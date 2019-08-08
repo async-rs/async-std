@@ -2,7 +2,6 @@
 
 - [Overview](./overview.md)
   - [`async-std`](./overview/async-std.md)
-  - [`async-task`](./overview/async-task.md)
   - [`std::future` and `futures-rs`](./overview/std-and-library-futures.md)
   - [Stability guarantees](./overview/stability-guarantees.md)
 - [Async concepts using async-std](./concepts.md)
