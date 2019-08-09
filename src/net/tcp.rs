@@ -6,6 +6,7 @@ use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
 use futures::{prelude::*, ready};
+use futures::stream::FusedStream;
 
 use crate::net::driver::IoHandle;
 
@@ -665,6 +666,10 @@ impl<'a> Stream for Incoming<'a> {
         let (socket, _) = ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
+}
+
+impl<'a> FusedStream for Incoming<'a> {
+    fn is_terminated(&self) -> bool { false }
 }
 
 impl From<net::TcpStream> for TcpStream {
