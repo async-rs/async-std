@@ -14,9 +14,9 @@ use lazy_static::lazy_static;
 use crate::utils::abort_on_panic;
 
 const MAX_THREADS: u64 = 10_000;
-const MIN_WAIT_MS: u64 = 1;
-const MAX_WAIT_MS: u64 = 100;
-const WAIT_SPREAD: u64 = MAX_WAIT_MS - MIN_WAIT_MS;
+const MIN_WAIT_US: u64 = 10;
+const MAX_WAIT_US: u64 = 10_000;
+const WAIT_SPREAD: u64 = MAX_WAIT_US - MIN_WAIT_US;
 
 static DYNAMIC_THREAD_COUNT: AtomicU64 = AtomicU64::new(0);
 
@@ -64,9 +64,9 @@ fn maybe_create_another_blocking_thread() {
     let relative_wait_limit = (WAIT_SPREAD * utilization_percent) / 100;
 
     // higher utilization -> lower wait time
-    let wait_limit_ms = MAX_WAIT_MS - relative_wait_limit;
-    assert!(wait_limit_ms >= MIN_WAIT_MS);
-    let wait_limit = Duration::from_millis(wait_limit_ms);
+    let wait_limit_us = MAX_WAIT_US - relative_wait_limit;
+    assert!(wait_limit_us >= MIN_WAIT_US);
+    let wait_limit = Duration::from_micros(wait_limit_us);
 
     thread::Builder::new()
         .name("async-blocking-driver-dynamic".to_string())
@@ -96,9 +96,9 @@ fn schedule(t: async_task::Task<()>) {
     let relative_wait_limit = (WAIT_SPREAD * utilization_percent) / 100;
 
     // higher utilization -> higher block time
-    let wait_limit_ms = MIN_WAIT_MS + relative_wait_limit;
-    assert!(wait_limit_ms <= MAX_WAIT_MS);
-    let wait_limit = Duration::from_millis(wait_limit_ms);
+    let wait_limit_us = MIN_WAIT_US + relative_wait_limit;
+    assert!(wait_limit_us <= MAX_WAIT_US);
+    let wait_limit = Duration::from_micros(wait_limit_us);
 
     let first_try_result = POOL.sender.send_timeout(t, wait_limit);
     match first_try_result {
