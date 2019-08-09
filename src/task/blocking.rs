@@ -83,10 +83,9 @@ fn schedule(t: async_task::Task<()>) {
             // NICEEEE
         }
         Err(crossbeam::channel::TrySendError::Full(t)) => {
-            // We were not able to send to the channel within our
-            // budget. Try to spin up another thread, and then
-            // block without a time limit on the submission of
-            // the task.
+            // We were not able to send to the channel without
+            // blocking. Try to spin up another thread and then
+            // retry sending while blocking.
             maybe_create_another_blocking_thread();
             POOL.sender.send(t).unwrap()
         }
