@@ -50,11 +50,14 @@ lazy_static! {
     };
 }
 
-// Create up to 10,000 dynamic blocking task worker threads.
+// Create up to MAX_THREADS dynamic blocking task worker threads.
 // Dynamic threads will terminate themselves if they don't
 // receive any work after a timeout that scales down as the
 // total number of threads scales up.
 fn maybe_create_another_blocking_thread() {
+    // We use a `Relaxed` atomic operation because
+    // it's just a heuristic, and would not lose correctness
+    // even if it's random.
     let workers = DYNAMIC_THREAD_COUNT.load(Ordering::Relaxed);
     if workers >= MAX_THREADS {
         return;
@@ -62,9 +65,7 @@ fn maybe_create_another_blocking_thread() {
 
     // We want to give up earlier when we have more threads
     // to exert backpressure on the system submitting work
-    // to do. We use a `Relaxed` atomic operation because
-    // it's just a heuristic, and would not lose correctness
-    // even if it's random.
+    // to do.
     let utilization_percent = (workers * 100) / MAX_THREADS;
     let relative_wait_limit = (WAIT_SPREAD * utilization_percent) / 100;
 
@@ -93,6 +94,9 @@ fn maybe_create_another_blocking_thread() {
 // timeout is dynamic, and when we have more threads we block
 // for longer before spinning up another thread for backpressure.
 fn schedule(t: async_task::Task<()>) {
+    // We use a `Relaxed` atomic operation because
+    // it's just a heuristic, and would not lose correctness
+    // even if it's random.
     let workers = DYNAMIC_THREAD_COUNT.load(Ordering::Relaxed);
 
     // We want to block for longer when we have more threads to
