@@ -20,14 +20,15 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::io::stdin;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::io;
 ///
-/// # futures::executor::block_on(async {
-/// let stdin = stdin();
+/// let stdin = io::stdin();
 /// let mut line = String::new();
 /// stdin.read_line(&mut line).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub fn stdin() -> Stdin {
     Stdin(Mutex::new(State::Idle(Some(Inner {

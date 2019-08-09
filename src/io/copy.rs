@@ -28,19 +28,16 @@ use std::io;
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::{io, task};
 ///
-/// fn main() -> std::io::Result<()> {
-///     task::block_on(async {
-///         let mut reader: &[u8] = b"hello";
-///         let mut writer: Vec<u8> = vec![];
+/// let mut reader: &[u8] = b"hello";
+/// let mut writer = io::stdout();
 ///
-///         io::copy(&mut reader, &mut writer).await?;
-///
-///         assert_eq!(&b"hello"[..], &writer[..]);
-///         Ok(())
-///     })
-/// }
+/// io::copy(&mut reader, &mut writer).await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn copy<R, W>(reader: &mut R, writer: &mut W) -> io::Result<u64>
 where

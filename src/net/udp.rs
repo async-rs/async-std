@@ -30,21 +30,19 @@ use crate::net::driver::IoHandle;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::net::UdpSocket;
 ///
-/// # futures::executor::block_on(async {
 /// let socket = UdpSocket::bind("127.0.0.1:8080").await?;
 /// let mut buf = vec![0u8; 1024];
 ///
-/// println!("Listening on {}", socket.local_addr()?);
-///
 /// loop {
 ///     let (n, peer) = socket.recv_from(&mut buf).await?;
-///     let sent = socket.send_to(&buf[..n], &peer).await?;
-///     println!("Sent {} out of {} bytes to {}", sent, n, peer);
+///     socket.send_to(&buf[..n], &peer).await?;
 /// }
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
@@ -68,12 +66,13 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
         let mut last_err = None;
@@ -116,13 +115,15 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     ///	use async_std::net::UdpSocket;
+    /// use std::net::IpAddr;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
-    /// println!("Address: {:?}", socket.local_addr());
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let addr = socket.local_addr()?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
@@ -136,6 +137,8 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     ///
     /// const THE_MERCHANT_OF_VENICE: &[u8] = b"
@@ -145,14 +148,13 @@ impl UdpSocket {
     ///     And if you wrong us, shall we not revenge?
     /// ";
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     ///
     /// let addr = "127.0.0.1:7878";
     /// let sent = socket.send_to(THE_MERCHANT_OF_VENICE, &addr).await?;
     /// println!("Sent {} bytes to {}", sent, addr);
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn send_to<A: ToSocketAddrs>(&self, buf: &[u8], addrs: A) -> io::Result<usize> {
         let addr = match addrs.to_socket_addrs()?.next() {
@@ -188,16 +190,17 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     ///
     /// let mut buf = vec![0; 1024];
     /// let (n, peer) = socket.recv_from(&mut buf).await?;
     /// println!("Received {} bytes from {}", n, peer);
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
@@ -229,13 +232,14 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     ///	use async_std::net::UdpSocket;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// socket.connect("127.0.0.1:8080").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn connect<A: ToSocketAddrs>(&self, addrs: A) -> io::Result<()> {
         let mut last_err = None;
@@ -263,6 +267,8 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     ///
     /// const THE_MERCHANT_OF_VENICE: &[u8] = b"
@@ -272,14 +278,13 @@ impl UdpSocket {
     ///     And if you wrong us, shall we not revenge?
     /// ";
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     ///
     /// let addr = "127.0.0.1:7878";
     /// let sent = socket.send_to(THE_MERCHANT_OF_VENICE, &addr).await?;
     /// println!("Sent {} bytes to {}", sent, addr);
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
@@ -305,16 +310,17 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     ///
     /// let mut buf = vec![0; 1024];
     /// let (n, peer) = socket.recv_from(&mut buf).await?;
     /// println!("Received {} bytes from {}", n, peer);
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
@@ -438,17 +444,18 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     /// use std::net::Ipv4Addr;
     ///
-    /// # futures::executor::block_on(async {
     /// let interface = Ipv4Addr::new(0, 0, 0, 0);
     /// let mdns_addr = Ipv4Addr::new(224, 0, 0, 123);
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// socket.join_multicast_v4(&mdns_addr, &interface)?;
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
         self.io_handle
@@ -466,17 +473,18 @@ impl UdpSocket {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::UdpSocket;
     /// use std::net::{Ipv6Addr, SocketAddr};
     ///
-    /// # futures::executor::block_on(async {
     /// let socket_addr = SocketAddr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into(), 0);
     /// let mdns_addr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x0123) ;
     /// let socket = UdpSocket::bind(&socket_addr).await?;
     ///
     /// socket.join_multicast_v6(&mdns_addr, 0)?;
-    /// # Ok::<_, Box<dyn std::error::Error>>(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn join_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
         self.io_handle

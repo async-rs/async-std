@@ -19,12 +19,13 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::os::unix::fs::symlink;
 ///
-/// # futures::executor::block_on(async {
 /// symlink("a.txt", "b.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();

@@ -24,10 +24,11 @@ const BLOCKED: usize = 1 << 1;
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::{sync::Mutex, task};
 /// use std::sync::Arc;
 ///
-/// # futures::executor::block_on(async {
 /// let m = Arc::new(Mutex::new(0));
 /// let mut tasks = vec![];
 ///
@@ -42,7 +43,8 @@ const BLOCKED: usize = 1 << 1;
 ///     t.await;
 /// }
 /// assert_eq!(*m.lock().await, 10);
-/// # })
+/// #
+/// # }) }
 /// ```
 pub struct Mutex<T> {
     state: AtomicUsize,
@@ -79,10 +81,11 @@ impl<T> Mutex<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
     /// use async_std::{sync::Mutex, task};
     /// use std::sync::Arc;
     ///
-    /// # futures::executor::block_on(async {
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
     ///
@@ -92,7 +95,8 @@ impl<T> Mutex<T> {
     /// .await;
     ///
     /// assert_eq!(*m2.lock().await, 20);
-    /// # })
+    /// #
+    /// # }) }
     /// ```
     pub async fn lock(&self) -> MutexGuard<'_, T> {
         pub struct LockFuture<'a, T> {
@@ -190,10 +194,11 @@ impl<T> Mutex<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
     /// use async_std::{sync::Mutex, task};
     /// use std::sync::Arc;
     ///
-    /// # futures::executor::block_on(async {
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
     ///
@@ -207,7 +212,8 @@ impl<T> Mutex<T> {
     /// .await;
     ///
     /// assert_eq!(*m2.lock().await, 20);
-    /// # })
+    /// #
+    /// # }) }
     /// ```
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         if self.state.fetch_or(LOCK, Ordering::Acquire) & LOCK == 0 {
@@ -241,13 +247,15 @@ impl<T> Mutex<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
     /// use async_std::sync::Mutex;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut mutex = Mutex::new(0);
     /// *mutex.get_mut() = 10;
     /// assert_eq!(*mutex.lock().await, 10);
-    /// });
+    /// #
+    /// # }) }
     /// ```
     pub fn get_mut(&mut self) -> &mut T {
         unsafe { &mut *self.value.get() }

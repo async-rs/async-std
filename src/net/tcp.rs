@@ -33,22 +33,17 @@ use crate::net::driver::IoHandle;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::net::TcpStream;
-/// use async_std::prelude::*;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{net::TcpStream, prelude::*};
 ///
-/// # futures::executor::block_on(async {
 /// let mut stream = TcpStream::connect("127.0.0.1:8080").await?;
-/// println!("Connected to {}", &stream.peer_addr()?);
-///
-/// let msg = "hello world";
-/// println!("<- {}", msg);
-/// stream.write_all(msg.as_bytes()).await?;
+/// stream.write_all(b"hello world").await?;
 ///
 /// let mut buf = vec![0u8; 1024];
 /// let n = stream.read(&mut buf).await?;
-/// println!("-> {}\n", std::str::from_utf8(&buf[..n])?);
-/// # Ok::<_, Box<dyn std::error::Error>>(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Debug)]
 pub struct TcpStream {
@@ -73,12 +68,13 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:0").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
         enum State {
@@ -157,16 +153,14 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
-    /// use std::net::{IpAddr, Ipv4Addr};
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
-    ///
-    /// let expected = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-    /// assert_eq!(stream.local_addr()?.ip(), expected);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let addr = stream.local_addr()?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
@@ -178,16 +172,14 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
-    /// use std::net::{IpAddr, Ipv4Addr};
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
-    ///
-    /// let expected = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-    /// assert_eq!(stream.peer_addr()?.ip(), expected);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let peer = stream.peer_addr()?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().peer_addr()
@@ -203,15 +195,16 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     ///
     /// stream.set_ttl(100)?;
     /// assert_eq!(stream.ttl()?, 100);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn ttl(&self) -> io::Result<u32> {
         self.io_handle.get_ref().ttl()
@@ -226,22 +219,25 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     ///
     /// stream.set_ttl(100)?;
     /// assert_eq!(stream.ttl()?, 100);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
         self.io_handle.get_ref().set_ttl(ttl)
     }
 
     /// Receives data on the socket from the remote address to which it is connected, without
-    /// removing that data from the queue. On success, returns the number of bytes peeked.
+    /// removing that data from the queue.
+    ///
+    /// On success, returns the number of bytes peeked.
     ///
     /// Successive calls return the same data. This is accomplished by passing `MSG_PEEK` as a flag
     /// to the underlying `recv` system call.
@@ -250,15 +246,16 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8000").await?;
     ///
-    /// let mut buf = [0; 10];
-    /// let len = stream.peek(&mut buf).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let mut buf = vec![0; 1024];
+    /// let n = stream.peek(&mut buf).await?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         let res = future::poll_fn(|cx| {
@@ -286,15 +283,16 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     ///
     /// stream.set_nodelay(true)?;
     /// assert_eq!(stream.nodelay()?, true);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn nodelay(&self) -> io::Result<bool> {
         self.io_handle.get_ref().nodelay()
@@ -312,15 +310,16 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     ///
     /// stream.set_nodelay(true)?;
     /// assert_eq!(stream.nodelay()?, true);
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
         self.io_handle.get_ref().set_nodelay(nodelay)
@@ -337,14 +336,15 @@ impl TcpStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpStream;
     /// use std::net::Shutdown;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     /// stream.shutdown(Shutdown::Both)?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
         self.io_handle.get_ref().shutdown(how)
@@ -460,24 +460,20 @@ impl AsyncWrite for &TcpStream {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::io;
-/// use async_std::net::TcpListener;
-/// use async_std::prelude::*;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{io, net::TcpListener, prelude::*};
 ///
-/// # futures::executor::block_on(async {
 /// let listener = TcpListener::bind("127.0.0.1:8080").await?;
-/// println!("Listening on {}", listener.local_addr()?);
-///
 /// let mut incoming = listener.incoming();
+///
 /// while let Some(stream) = incoming.next().await {
 ///     let stream = stream?;
-///     println!("Accepting from: {}", stream.peer_addr()?);
-///
 ///     let (reader, writer) = &mut (&stream, &stream);
 ///     io::copy(reader, writer).await?;
 /// }
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Debug)]
 pub struct TcpListener {
@@ -502,12 +498,13 @@ impl TcpListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpListener;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = TcpListener::bind("127.0.0.1:0").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     ///
     /// [`local_addr`]: #method.local_addr
@@ -550,13 +547,14 @@ impl TcpListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpListener;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = TcpListener::bind("127.0.0.1:0").await?;
     /// let (stream, addr) = listener.accept().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
         future::poll_fn(|cx| {
@@ -602,10 +600,10 @@ impl TcpListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::net::TcpListener;
-    /// use async_std::prelude::*;
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{net::TcpListener, prelude::*};
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = TcpListener::bind("127.0.0.1:0").await?;
     /// let mut incoming = listener.incoming();
     ///
@@ -613,8 +611,8 @@ impl TcpListener {
     ///     let mut stream = stream?;
     ///     stream.write_all(b"hello world").await?;
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
         Incoming(self)
@@ -629,16 +627,14 @@ impl TcpListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::net::TcpListener;
-    /// use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = TcpListener::bind("127.0.0.1:8080").await?;
-    ///
-    /// let expected = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 8080);
-    /// assert_eq!(listener.local_addr()?, SocketAddr::V4(expected));
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let addr = listener.local_addr()?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()

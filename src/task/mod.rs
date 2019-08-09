@@ -11,14 +11,15 @@
 //!
 //! ```
 //! # #![feature(async_await)]
+//! # fn main() { async_std::task::block_on(async {
+//! #
 //! use async_std::task;
 //!
-//! # async_std::task::block_on(async {
 //! let handle = task::spawn(async {
 //!     1 + 2
 //! });
-//! assert_eq!(handle.await, 3);
-//! # });
+//! #
+//! # }) }
 //! ```
 
 #[doc(inline)]

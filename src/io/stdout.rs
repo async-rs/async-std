@@ -19,14 +19,14 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::io::stdout;
-/// use async_std::prelude::*;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{io, prelude::*};
 ///
-/// # futures::executor::block_on(async {
-/// let mut stdout = stdout();
+/// let mut stdout = io::stdout();
 /// stdout.write_all(b"Hello, world!").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub fn stdout() -> Stdout {
     Stdout(Mutex::new(State::Idle(Some(Inner {

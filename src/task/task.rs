@@ -66,14 +66,16 @@ impl<T> JoinHandle<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
     /// use async_std::task;
     ///
-    /// # async_std::task::block_on(async {
     /// let handle = task::spawn(async {
     ///     1 + 2
     /// });
     /// println!("id = {}", handle.task().id());
-    /// # });
+    /// #
+    /// # }) }
     pub fn task(&self) -> &Task {
         self.0.tag().task()
     }
@@ -97,13 +99,12 @@ impl<T> Future for JoinHandle<T> {
 ///
 /// ```
 /// # #![feature(async_await)]
+/// #
 /// use async_std::task;
 ///
-/// # async_std::task::block_on(async {
 /// task::block_on(async {
 ///     println!("id = {:?}", task::current().id());
 /// })
-/// # });
 /// ```
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
 pub struct TaskId(NonZeroU64);

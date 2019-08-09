@@ -10,14 +10,15 @@
 //!
 //! ```no_run
 //! # #![feature(async_await)]
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
 //! use async_std::fs::File;
 //! use async_std::prelude::*;
 //!
-//! # futures::executor::block_on(async {
 //! let mut file = File::create("foo.txt").await?;
 //! file.write_all(b"Hello, world!").await?;
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # Ok(()) }) }
 //! ```
 
 use std::fs;
@@ -61,12 +62,13 @@ pub use std::fs::{FileType, Metadata, Permissions};
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::canonicalize;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let path = canonicalize(".").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let path = fs::canonicalize(".").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
@@ -91,12 +93,13 @@ pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::create_dir;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// create_dir("./some/dir").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::create_dir("./some/dir").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -120,12 +123,13 @@ pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::create_dir_all;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// create_dir_all("./some/dir").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::create_dir_all("./some/dir").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -151,12 +155,13 @@ pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::hard_link;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// hard_link("a.txt", "b.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::hard_link("a.txt", "b.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
     let from = from.as_ref().to_owned();
@@ -188,12 +193,13 @@ pub async fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Re
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::copy;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let bytes_copied = copy("foo.txt", "bar.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let bytes_copied = fs::copy("foo.txt", "bar.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<u64> {
     let from = from.as_ref().to_owned();
@@ -220,12 +226,13 @@ pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::metadata;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let perm = metadata("foo.txt").await?.permissions();
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let perm = fs::metadata("foo.txt").await?.permissions();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
@@ -253,12 +260,13 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::read;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let contents = read("foo.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let contents = fs::read("foo.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
@@ -288,18 +296,18 @@ pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::read_dir;
-/// use async_std::prelude::*;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{fs, prelude::*};
 ///
-/// # futures::executor::block_on(async {
-/// let mut dir = read_dir(".").await?;
+/// let mut dir = fs::read_dir(".").await?;
 ///
 /// while let Some(entry) = dir.next().await {
 ///     let entry = entry?;
 ///     println!("{:?}", entry.file_name());
 /// }
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
@@ -325,12 +333,13 @@ pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::read_link;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let path = read_link("foo.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let path = fs::read_link("foo.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
@@ -383,12 +392,13 @@ pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::remove_dir;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// remove_dir("./some/dir").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::remove_dir("./some/dir").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -412,12 +422,13 @@ pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::remove_dir_all;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// remove_dir_all("./some/dir").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::remove_dir_all("./some/dir").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -441,12 +452,13 @@ pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::remove_file;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// remove_file("foo.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::remove_file("foo.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -471,12 +483,13 @@ pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::rename;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// rename("a.txt", "b.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::rename("a.txt", "b.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
     let from = from.as_ref().to_owned();
@@ -501,15 +514,16 @@ pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Resul
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::{metadata, set_permissions};
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let mut perm = metadata("foo.txt").await?.permissions();
+/// let mut perm = fs::metadata("foo.txt").await?.permissions();
 /// perm.set_readonly(true);
 ///
-/// set_permissions("foo.txt", perm).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::set_permissions("foo.txt", perm).await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: fs::Permissions) -> io::Result<()> {
     let path = path.as_ref().to_owned();
@@ -533,12 +547,13 @@ pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: fs::Permissions) -> 
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::symlink_metadata;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let perm = symlink_metadata("foo.txt").await?.permissions();
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let perm = fs::symlink_metadata("foo.txt").await?.permissions();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
@@ -564,12 +579,13 @@ pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::write;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// write("foo.txt", b"Lorem ipsum").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// fs::write("foo.txt", b"Lorem ipsum").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref().to_owned();

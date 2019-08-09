@@ -8,17 +8,18 @@
 //!
 //! ```no_run
 //! # #![feature(async_await)]
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
 //! use async_std::{io, prelude::*};
 //! use std::time::Duration;
 //!
-//! # async_std::task::block_on(async {
 //! let stdin = io::stdin();
 //! let mut line = String::new();
 //! let dur = Duration::from_secs(5);
 //!
 //! stdin.read_line(&mut line).timeout(dur).await??;
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # Ok(()) }) }
 //! ```
 //!
 //! [`timeout`]: ../time/trait.Timeout.html#method.timeout

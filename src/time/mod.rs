@@ -34,7 +34,6 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use cfg_if::cfg_if;
 use futures_timer::Delay;
 use pin_utils::unsafe_pinned;
 
@@ -56,80 +55,69 @@ impl From<TimeoutError> for io::Error {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
-        #[doc(hidden)]
-        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+/// An extension trait that configures timeouts for futures.
+pub trait Timeout: Future + Sized {
+    /// TODO
+    type TimeoutFuture: Future<Output = Result<<Self as Future>::Output, TimeoutError>>;
 
-        /// An extension trait that configures timeouts for futures.
-        pub trait Timeout: Future + Sized {
-            /// Awaits a future to completion or times out after a duration of time.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # #![feature(async_await)]
-            /// # fn main() -> io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::{io, prelude::*};
-            /// use std::time::Duration;
-            ///
-            /// let stdin = io::stdin();
-            /// let mut line = String::new();
-            ///
-            /// let n = stdin
-            ///     .read_line(&mut line)
-            ///     .timeout(Duration::from_secs(5))
-            ///     .await??;
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            fn timeout(self, dur: Duration) -> ImplFuture<Result<Self::Output, TimeoutError>> {
-                TimeoutFuture {
-                    future: self,
-                    delay: Delay::new(dur),
-                }
-            }
-        }
-    } else {
-        /// An extension trait that configures timeouts for futures.
-        pub trait Timeout: Future + Sized {
-            /// Awaits a future to completion or times out after a duration of time.
-            fn timeout(self, dur: Duration) -> TimeoutFuture<Self> {
-                TimeoutFuture {
-                    future: self,
-                    delay: Delay::new(dur),
-                }
-            }
-        }
+    /// Awaits a future to completion or times out after a duration of time.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{io, prelude::*};
+    /// use std::time::Duration;
+    ///
+    /// let stdin = io::stdin();
+    /// let mut line = String::new();
+    ///
+    /// let n = stdin
+    ///     .read_line(&mut line)
+    ///     .timeout(Duration::from_secs(5))
+    ///     .await??;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    fn timeout(self, dur: Duration) -> Self::TimeoutFuture;
+}
 
-        /// A future that times out after a duration of time.
-        #[doc(hidden)]
-        #[derive(Debug)]
-        pub struct TimeoutFuture<F> {
-            future: F,
-            delay: Delay,
-        }
+impl<F: Future> Timeout for F {
+    type TimeoutFuture = TimeoutFuture<F>;
 
-        impl<F> TimeoutFuture<F> {
-            unsafe_pinned!(future: F);
-            unsafe_pinned!(delay: Delay);
-        }
-
-        impl<F: Future> Future for TimeoutFuture<F> {
-            type Output = Result<F::Output, TimeoutError>;
-
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                match self.as_mut().future().poll(cx) {
-                    Poll::Ready(v) => Poll::Ready(Ok(v)),
-                    Poll::Pending => match self.delay().poll(cx) {
-                        Poll::Ready(_) => Poll::Ready(Err(TimeoutError)),
-                        Poll::Pending => Poll::Pending,
-                    },
-                }
-            }
+    fn timeout(self, dur: Duration) -> Self::TimeoutFuture {
+        TimeoutFuture {
+            future: self,
+            delay: Delay::new(dur),
         }
     }
 }
 
-impl<F: Future> Timeout for F {}
+/// A future that times out after a duration of time.
+#[doc(hidden)]
+#[derive(Debug)]
+pub struct TimeoutFuture<F> {
+    future: F,
+    delay: Delay,
+}
+
+impl<F> TimeoutFuture<F> {
+    unsafe_pinned!(future: F);
+    unsafe_pinned!(delay: Delay);
+}
+
+impl<F: Future> Future for TimeoutFuture<F> {
+    type Output = Result<F::Output, TimeoutError>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.as_mut().future().poll(cx) {
+            Poll::Ready(v) => Poll::Ready(Ok(v)),
+            Poll::Pending => match self.delay().poll(cx) {
+                Poll::Ready(_) => Poll::Ready(Err(TimeoutError)),
+                Poll::Pending => Poll::Pending,
+            },
+        }
+    }
+}

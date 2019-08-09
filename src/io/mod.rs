@@ -10,14 +10,15 @@
 //!
 //! ```no_run
 //! # #![feature(async_await)]
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
 //! use async_std::io;
 //!
-//! # futures::executor::block_on(async {
 //! let stdin = io::stdin();
 //! let mut line = String::new();
 //! stdin.read_line(&mut line).await?;
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # Ok(()) }) }
 //! ```
 
 #[doc(inline)]

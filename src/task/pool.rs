@@ -30,11 +30,14 @@ use super::{JoinHandle, Task};
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::task::current;
 ///
-/// # async_std::task::block_on(async {
 /// println!("The name of this task is {:?}", current().name());
-/// # });
+/// #
+/// # }) }
+/// ```
 pub fn current() -> Task {
     get_task(|task| task.clone()).expect("`task::current()` called outside the context of a task")
 }
@@ -49,15 +52,17 @@ pub fn current() -> Task {
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::task;
 ///
-/// # async_std::task::block_on(async {
 /// let handle = task::spawn(async {
 ///     1 + 2
 /// });
 ///
 /// assert_eq!(handle.await, 3);
-/// # });
+/// #
+/// # }) }
 /// ```
 pub fn spawn<F, T>(future: F) -> JoinHandle<T>
 where

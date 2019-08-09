@@ -14,17 +14,19 @@
 //!
 //! ```no_run
 //! # #![feature(async_await)]
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
 //! use async_std::net::UdpSocket;
 //!
-//! # futures::executor::block_on(async {
 //! let socket = UdpSocket::bind("127.0.0.1:8080").await?;
 //! let mut buf = vec![0u8; 1024];
+//!
 //! loop {
 //!     let (n, peer) = socket.recv_from(&mut buf).await?;
 //!     socket.send_to(&buf[..n], &peer).await?;
 //! }
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # Ok(()) }) }
 //! ```
 
 pub use tcp::{Incoming, TcpListener, TcpStream};

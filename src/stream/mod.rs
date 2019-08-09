@@ -8,16 +8,17 @@
 //!
 //! ```
 //! # #![feature(async_await)]
-//! # use async_std::prelude::*;
-//! # async_std::task::block_on(async {
-//! use async_std::stream;
+//! # fn main() { async_std::task::block_on(async {
+//! #
+//! use async_std::{prelude::*, stream};
 //!
 //! let mut stream = stream::repeat(9).take(3);
+//!
 //! while let Some(num) = stream.next().await {
 //!     assert_eq!(num, 9);
 //! }
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # }) }
 //! ```
 
 #[doc(inline)]

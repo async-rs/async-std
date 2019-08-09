@@ -34,29 +34,31 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
 /// let mut file = File::create("foo.txt").await?;
 /// file.write_all(b"Hello, world!").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 ///
 /// Read the contents of a file into a `Vec<u8>`:
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
 /// let mut file = File::open("foo.txt").await?;
 /// let mut contents = Vec::new();
 /// file.read_to_end(&mut contents).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Debug)]
 pub struct File {
@@ -123,12 +125,13 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = File::open("foo.txt").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
@@ -169,12 +172,13 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = File::create("foo.txt").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
@@ -215,15 +219,16 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut file = File::create("foo.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_all().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn sync_all(&self) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -270,15 +275,16 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut file = File::create("foo.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_data().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn sync_data(&self) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -329,14 +335,15 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut file = File::create("foo.txt").await?;
     /// file.set_len(10).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn set_len(&self, size: u64) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -376,13 +383,14 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = File::open("foo.txt").await?;
     /// let metadata = file.metadata().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn metadata(&self) -> io::Result<fs::Metadata> {
         future::poll_fn(|cx| {
@@ -427,16 +435,17 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut file = File::create("foo.txt").await?;
     /// let mut perms = file.metadata().await?.permissions();
     /// perms.set_readonly(true);
     /// file.set_permissions(perms).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn set_permissions(&self, perm: fs::Permissions) -> io::Result<()> {
         let mut perm = Some(perm);

@@ -182,11 +182,7 @@ impl<T: Send + 'static> LocalKey<T> {
         }
 
         let key = self.__key.load(Ordering::Acquire);
-        if key == 0 {
-            init(&self.__key)
-        } else {
-            key
-        }
+        if key == 0 { init(&self.__key) } else { key }
     }
 }
 

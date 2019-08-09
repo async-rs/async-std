@@ -74,19 +74,16 @@ impl DirBuilder {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::{metadata, DirBuilder};
-    ///
-    /// # futures::executor::block_on(async {
-    /// let path = "/tmp/foo/bar/baz";
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::DirBuilder;
     ///
     /// DirBuilder::new()
     ///     .recursive(true)
-    ///     .create(path)
+    ///     .create("/tmp/foo/bar/baz")
     ///     .await?;
-    ///
-    /// assert!(metadata(path).await?.is_dir());
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn create<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<()>> {
         let mut builder = fs::DirBuilder::new();

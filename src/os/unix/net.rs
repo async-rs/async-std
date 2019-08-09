@@ -33,17 +33,17 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::os::unix::net::UnixDatagram;
 ///
-/// # futures::executor::block_on(async {
 /// let socket = UnixDatagram::bind("/tmp/socket1").await?;
 /// socket.send_to(b"hello world", "/tmp/socket2").await?;
 ///
 /// let mut buf = vec![0u8; 1024];
 /// let (n, peer) = socket.recv_from(&mut buf).await?;
-/// println!("Received {} bytes from {:?}", n, peer);
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub struct UnixDatagram {
     #[cfg(not(feature = "docs.rs"))]
@@ -67,12 +67,13 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::bind("/tmp/socket").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
@@ -86,12 +87,13 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::unbound()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn unbound() -> io::Result<UnixDatagram> {
         let socket = mio_uds::UnixDatagram::unbound()?;
@@ -106,12 +108,13 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let (socket1, socket2) = UnixDatagram::pair()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixDatagram, UnixDatagram)> {
         let (a, b) = mio_uds::UnixDatagram::pair()?;
@@ -133,13 +136,14 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::unbound()?;
     /// socket.connect("/tmp/socket").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn connect<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         // TODO(stjepang): Connect the socket on a blocking pool.
@@ -153,13 +157,14 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::bind("/tmp/socket").await?;
     /// let addr = socket.local_addr()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
@@ -175,14 +180,15 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut socket = UnixDatagram::unbound()?;
     /// socket.connect("/tmp/socket").await?;
     /// let peer = socket.peer_addr()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().peer_addr()
@@ -196,14 +202,15 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut socket = UnixDatagram::unbound()?;
     /// let mut buf = vec![0; 1024];
     /// let (n, peer) = socket.recv_from(&mut buf).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
@@ -229,14 +236,15 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::bind("/tmp/socket").await?;
     /// let mut buf = vec![0; 1024];
     /// let n = socket.recv(&mut buf).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
@@ -262,13 +270,14 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut socket = UnixDatagram::unbound()?;
     /// socket.send_to(b"hello world", "/tmp/socket").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn send_to<P: AsRef<Path>>(&self, buf: &[u8], path: P) -> io::Result<usize> {
         future::poll_fn(|cx| {
@@ -294,14 +303,15 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// # futures::executor::block_on(async {
     /// let mut socket = UnixDatagram::unbound()?;
     /// socket.connect("/tmp/socket").await?;
     /// socket.send(b"hello world").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
@@ -330,14 +340,15 @@ impl UnixDatagram {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixDatagram;
     /// use std::net::Shutdown;
     ///
-    /// # futures::executor::block_on(async {
     /// let socket = UnixDatagram::unbound()?;
     /// socket.shutdown(Shutdown::Both)?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         self.io_handle.get_ref().shutdown(how)
@@ -380,10 +391,11 @@ impl fmt::Debug for UnixDatagram {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::os::unix::net::UnixListener;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
 /// let listener = UnixListener::bind("/tmp/socket").await?;
 /// let mut incoming = listener.incoming();
 ///
@@ -391,8 +403,8 @@ impl fmt::Debug for UnixDatagram {
 ///     let mut stream = stream?;
 ///     stream.write_all(b"hello world").await?;
 /// }
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub struct UnixListener {
     #[cfg(not(feature = "docs.rs"))]
@@ -408,12 +420,13 @@ impl UnixListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixListener;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = UnixListener::bind("/tmp/socket").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixListener> {
         let path = path.as_ref().to_owned();
@@ -433,13 +446,14 @@ impl UnixListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixListener;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = UnixListener::bind("/tmp/socket").await?;
     /// let (socket, addr) = listener.accept().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         future::poll_fn(|cx| {
@@ -480,10 +494,11 @@ impl UnixListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixListener;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = UnixListener::bind("/tmp/socket").await?;
     /// let mut incoming = listener.incoming();
     ///
@@ -491,8 +506,8 @@ impl UnixListener {
     ///     let mut stream = stream?;
     ///     stream.write_all(b"hello world").await?;
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
         Incoming(self)
@@ -504,13 +519,14 @@ impl UnixListener {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixListener;
     ///
-    /// # futures::executor::block_on(async {
     /// let listener = UnixListener::bind("/tmp/socket").await?;
     /// let addr = listener.local_addr()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
@@ -567,17 +583,18 @@ impl Stream for Incoming<'_> {
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::os::unix::net::UnixStream;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
 /// let mut stream = UnixStream::connect("/tmp/socket").await?;
 /// stream.write_all(b"hello world").await?;
 ///
 /// let mut response = Vec::new();
 /// stream.read_to_end(&mut response).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub struct UnixStream {
     #[cfg(not(feature = "docs.rs"))]
@@ -593,12 +610,13 @@ impl UnixStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = UnixStream::connect("/tmp/socket").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         enum State {
@@ -654,12 +672,13 @@ impl UnixStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = UnixStream::pair()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
         let (a, b) = mio_uds::UnixStream::pair()?;
@@ -680,13 +699,14 @@ impl UnixStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = UnixStream::connect("/tmp/socket").await?;
     /// let addr = stream.local_addr()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
@@ -698,13 +718,14 @@ impl UnixStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = UnixStream::connect("/tmp/socket").await?;
     /// let peer = stream.peer_addr()?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().peer_addr()
@@ -719,14 +740,15 @@ impl UnixStream {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::os::unix::net::UnixStream;
     /// use std::net::Shutdown;
     ///
-    /// # futures::executor::block_on(async {
     /// let stream = UnixStream::connect("/tmp/socket").await?;
     /// stream.shutdown(Shutdown::Both)?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         self.io_handle.get_ref().shutdown(how)
