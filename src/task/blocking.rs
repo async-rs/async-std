@@ -38,9 +38,14 @@ lazy_static! {
                 .expect("cannot start a thread driving blocking tasks");
         }
 
-        // We want to bound the work queue to make it more
-        // suitable as a backpressure mechanism.
-        let (sender, receiver) = bounded(MAX_THREADS as usize);
+        // We want to use an unbuffered channel here to help
+        // us drive our dynamic control. In effect, the
+        // kernel's scheduler becomes the queue, reducing
+        // the number of buffers that work must flow through
+        // before being acted on by a core. This helps keep
+        // latency snappy in the overall async system by
+        // reducing bufferbloat.
+        let (sender, receiver) = bounded(0);
         Pool { sender, receiver }
     };
 }
