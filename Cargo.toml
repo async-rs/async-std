@@ -7,9 +7,9 @@ license = "Apache-2.0/MIT"
 repository = "https://github.com/stjepang/async-std"
 homepage = "https://github.com/stjepang/async-std"
 documentation = "https://docs.rs/async-std"
-description = "Asynchronous standard library"
-keywords = []
-categories = ["asynchronous", "concurrency"]
+description = "Async version of the Rust standard library"
+keywords = ["async", "await", "future", "std", "task"]
+categories = ["asynchronous", "concurrency", "network-programming"]
 
 [package.metadata.docs.rs]
 features = ["docs"]
@@ -19,7 +19,7 @@ rustdoc-args = ["--features docs"]
 docs = []
 
 [dependencies]
-async-task = { path = "async-task" }
+async-task = { path = "../async-task" }
 cfg-if = "0.1.9"
 crossbeam = "0.7.1"
 futures-preview = "0.3.0-alpha.17"
@@ -37,9 +37,3 @@ slab = "0.4.2"
 femme = "1.1.0"
 # surf = { git = "ssh://github.com/yoshuawuyts/surf" }
 tempdir = "0.3.7"
-
-[workspace]
-members = [
-  ".",
-  "async-task",
-]
