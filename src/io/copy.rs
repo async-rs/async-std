@@ -1,6 +1,6 @@
-use std::io;
-
 use futures::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+
+use crate::io;
 
 /// Copies the entire contents of a reader into a writer.
 ///

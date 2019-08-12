@@ -1,9 +1,10 @@
-use std::io::{self, IoSliceMut, Read as _, SeekFrom};
+use std::io::{IoSliceMut, Read as _, SeekFrom};
 use std::pin::Pin;
 use std::{cmp, fmt};
 
 use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
 
+use crate::io;
 use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
@@ -22,7 +23,10 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// When the `BufReader` is dropped, the contents of its buffer will be discarded. Creating
 /// multiple instances of a `BufReader` on the same stream can cause data loss.
 ///
+/// This type is an async version of [`std::io::BufReader`].
+///
 /// [`Read`]: trait.Read.html
+/// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
 ///
 /// # Examples
 ///

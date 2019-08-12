@@ -22,10 +22,10 @@
 //! ```
 
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::task::blocking;
+use std::io;
 
 pub use dir_builder::DirBuilder;
 pub use dir_entry::DirEntry;

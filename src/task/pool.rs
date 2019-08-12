@@ -1,6 +1,5 @@
 use std::cell::{Cell, UnsafeCell};
 use std::fmt::Arguments;
-use std::io;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
 use std::pin::Pin;
@@ -14,6 +13,7 @@ use lazy_static::lazy_static;
 use super::task;
 use super::{JoinHandle, Task};
 use crate::future::Future;
+use crate::io;
 
 /// Returns a handle to the current task.
 ///

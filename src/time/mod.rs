@@ -28,7 +28,6 @@
 
 use std::error::Error;
 use std::fmt;
-use std::io;
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -37,6 +36,7 @@ use futures_timer::Delay;
 use pin_utils::unsafe_pinned;
 
 use crate::future::Future;
+use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {

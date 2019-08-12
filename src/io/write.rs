@@ -1,4 +1,4 @@
-use std::io::{self, IoSlice};
+use std::io::IoSlice;
 use std::mem;
 use std::pin::Pin;
 
@@ -6,6 +6,7 @@ use cfg_if::cfg_if;
 use futures::io::AsyncWrite;
 
 use crate::future::Future;
+use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {

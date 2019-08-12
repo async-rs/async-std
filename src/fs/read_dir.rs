@@ -1,11 +1,11 @@
 use std::fs;
-use std::io;
 
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use super::DirEntry;
 use crate::future::Future;
+use crate::io;
 use crate::task::{blocking, Context, Poll};
 
 /// A stream over entries in a directory.

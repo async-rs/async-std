@@ -1,7 +1,7 @@
 //! Types for working with files.
 
 use std::fs;
-use std::io::{self, SeekFrom};
+use std::io::{Read as _, Seek, SeekFrom, Write as _};
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -11,6 +11,7 @@ use futures::future::{self, FutureExt, TryFutureExt};
 use futures::io::{AsyncSeek, Initializer};
 
 use crate::future::Future;
+use crate::io;
 use crate::task::{blocking, Context, Poll};
 
 /// A reference to a file on the filesystem.
@@ -543,10 +544,10 @@ impl futures::io::AsyncRead for &File {
                     *state = State::Busy(blocking::spawn(async move {
                         if offset > 0 {
                             let pos = SeekFrom::Current(-(offset as i64));
-                            let _ = io::Seek::seek(&mut inner.file, pos);
+                            let _ = Seek::seek(&mut inner.file, pos);
                         }
 
-                        let res = io::Read::read(&mut inner.file, &mut inner.buf);
+                        let res = inner.file.read(&mut inner.buf);
                         inner.last_op = Some(Operation::Read(res));
                         State::Idle(Some(inner))
                     }));
@@ -621,7 +622,7 @@ impl futures::io::AsyncWrite for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::write(&mut inner.file, &mut inner.buf);
+                            let res = inner.file.write(&mut inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));
@@ -654,7 +655,7 @@ impl futures::io::AsyncWrite for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::flush(&mut inner.file);
+                            let res = inner.file.flush();
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))
                         }));
@@ -725,7 +726,7 @@ impl AsyncSeek for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Seek::seek(&mut inner.file, pos);
+                            let res = inner.file.seek(pos);
                             inner.last_op = Some(Operation::Seek(res));
                             State::Idle(Some(inner))
                         }));

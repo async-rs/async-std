@@ -1,5 +1,5 @@
 use std::fmt;
-use std::io::{self, prelude::*};
+use std::io::{Read as _, Write as _};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -9,6 +9,7 @@ use lazy_static::lazy_static;
 use mio::{self, Evented};
 use slab::Slab;
 
+use crate::io;
 use crate::task::{Context, Poll, Waker};
 use crate::utils::abort_on_panic;
 
@@ -296,7 +297,7 @@ impl<T: Evented + fmt::Debug> fmt::Debug for IoHandle<T> {
     }
 }
 
-impl<T: Evented + Unpin + Read> AsyncRead for IoHandle<T> {
+impl<T: Evented + std::io::Read + Unpin> AsyncRead for IoHandle<T> {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -316,7 +317,7 @@ impl<T: Evented + Unpin + Read> AsyncRead for IoHandle<T> {
 
 impl<'a, T: Evented + Unpin> AsyncRead for &'a IoHandle<T>
 where
-    &'a T: Read,
+    &'a T: std::io::Read,
 {
     fn poll_read(
         mut self: Pin<&mut Self>,
@@ -335,7 +336,7 @@ where
     }
 }
 
-impl<T: Evented + Unpin + Write> AsyncWrite for IoHandle<T> {
+impl<T: Evented + std::io::Write + Unpin> AsyncWrite for IoHandle<T> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -371,7 +372,7 @@ impl<T: Evented + Unpin + Write> AsyncWrite for IoHandle<T> {
 
 impl<'a, T: Evented + Unpin> AsyncWrite for &'a IoHandle<T>
 where
-    &'a T: Write,
+    &'a T: std::io::Write,
 {
     fn poll_write(
         self: Pin<&mut Self>,
