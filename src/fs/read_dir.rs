@@ -1,5 +1,6 @@
 use std::fs;
 
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -7,6 +8,49 @@ use super::DirEntry;
 use crate::future::Future;
 use crate::io;
 use crate::task::{blocking, Context, Poll};
+
+/// Returns a stream over the entries within a directory.
+///
+/// The stream yields items of type [`io::Result`]`<`[`DirEntry`]`>`. New errors may be encountered
+/// after a stream is initially constructed.
+///
+/// This function is an async version of [`std::fs::read_dir`].
+///
+/// [`io::Result`]: https://doc.rust-lang.org/std/io/type.Result.html
+/// [`DirEntry`]: struct.DirEntry.html
+/// [`std::fs::read_dir`]: https://doc.rust-lang.org/std/fs/fn.read_dir.html
+///
+/// # Errors
+///
+/// An error will be returned in the following situations (not an exhaustive list):
+///
+/// * `path` does not exist.
+/// * `path` does not point at a directory.
+/// * The current process lacks permissions to view the contents of `path`.
+///
+/// # Examples
+///
+/// ```no_run
+/// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{fs, prelude::*};
+///
+/// let mut dir = fs::read_dir(".").await?;
+///
+/// while let Some(entry) = dir.next().await {
+///     let entry = entry?;
+///     println!("{:?}", entry.file_name());
+/// }
+/// #
+/// # Ok(()) }) }
+/// ```
+pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
+    let path = path.as_ref().to_owned();
+    blocking::spawn(async move { fs::read_dir(path) })
+        .await
+        .map(ReadDir::new)
+}
 
 /// A stream over entries in a directory.
 ///
