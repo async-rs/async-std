@@ -2,8 +2,6 @@
 
 A collection of small, useful patterns.
 
-<!-- toc -->
-
 ## Splitting streams
 
 `async-std` doesn't provide a `split()` method on `io` handles. Instead, splitting a stream into a read and write half can be done like this:
