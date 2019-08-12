@@ -1,7 +1,7 @@
 language: rust
 
 before_script:
-- rustup component add rustfmt
+  - rustup component add rustfmt
 
 matrix:
   fast_finish: true
