@@ -1,4 +1,4 @@
-# Async version of Rust's standard library
+# Async version of the Rust standard library
 
 <!-- [![Build Status](https://travis-ci.org/stjepang/async-std.svg?branch=master)]( -->
 <!-- https://travis-ci.org/stjepang/async-std) -->
