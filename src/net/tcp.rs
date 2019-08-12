@@ -352,7 +352,7 @@ impl TcpStream {
     }
 }
 
-impl AsyncRead for TcpStream {
+impl futures::io::AsyncRead for TcpStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -370,7 +370,7 @@ impl AsyncRead for TcpStream {
     }
 }
 
-impl AsyncRead for &TcpStream {
+impl futures::io::AsyncRead for &TcpStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -388,7 +388,7 @@ impl AsyncRead for &TcpStream {
     }
 }
 
-impl AsyncWrite for TcpStream {
+impl futures::io::AsyncWrite for TcpStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -414,7 +414,7 @@ impl AsyncWrite for TcpStream {
     }
 }
 
-impl AsyncWrite for &TcpStream {
+impl futures::io::AsyncWrite for &TcpStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -656,7 +656,7 @@ impl TcpListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a TcpListener);
 
-impl<'a> Stream for Incoming<'a> {
+impl<'a> futures::Stream for Incoming<'a> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

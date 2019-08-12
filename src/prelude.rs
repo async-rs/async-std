@@ -25,21 +25,16 @@
 //! [`timeout`]: ../time/trait.Timeout.html#method.timeout
 
 #[doc(no_inline)]
-pub use futures::future::FutureExt as _;
+pub use crate::future::Future;
 #[doc(no_inline)]
-pub use futures::future::TryFutureExt as _;
+pub use crate::io::BufRead as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncBufReadExt as _;
+pub use crate::io::Read as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncReadExt as _;
+pub use crate::io::Seek as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncSeekExt as _;
+pub use crate::io::Write as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncWriteExt as _;
-#[doc(no_inline)]
-pub use futures::stream::StreamExt as _;
-#[doc(no_inline)]
-pub use futures::stream::TryStreamExt as _;
-
+pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::time::Timeout as _;

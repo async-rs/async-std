@@ -755,7 +755,7 @@ impl UnixStream {
     }
 }
 
-impl AsyncRead for UnixStream {
+impl futures::io::AsyncRead for UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -765,7 +765,7 @@ impl AsyncRead for UnixStream {
     }
 }
 
-impl AsyncRead for &UnixStream {
+impl futures::io::AsyncRead for &UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -775,7 +775,7 @@ impl AsyncRead for &UnixStream {
     }
 }
 
-impl AsyncWrite for UnixStream {
+impl futures::io::AsyncWrite for UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -793,7 +793,7 @@ impl AsyncWrite for UnixStream {
     }
 }
 
-impl AsyncWrite for &UnixStream {
+impl futures::io::AsyncWrite for &UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

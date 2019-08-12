@@ -483,7 +483,7 @@ impl File {
     }
 }
 
-impl AsyncRead for File {
+impl futures::io::AsyncRead for File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -498,7 +498,7 @@ impl AsyncRead for File {
     }
 }
 
-impl AsyncRead for &File {
+impl futures::io::AsyncRead for &File {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -564,7 +564,7 @@ impl AsyncRead for &File {
     }
 }
 
-impl AsyncWrite for File {
+impl futures::io::AsyncWrite for File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -582,7 +582,7 @@ impl AsyncWrite for File {
     }
 }
 
-impl AsyncWrite for &File {
+impl futures::io::AsyncWrite for &File {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -693,7 +693,7 @@ impl AsyncWrite for &File {
     }
 }
 
-impl AsyncSeek for File {
+impl futures::io::AsyncSeek for File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

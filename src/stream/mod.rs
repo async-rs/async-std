@@ -1,4 +1,4 @@
-//! Composable asynchronous iteration.
+//! Asynchronous iteration.
 //!
 //! This module is an async version of [`std::iter`].
 //!
@@ -12,14 +12,21 @@
 //! #
 //! use async_std::{prelude::*, stream};
 //!
-//! let mut stream = stream::repeat(9).take(3);
+//! let mut s = stream::repeat(9).take(3);
 //!
-//! while let Some(num) = stream.next().await {
-//!     assert_eq!(num, 9);
+//! while let Some(v) = s.next().await {
+//!     assert_eq!(v, 9);
 //! }
 //! #
 //! # }) }
 //! ```
 
-#[doc(inline)]
-pub use futures::stream::{empty, once, repeat, Empty, Once, Repeat, Stream};
+pub use empty::{empty, Empty};
+pub use once::{once, Once};
+pub use repeat::{repeat, Repeat};
+pub use stream::{Stream, Take};
+
+mod empty;
+mod once;
+mod repeat;
+mod stream;

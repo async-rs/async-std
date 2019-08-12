@@ -81,7 +81,7 @@ enum Operation {
     Flush(io::Result<()>),
 }
 
-impl AsyncWrite for Stderr {
+impl futures::io::AsyncWrite for Stderr {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

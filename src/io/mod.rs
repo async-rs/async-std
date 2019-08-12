@@ -22,17 +22,24 @@
 //! ```
 
 #[doc(inline)]
-pub use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite, SeekFrom};
+pub use std::io::{empty, sink, Cursor, Empty, Error, ErrorKind, Result, SeekFrom, Sink};
 
+pub use buf_read::{BufRead, Lines};
+pub use buf_reader::BufReader;
 pub use copy::copy;
+pub use read::Read;
+pub use seek::Seek;
 pub use stderr::{stderr, Stderr};
 pub use stdin::{stdin, Stdin};
 pub use stdout::{stdout, Stdout};
+pub use write::Write;
 
+mod buf_read;
+mod buf_reader;
 mod copy;
+mod read;
+mod seek;
 mod stderr;
 mod stdin;
 mod stdout;
-
-#[doc(inline)]
-pub use std::io::{empty, sink, Cursor, Empty, Error, ErrorKind, Result, Sink};
+mod write;

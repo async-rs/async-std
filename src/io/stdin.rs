@@ -140,7 +140,7 @@ impl Stdin {
     }
 }
 
-impl AsyncRead for Stdin {
+impl futures::io::AsyncRead for Stdin {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

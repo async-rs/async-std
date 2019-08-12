@@ -23,7 +23,7 @@
 //! ```
 
 #[doc(inline)]
-pub use futures::task::{Context, Poll, Waker};
+pub use std::task::{Context, Poll, Waker};
 
 pub use local::{AccessError, LocalKey};
 pub use pool::{block_on, current, spawn, Builder};

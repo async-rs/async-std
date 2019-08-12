@@ -34,8 +34,24 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
+use cfg_if::cfg_if;
 use futures_timer::Delay;
 use pin_utils::unsafe_pinned;
+
+cfg_if! {
+    if #[cfg(feature = "docs.rs")] {
+        #[doc(hidden)]
+        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+
+        macro_rules! ret {
+            ($f:tt, $o:ty) => (ImplFuture<$o>);
+        }
+    } else {
+        macro_rules! ret {
+            ($f:tt, $o:ty) => ($f<Self>);
+        }
+    }
+}
 
 /// An error returned when a future times out.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -57,9 +73,6 @@ impl From<TimeoutError> for io::Error {
 
 /// An extension trait that configures timeouts for futures.
 pub trait Timeout: Future + Sized {
-    /// TODO
-    type TimeoutFuture: Future<Output = Result<<Self as Future>::Output, TimeoutError>>;
-
     /// Awaits a future to completion or times out after a duration of time.
     ///
     /// # Examples
@@ -81,13 +94,7 @@ pub trait Timeout: Future + Sized {
     /// #
     /// # Ok(()) }) }
     /// ```
-    fn timeout(self, dur: Duration) -> Self::TimeoutFuture;
-}
-
-impl<F: Future> Timeout for F {
-    type TimeoutFuture = TimeoutFuture<F>;
-
-    fn timeout(self, dur: Duration) -> Self::TimeoutFuture {
+    fn timeout(self, dur: Duration) -> ret!(TimeoutFuture, Result<Self::Output, TimeoutError>) {
         TimeoutFuture {
             future: self,
             delay: Delay::new(dur),
@@ -97,7 +104,7 @@ impl<F: Future> Timeout for F {
 
 /// A future that times out after a duration of time.
 #[doc(hidden)]
-#[derive(Debug)]
+#[allow(missing_debug_implementations)]
 pub struct TimeoutFuture<F> {
     future: F,
     delay: Delay,
@@ -121,3 +128,5 @@ impl<F: Future> Future for TimeoutFuture<F> {
         }
     }
 }
+
+impl<F: Future> Timeout for F {}
