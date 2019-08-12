@@ -8,7 +8,7 @@ These concepts are not hard, but something many people are not used to. This bas
 
 Futures are a concept that abstracts over how code is run. By themselves, they do nothing. This is a weird concept in an imperative language, where usually one thing happens after the other - right now.
 
-So how do Futures run? You decide! Futures do nothing without the piece of code _executing_ them. This part is called an _executor_. An _executor_ decides _when_ and _how_ to execute your futures. `async-task` is such an _executor_, `async-std` is a library providing the building blocks.
+So how do Futures run? You decide! Futures do nothing without the piece of code _executing_ them. This part is called an _executor_. An _executor_ decides _when_ and _how_ to execute your futures. The `async-std::task` module provides you with and interface to such an executor.
 
 Let's start with a little bit of motivation, though.
 

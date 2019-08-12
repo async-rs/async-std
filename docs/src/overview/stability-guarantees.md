@@ -1,6 +1,6 @@
 # Stability and SemVer
 
-`async-std` and `async-task` follow https://semver.org/.
+`async-std` follows https://semver.org/.
 
 In short: we are versioning our software as `MAJOR.MINOR.PATCH`. We increase the:
 

@@ -1,7 +1,7 @@
 # Exercise: Waiting for `std::thread`
 
 Parallel processing is usually done via [threads].
-Concurrent programming is usually done with systems similar to [async-task].
+In `async-std`, we have similar concept, called a [`task`].
 These two worlds seem different - and in some regards, they are - though they
 are easy to connect.
 In this exercise, you will learn how to connect to concurrent/parallel components easily, by connecting a thread to a task.
@@ -36,8 +36,8 @@ This comes at a cost though: the waiting thread will [block] until the child is 
 
 
 [threads]: TODO: wikipedia
-[async-task]: TODO: link
-[`spawn`]: TODO: link
-[`JoinHandle`]: TODO: link
+[`task`]: TODO: docs link
+[`spawn`]: TODO: docs link
+[`JoinHandle`]: TODO: docs link
 [schedules]: TODO: Glossary link
 [block]: TODO: Link to blocking
