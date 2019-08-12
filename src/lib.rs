@@ -22,7 +22,7 @@
 #![feature(async_await)]
 #![cfg_attr(feature = "docs.rs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
-#![doc(html_playground_url = "https://play.rust-lang.org")]
+#![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 
 pub mod fs;
 pub mod future;
