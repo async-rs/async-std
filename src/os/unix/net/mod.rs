@@ -12,6 +12,9 @@ mod stream;
 
 cfg_if! {
     if #[cfg(feature = "docs.rs")] {
+        use std::fmt;
+        use std::path::Path;
+
         /// An address associated with a Unix socket.
         ///
         /// # Examples
