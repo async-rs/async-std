@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use futures::prelude::*;
+use futures::future;
 
 use crate::time::Timeout;
 

@@ -1,11 +1,11 @@
 use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
-use std::task::Poll;
 
 use cfg_if::cfg_if;
-use futures::{prelude::*, ready};
+use futures::future;
 
 use crate::net::driver::IoHandle;
+use crate::task::Poll;
 
 /// A UDP socket.
 ///
@@ -168,7 +168,7 @@ impl UdpSocket {
         };
 
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_writable(cx)?);
+            futures::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send_to(buf, &addr) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -204,7 +204,7 @@ impl UdpSocket {
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().recv_from(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -288,7 +288,7 @@ impl UdpSocket {
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_writable(cx)?);
+            futures::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -324,7 +324,7 @@ impl UdpSocket {
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().recv(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),

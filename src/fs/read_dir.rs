@@ -1,15 +1,12 @@
 use std::fs;
-use std::future::Future;
 use std::io;
 
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
-
-use futures::Stream;
 
 use super::DirEntry;
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Context, Poll};
 
 /// A stream over entries in a directory.
 ///
@@ -55,7 +52,7 @@ impl ReadDir {
     }
 }
 
-impl Stream for ReadDir {
+impl futures::Stream for ReadDir {
     type Item = io::Result<DirEntry>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

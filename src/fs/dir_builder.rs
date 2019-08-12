@@ -1,10 +1,10 @@
 use std::fs;
-use std::future::Future;
 use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
+use crate::future::Future;
 use crate::task::blocking;
 
 /// A builder for creating directories in various manners.

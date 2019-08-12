@@ -21,11 +21,12 @@
 //! # }) }
 //! ```
 
-use std::future::Future;
 use std::pin::Pin;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
+
+use crate::future::Future;
+use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs.rs")] {

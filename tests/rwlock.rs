@@ -7,10 +7,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+use async_std::prelude::*;
 use async_std::sync::RwLock;
 use async_std::task;
 use futures::channel::mpsc;
-use futures::prelude::*;
 
 /// Generates a random number in `0..n`.
 pub fn random(n: u32) -> u32 {

@@ -1,16 +1,15 @@
 use std::ffi::OsString;
 use std::fs;
-use std::future::Future;
 use std::io;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::Poll;
 
 use cfg_if::cfg_if;
-use futures::prelude::*;
+use futures::future::{self, FutureExt, TryFutureExt};
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Poll};
 
 /// An entry inside a directory.
 ///

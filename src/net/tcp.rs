@@ -2,13 +2,13 @@ use std::io::{self, IoSlice, IoSliceMut};
 use std::mem;
 use std::net::{self, SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::{prelude::*, ready};
-use futures::stream::FusedStream;
+use futures::future;
 
+use crate::future::Future;
 use crate::net::driver::IoHandle;
+use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -260,7 +260,8 @@ impl TcpStream {
     /// ```
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         let res = future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
+
             match self.io_handle.get_ref().peek(buf) {
                 Ok(len) => Poll::Ready(Ok(len)),
                 Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -559,7 +560,7 @@ impl TcpListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().accept_std() {
                 Ok((io, addr)) => {
@@ -663,13 +664,9 @@ impl<'a> futures::Stream for Incoming<'a> {
         let future = self.0.accept();
         pin_utils::pin_mut!(future);
 
-        let (socket, _) = ready!(future.poll(cx))?;
+        let (socket, _) = futures::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
-}
-
-impl<'a> FusedStream for Incoming<'a> {
-    fn is_terminated(&self) -> bool { false }
 }
 
 impl From<net::TcpStream> for TcpStream {

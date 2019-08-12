@@ -1,11 +1,11 @@
 use std::fs;
-use std::future::Future;
 use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
 use super::File;
+use crate::future::Future;
 use crate::task::blocking;
 
 /// Options and flags which for configuring how a file is opened.

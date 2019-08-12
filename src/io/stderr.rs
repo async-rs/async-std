@@ -1,13 +1,11 @@
-use std::future::Future;
 use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::prelude::*;
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard error of the current process.
 ///

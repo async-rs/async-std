@@ -1,14 +1,14 @@
 //! A thread pool for running blocking functions asynchronously.
 
 use std::fmt;
-use std::future::Future;
 use std::pin::Pin;
-use std::task::{Context, Poll};
 use std::thread;
 
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
+use crate::future::Future;
+use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
 
 struct Pool {

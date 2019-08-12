@@ -6,15 +6,15 @@ use std::mem;
 use std::net::Shutdown;
 use std::path::Path;
 use std::pin::Pin;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::{prelude::*, ready};
+use futures::future;
 use mio_uds;
 
+use crate::future::Future;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-use crate::task::blocking;
+use crate::task::{blocking, Context, Poll};
 
 /// A Unix datagram socket.
 ///
@@ -214,7 +214,7 @@ impl UnixDatagram {
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().recv_from(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -248,7 +248,7 @@ impl UnixDatagram {
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_writable(cx)?);
+            futures::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().recv(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -281,7 +281,7 @@ impl UnixDatagram {
     /// ```
     pub async fn send_to<P: AsRef<Path>>(&self, buf: &[u8], path: P) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_writable(cx)?);
+            futures::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send_to(buf, path.as_ref()) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -315,7 +315,7 @@ impl UnixDatagram {
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_writable(cx)?);
+            futures::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -457,7 +457,7 @@ impl UnixListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            ready!(self.io_handle.poll_readable(cx)?);
+            futures::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().accept_std() {
                 Ok(Some((io, addr))) => {
@@ -560,14 +560,14 @@ impl fmt::Debug for UnixListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a UnixListener);
 
-impl Stream for Incoming<'_> {
+impl futures::Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let future = self.0.accept();
         futures::pin_mut!(future);
 
-        let (socket, _) = ready!(future.poll(cx))?;
+        let (socket, _) = futures::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
 }
@@ -639,7 +639,7 @@ impl UnixStream {
         future::poll_fn(|cx| {
             match &mut state {
                 State::Waiting(stream) => {
-                    ready!(stream.io_handle.poll_writable(cx)?);
+                    futures::ready!(stream.io_handle.poll_writable(cx)?);
 
                     if let Some(err) = stream.io_handle.get_ref().take_error()? {
                         return Poll::Ready(Err(err));

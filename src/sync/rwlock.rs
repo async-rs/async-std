@@ -1,12 +1,13 @@
 use std::cell::UnsafeCell;
 use std::fmt;
-use std::future::Future;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::task::{Context, Poll, Waker};
 
 use slab::Slab;
+
+use crate::future::Future;
+use crate::task::{Context, Poll, Waker};
 
 /// Set if a write lock is held.
 const WRITE_LOCK: usize = 1 << 0;

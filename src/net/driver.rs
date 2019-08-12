@@ -3,13 +3,13 @@ use std::io::{self, prelude::*};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Waker};
 
-use futures::{prelude::*, ready};
+use futures::io::{AsyncRead, AsyncWrite};
 use lazy_static::lazy_static;
 use mio::{self, Evented};
 use slab::Slab;
 
+use crate::task::{Context, Poll, Waker};
 use crate::utils::abort_on_panic;
 
 /// Data associated with a registered I/O handle.
@@ -302,7 +302,7 @@ impl<T: Evented + Unpin + Read> AsyncRead for IoHandle<T> {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        ready!(Pin::new(&mut *self).poll_readable(cx)?);
+        futures::ready!(Pin::new(&mut *self).poll_readable(cx)?);
 
         match self.source.read(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -323,7 +323,7 @@ where
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        ready!(Pin::new(&mut *self).poll_readable(cx)?);
+        futures::ready!(Pin::new(&mut *self).poll_readable(cx)?);
 
         match (&self.source).read(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -341,7 +341,7 @@ impl<T: Evented + Unpin + Write> AsyncWrite for IoHandle<T> {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        ready!(self.poll_writable(cx)?);
+        futures::ready!(self.poll_writable(cx)?);
 
         match self.source.write(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -353,7 +353,7 @@ impl<T: Evented + Unpin + Write> AsyncWrite for IoHandle<T> {
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        ready!(self.poll_writable(cx)?);
+        futures::ready!(self.poll_writable(cx)?);
 
         match self.source.flush() {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -378,7 +378,7 @@ where
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        ready!(self.poll_writable(cx)?);
+        futures::ready!(self.poll_writable(cx)?);
 
         match (&self.source).write(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
@@ -390,7 +390,7 @@ where
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        ready!(self.poll_writable(cx)?);
+        futures::ready!(self.poll_writable(cx)?);
 
         match (&self.source).flush() {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {

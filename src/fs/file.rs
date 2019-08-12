@@ -1,18 +1,17 @@
 //! Types for working with files.
 
 use std::fs;
-use std::future::Future;
 use std::io::{self, SeekFrom};
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::io::Initializer;
-use futures::prelude::*;
+use futures::future::{self, FutureExt, TryFutureExt};
+use futures::io::{AsyncSeek, Initializer};
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Context, Poll};
 
 /// A reference to a file on the filesystem.
 ///

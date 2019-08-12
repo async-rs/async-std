@@ -1,33 +1,46 @@
-use std::io::{self, IoSliceMut, Read, SeekFrom};
+use std::io::{self, IoSliceMut, Read as _, SeekFrom};
 use std::pin::Pin;
-use std::task::{Context, Poll};
 use std::{cmp, fmt};
 
 use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
 
-// used by `BufReader` and `BufWriter`
-// https://github.com/rust-lang/rust/blob/master/src/libstd/sys_common/io.rs#L1
-const DEFAULT_BUF_SIZE: usize = 8 * 1024;
+use crate::task::{Context, Poll};
 
-/// The `BufReader` struct adds buffering to any reader.
+const DEFAULT_CAPACITY: usize = 8 * 1024;
+
+/// Adds buffering to any reader.
 ///
-/// It can be excessively inefficient to work directly with a [`AsyncRead`]
-/// instance. A `BufReader` performs large, infrequent reads on the underlying
-/// [`AsyncRead`] and maintains an in-memory buffer of the results.
+/// It can be excessively inefficient to work directly with a [`Read`] instance. A `BufReader`
+/// performs large, infrequent reads on the underlying [`Read`] and maintains an in-memory buffer
+/// of the incoming byte stream.
 ///
-/// `BufReader` can improve the speed of programs that make *small* and
-/// *repeated* read calls to the same file or network socket. It does not
-/// help when reading very large amounts at once, or reading just one or a few
-/// times. It also provides no advantage when reading from a source that is
-/// already in memory, like a `Vec<u8>`.
+/// `BufReader` can improve the speed of programs that make *small* and *repeated* read calls to
+/// the same file or network socket. It does not help when reading very large amounts at once, or
+/// reading just one or a few times. It also provides no advantage when reading from a source that
+/// is already in memory, like a `Vec<u8>`.
 ///
-/// When the `BufReader` is dropped, the contents of its buffer will be
-/// discarded. Creating multiple instances of a `BufReader` on the same
-/// stream can cause data loss.
+/// When the `BufReader` is dropped, the contents of its buffer will be discarded. Creating
+/// multiple instances of a `BufReader` on the same stream can cause data loss.
 ///
-/// [`AsyncRead`]: futures_io::AsyncRead
+/// [`Read`]: trait.Read.html
 ///
-// TODO: Examples
+/// # Examples
+///
+/// ```no_run
+/// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs::File;
+/// use async_std::io::BufReader;
+/// use async_std::prelude::*;
+///
+/// let mut f = BufReader::new(File::open("a.txt").await?);
+///
+/// let mut line = String::new();
+/// f.read_line(&mut line).await?;
+/// #
+/// # Ok(()) }) }
+/// ```
 pub struct BufReader<R> {
     inner: R,
     buf: Box<[u8]>,
@@ -36,19 +49,49 @@ pub struct BufReader<R> {
 }
 
 impl<R: AsyncRead> BufReader<R> {
-    /// Creates a new `BufReader` with a default buffer capacity. The default is currently 8 KB,
-    /// but may change in the future.
-    pub fn new(inner: R) -> Self {
-        Self::with_capacity(DEFAULT_BUF_SIZE, inner)
+    /// Creates a buffered reader with default buffer capacity.
+    ///
+    /// The default capacity is currently 8 KB, but may change in the future.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let f = BufReader::new(File::open("a.txt").await?);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn new(inner: R) -> BufReader<R> {
+        BufReader::with_capacity(DEFAULT_CAPACITY, inner)
     }
 
-    /// Creates a new `BufReader` with the specified buffer capacity.
-    pub fn with_capacity(capacity: usize, inner: R) -> Self {
+    /// Creates a new buffered reader with the specified capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let f = BufReader::with_capacity(1024, File::open("a.txt").await?);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn with_capacity(capacity: usize, inner: R) -> BufReader<R> {
         unsafe {
             let mut buffer = Vec::with_capacity(capacity);
             buffer.set_len(capacity);
             inner.initializer().initialize(&mut buffer);
-            Self {
+
+            BufReader {
                 inner,
                 buf: buffer.into_boxed_slice(),
                 pos: 0,
@@ -66,6 +109,21 @@ impl<R> BufReader<R> {
     /// Gets a reference to the underlying reader.
     ///
     /// It is inadvisable to directly read from the underlying reader.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let f = BufReader::new(File::open("a.txt").await?);
+    /// let inner = f.get_ref();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
     pub fn get_ref(&self) -> &R {
         &self.inner
     }
@@ -73,29 +131,67 @@ impl<R> BufReader<R> {
     /// Gets a mutable reference to the underlying reader.
     ///
     /// It is inadvisable to directly read from the underlying reader.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let mut f = BufReader::new(File::open("a.txt").await?);
+    /// let inner = f.get_mut();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
     pub fn get_mut(&mut self) -> &mut R {
         &mut self.inner
     }
 
-    /// Gets a pinned mutable reference to the underlying reader.
+    /// Returns a reference to the internal buffer.
     ///
-    /// It is inadvisable to directly read from the underlying reader.
-    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut R> {
-        self.inner()
-    }
-
-    /// Consumes this `BufWriter`, returning the underlying reader.
+    /// This function will not attempt to fill the buffer if it is empty.
     ///
-    /// Note that any leftover data in the internal buffer is lost.
-    pub fn into_inner(self) -> R {
-        self.inner
-    }
-
-    /// Returns a reference to the internally buffered data.
+    /// # Examples
     ///
-    /// Unlike `fill_buf`, this will not attempt to fill the buffer if it is empty.
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let f = BufReader::new(File::open("a.txt").await?);
+    /// let buffer = f.buffer();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
     pub fn buffer(&self) -> &[u8] {
         &self.buf[self.pos..self.cap]
+    }
+
+    /// Unwraps the buffered reader, returning the underlying reader.
+    ///
+    /// Note that any leftover data in the internal buffer is lost.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    ///
+    /// let f = BufReader::new(File::open("a.txt").await?);
+    /// let inner = f.into_inner();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn into_inner(self) -> R {
+        self.inner
     }
 
     /// Invalidates all data in the internal buffer.
@@ -192,27 +288,23 @@ impl<R: AsyncRead + fmt::Debug> fmt::Debug for BufReader<R> {
 }
 
 impl<R: AsyncSeek> AsyncSeek for BufReader<R> {
-    /// Seek to an offset, in bytes, in the underlying reader.
+    /// Seeks to an offset, in bytes, in the underlying reader.
     ///
-    /// The position used for seeking with `SeekFrom::Current(_)` is the
-    /// position the underlying reader would be at if the `BufReader` had no
-    /// internal buffer.
+    /// The position used for seeking with `SeekFrom::Current(_)` is the position the underlying
+    /// reader would be at if the `BufReader` had no internal buffer.
     ///
-    /// Seeking always discards the internal buffer, even if the seek position
-    /// would otherwise fall within it. This guarantees that calling
-    /// `.into_inner()` immediately after a seek yields the underlying reader
-    /// at the same position.
+    /// Seeking always discards the internal buffer, even if the seek position would otherwise fall
+    /// within it. This guarantees that calling `.into_inner()` immediately after a seek yields the
+    /// underlying reader at the same position.
     ///
-    /// To seek without discarding the internal buffer, use
-    /// [`BufReader::poll_seek_relative`](BufReader::poll_seek_relative).
+    /// See [`Seek`] for more details.
     ///
-    /// See [`AsyncSeek`](futures_io::AsyncSeek) for more details.
+    /// Note: In the edge case where you're seeking with `SeekFrom::Current(n)` where `n` minus the
+    /// internal buffer length overflows an `i64`, two seeks will be performed instead of one. If
+    /// the second seek returns `Err`, the underlying reader will be left at the same position it
+    /// would have if you called `seek` with `SeekFrom::Current(0)`.
     ///
-    /// Note: In the edge case where you're seeking with `SeekFrom::Current(n)`
-    /// where `n` minus the internal buffer length overflows an `i64`, two
-    /// seeks will be performed instead of one. If the second seek returns
-    /// `Err`, the underlying reader will be left at the same position it would
-    /// have if you called `seek` with `SeekFrom::Current(0)`.
+    /// [`Seek`]: trait.Seek.html
     fn poll_seek(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

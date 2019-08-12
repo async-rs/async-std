@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
-use std::task::{Context, Poll};
+
+use crate::task::{Context, Poll};
 
 /// Creates a stream that doesn't yield any items.
 ///

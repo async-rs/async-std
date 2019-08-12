@@ -1,15 +1,16 @@
-use std::future::Future;
 use std::io::{self, SeekFrom};
 use std::pin::Pin;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
 use futures::io::AsyncSeek;
 
+use crate::future::Future;
+use crate::task::{Context, Poll};
+
 cfg_if! {
     if #[cfg(feature = "docs.rs")] {
         #[doc(hidden)]
-        pub struct ImplFuture<'a, t>(std::marker::PhantomData<&'a t>);
+        pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
         macro_rules! ret {
             ($a:lifetime, $f:tt, $o:ty) => (ImplFuture<$a, $o>);

@@ -1,18 +1,18 @@
-use std::future::Future;
-use std::io::{self};
+use std::io;
 use std::mem;
 use std::pin::Pin;
 use std::str;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
 use futures::io::AsyncBufRead;
-use futures::Stream;
+
+use crate::future::Future;
+use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs.rs")] {
         #[doc(hidden)]
-        pub struct ImplFuture<'a, t>(std::marker::PhantomData<&'a t>);
+        pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
         macro_rules! ret {
             ($a:lifetime, $f:tt, $o:ty) => (ImplFuture<$a, $o>);
@@ -245,7 +245,7 @@ pub struct Lines<R> {
     read: usize,
 }
 
-impl<R: AsyncBufRead> Stream for Lines<R> {
+impl<R: AsyncBufRead> futures::Stream for Lines<R> {
     type Item = io::Result<String>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

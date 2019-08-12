@@ -1,6 +1,5 @@
 use std::cell::{Cell, UnsafeCell};
 use std::fmt::Arguments;
-use std::future::Future;
 use std::io;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
@@ -9,11 +8,12 @@ use std::ptr;
 use std::thread;
 
 use crossbeam::channel::{unbounded, Sender};
-use futures::prelude::*;
+use futures::future::FutureExt;
 use lazy_static::lazy_static;
 
 use super::task;
 use super::{JoinHandle, Task};
+use crate::future::Future;
 
 /// Returns a handle to the current task.
 ///

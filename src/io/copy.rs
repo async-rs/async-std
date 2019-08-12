@@ -1,5 +1,6 @@
-use futures::prelude::*;
 use std::io;
+
+use futures::io::{AsyncRead, AsyncReadExt, AsyncWrite};
 
 /// Copies the entire contents of a reader into a writer.
 ///
