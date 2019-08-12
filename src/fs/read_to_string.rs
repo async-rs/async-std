@@ -24,7 +24,7 @@ use crate::task::blocking;
 /// use async_std::fs::read_to_string;
 ///
 /// # futures::executor::block_on(async {
-/// let contents = read_to_string("foo.txt").await?;
+/// let contents = read_to_string("a.txt").await?;
 /// # std::io::Result::Ok(())
 /// # }).unwrap();
 /// ```

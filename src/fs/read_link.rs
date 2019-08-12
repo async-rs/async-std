@@ -25,7 +25,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// let path = fs::read_link("foo.txt").await?;
+/// let path = fs::read_link("a.txt").await?;
 /// #
 /// # Ok(()) }) }
 /// ```

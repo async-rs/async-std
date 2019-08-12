@@ -25,10 +25,10 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// let mut perm = fs::metadata("foo.txt").await?.permissions();
+/// let mut perm = fs::metadata("a.txt").await?.permissions();
 /// perm.set_readonly(true);
 ///
-/// fs::set_permissions("foo.txt", perm).await?;
+/// fs::set_permissions("a.txt", perm).await?;
 /// #
 /// # Ok(()) }) }
 /// ```

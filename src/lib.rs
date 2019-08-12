@@ -1,4 +1,4 @@
-//! Asynchronous standard library.
+//! Async version of the Rust standard library.
 //!
 //! This crate is an async version of [`std`].
 //!

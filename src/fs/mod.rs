@@ -15,7 +15,7 @@
 //! use async_std::fs::File;
 //! use async_std::prelude::*;
 //!
-//! let mut file = File::create("foo.txt").await?;
+//! let mut file = File::create("a.txt").await?;
 //! file.write_all(b"Hello, world!").await?;
 //! #
 //! # Ok(()) }) }

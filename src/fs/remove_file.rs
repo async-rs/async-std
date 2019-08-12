@@ -25,7 +25,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// fs::remove_file("foo.txt").await?;
+/// fs::remove_file("a.txt").await?;
 /// #
 /// # Ok(()) }) }
 /// ```

@@ -27,7 +27,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// fs::write("foo.txt", b"Lorem ipsum").await?;
+/// fs::write("a.txt", b"Lorem ipsum").await?;
 /// #
 /// # Ok(()) }) }
 /// ```

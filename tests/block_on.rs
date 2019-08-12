@@ -9,10 +9,10 @@ fn smoke() {
 }
 
 #[test]
-#[should_panic = "foo"]
+#[should_panic = "boom"]
 fn panic() {
     task::block_on(async {
         // This panic should get propagated into the parent thread.
-        panic!("foo");
+        panic!("boom");
     });
 }

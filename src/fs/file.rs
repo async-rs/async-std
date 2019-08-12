@@ -39,7 +39,7 @@ use crate::task::{blocking, Context, Poll};
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// let mut file = File::create("foo.txt").await?;
+/// let mut file = File::create("a.txt").await?;
 /// file.write_all(b"Hello, world!").await?;
 /// #
 /// # Ok(()) }) }
@@ -54,7 +54,7 @@ use crate::task::{blocking, Context, Poll};
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// let mut file = File::open("foo.txt").await?;
+/// let mut file = File::open("a.txt").await?;
 /// let mut contents = Vec::new();
 /// file.read_to_end(&mut contents).await?;
 /// #
@@ -129,7 +129,7 @@ impl File {
     /// #
     /// use async_std::fs::File;
     ///
-    /// let file = File::open("foo.txt").await?;
+    /// let file = File::open("a.txt").await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -176,7 +176,7 @@ impl File {
     /// #
     /// use async_std::fs::File;
     ///
-    /// let file = File::create("foo.txt").await?;
+    /// let file = File::create("a.txt").await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -224,7 +224,7 @@ impl File {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_all().await?;
     /// #
@@ -280,7 +280,7 @@ impl File {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_data().await?;
     /// #
@@ -340,7 +340,7 @@ impl File {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.set_len(10).await?;
     /// #
     /// # Ok(()) }) }
@@ -387,7 +387,7 @@ impl File {
     /// #
     /// use async_std::fs::File;
     ///
-    /// let file = File::open("foo.txt").await?;
+    /// let file = File::open("a.txt").await?;
     /// let metadata = file.metadata().await?;
     /// #
     /// # Ok(()) }) }
@@ -440,7 +440,7 @@ impl File {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// let mut perms = file.metadata().await?.permissions();
     /// perms.set_readonly(true);
     /// file.set_permissions(perms).await?;

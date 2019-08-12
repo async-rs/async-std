@@ -94,11 +94,11 @@ impl<T: Send + 'static> LocalKey<T> {
     /// use std::cell::Cell;
     ///
     /// task_local! {
-    ///     static FOO: Cell<u32> = Cell::new(5);
+    ///     static NUMBER: Cell<u32> = Cell::new(5);
     /// }
     ///
     /// task::block_on(async {
-    ///     let v = FOO.with(|c| c.get());
+    ///     let v = NUMBER.with(|c| c.get());
     ///     assert_eq!(v, 5);
     /// });
     /// ```

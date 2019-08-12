@@ -39,7 +39,7 @@ use crate::task::blocking;
 ///
 /// let file = OpenOptions::new()
 ///     .read(true)
-///     .open("foo.txt")
+///     .open("a.txt")
 ///     .await?;
 /// #
 /// # Ok(()) }) }
@@ -57,7 +57,7 @@ use crate::task::blocking;
 ///     .read(true)
 ///     .write(true)
 ///     .create(true)
-///     .open("foo.txt")
+///     .open("a.txt")
 ///     .await?;
 /// #
 /// # Ok(()) }) }
@@ -80,7 +80,7 @@ impl OpenOptions {
     ///
     /// let file = OpenOptions::new()
     ///     .read(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -103,7 +103,7 @@ impl OpenOptions {
     ///
     /// let file = OpenOptions::new()
     ///     .read(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -130,7 +130,7 @@ impl OpenOptions {
     ///
     /// let file = OpenOptions::new()
     ///     .write(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -176,7 +176,7 @@ impl OpenOptions {
     ///
     /// let file = OpenOptions::new()
     ///     .append(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -204,7 +204,7 @@ impl OpenOptions {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .truncate(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -234,7 +234,7 @@ impl OpenOptions {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .create(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -271,7 +271,7 @@ impl OpenOptions {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .create_new(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
@@ -321,7 +321,7 @@ impl OpenOptions {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// let file = OpenOptions::new().open("foo.txt").await?;
+    /// let file = OpenOptions::new().open("a.txt").await?;
     /// #
     /// # Ok(()) }) }
     /// ```

@@ -32,7 +32,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// let bytes_copied = fs::copy("foo.txt", "bar.txt").await?;
+/// let bytes_copied = fs::copy("a.txt", "b.txt").await?;
 /// #
 /// # Ok(()) }) }
 /// ```

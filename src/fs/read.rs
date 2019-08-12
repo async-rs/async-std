@@ -29,7 +29,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// let contents = fs::read("foo.txt").await?;
+/// let contents = fs::read("a.txt").await?;
 /// #
 /// # Ok(()) }) }
 /// ```

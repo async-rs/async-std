@@ -25,7 +25,7 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// let perm = fs::symlink_metadata("foo.txt").await?.permissions();
+/// let perm = fs::symlink_metadata("a.txt").await?.permissions();
 /// #
 /// # Ok(()) }) }
 /// ```
