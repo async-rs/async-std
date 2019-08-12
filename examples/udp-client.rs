@@ -14,11 +14,11 @@
 
 #![feature(async_await)]
 
-use async_std::{io, net, task};
+use async_std::{io, net::UdpSocket, task};
 
 fn main() -> io::Result<()> {
     task::block_on(async {
-        let socket = net::UdpSocket::bind("127.0.0.1:8081").await?;
+        let socket = UdpSocket::bind("127.0.0.1:8081").await?;
         println!("Listening on {}", socket.local_addr()?);
 
         let msg = "hello world";

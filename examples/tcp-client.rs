@@ -14,11 +14,11 @@
 
 #![feature(async_await)]
 
-use async_std::{io, net, prelude::*, task};
+use async_std::{io, net::TcpStream, prelude::*, task};
 
 fn main() -> io::Result<()> {
     task::block_on(async {
-        let mut stream = net::TcpStream::connect("127.0.0.1:8080").await?;
+        let mut stream = TcpStream::connect("127.0.0.1:8080").await?;
         println!("Connected to {}", &stream.peer_addr()?);
 
         let msg = "hello world";
