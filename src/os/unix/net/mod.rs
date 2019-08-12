@@ -11,7 +11,7 @@ mod listener;
 mod stream;
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use std::fmt;
         use std::path::Path;
 

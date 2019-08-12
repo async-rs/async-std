@@ -43,14 +43,14 @@ use crate::task::{blocking, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixDatagram {
-    #[cfg(not(feature = "docs.rs"))]
+    #[cfg(not(feature = "docs"))]
     io_handle: IoHandle<mio_uds::UnixDatagram>,
 
     raw_fd: RawFd,
 }
 
 impl UnixDatagram {
-    #[cfg(not(feature = "docs.rs"))]
+    #[cfg(not(feature = "docs"))]
     fn new(socket: mio_uds::UnixDatagram) -> UnixDatagram {
         UnixDatagram {
             raw_fd: socket.as_raw_fd(),

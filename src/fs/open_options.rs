@@ -333,16 +333,16 @@ impl OpenOptions {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::OpenOptionsExt;
     } else if #[cfg(unix)] {
         use std::os::unix::fs::OpenOptionsExt;
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl OpenOptionsExt for OpenOptions {
             fn mode(&mut self, mode: u32) -> &mut Self {
                 self.0.mode(mode);

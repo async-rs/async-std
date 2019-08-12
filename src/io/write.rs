@@ -10,7 +10,7 @@ use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         #[doc(hidden)]
         pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
@@ -33,7 +33,7 @@ cfg_if! {
 ///
 /// [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
 /// [`futures::io::AsyncWrite`]:
-/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
+/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
 pub trait Write {
     /// Writes some bytes into the byte stream.
     ///

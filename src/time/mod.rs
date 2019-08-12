@@ -40,7 +40,7 @@ use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         #[doc(hidden)]
         pub struct ImplFuture<T>(std::marker::PhantomData<T>);
 

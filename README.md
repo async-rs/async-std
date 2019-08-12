@@ -25,7 +25,7 @@ git clone git@github.com:stjepang/async-std.git && cd async-std
 Read the docs:
 
 ```
-cargo doc --features docs.rs --open
+cargo doc --features docs --open
 ```
 
 Check out the [examples](examples). To run an example:

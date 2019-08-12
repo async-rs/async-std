@@ -12,11 +12,11 @@ keywords = []
 categories = ["asynchronous", "concurrency"]
 
 [package.metadata.docs.rs]
-features = ["docs.rs"]
-rustdoc-args = ["--features docs.rs"]
+features = ["docs"]
+rustdoc-args = ["--features docs"]
 
 [features]
-"docs.rs" = []
+docs = []
 
 [dependencies]
 async-task = { path = "async-task" }

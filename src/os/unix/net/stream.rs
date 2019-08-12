@@ -40,7 +40,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixStream {
-    #[cfg(not(feature = "docs.rs"))]
+    #[cfg(not(feature = "docs"))]
     pub(super) io_handle: IoHandle<mio_uds::UnixStream>,
 
     pub(super) raw_fd: RawFd,

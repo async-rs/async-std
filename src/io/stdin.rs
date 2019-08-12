@@ -195,7 +195,7 @@ impl futures::io::AsyncRead for Stdin {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, RawFd};
         use crate::os::windows::io::{AsRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -205,9 +205,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stdin {
             fn as_raw_fd(&self) -> RawFd {
                 io::stdin().as_raw_fd()
@@ -216,9 +216,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stdin {
             fn as_raw_handle(&self) -> RawHandle {
                 io::stdin().as_raw_handle()

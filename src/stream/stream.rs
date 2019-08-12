@@ -29,7 +29,7 @@ use crate::future::Future;
 use crate::task::{Context, Poll};
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         #[doc(hidden)]
         pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
@@ -52,7 +52,7 @@ cfg_if! {
 ///
 /// [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
 /// [`futures::stream::Stream`]:
-/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+/// https://docs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
 pub trait Stream {
     /// The type of items yielded by this stream.
     type Item;

@@ -34,7 +34,7 @@ pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Resu
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         /// Unix-specific extensions to `DirBuilder`.
         pub trait DirBuilderExt {
             /// Sets the mode to create new directories with. This option defaults to

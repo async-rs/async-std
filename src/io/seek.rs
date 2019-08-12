@@ -9,7 +9,7 @@ use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         #[doc(hidden)]
         pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
@@ -32,7 +32,7 @@ cfg_if! {
 ///
 /// [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
 /// [`futures::io::AsyncSeek`]:
-/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
+/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
 pub trait Seek {
     /// Seeks to a new position in a byte stream.
     ///

@@ -50,7 +50,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixListener {
-    #[cfg(not(feature = "docs.rs"))]
+    #[cfg(not(feature = "docs"))]
     io_handle: IoHandle<mio_uds::UnixListener>,
 
     raw_fd: RawFd,

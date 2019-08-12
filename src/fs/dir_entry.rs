@@ -228,16 +228,16 @@ fn io_error(err: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> io::Err
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::DirEntryExt;
     } else if #[cfg(unix)] {
         use std::os::unix::fs::DirEntryExt;
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl DirEntryExt for DirEntry {
             fn ino(&self) -> u64 {
                 self.ino

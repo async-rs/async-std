@@ -20,7 +20,7 @@
 //! ```
 
 #![feature(async_await)]
-#![cfg_attr(feature = "docs.rs", feature(doc_cfg))]
+#![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 

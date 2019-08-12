@@ -24,9 +24,9 @@ use crate::task::{Context, Poll};
 /// [`connect`]: struct.TcpStream.html#method.connect
 /// [accepting]: struct.TcpListener.html#method.accept
 /// [listener]: struct.TcpListener.html
-/// [`AsyncRead`]: https://docs.rs/futures-preview/0.3.0-alpha.13/futures/io/trait.AsyncRead.html
-/// [`AsyncWrite`]: https://docs.rs/futures-preview/0.3.0-alpha.13/futures/io/trait.AsyncRead.html
-/// [`futures::io`]: https://docs.rs/futures-preview/0.3.0-alpha.13/futures/io
+/// [`AsyncRead`]: https://docs/futures-preview/0.3.0-alpha.13/futures/io/trait.AsyncRead.html
+/// [`AsyncWrite`]: https://docs/futures-preview/0.3.0-alpha.13/futures/io/trait.AsyncRead.html
+/// [`futures::io`]: https://docs/futures-preview/0.3.0-alpha.13/futures/io
 /// [`shutdown`]: struct.TcpStream.html#method.shutdown
 /// [`std::net::TcpStream`]: https://doc.rust-lang.org/std/net/struct.TcpStream.html
 ///
@@ -463,7 +463,7 @@ impl From<net::TcpStream> for TcpStream {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
         // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -473,9 +473,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpStream {
             fn as_raw_fd(&self) -> RawFd {
                 self.raw_fd
@@ -496,9 +496,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(windows)))]
+#[cfg_attr(feature = "docs", doc(cfg(windows)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         // impl AsRawSocket for TcpStream {
         //     fn as_raw_socket(&self) -> RawSocket {
         //         self.raw_socket

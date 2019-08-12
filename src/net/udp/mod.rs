@@ -537,7 +537,7 @@ impl From<net::UdpSocket> for UdpSocket {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
         // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -547,9 +547,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for UdpSocket {
             fn as_raw_fd(&self) -> RawFd {
                 self.raw_fd
@@ -570,9 +570,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(windows)))]
+#[cfg_attr(feature = "docs", doc(cfg(windows)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         // use std::os::windows::io::{AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket};
         //
         // impl AsRawSocket for UdpSocket {
