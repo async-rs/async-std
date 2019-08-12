@@ -16,5 +16,5 @@ matrix:
 script:
   - cargo check --all --benches --bins --examples --tests
   - cargo test --all
-  - cargo doc --features docs.rs
+  - cargo doc --features docs
   - cargo fmt --all -- --check
