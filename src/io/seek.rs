@@ -25,7 +25,7 @@ cfg_if! {
 ///
 /// This trait is an async version of [`std::io::Seek`].
 ///
-/// While it is currently not possible to implement this trait directly, it get implemented
+/// While it is currently not possible to implement this trait directly, it gets implemented
 /// automatically for all types that implement [`futures::io::AsyncSeek`].
 ///
 /// [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
