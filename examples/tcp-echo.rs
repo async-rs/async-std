@@ -8,9 +8,10 @@
 
 #![feature(async_await)]
 
-use async_std::{io, net, prelude::*, task};
+use async_std::net::{TcpListener, TcpStream};
+use async_std::{io, prelude::*, task};
 
-async fn process(stream: net::TcpStream) -> io::Result<()> {
+async fn process(stream: TcpStream) -> io::Result<()> {
     println!("Accepted from: {}", stream.peer_addr()?);
 
     let (reader, writer) = &mut (&stream, &stream);
@@ -21,7 +22,7 @@ async fn process(stream: net::TcpStream) -> io::Result<()> {
 
 fn main() -> io::Result<()> {
     task::block_on(async {
-        let listener = net::TcpListener::bind("127.0.0.1:8080").await?;
+        let listener = TcpListener::bind("127.0.0.1:8080").await?;
         println!("Listening on {}", listener.local_addr()?);
 
         let mut incoming = listener.incoming();

@@ -1,11 +1,11 @@
 use std::fs;
-use std::future::Future;
 use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
 use super::File;
+use crate::future::Future;
 use crate::task::blocking;
 
 /// Options and flags which for configuring how a file is opened.
@@ -33,32 +33,34 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::OpenOptions;
 ///
-/// # futures::executor::block_on(async {
 /// let file = OpenOptions::new()
 ///     .read(true)
-///     .open("foo.txt")
+///     .open("a.txt")
 ///     .await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 ///
 /// Opening a file for both reading and writing, creating it if it doesn't exist:
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::OpenOptions;
 ///
-/// # futures::executor::block_on(async {
 /// let file = OpenOptions::new()
 ///     .read(true)
 ///     .write(true)
 ///     .create(true)
-///     .open("foo.txt")
+///     .open("a.txt")
 ///     .await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Clone, Debug)]
 pub struct OpenOptions(fs::OpenOptions);
@@ -72,15 +74,16 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .read(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn new() -> OpenOptions {
         OpenOptions(fs::OpenOptions::new())
@@ -94,15 +97,16 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .read(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn read(&mut self, read: bool) -> &mut OpenOptions {
         self.0.read(read);
@@ -120,15 +124,16 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .write(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn write(&mut self, write: bool) -> &mut OpenOptions {
         self.0.write(write);
@@ -165,15 +170,16 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .append(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn append(&mut self, append: bool) -> &mut OpenOptions {
         self.0.append(append);
@@ -191,16 +197,17 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .truncate(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn truncate(&mut self, truncate: bool) -> &mut OpenOptions {
         self.0.truncate(truncate);
@@ -220,16 +227,17 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .create(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn create(&mut self, create: bool) -> &mut OpenOptions {
         self.0.create(create);
@@ -256,16 +264,17 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
     /// let file = OpenOptions::new()
     ///     .write(true)
     ///     .create_new(true)
-    ///     .open("foo.txt")
+    ///     .open("a.txt")
     ///     .await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn create_new(&mut self, create_new: bool) -> &mut OpenOptions {
         self.0.create_new(create_new);
@@ -308,12 +317,13 @@ impl OpenOptions {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// # futures::executor::block_on(async {
-    /// let file = OpenOptions::new().open("foo.txt").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let file = OpenOptions::new().open("a.txt").await?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn open<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<File>> {
         let path = path.as_ref().to_owned();
@@ -323,16 +333,16 @@ impl OpenOptions {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::OpenOptionsExt;
     } else if #[cfg(unix)] {
         use std::os::unix::fs::OpenOptionsExt;
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl OpenOptionsExt for OpenOptions {
             fn mode(&mut self, mode: u32) -> &mut Self {
                 self.0.mode(mode);

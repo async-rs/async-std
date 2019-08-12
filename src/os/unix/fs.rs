@@ -1,10 +1,10 @@
 //! Unix-specific filesystem extensions.
 
-use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
+use crate::io;
 use crate::task::blocking;
 
 /// Creates a new symbolic link on the filesystem.
@@ -19,12 +19,13 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::os::unix::fs::symlink;
 ///
-/// # futures::executor::block_on(async {
 /// symlink("a.txt", "b.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();
@@ -33,7 +34,7 @@ pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Resu
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         /// Unix-specific extensions to `DirBuilder`.
         pub trait DirBuilderExt {
             /// Sets the mode to create new directories with. This option defaults to

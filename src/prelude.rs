@@ -8,37 +8,33 @@
 //!
 //! ```no_run
 //! # #![feature(async_await)]
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
 //! use async_std::{io, prelude::*};
 //! use std::time::Duration;
 //!
-//! # async_std::task::block_on(async {
 //! let stdin = io::stdin();
 //! let mut line = String::new();
 //! let dur = Duration::from_secs(5);
 //!
 //! stdin.read_line(&mut line).timeout(dur).await??;
-//! # std::io::Result::Ok(())
-//! # }).unwrap();
+//! #
+//! # Ok(()) }) }
 //! ```
 //!
 //! [`timeout`]: ../time/trait.Timeout.html#method.timeout
 
 #[doc(no_inline)]
-pub use futures::future::FutureExt as _;
+pub use crate::future::Future;
 #[doc(no_inline)]
-pub use futures::future::TryFutureExt as _;
+pub use crate::io::BufRead as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncBufReadExt as _;
+pub use crate::io::Read as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncReadExt as _;
+pub use crate::io::Seek as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncSeekExt as _;
+pub use crate::io::Write as _;
 #[doc(no_inline)]
-pub use futures::io::AsyncWriteExt as _;
-#[doc(no_inline)]
-pub use futures::stream::StreamExt as _;
-#[doc(no_inline)]
-pub use futures::stream::TryStreamExt as _;
-
+pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::time::Timeout as _;

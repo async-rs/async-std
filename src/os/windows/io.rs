@@ -3,7 +3,7 @@
 use cfg_if::cfg_if;
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         /// Raw HANDLEs.
         pub type RawHandle = *mut std::os::raw::c_void;
 

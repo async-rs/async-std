@@ -1,16 +1,16 @@
 //! A thread pool for running blocking functions asynchronously.
 
 use std::fmt;
-use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::task::{Context, Poll};
 use std::thread;
 use std::time::Duration;
 
 use crossbeam::channel::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
+use crate::future::Future;
+use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
 
 const MAX_THREADS: u64 = 10_000;

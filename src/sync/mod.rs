@@ -10,10 +10,11 @@
 //!
 //! ```
 //! # #![feature(async_await)]
+//! # fn main() { async_std::task::block_on(async {
+//! #
 //! use async_std::{sync::Mutex, task};
 //! use std::sync::Arc;
 //!
-//! # futures::executor::block_on(async {
 //! let m1 = Arc::new(Mutex::new(0));
 //! let m2 = m1.clone();
 //!
@@ -23,7 +24,8 @@
 //! .await;
 //!
 //! assert_eq!(*m1.lock().await, 1);
-//! # })
+//! #
+//! # }) }
 //! ```
 
 pub use mutex::{Mutex, MutexGuard};

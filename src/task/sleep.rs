@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use futures::prelude::*;
+use futures::future;
 
 use crate::time::Timeout;
 
@@ -16,12 +16,14 @@ use crate::time::Timeout;
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::task;
 /// use std::time::Duration;
 ///
-/// # async_std::task::block_on(async {
 /// task::sleep(Duration::from_secs(1)).await;
-/// # });
+/// #
+/// # }) }
 /// ```
 pub async fn sleep(dur: Duration) {
     let _ = future::pending::<()>().timeout(dur).await;

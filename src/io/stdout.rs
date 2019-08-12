@@ -1,13 +1,11 @@
-use std::future::Future;
 use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::prelude::*;
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard output of the current process.
 ///
@@ -19,14 +17,14 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::io::stdout;
-/// use async_std::prelude::*;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::{io, prelude::*};
 ///
-/// # futures::executor::block_on(async {
-/// let mut stdout = stdout();
+/// let mut stdout = io::stdout();
 /// stdout.write_all(b"Hello, world!").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub fn stdout() -> Stdout {
     Stdout(Mutex::new(State::Idle(Some(Inner {
@@ -81,7 +79,7 @@ enum Operation {
     Flush(io::Result<()>),
 }
 
-impl AsyncWrite for Stdout {
+impl futures::io::AsyncWrite for Stdout {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -165,7 +163,7 @@ impl AsyncWrite for Stdout {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, RawFd};
         use crate::os::windows::io::{AsRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -175,9 +173,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stdout {
             fn as_raw_fd(&self) -> RawFd {
                 io::stdout().as_raw_fd()
@@ -186,9 +184,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stdout {
             fn as_raw_handle(&self) -> RawHandle {
                 io::stdout().as_raw_handle()

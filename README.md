@@ -1,4 +1,4 @@
-# Async version of Rust's standard library
+# Async version of the Rust standard library
 
 <!-- [![Build Status](https://travis-ci.org/stjepang/async-std.svg?branch=master)]( -->
 <!-- https://travis-ci.org/stjepang/async-std) -->
@@ -25,7 +25,7 @@ git clone git@github.com:stjepang/async-std.git && cd async-std
 Read the docs:
 
 ```
-cargo doc --features docs.rs --open
+cargo doc --features docs --open
 ```
 
 Check out the [examples](examples). To run an example:

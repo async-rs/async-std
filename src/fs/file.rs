@@ -1,18 +1,18 @@
 //! Types for working with files.
 
 use std::fs;
-use std::future::Future;
-use std::io::{self, SeekFrom};
+use std::io::{Read as _, Seek, SeekFrom, Write as _};
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
-use futures::io::Initializer;
-use futures::prelude::*;
+use futures::future::{self, FutureExt, TryFutureExt};
+use futures::io::{AsyncSeek, Initializer};
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::io;
+use crate::task::{blocking, Context, Poll};
 
 /// A reference to a file on the filesystem.
 ///
@@ -34,29 +34,31 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
-/// let mut file = File::create("foo.txt").await?;
+/// let mut file = File::create("a.txt").await?;
 /// file.write_all(b"Hello, world!").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 ///
 /// Read the contents of a file into a `Vec<u8>`:
 ///
 /// ```no_run
 /// # #![feature(async_await)]
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
 ///
-/// # futures::executor::block_on(async {
-/// let mut file = File::open("foo.txt").await?;
+/// let mut file = File::open("a.txt").await?;
 /// let mut contents = Vec::new();
 /// file.read_to_end(&mut contents).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[derive(Debug)]
 pub struct File {
@@ -123,12 +125,13 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
-    /// let file = File::open("foo.txt").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let file = File::open("a.txt").await?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
@@ -169,12 +172,13 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
-    /// let file = File::create("foo.txt").await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// let file = File::create("a.txt").await?;
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
@@ -215,15 +219,16 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_all().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn sync_all(&self) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -270,15 +275,16 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.write_all(b"Hello, world!").await?;
     /// file.sync_data().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn sync_data(&self) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -329,14 +335,15 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// file.set_len(10).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn set_len(&self, size: u64) -> io::Result<()> {
         future::poll_fn(|cx| {
@@ -376,13 +383,14 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     ///
-    /// # futures::executor::block_on(async {
-    /// let file = File::open("foo.txt").await?;
+    /// let file = File::open("a.txt").await?;
     /// let metadata = file.metadata().await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn metadata(&self) -> io::Result<fs::Metadata> {
         future::poll_fn(|cx| {
@@ -427,16 +435,17 @@ impl File {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut file = File::create("foo.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     /// let mut perms = file.metadata().await?.permissions();
     /// perms.set_readonly(true);
     /// file.set_permissions(perms).await?;
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn set_permissions(&self, perm: fs::Permissions) -> io::Result<()> {
         let mut perm = Some(perm);
@@ -474,7 +483,7 @@ impl File {
     }
 }
 
-impl AsyncRead for File {
+impl futures::io::AsyncRead for File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -489,7 +498,7 @@ impl AsyncRead for File {
     }
 }
 
-impl AsyncRead for &File {
+impl futures::io::AsyncRead for &File {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -535,10 +544,10 @@ impl AsyncRead for &File {
                     *state = State::Busy(blocking::spawn(async move {
                         if offset > 0 {
                             let pos = SeekFrom::Current(-(offset as i64));
-                            let _ = io::Seek::seek(&mut inner.file, pos);
+                            let _ = Seek::seek(&mut inner.file, pos);
                         }
 
-                        let res = io::Read::read(&mut inner.file, &mut inner.buf);
+                        let res = inner.file.read(&mut inner.buf);
                         inner.last_op = Some(Operation::Read(res));
                         State::Idle(Some(inner))
                     }));
@@ -555,7 +564,7 @@ impl AsyncRead for &File {
     }
 }
 
-impl AsyncWrite for File {
+impl futures::io::AsyncWrite for File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -573,7 +582,7 @@ impl AsyncWrite for File {
     }
 }
 
-impl AsyncWrite for &File {
+impl futures::io::AsyncWrite for &File {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -613,7 +622,7 @@ impl AsyncWrite for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::write(&mut inner.file, &mut inner.buf);
+                            let res = inner.file.write(&mut inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));
@@ -646,7 +655,7 @@ impl AsyncWrite for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::flush(&mut inner.file);
+                            let res = inner.file.flush();
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))
                         }));
@@ -684,7 +693,7 @@ impl AsyncWrite for &File {
     }
 }
 
-impl AsyncSeek for File {
+impl futures::io::AsyncSeek for File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -717,7 +726,7 @@ impl AsyncSeek for &File {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Seek::seek(&mut inner.file, pos);
+                            let res = inner.file.seek(pos);
                             inner.last_op = Some(Operation::Seek(res));
                             State::Idle(Some(inner))
                         }));
@@ -763,7 +772,7 @@ impl From<std::fs::File> for File {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
         use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -773,9 +782,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for File {
             fn as_raw_fd(&self) -> RawFd {
                 self.raw_fd
@@ -796,9 +805,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(windows)))]
+#[cfg_attr(feature = "docs", doc(cfg(windows)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for File {
             fn as_raw_handle(&self) -> RawHandle {
                 self.raw_handle.0

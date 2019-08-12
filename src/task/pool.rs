@@ -1,7 +1,5 @@
 use std::cell::{Cell, UnsafeCell};
 use std::fmt::Arguments;
-use std::future::Future;
-use std::io;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
 use std::pin::Pin;
@@ -9,11 +7,13 @@ use std::ptr;
 use std::thread;
 
 use crossbeam::channel::{unbounded, Sender};
-use futures::prelude::*;
+use futures::future::FutureExt;
 use lazy_static::lazy_static;
 
 use super::task;
 use super::{JoinHandle, Task};
+use crate::future::Future;
+use crate::io;
 
 /// Returns a handle to the current task.
 ///
@@ -30,11 +30,14 @@ use super::{JoinHandle, Task};
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::task::current;
 ///
-/// # async_std::task::block_on(async {
 /// println!("The name of this task is {:?}", current().name());
-/// # });
+/// #
+/// # }) }
+/// ```
 pub fn current() -> Task {
     get_task(|task| task.clone()).expect("`task::current()` called outside the context of a task")
 }
@@ -49,15 +52,17 @@ pub fn current() -> Task {
 ///
 /// ```
 /// # #![feature(async_await)]
+/// # fn main() { async_std::task::block_on(async {
+/// #
 /// use async_std::task;
 ///
-/// # async_std::task::block_on(async {
 /// let handle = task::spawn(async {
 ///     1 + 2
 /// });
 ///
 /// assert_eq!(handle.await, 3);
-/// # });
+/// #
+/// # }) }
 /// ```
 pub fn spawn<F, T>(future: F) -> JoinHandle<T>
 where

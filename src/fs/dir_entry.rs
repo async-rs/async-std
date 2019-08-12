@@ -1,16 +1,15 @@
 use std::ffi::OsString;
 use std::fs;
-use std::future::Future;
-use std::io;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::Poll;
 
 use cfg_if::cfg_if;
-use futures::prelude::*;
+use futures::future::{self, FutureExt, TryFutureExt};
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::io;
+use crate::task::{blocking, Poll};
 
 /// An entry inside a directory.
 ///
@@ -76,18 +75,18 @@ impl DirEntry {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::read_dir;
-    /// use async_std::prelude::*;
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{fs, prelude::*};
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut dir = read_dir(".").await?;
+    /// let mut dir = fs::read_dir(".").await?;
     ///
     /// while let Some(entry) = dir.next().await {
     ///     let entry = entry?;
     ///     println!("{:?}", entry.path());
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn path(&self) -> PathBuf {
         self.path.clone()
@@ -101,18 +100,18 @@ impl DirEntry {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::read_dir;
-    /// use async_std::prelude::*;
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{fs, prelude::*};
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut dir = read_dir(".").await?;
+    /// let mut dir = fs::read_dir(".").await?;
     ///
     /// while let Some(entry) = dir.next().await {
     ///     let entry = entry?;
     ///     println!("{:?}", entry.metadata().await?);
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn metadata(&self) -> io::Result<fs::Metadata> {
         future::poll_fn(|cx| {
@@ -154,18 +153,18 @@ impl DirEntry {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::read_dir;
-    /// use async_std::prelude::*;
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{fs, prelude::*};
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut dir = read_dir(".").await?;
+    /// let mut dir = fs::read_dir(".").await?;
     ///
     /// while let Some(entry) = dir.next().await {
     ///     let entry = entry?;
     ///     println!("{:?}", entry.file_type().await?);
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn file_type(&self) -> io::Result<fs::FileType> {
         future::poll_fn(|cx| {
@@ -205,18 +204,18 @@ impl DirEntry {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::read_dir;
-    /// use async_std::prelude::*;
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::{fs, prelude::*};
     ///
-    /// # futures::executor::block_on(async {
-    /// let mut dir = read_dir(".").await?;
+    /// let mut dir = fs::read_dir(".").await?;
     ///
     /// while let Some(entry) = dir.next().await {
     ///     let entry = entry?;
     ///     println!("{:?}", entry.file_name());
     /// }
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn file_name(&self) -> OsString {
         self.file_name.clone()
@@ -229,16 +228,16 @@ fn io_error(err: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> io::Err
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::DirEntryExt;
     } else if #[cfg(unix)] {
         use std::os::unix::fs::DirEntryExt;
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl DirEntryExt for DirEntry {
             fn ino(&self) -> u64 {
                 self.ino

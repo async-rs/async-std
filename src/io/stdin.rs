@@ -1,14 +1,13 @@
-use std::future::Future;
 use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
+use futures::future;
 use futures::io::Initializer;
-use futures::prelude::*;
 
-use crate::task::blocking;
+use crate::future::Future;
+use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -20,14 +19,15 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::io::stdin;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::io;
 ///
-/// # futures::executor::block_on(async {
-/// let stdin = stdin();
+/// let stdin = io::stdin();
 /// let mut line = String::new();
 /// stdin.read_line(&mut line).await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 pub fn stdin() -> Stdin {
     Stdin(Mutex::new(State::Idle(Some(Inner {
@@ -139,7 +139,7 @@ impl Stdin {
     }
 }
 
-impl AsyncRead for Stdin {
+impl futures::io::AsyncRead for Stdin {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -195,7 +195,7 @@ impl AsyncRead for Stdin {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::io::{AsRawFd, RawFd};
         use crate::os::windows::io::{AsRawHandle, RawHandle};
     } else if #[cfg(unix)] {
@@ -205,9 +205,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stdin {
             fn as_raw_fd(&self) -> RawFd {
                 io::stdin().as_raw_fd()
@@ -216,9 +216,9 @@ cfg_if! {
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(windows, feature = "docs.rs"))] {
+    if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stdin {
             fn as_raw_handle(&self) -> RawHandle {
                 io::stdin().as_raw_handle()

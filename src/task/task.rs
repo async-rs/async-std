@@ -1,14 +1,14 @@
 use std::fmt;
-use std::future::Future;
 use std::i64;
 use std::mem;
 use std::num::NonZeroU64;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::task::{Context, Poll};
 
 use super::local;
+use crate::future::Future;
+use crate::task::{Context, Poll};
 
 /// A handle to a task.
 #[derive(Clone)]
@@ -66,14 +66,16 @@ impl<T> JoinHandle<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
     /// use async_std::task;
     ///
-    /// # async_std::task::block_on(async {
     /// let handle = task::spawn(async {
     ///     1 + 2
     /// });
     /// println!("id = {}", handle.task().id());
-    /// # });
+    /// #
+    /// # }) }
     pub fn task(&self) -> &Task {
         self.0.tag().task()
     }
@@ -97,13 +99,12 @@ impl<T> Future for JoinHandle<T> {
 ///
 /// ```
 /// # #![feature(async_await)]
+/// #
 /// use async_std::task;
 ///
-/// # async_std::task::block_on(async {
 /// task::block_on(async {
 ///     println!("id = {:?}", task::current().id());
 /// })
-/// # });
 /// ```
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
 pub struct TaskId(NonZeroU64);

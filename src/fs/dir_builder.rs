@@ -1,10 +1,10 @@
 use std::fs;
-use std::future::Future;
-use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
+use crate::future::Future;
+use crate::io;
 use crate::task::blocking;
 
 /// A builder for creating directories in various manners.
@@ -74,19 +74,16 @@ impl DirBuilder {
     ///
     /// ```no_run
     /// # #![feature(async_await)]
-    /// use async_std::fs::{metadata, DirBuilder};
-    ///
-    /// # futures::executor::block_on(async {
-    /// let path = "/tmp/foo/bar/baz";
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::DirBuilder;
     ///
     /// DirBuilder::new()
     ///     .recursive(true)
-    ///     .create(path)
+    ///     .create("/tmp/foo/bar/baz")
     ///     .await?;
-    ///
-    /// assert!(metadata(path).await?.is_dir());
-    /// # std::io::Result::Ok(())
-    /// # }).unwrap();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn create<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<()>> {
         let mut builder = fs::DirBuilder::new();
@@ -105,16 +102,16 @@ impl DirBuilder {
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs.rs")] {
+    if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::DirBuilderExt;
     } else if #[cfg(unix)] {
         use std::os::unix::fs::DirBuilderExt;
     }
 }
 
-#[cfg_attr(feature = "docs.rs", doc(cfg(unix)))]
+#[cfg_attr(feature = "docs", doc(cfg(unix)))]
 cfg_if! {
-    if #[cfg(any(unix, feature = "docs.rs"))] {
+    if #[cfg(any(unix, feature = "docs"))] {
         impl DirBuilderExt for DirBuilder {
             fn mode(&mut self, mode: u32) -> &mut Self {
                 self.mode = Some(mode);
