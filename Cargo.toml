@@ -19,7 +19,7 @@ rustdoc-args = ["--features docs"]
 docs = []
 
 [dependencies]
-async-task = { path = "../async-task" }
+async-task = { git = "git@github.com:async-std/async-task.git" }
 cfg-if = "0.1.9"
 crossbeam = "0.7.1"
 futures-preview = "0.3.0-alpha.17"
