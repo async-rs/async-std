@@ -17,6 +17,7 @@
   - [Proper Shutdown](./patterns/proper-shutdown.md)
   - [Background Tasks](./patterns/background-tasks.md)
   - [Testing](./patterns/testing.md)
+  - [Collected Small Patterns](./patters/small-patterns.md)
 - [Security practices](./security/index.md)
   - [Security disclosures and policy](./security/policy.md)
 - [Glossary](./glossary.md)
