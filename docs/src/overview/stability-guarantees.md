@@ -8,15 +8,26 @@ In short: we are versioning our software as `MAJOR.MINOR.PATCH`. We increase the
 * MINOR version when we introducece functionality in a backwards-compatible manner
 * PATCH version when we make backwards-compatible bug fixes
 
+We will provide migration documentation between major versions.
+
 ## Future expectations
 
-`async-std` uses the `AsyncRead/AsyncWrite/AsyncSeek/AsyncBufRead` and the `Stream` traits from the `futures-rs` library. We expect those to be conservatively updated and in lockstep. Breaking changes in these traits will lead to a major version upgrade, for which we will provide migration documentation.
+`async-std` uses its own implementations of the following concepts:
+
+* `Read`
+* `Write`
+* `Seek`
+* `BufRead`
+* `Stream`
+
+For integration with the ecosystem, all types implementing these traits also have an implementation of the corresponding interfaces in the `futures-rs` library.
+Please note that our SemVer guarantees don't extend to usage of those interfaces. We expect those to be conservatively updated and in lockstep.
 
 ## Minimum version policy
 
 The current tentative policy is that the minimum Rust version required to use this crate can be increased in minor version updates. For example, if `async-std` 1.0 requires Rust 1.37.0, then `async-std` 1.0.z for all values of z will also require Rust 1.37.0 or newer. However, `async-std` 1.y for y > 0 may require a newer minimum version of Rust.
 
-In general, this crate will be conservative with respect to the minimum supported version of Rust. With `async/await` being a new feature though, we will track changes in a measured pace.
+In general, this crate will be conservative with respect to the minimum supported version of Rust. With `async/await` being a new feature though, we will track changes in a measured pace initially.
 
 ## Security fixes
 
