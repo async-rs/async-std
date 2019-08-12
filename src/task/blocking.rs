@@ -4,7 +4,7 @@ use std::fmt;
 use std::pin::Pin;
 use std::thread;
 
-use crossbeam::channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
 use crate::future::Future;

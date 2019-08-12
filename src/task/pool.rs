@@ -6,7 +6,7 @@ use std::pin::Pin;
 use std::ptr;
 use std::thread;
 
-use crossbeam::channel::{unbounded, Sender};
+use crossbeam_channel::{unbounded, Sender};
 use futures::future::FutureExt;
 use lazy_static::lazy_static;
 
