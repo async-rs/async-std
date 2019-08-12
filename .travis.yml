@@ -14,7 +14,7 @@ matrix:
       os: windows
 
 script:
+  - cargo fmt --all -- --check
   - cargo check --all --benches --bins --examples --tests
   - cargo test --all
   - cargo doc --features docs
-  - cargo fmt --all -- --check
