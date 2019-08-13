@@ -23,7 +23,7 @@
 //! }
 //! ```
 //!
-//! Use sockets in a familiar way:
+//! Use sockets in a familiar way, with low-friction built-in timeouts:
 //!
 //! ```no_run
 //! #![feature(async_await)]
