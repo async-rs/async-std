@@ -138,6 +138,15 @@ impl<T: futures::Stream + Unpin + ?Sized> Future for NextFuture<'_, T> {
     }
 }
 
+impl<T> futures::future::FusedFuture for NextFuture<'_, T>
+where
+    T: futures::stream::FusedStream + Unpin + ?Sized,
+{
+    fn is_terminated(&self) -> bool {
+        self.stream.is_terminated()
+    }
+}
+
 /// A stream that yields the first `n` items of another stream.
 #[derive(Clone, Debug)]
 pub struct Take<S> {
