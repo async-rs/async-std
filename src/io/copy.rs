@@ -32,7 +32,6 @@ use crate::io;
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
-/// use async_std::task;
 ///
 /// let mut reader: &[u8] = b"hello";
 /// let mut writer = io::stdout();

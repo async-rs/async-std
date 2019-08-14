@@ -14,9 +14,9 @@
 
 #![feature(async_await)]
 
-use async_Std::prelude::*;
 use async_std::io;
 use async_std::net::TcpStream;
+use async_std::prelude::*;
 use async_std::task;
 
 fn main() -> io::Result<()> {

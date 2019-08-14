@@ -42,7 +42,7 @@ use crate::task::Poll;
 ///     socket.send_to(&buf[..n], &peer).await?;
 /// }
 /// #
-/// # Ok(()) }) }
+/// # }) }
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
@@ -117,8 +117,6 @@ impl UdpSocket {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use std::net::IpAddr;
-    ///
     ///	use async_std::net::UdpSocket;
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;

@@ -158,7 +158,7 @@ impl DirEntry {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs;
-    /// use async_Std::prelude::*;
+    /// use async_std::prelude::*;
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///

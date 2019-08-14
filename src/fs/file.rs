@@ -338,9 +338,8 @@ impl File {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
-    /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("a.txt").await?;
+    /// let file = File::create("a.txt").await?;
     /// file.set_len(10).await?;
     /// #
     /// # Ok(()) }) }
@@ -438,9 +437,9 @@ impl File {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
-    /// use async_std::prelude::*;
     ///
-    /// let mut file = File::create("a.txt").await?;
+    /// let file = File::create("a.txt").await?;
+    ///
     /// let mut perms = file.metadata().await?.permissions();
     /// perms.set_readonly(true);
     /// file.set_permissions(perms).await?;

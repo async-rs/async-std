@@ -220,7 +220,7 @@ impl<T> RwLock<T> {
     ///
     /// let lock = RwLock::new(1);
     ///
-    /// let mut n = lock.read().await;
+    /// let n = lock.read().await;
     /// assert_eq!(*n, 1);
     ///
     /// assert!(lock.try_read().is_some());
@@ -385,7 +385,7 @@ impl<T> RwLock<T> {
     ///
     /// let lock = RwLock::new(1);
     ///
-    /// let mut n = lock.read().await;
+    /// let n = lock.read().await;
     /// assert_eq!(*n, 1);
     ///
     /// assert!(lock.try_write().is_none());
