@@ -10,8 +10,8 @@ matrix:
       os: linux
     - rust: nightly
       os: osx
-    - rust: nightly-x86_64-pc-windows-msvc
-      os: windows
+#    - rust: nightly-x86_64-pc-windows-msvc
+#      os: windows
 
 script:
   - cargo fmt --all -- --check
