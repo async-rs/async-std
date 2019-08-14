@@ -5,9 +5,10 @@
 /// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
+/// use std::time::Duration;
+///
 /// use async_std::future::pending;
 /// use async_std::prelude::*;
-/// use std::time::Duration;
 ///
 /// let dur = Duration::from_secs(1);
 /// assert!(pending::<()>().timeout(dur).await.is_err());

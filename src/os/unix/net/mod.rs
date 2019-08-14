@@ -65,8 +65,9 @@ cfg_if! {
             /// With a pathname:
             ///
             /// ```no_run
-            /// use async_std::os::unix::net::UnixListener;
             /// use std::path::Path;
+            ///
+            /// use async_std::os::unix::net::UnixListener;
             ///
             /// let socket = UnixListener::bind("/tmp/socket").await?;
             /// let addr = socket.local_addr()?;

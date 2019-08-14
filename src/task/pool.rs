@@ -32,9 +32,9 @@ use crate::io;
 /// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
-/// use async_std::task::current;
+/// use async_std::task;
 ///
-/// println!("The name of this task is {:?}", current().name());
+/// println!("The name of this task is {:?}", task::current().name());
 /// #
 /// # }) }
 /// ```

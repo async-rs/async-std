@@ -37,4 +37,6 @@ pub use crate::io::Write as _;
 #[doc(no_inline)]
 pub use crate::stream::Stream;
 #[doc(no_inline)]
+pub use crate::task_local;
+#[doc(no_inline)]
 pub use crate::time::Timeout as _;

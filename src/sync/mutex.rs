@@ -27,8 +27,10 @@ const BLOCKED: usize = 1 << 1;
 /// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
-/// use async_std::{sync::Mutex, task};
 /// use std::sync::Arc;
+///
+/// use async_std::sync::Mutex;
+/// use async_std::task;
 ///
 /// let m = Arc::new(Mutex::new(0));
 /// let mut tasks = vec![];
@@ -84,8 +86,10 @@ impl<T> Mutex<T> {
     /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
-    /// use async_std::{sync::Mutex, task};
     /// use std::sync::Arc;
+    ///
+    /// use async_std::sync::Mutex;
+    /// use async_std::task;
     ///
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
@@ -197,8 +201,10 @@ impl<T> Mutex<T> {
     /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
-    /// use async_std::{sync::Mutex, task};
     /// use std::sync::Arc;
+    ///
+    /// use async_std::sync::Mutex;
+    /// use async_std::task;
     ///
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
@@ -229,7 +235,6 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// use async_std::sync::Mutex;
     ///
     /// let mutex = Mutex::new(10);

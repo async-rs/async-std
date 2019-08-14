@@ -36,7 +36,8 @@ use crate::task::{Context, Poll};
 /// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
-/// use async_std::{net::TcpStream, prelude::*};
+/// use async_std::net::TcpStream;
+/// use async_std::prelude::*;
 ///
 /// let mut stream = TcpStream::connect("127.0.0.1:8080").await?;
 /// stream.write_all(b"hello world").await?;
@@ -340,8 +341,9 @@ impl TcpStream {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::net::TcpStream;
     /// use std::net::Shutdown;
+    ///
+    /// use async_std::net::TcpStream;
     ///
     /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
     /// stream.shutdown(Shutdown::Both)?;

@@ -10,7 +10,8 @@
 //! # #![feature(async_await)]
 //! # fn main() { async_std::task::block_on(async {
 //! #
-//! use async_std::{prelude::*, stream};
+//! use async_std::prelude::*;
+//! use async_std::stream;
 //!
 //! let mut s = stream::repeat(9).take(3);
 //!
@@ -71,7 +72,8 @@ pub trait Stream {
     /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
-    /// use async_std::{prelude::*, stream};
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
     ///
     /// let mut s = stream::once(7);
     ///
@@ -92,7 +94,8 @@ pub trait Stream {
     /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
-    /// use async_std::{prelude::*, stream};
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
     ///
     /// let mut s = stream::repeat(9).take(3);
     ///

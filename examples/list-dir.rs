@@ -4,7 +4,10 @@
 
 use std::env::args;
 
-use async_std::{fs, io, prelude::*, task};
+use async_std::fs;
+use async_std::io;
+use async_std::prelude::*;
+use async_std::task;
 
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");

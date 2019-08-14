@@ -4,7 +4,10 @@
 
 use std::env::args;
 
-use async_std::{fs::File, io, prelude::*, task};
+use async_std::fs::File;
+use async_std::io;
+use async_std::prelude::*;
+use async_std::task;
 
 const LEN: usize = 4 * 1024 * 1024; // 4 Mb
 
