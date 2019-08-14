@@ -2,7 +2,8 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use async_std::{task, task_local};
+use async_std::task;
+use async_std::task_local;
 
 #[test]
 fn drop_local() {
