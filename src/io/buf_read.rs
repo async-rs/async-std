@@ -1,4 +1,3 @@
-use std::io;
 use std::mem;
 use std::pin::Pin;
 use std::str;
@@ -7,6 +6,7 @@ use cfg_if::cfg_if;
 use futures::io::AsyncBufRead;
 
 use crate::future::Future;
+use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {

@@ -1,11 +1,10 @@
-use std::io::SeekFrom;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
 use futures::io::AsyncSeek;
 
 use crate::future::Future;
-use crate::io;
+use crate::io::{self, SeekFrom};
 use crate::task::{Context, Poll};
 
 cfg_if! {
