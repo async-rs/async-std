@@ -2,8 +2,8 @@
 
 use async_std::task;
 
-use std::{thread,time};
 use futures::channel::oneshot;
+use std::{thread, time};
 
 struct AsyncHandle<T> {
     handle: thread::JoinHandle<T>,
@@ -22,8 +22,7 @@ impl<T> AsyncHandle<T> {
     }
 }
 
-
-fn spawn<F,T>(f: F) -> AsyncHandle<T>
+fn spawn<F, T>(f: F) -> AsyncHandle<T>
 where
     F: FnOnce() -> T,
     F: Send + 'static,
@@ -39,7 +38,7 @@ where
 
     AsyncHandle {
         handle: thread_handle,
-        notifier: receiver
+        notifier: receiver,
     }
 }
 
