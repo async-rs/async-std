@@ -19,25 +19,15 @@ For detailed information, take a look at the [documentation][docs] and the assoc
 
 Add the following lines to you `Cargo.toml`:
 
-<<<<<<< HEAD
-```
-git clone git@github.com:async-rs/async-std.git && cd async-std
-=======
 ```toml
 [dependencies]
 async-std = "0.99"
->>>>>>> Start a new README
 ```
 
 Or use [cargo add][cargo-add] if you have it installed:
 
-<<<<<<< HEAD
-```
-cargo doc --features docs --open
-=======
 ```sh
 $ cargo add async-std
->>>>>>> Start a new README
 ```
 
 [cargo add]: https://github.com/killercup/cargo-edit
