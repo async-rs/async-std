@@ -22,11 +22,13 @@
 //! # }) }
 //! ```
 
+pub use cycle::{cycle, Cycle};
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use stream::{Stream, Take};
 
+mod cycle;
 mod empty;
 mod once;
 mod repeat;
