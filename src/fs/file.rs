@@ -8,7 +8,7 @@ use std::sync::Mutex;
 
 use cfg_if::cfg_if;
 use futures::future::{self, FutureExt, TryFutureExt};
-use futures::io::{AsyncSeek, Initializer};
+use futures::io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
 use crate::future::Future;
 use crate::io;
@@ -482,7 +482,7 @@ impl File {
     }
 }
 
-impl futures::io::AsyncRead for File {
+impl AsyncRead for File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -497,7 +497,7 @@ impl futures::io::AsyncRead for File {
     }
 }
 
-impl futures::io::AsyncRead for &File {
+impl AsyncRead for &File {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -563,7 +563,7 @@ impl futures::io::AsyncRead for &File {
     }
 }
 
-impl futures::io::AsyncWrite for File {
+impl AsyncWrite for File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -581,7 +581,7 @@ impl futures::io::AsyncWrite for File {
     }
 }
 
-impl futures::io::AsyncWrite for &File {
+impl AsyncWrite for &File {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -692,7 +692,7 @@ impl futures::io::AsyncWrite for &File {
     }
 }
 
-impl futures::io::AsyncSeek for File {
+impl AsyncSeek for File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

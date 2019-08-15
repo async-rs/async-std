@@ -5,6 +5,7 @@ use std::pin::Pin;
 
 use cfg_if::cfg_if;
 use futures::future;
+use futures::io::{AsyncRead, AsyncWrite};
 
 use crate::io;
 use crate::net::driver::IoHandle;
@@ -355,7 +356,7 @@ impl TcpStream {
     }
 }
 
-impl futures::io::AsyncRead for TcpStream {
+impl AsyncRead for TcpStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -373,7 +374,7 @@ impl futures::io::AsyncRead for TcpStream {
     }
 }
 
-impl futures::io::AsyncRead for &TcpStream {
+impl AsyncRead for &TcpStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -391,7 +392,7 @@ impl futures::io::AsyncRead for &TcpStream {
     }
 }
 
-impl futures::io::AsyncWrite for TcpStream {
+impl AsyncWrite for TcpStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -417,7 +418,7 @@ impl futures::io::AsyncWrite for TcpStream {
     }
 }
 
-impl futures::io::AsyncWrite for &TcpStream {
+impl AsyncWrite for &TcpStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

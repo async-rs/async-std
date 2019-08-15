@@ -7,6 +7,7 @@ use std::path::Path;
 use std::pin::Pin;
 
 use futures::future;
+use futures::io::{AsyncRead, AsyncWrite};
 use mio_uds;
 
 use super::SocketAddr;
@@ -198,7 +199,7 @@ impl UnixStream {
     }
 }
 
-impl futures::io::AsyncRead for UnixStream {
+impl AsyncRead for UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -208,7 +209,7 @@ impl futures::io::AsyncRead for UnixStream {
     }
 }
 
-impl futures::io::AsyncRead for &UnixStream {
+impl AsyncRead for &UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -218,7 +219,7 @@ impl futures::io::AsyncRead for &UnixStream {
     }
 }
 
-impl futures::io::AsyncWrite for UnixStream {
+impl AsyncWrite for UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -236,7 +237,7 @@ impl futures::io::AsyncWrite for UnixStream {
     }
 }
 
-impl futures::io::AsyncWrite for &UnixStream {
+impl AsyncWrite for &UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

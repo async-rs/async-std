@@ -3,6 +3,7 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
+use futures::io::AsyncWrite;
 
 use crate::future::Future;
 use crate::task::{blocking, Context, Poll};
@@ -80,7 +81,7 @@ enum Operation {
     Flush(io::Result<()>),
 }
 
-impl futures::io::AsyncWrite for Stdout {
+impl AsyncWrite for Stdout {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

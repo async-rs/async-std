@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use cfg_if::cfg_if;
 use futures::future;
-use futures::io::Initializer;
+use futures::io::{AsyncRead, Initializer};
 
 use crate::future::Future;
 use crate::task::{blocking, Context, Poll};
@@ -140,7 +140,7 @@ impl Stdin {
     }
 }
 
-impl futures::io::AsyncRead for Stdin {
+impl AsyncRead for Stdin {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

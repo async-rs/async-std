@@ -27,11 +27,11 @@ lazy_static! {
         for _ in 0..2 {
             thread::Builder::new()
                 .name("async-blocking-driver".to_string())
-                .spawn(|| {
+                .spawn(|| abort_on_panic(|| {
                     for task in &POOL.receiver {
-                        abort_on_panic(|| task.run());
+                        task.run();
                     }
-                })
+                }))
                 .expect("cannot start a thread driving blocking tasks");
         }
 
@@ -77,24 +77,12 @@ fn maybe_create_another_blocking_thread() {
 // nonblocking way and spinning up another worker thread if
 // there is not a thread ready to accept the work.
 fn schedule(t: async_task::Task<()>) {
-    let first_try_result = POOL.sender.try_send(t);
-    match first_try_result {
-        Ok(()) => {
-            // NICEEEE
-        }
-        Err(crossbeam::channel::TrySendError::Full(t)) => {
-            // We were not able to send to the channel without
-            // blocking. Try to spin up another thread and then
-            // retry sending while blocking.
-            maybe_create_another_blocking_thread();
-            POOL.sender.send(t).unwrap()
-        }
-        Err(crossbeam::channel::TrySendError::Disconnected(_)) => {
-            panic!(
-                "unable to send to blocking threadpool \
-                due to receiver disconnection"
-            );
-        }
+    if let Err(err) = POOL.sender.try_send(t) {
+        // We were not able to send to the channel without
+        // blocking. Try to spin up another thread and then
+        // retry sending while blocking.
+        maybe_create_another_blocking_thread();
+        POOL.sender.send(err.into_inner()).unwrap();
     }
 }
 

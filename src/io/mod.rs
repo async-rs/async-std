@@ -22,13 +22,15 @@
 //! ```
 
 #[doc(inline)]
-pub use std::io::{empty, sink, Cursor, Empty, Error, ErrorKind, Result, SeekFrom, Sink};
+pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
 pub use copy::copy;
+pub use empty::{empty, Empty};
 pub use read::Read;
 pub use seek::Seek;
+pub use sink::{sink, Sink};
 pub use stderr::{stderr, Stderr};
 pub use stdin::{stdin, Stdin};
 pub use stdout::{stdout, Stdout};
@@ -37,8 +39,10 @@ pub use write::Write;
 mod buf_read;
 mod buf_reader;
 mod copy;
+mod empty;
 mod read;
 mod seek;
+mod sink;
 mod stderr;
 mod stdin;
 mod stdout;
