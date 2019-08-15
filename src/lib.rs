@@ -1,8 +1,12 @@
 //! Async version of the Rust standard library.
 //!
 //! This crate is an async version of [`std`].
+//! Higher-level documentation in the form of the book
+//! ["Async programming in Rust with async-std"][book]
+//! is available.
 //!
 //! [`std`]: https://doc.rust-lang.org/std/index.html
+//! [here]: https://book.async.rs
 //!
 //! # Examples
 //!
