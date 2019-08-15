@@ -1,4 +1,4 @@
-//! Creates a web request to the Rust website.
+//! Creates a HTTP request to the official Rust website.
 
 #![feature(async_await)]
 
