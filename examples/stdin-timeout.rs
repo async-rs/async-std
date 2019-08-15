@@ -9,22 +9,13 @@ use async_std::prelude::*;
 use async_std::task;
 
 fn main() -> io::Result<()> {
-    task::block_on(async {
+    task::block_on(io::timeout(Duration::from_secs(5), async {
         let stdin = io::stdin();
+
         let mut line = String::new();
+        stdin.read_line(&mut line).await?;
 
-        match stdin
-            .read_line(&mut line)
-            .timeout(Duration::from_secs(5))
-            .await
-        {
-            Ok(res) => {
-                res?;
-                print!("Got line: {}", line);
-            }
-            Err(_) => println!("You have only 5 seconds to enter a line. Try again :)"),
-        }
-
+        print!("Got line: {}", line);
         Ok(())
-    })
+    }))
 }

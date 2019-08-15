@@ -34,6 +34,7 @@ pub use sink::{sink, Sink};
 pub use stderr::{stderr, Stderr};
 pub use stdin::{stdin, Stdin};
 pub use stdout::{stdout, Stdout};
+pub use timeout::timeout;
 pub use write::Write;
 
 mod buf_read;
@@ -46,4 +47,5 @@ mod sink;
 mod stderr;
 mod stdin;
 mod stdout;
+mod timeout;
 mod write;
