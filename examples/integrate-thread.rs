@@ -44,28 +44,28 @@ where
 }
 
 fn main() {
-    let thread_handle = spawn(move || {
+    let sleepy_thread = spawn(move || {
         thread::sleep(time::Duration::from_millis(1000));
         String::from("Finished")
     });
 
     task::block_on(async move {
-        println!("waiting for thread 1");
-        let thread_result = thread_handle.join().await;
+        println!("waiting for sleepy thread");
+        let thread_result = sleepy_thread.join().await;
         match thread_result {
             Ok(s) => println!("Result: {}", s),
             Err(e) => println!("Error: {:?}", e),
         }
     });
 
-    let thread_handle = spawn(move || {
+    let panicing_thread = spawn(move || {
         panic!("aaah!");
         String::from("Finished!")
     });
 
     task::block_on(async move {
-        println!("waiting for thread 2");
-        let thread_result = thread_handle.join().await;
+        println!("waiting for panicing thread");
+        let thread_result = panicing_thread.join().await;
         match thread_result {
             Ok(s) => println!("Result: {}", s),
             Err(e) => println!("Error: {:?}", e),
