@@ -14,7 +14,10 @@
 
 #![feature(async_await)]
 
-use async_std::{io, net::TcpStream, prelude::*, task};
+use async_std::io;
+use async_std::net::TcpStream;
+use async_std::prelude::*;
+use async_std::task;
 
 fn main() -> io::Result<()> {
     task::block_on(async {

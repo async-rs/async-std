@@ -181,7 +181,7 @@ impl UnixDatagram {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// let mut socket = UnixDatagram::unbound()?;
+    /// let socket = UnixDatagram::unbound()?;
     /// socket.connect("/tmp/socket").await?;
     /// let peer = socket.peer_addr()?;
     /// #
@@ -203,7 +203,7 @@ impl UnixDatagram {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// let mut socket = UnixDatagram::unbound()?;
+    /// let socket = UnixDatagram::unbound()?;
     /// let mut buf = vec![0; 1024];
     /// let (n, peer) = socket.recv_from(&mut buf).await?;
     /// #
@@ -271,7 +271,7 @@ impl UnixDatagram {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// let mut socket = UnixDatagram::unbound()?;
+    /// let socket = UnixDatagram::unbound()?;
     /// socket.send_to(b"hello world", "/tmp/socket").await?;
     /// #
     /// # Ok(()) }) }
@@ -304,7 +304,7 @@ impl UnixDatagram {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
     ///
-    /// let mut socket = UnixDatagram::unbound()?;
+    /// let socket = UnixDatagram::unbound()?;
     /// socket.connect("/tmp/socket").await?;
     /// socket.send(b"hello world").await?;
     /// #

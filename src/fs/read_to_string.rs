@@ -21,12 +21,13 @@ use crate::task::blocking;
 ///
 /// ```no_run
 /// # #![feature(async_await)]
-/// use async_std::fs::read_to_string;
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::fs;
 ///
-/// # futures::executor::block_on(async {
-/// let contents = read_to_string("a.txt").await?;
-/// # std::io::Result::Ok(())
-/// # }).unwrap();
+/// let contents = fs::read_to_string("a.txt").await?;
+/// #
+/// # Ok(()) }) }
 /// ```
 pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let path = path.as_ref().to_owned();

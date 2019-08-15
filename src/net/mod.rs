@@ -26,7 +26,7 @@
 //!     socket.send_to(&buf[..n], &peer).await?;
 //! }
 //! #
-//! # Ok(()) }) }
+//! # }) }
 //! ```
 
 pub use tcp::{Incoming, TcpListener, TcpStream};

@@ -184,7 +184,7 @@ impl Tag {
                     let new = mem::transmute::<usize, Option<Task>>(new_raw);
                     drop(new);
                 }
-            };
+            }
 
             mem::transmute::<&AtomicUsize, &Option<Task>>(&self.raw_metadata)
                 .as_ref()

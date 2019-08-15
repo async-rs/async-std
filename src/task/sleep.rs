@@ -18,8 +18,9 @@ use crate::time::Timeout;
 /// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
-/// use async_std::task;
 /// use std::time::Duration;
+///
+/// use async_std::task;
 ///
 /// task::sleep(Duration::from_secs(1)).await;
 /// #

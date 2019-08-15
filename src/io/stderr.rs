@@ -19,7 +19,8 @@ use crate::task::{blocking, Context, Poll};
 /// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
-/// use async_std::{io, prelude::*};
+/// use async_std::io;
+/// use async_std::prelude::*;
 ///
 /// let mut stderr = io::stderr();
 /// stderr.write_all(b"Hello, world!").await?;

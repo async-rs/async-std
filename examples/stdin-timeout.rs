@@ -4,7 +4,9 @@
 
 use std::time::Duration;
 
-use async_std::{io, prelude::*, task};
+use async_std::io;
+use async_std::prelude::*;
+use async_std::task;
 
 fn main() -> io::Result<()> {
     task::block_on(async {

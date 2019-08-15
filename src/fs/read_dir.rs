@@ -1,5 +1,4 @@
 use std::fs;
-
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -34,7 +33,8 @@ use crate::task::{blocking, Context, Poll};
 /// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
-/// use async_std::{fs, prelude::*};
+/// use async_std::fs;
+/// use async_std::prelude::*;
 ///
 /// let mut dir = fs::read_dir(".").await?;
 ///

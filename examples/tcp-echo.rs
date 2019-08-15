@@ -8,8 +8,10 @@
 
 #![feature(async_await)]
 
+use async_std::io;
 use async_std::net::{TcpListener, TcpStream};
-use async_std::{io, prelude::*, task};
+use async_std::prelude::*;
+use async_std::task;
 
 async fn process(stream: TcpStream) -> io::Result<()> {
     println!("Accepted from: {}", stream.peer_addr()?);

@@ -1,7 +1,10 @@
 language: rust
 
+env:
+  - RUSTFLAGS="-D warnings"
+
 before_script:
-- rustup component add rustfmt
+  - rustup component add rustfmt
 
 matrix:
   fast_finish: true
@@ -10,11 +13,11 @@ matrix:
       os: linux
     - rust: nightly
       os: osx
-    - rust: nightly-x86_64-pc-windows-msvc
-      os: windows
+#    - rust: nightly-x86_64-pc-windows-msvc
+#      os: windows
 
 script:
+  - cargo fmt --all -- --check
   - cargo check --all --benches --bins --examples --tests
   - cargo test --all
-  - cargo doc --features docs.rs
-  - cargo fmt --all -- --check
+  - cargo doc --features docs

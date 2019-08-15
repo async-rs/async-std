@@ -1,10 +1,10 @@
-use std::io::{IoSliceMut, Read as _, SeekFrom};
+use std::io::{IoSliceMut, Read as _};
 use std::pin::Pin;
 use std::{cmp, fmt};
 
 use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
 
-use crate::io;
+use crate::io::{self, SeekFrom};
 use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;

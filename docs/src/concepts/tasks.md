@@ -1,0 +1,83 @@
+# Tasks
+Now that we know what Futures are, we now want to run them!
+
+In `async-std`, the `tasks` (TODO: link) module is responsible for this. The simplest way is using the `block_on` function:
+
+```rust
+use async_std::fs::File;
+use async_std::task;
+
+async fn read_file(path: &str) -> Result<String, io::Error> {
+    let mut file = File.open(path).await?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).await?; 
+    contents
+}
+
+fn main() {
+    let task = task::spawn(async {
+        let result = read_file("data.csv");
+        match result {
+            Ok(s) => println!("{}", s),
+            Err(e) => println!("Error reading file: {:?}", e)
+        }
+    });
+    println!("Started task!");
+    task::block_on(task);
+    println!("Stopped task!");
+}
+```
+
+This asks the runtime baked into `async_std` to execute the code that reads a file. Let’s go one by one, though, inside to outside.
+
+```rust
+async {
+    let result = read_file("data.csv");
+    match result {
+        Ok(s) => println!("{}", s),
+        Err(e) => println!("Error reading file: {:?}", e)
+    }
+}
+```
+
+This is an `async` *block*. Async blocks are necessary to call `async` functions, and will instruct the compiler to include all the relevant instructions to do so. In Rust, all blocks return a value and `async` blocks happen to return a value of the kind `Future`.
+
+But let’s get to the interesting part:
+
+```rust
+
+task::spawn(async { })
+
+```
+
+`spawn` takes a Future and starts running it on a `Task`. It returns a `JoinHandle`. Futures in Rust are sometimes called *cold* Futures. You need something that starts running them. To run a Future, there may be some additional bookkeeping required, e.g. if it’s running or finished, where it is being placed in memory and what the current state is. This bookkeeping part is abstracted away in a `Task`. A `Task` is similar to a `Thread`, with some minor differences: it will be scheduled by the program instead of the operating system kernel and if it encounters a point where it needs to wait, the program itself responsible for waking it up again. We’ll talk a little bit about that later. An `async_std` task can also has a name and an ID, just like a thread.
+
+For now, it is enough to know that once you `spawn`ed a task, it will continue running in the background. The `JoinHandle` in itself is a future that will finish once the `Task` ran to conclusion. Much like with `threads` and the `join` function, we can now call `block_on` on the handle to *block* the program (or the calling thread, to be specific) to wait for it to finish.
+
+
+## Tasks in `async_std`
+
+Tasks in `async_std` are one of the core abstractions. Much like Rust’s `thread`s, they provide some practical functionality over the raw concept. `Tasks` have a relationship to the runtime, but they are in themselves separate. `async_std` tasks have a number of desirable properties:
+
+
+- They are single-allocated
+- All tasks have a *backchannel*, which allows them to propagate results and errors to the spawning task through the `JoinHandle`
+- The carry desirable metadata for debugging
+- They support task local storage
+
+`async_std` s task api handles setup and teardown of a backing runtime for you and doesn’t rely on a runtime being started.
+
+## Blocking
+
+TODO: fill me in
+
+## Errors and panics
+
+TODO: fill me in
+
+
+## Conclusion
+
+`async_std` comes with a useful `Task` type that works with an API similar to `std::thread`. It covers error and panic behaviour in a structured and defined way.
+
+Tasks are separate concurrent units and sometimes they need to communicate. That’s where `Stream`s come in.

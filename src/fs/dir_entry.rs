@@ -77,7 +77,8 @@ impl DirEntry {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs, prelude::*};
+    /// use async_std::fs;
+    /// use async_std::prelude::*;
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
@@ -102,7 +103,8 @@ impl DirEntry {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs, prelude::*};
+    /// use async_std::fs;
+    /// use async_std::prelude::*;
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
@@ -155,7 +157,8 @@ impl DirEntry {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs, prelude::*};
+    /// use async_std::fs;
+    /// use async_std::prelude::*;
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
@@ -206,7 +209,8 @@ impl DirEntry {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs, prelude::*};
+    /// use async_std::fs;
+    /// use async_std::prelude::*;
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///

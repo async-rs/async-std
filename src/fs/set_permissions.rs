@@ -27,7 +27,6 @@ use crate::task::blocking;
 ///
 /// let mut perm = fs::metadata("a.txt").await?.permissions();
 /// perm.set_readonly(true);
-///
 /// fs::set_permissions("a.txt", perm).await?;
 /// #
 /// # Ok(()) }) }

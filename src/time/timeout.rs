@@ -54,8 +54,10 @@ pub trait Timeout: Future + Sized {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{io, prelude::*};
     /// use std::time::Duration;
+    ///
+    /// use async_std::io;
+    /// use async_std::prelude::*;
     ///
     /// let stdin = io::stdin();
     /// let mut line = String::new();

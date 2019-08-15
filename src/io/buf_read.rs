@@ -1,4 +1,3 @@
-use std::io;
 use std::mem;
 use std::pin::Pin;
 use std::str;
@@ -7,6 +6,7 @@ use cfg_if::cfg_if;
 use futures::io::AsyncBufRead;
 
 use crate::future::Future;
+use crate::io;
 use crate::task::{Context, Poll};
 
 cfg_if! {
@@ -49,12 +49,14 @@ pub trait BufRead {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, io::BufReader, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
     ///
-    /// let mut f = BufReader::new(File::open("a.txt").await?);
+    /// let mut file = BufReader::new(File::open("a.txt").await?);
     ///
     /// let mut buf = vec![0; 1024];
-    /// let n = f.read_until(b'\n', &mut buf).await?;
+    /// let n = file.read_until(b'\n', &mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -98,12 +100,14 @@ pub trait BufRead {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, io::BufReader, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
     ///
-    /// let mut f = BufReader::new(File::open("a.txt").await?);
+    /// let mut file = BufReader::new(File::open("a.txt").await?);
     ///
     /// let mut buf = String::new();
-    /// f.read_line(&mut buf).await?;
+    /// file.read_line(&mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -137,11 +141,12 @@ pub trait BufRead {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, io::BufReader, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
     ///
-    /// let mut f = BufReader::new(File::open("a.txt").await?);
-    ///
-    /// let mut lines = f.lines();
+    /// let file = File::open("a.txt").await?;
+    /// let mut lines = BufReader::new(file).lines();
     /// let mut count = 0;
     ///
     /// for line in lines.next().await {

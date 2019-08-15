@@ -21,8 +21,11 @@ use super::pool;
 ///
 /// ```
 /// # #![feature(async_await)]
-/// use async_std::{task, task_local};
+/// #
 /// use std::cell::Cell;
+///
+/// use async_std::task;
+/// use async_std::prelude::*;
 ///
 /// task_local! {
 ///     static VAL: Cell<u32> = Cell::new(5);
@@ -90,8 +93,11 @@ impl<T: Send + 'static> LocalKey<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
-    /// use async_std::{task, task_local};
+    /// #
     /// use std::cell::Cell;
+    ///
+    /// use async_std::task;
+    /// use async_std::prelude::*;
     ///
     /// task_local! {
     ///     static NUMBER: Cell<u32> = Cell::new(5);
@@ -127,8 +133,11 @@ impl<T: Send + 'static> LocalKey<T> {
     ///
     /// ```
     /// # #![feature(async_await)]
-    /// use async_std::{task, task_local};
+    /// #
     /// use std::cell::Cell;
+    ///
+    /// use async_std::task;
+    /// use async_std::prelude::*;
     ///
     /// task_local! {
     ///     static VAL: Cell<u32> = Cell::new(5);

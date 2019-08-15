@@ -10,8 +10,10 @@
 //! # #![feature(async_await)]
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
-//! use async_std::{io, prelude::*};
 //! use std::time::Duration;
+//!
+//! use async_std::io;
+//! use async_std::prelude::*;
 //!
 //! let stdin = io::stdin();
 //! let mut line = String::new();
@@ -36,5 +38,7 @@ pub use crate::io::Seek as _;
 pub use crate::io::Write as _;
 #[doc(no_inline)]
 pub use crate::stream::Stream;
+#[doc(no_inline)]
+pub use crate::task_local;
 #[doc(no_inline)]
 pub use crate::time::Timeout as _;

@@ -33,7 +33,9 @@ use crate::task::{Context, Poll};
 /// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
-/// use async_std::{io, net::TcpListener, prelude::*};
+/// use async_std::io;
+/// use async_std::net::TcpListener;
+/// use async_std::prelude::*;
 ///
 /// let listener = TcpListener::bind("127.0.0.1:8080").await?;
 /// let mut incoming = listener.incoming();
@@ -173,7 +175,8 @@ impl TcpListener {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{net::TcpListener, prelude::*};
+    /// use async_std::net::TcpListener;
+    /// use async_std::prelude::*;
     ///
     /// let listener = TcpListener::bind("127.0.0.1:0").await?;
     /// let mut incoming = listener.incoming();

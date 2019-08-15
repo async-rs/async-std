@@ -42,7 +42,7 @@ use crate::task::Poll;
 ///     socket.send_to(&buf[..n], &peer).await?;
 /// }
 /// #
-/// # Ok(()) }) }
+/// # }) }
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
@@ -118,7 +118,6 @@ impl UdpSocket {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     ///	use async_std::net::UdpSocket;
-    /// use std::net::IpAddr;
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// let addr = socket.local_addr()?;
@@ -446,8 +445,9 @@ impl UdpSocket {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::net::UdpSocket;
     /// use std::net::Ipv4Addr;
+    ///
+    /// use async_std::net::UdpSocket;
     ///
     /// let interface = Ipv4Addr::new(0, 0, 0, 0);
     /// let mdns_addr = Ipv4Addr::new(224, 0, 0, 123);
@@ -475,8 +475,9 @@ impl UdpSocket {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::net::UdpSocket;
     /// use std::net::{Ipv6Addr, SocketAddr};
+    ///
+    /// use async_std::net::UdpSocket;
     ///
     /// let socket_addr = SocketAddr::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into(), 0);
     /// let mdns_addr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x0123) ;

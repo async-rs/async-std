@@ -55,7 +55,8 @@ pub trait Read {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::prelude::*;
     ///
     /// let mut f = File::open("a.txt").await?;
     ///
@@ -104,7 +105,8 @@ pub trait Read {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::prelude::*;
     ///
     /// let mut f = File::open("a.txt").await?;
     ///
@@ -141,7 +143,8 @@ pub trait Read {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::prelude::*;
     ///
     /// let mut f = File::open("a.txt").await?;
     ///
@@ -193,7 +196,8 @@ pub trait Read {
     /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::{fs::File, prelude::*};
+    /// use async_std::fs::File;
+    /// use async_std::prelude::*;
     ///
     /// let mut f = File::open("a.txt").await?;
     ///
