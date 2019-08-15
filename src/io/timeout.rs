@@ -20,11 +20,12 @@ use crate::task::{Context, Poll};
 ///
 /// use async_std::io;
 ///
-/// let stdin = io::stdin();
-/// let mut line = String::new();
-///
-/// let dur = Duration::from_secs(5);
-/// let n = io::timeout(dur, stdin.read_line(&mut line)).await?;
+/// io::timeout(Duration::from_secs(5), async {
+///     let stdin = io::stdin();
+///     let mut line = String::new();
+///     let n = stdin.read_line(&mut line).await?;
+/// })
+/// .await?;
 /// #
 /// # Ok(()) }) }
 /// ```
@@ -61,7 +62,7 @@ where
             Poll::Pending => match self.delay().poll(cx) {
                 Poll::Ready(_) => Poll::Ready(Err(io::Error::new(
                     io::ErrorKind::TimedOut,
-                    "future has timed out",
+                    "I/O operation has timed out",
                 ))),
                 Poll::Pending => Poll::Pending,
             },
