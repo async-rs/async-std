@@ -11,6 +11,7 @@
   - [Streams and Channels](./concepts/streams.md)
 - [Tutorials](./tutorials/index.md)
   - [Integrating std::thread](./tutorials/integrating-std-thread.md)
+  - [Implementing a Chat Server](./tutorials/chat.md)
 - [Async Patterns](./patterns.md)
   - [Fork/Join](./patterns/fork-join.md)
   - [Accepting requests](./patterns/accepting-concurrent-requests.md)
