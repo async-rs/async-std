@@ -61,7 +61,7 @@ where
             Poll::Pending => match self.delay().poll(cx) {
                 Poll::Ready(_) => Poll::Ready(Err(io::Error::new(
                     io::ErrorKind::TimedOut,
-                    "future has timed out",
+                    "IO operation has timed out",
                 ))),
                 Poll::Pending => Poll::Pending,
             },
