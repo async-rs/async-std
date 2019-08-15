@@ -33,7 +33,7 @@ Or use [cargo add][cargo-add] if you have it installed:
 $ cargo add async-std
 ```
 
-[cargo add]: https://github.com/killercup/cargo-edit
+[cargo-add]: https://github.com/killercup/cargo-edit
 
 ## Hello world
 
