@@ -10,9 +10,9 @@
 /// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
-/// use async_std::future::ready;
+/// use async_std::future;
 ///
-/// assert_eq!(ready(10).await, 10);
+/// assert_eq!(future::ready(10).await, 10);
 /// #
 /// # }) }
 /// ```

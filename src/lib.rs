@@ -39,6 +39,5 @@ pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
-pub mod time;
 
 pub(crate) mod utils;
