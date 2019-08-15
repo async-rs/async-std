@@ -7,7 +7,7 @@ https://github.com/async-rs/async-std)
 [![Documentation](https://docs.rs/async-std/badge.svg)](https://docs.rs/async-std)
 [![chat](https://img.shields.io/discord/598880689856970762.svg?logo=discord)](https://discord.gg/JvZeVNe)
 
-This crate provides an async version of [`std`]. It provides all the interfaces you are used to, but async and ready for Rusts `async/await`-syntax.
+This crate provides an async version of [`std`]. It provides all the interfaces you are used to, but in an async version and ready for Rust's `async/await`-syntax.
 
 [`std`]: https://doc.rust-lang.org/std/index.html
 
