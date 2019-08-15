@@ -10,3 +10,4 @@ Patches improving the resilience of the library or the testing setup are happily
 
 [security-policies]: /security/policy
 [github]: https://github.com/async-rs/
+

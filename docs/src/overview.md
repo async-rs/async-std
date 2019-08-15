@@ -1,4 +1,4 @@
-# Overview
+# Welcome to `async-std`
 
 ![async-std logo](./images/horizontal_color.svg)
 
