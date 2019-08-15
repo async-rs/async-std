@@ -8,5 +8,5 @@ In the case that you find a security-related bug in our library, please get in t
 
 Patches improving the resilience of the library or the testing setup are happily accepted on our [github org][github].
 
-[security-policies]: /security/policy
-[github]: https://github.com/async-std/
+[security-policy]: /security/policy
+[github]: https://github.com/async-rs

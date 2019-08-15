@@ -1,4 +1,4 @@
-# Overview
+# Welcome to `async-std`
 
 ![async-std logo](./images/horizontal_color.svg)
 
@@ -6,5 +6,5 @@
 
 `async-std` provides an interface to all important primitives: filesystem operations, network operations and concurrency basics like timers. It also exposes an `task` in a model similar to the `thread` module found in the Rust standard lib.  But it does not only include io primitives, but also `async/await` compatible versions of primitives like `Mutex`. You can read more about `async-std` in [the overview chapter][overview-std].
 
-[organization]: https://github.com/async-std/async-std
+[organization]: https://github.com/async-rs/async-std
 [overview-std]: overview/async-std/

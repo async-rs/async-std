@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/async-rs/async-std.svg?branch=master)](https://travis-ci.org/stjepang/async-std)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
-https://github.com/async-std/async-std)
+https://github.com/async-rs/async-std)
 [![Cargo](https://img.shields.io/crates/v/async-std.svg)](https://crates.io/crates/async-std)
 [![Documentation](https://docs.rs/async-std/badge.svg)](https://docs.rs/async-std)
 [![chat](https://img.shields.io/discord/598880689856970762.svg?logo=discord)](https://discord.gg/JvZeVNe)
