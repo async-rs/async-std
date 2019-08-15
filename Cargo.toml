@@ -35,5 +35,5 @@ slab = "0.4.2"
 
 [dev-dependencies]
 femme = "1.1.0"
-# surf = { git = "ssh://github.com/yoshuawuyts/surf" }
+surf = "1.0.1"
 tempdir = "0.3.7"
