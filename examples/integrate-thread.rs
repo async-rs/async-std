@@ -64,7 +64,7 @@ fn main() {
     });
 
     task::block_on(async move {
-        println!("waiting for panicing thread");
+        println!("waiting for panicking thread");
         let thread_result = panicing_thread.join().await;
         match thread_result {
             Ok(s) => println!("Result: {}", s),
