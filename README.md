@@ -1,38 +1,46 @@
-# Async version of the Rust standard library
+# Async version of Rust's standard library
 
-<!-- [![Build Status](https://travis-ci.com/async-rs/async-std.svg?branch=master)]( -->
-<!-- https://travis-ci.com/async-rs/async-std) -->
-<!-- [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]( -->
-<!-- https://github.com/async-rs/async-std) -->
-<!-- [![Cargo](https://img.shields.io/crates/v/async-std.svg)]( -->
-<!-- https://crates.io/crates/async-std) -->
-<!-- [![Documentation](https://docs.rs/async-std/badge.svg)]( -->
-<!-- https://docs.rs/async-std) -->
+[![Build Status](https://travis-ci.org/async-rs/async-std.svg?branch=master)](https://travis-ci.org/stjepang/async-std)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
+https://github.com/async-std/async-std)
+[![Cargo](https://img.shields.io/crates/v/async-std.svg)](https://crates.io/crates/async-std)
+[![Documentation](https://docs.rs/async-std/badge.svg)](https://docs.rs/async-std)
 [![chat](https://img.shields.io/discord/598880689856970762.svg?logo=discord)](https://discord.gg/JvZeVNe)
 
-This crate is an async version of [`std`].
+This crate provices an async version of [`std`]. It provides all the interfaces you are used to, but async and ready for Rusts `async/await`-syntax.
+
+For detailed information, take a look at the [documentation][docs] and the associated [book][book].
 
 [`std`]: https://doc.rust-lang.org/std/index.html
+[docs]: https://docs.rs/async-std
+[book]: https://book.async.rs
 
 ## Quickstart
 
-Clone the repo:
+Add the following lines to you `Cargo.toml`:
 
+<<<<<<< HEAD
 ```
 git clone git@github.com:async-rs/async-std.git && cd async-std
+=======
+```toml
+[dependencies]
+async-std = "0.99"
+>>>>>>> Start a new README
 ```
 
-Read the docs:
+Or use [cargo add][cargo-add] if you have it installed:
 
+<<<<<<< HEAD
 ```
 cargo doc --features docs --open
+=======
+```sh
+$ cargo add async-std
+>>>>>>> Start a new README
 ```
 
-Check out the [examples](examples). To run an example:
-
-```
-cargo run --example hello-world
-```
+[cargo add]: https://github.com/killercup/cargo-edit
 
 ## Hello world
 
@@ -47,6 +55,32 @@ fn main() {
     })
 }
 ```
+
+## Take a look around
+
+Clone the repo:
+
+```
+git clone git@github.com:stjepang/async-std.git && cd async-std
+```
+
+Read the docs:
+
+```
+cargo doc --features docs.rs --open
+```
+
+Check out the [examples](examples). To run an example:
+
+```
+cargo run --example hello-world
+```
+
+## Contributing
+
+See [our contribution document][contribution].
+
+[contribution]: https://async.rs/contribute
 
 ## License
 
