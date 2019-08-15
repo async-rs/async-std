@@ -1,9 +1,9 @@
 # Async version of the Rust standard library
 
-<!-- [![Build Status](https://travis-ci.org/stjepang/async-std.svg?branch=master)]( -->
-<!-- https://travis-ci.org/stjepang/async-std) -->
+<!-- [![Build Status](https://travis-ci.com/async-rs/async-std.svg?branch=master)]( -->
+<!-- https://travis-ci.com/async-rs/async-std) -->
 <!-- [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]( -->
-<!-- https://github.com/stjepang/async-std) -->
+<!-- https://github.com/async-rs/async-std) -->
 <!-- [![Cargo](https://img.shields.io/crates/v/async-std.svg)]( -->
 <!-- https://crates.io/crates/async-std) -->
 <!-- [![Documentation](https://docs.rs/async-std/badge.svg)]( -->
@@ -19,7 +19,7 @@ This crate is an async version of [`std`].
 Clone the repo:
 
 ```
-git clone git@github.com:stjepang/async-std.git && cd async-std
+git clone git@github.com:async-rs/async-std.git && cd async-std
 ```
 
 Read the docs:
