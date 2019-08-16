@@ -37,6 +37,7 @@ impl<S: futures::Stream> Fuse<S> {
     }
 }
 
+
 impl<S: futures::Stream> futures::Stream for Fuse<S> {
     type Item = S::Item;
 
