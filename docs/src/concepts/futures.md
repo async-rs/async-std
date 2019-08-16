@@ -15,6 +15,8 @@ Note how we avoided any word like *"thread"*, but instead opted for "computation
 
 `Send` and `Sync` can be composed in interesting fashions, but that's beyond the scope here. You can find examples in the [Rust Book][rust-book-sync].
 
+[rust-book-sync]: https://doc.rust-lang.org/stable/book/ch16-04-extensible-concurrency-sync-and-send.html
+
 To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs: their data sharing. It does so in a very lightweight fashion: the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
 
 ## An easy view of computation
