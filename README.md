@@ -1,6 +1,6 @@
 # Async version of Rust's standard library
 
-[![Build Status](https://travis-ci.org/async-rs/async-std.svg?branch=master)](https://travis-ci.org/async-rs/async-std)
+[![Build Status](https://travis-ci.com/async-rs/async-std.svg?branch=master)](https://travis-ci.org/async-rs/async-std)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](
 https://github.com/async-rs/async-std)
 [![Cargo](https://img.shields.io/crates/v/async-std.svg)](https://crates.io/crates/async-std)
