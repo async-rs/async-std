@@ -62,7 +62,10 @@ impl AsyncRead for Empty {
 
 impl AsyncBufRead for Empty {
     #[inline]
-    fn poll_fill_buf(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+    fn poll_fill_buf<'a>(
+        self: Pin<&'a mut Self>,
+        _: &mut Context<'_>,
+    ) -> Poll<io::Result<&'a [u8]>> {
         Poll::Ready(Ok(&[]))
     }
 
