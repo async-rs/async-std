@@ -29,23 +29,24 @@
 //! #![feature(async_await)]
 //!
 //! use std::time::Duration;
-//!
+//! 
 //! use async_std::{
 //!     prelude::*,
 //!     task,
+//!     io,
 //!     net::TcpStream,
 //! };
 //!
-//! async fn get() -> std::io::Result<Vec<u8>> {
+//! async fn get() -> io::Result<Vec<u8>> {
 //!     let mut stream = TcpStream::connect("example.com:80").await?;
 //!     stream.write_all(b"GET /index.html HTTP/1.0\r\n\r\n").await?;
-//!
+//! 
 //!     let mut buf = vec![];
-//!     stream.read_to_end(&mut buf)
-//!         .timeout(Duration::from_secs(5))
-//!         .await?;
-//!
-//!     Ok(buf)
+//! 
+//!     io::timeout(Duration::from_secs(5), async {
+//!         stream.read_to_end(&mut buf).await?
+//!         Ok(buf)
+//!     })
 //! }
 //!
 //! fn main() {
