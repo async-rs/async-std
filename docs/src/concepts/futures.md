@@ -101,7 +101,7 @@ This function sets up a deferred computation. When this function is called, it w
 
 ## What does `.await` do?
 
-The `.await` postfix does exactly what it says on the tin: the moment you use it, the code will wait until the requested action (e.g. opening a file or reading all data in it) is finished. `.await?` is not special, it’s just the application of the `?` operator to the result of `.await`. So, what is gained over the initial code example? We’re getting futures and then immediately waiting for them?
+The `.await` postfix does exactly what it says on the tin: the moment you use it, the code will wait until the requested action (e.g. opening a file or reading all data in it) is finished. `.await?` is not special, it's just the application of the `?` operator to the result of `.await`. So, what is gained over the initial code example? We’re getting futures and then immediately waiting for them?
 
 The `.await` points act as a marker. Here, the code will wait for a `Future` to produce its value. How will a future finish? You don’t need to care! The marker allows the code later *executing* this piece of code (usually called the “runtime”) when it can take some time to care about all the other things it has to do. It will come back to this point when the operation you are doing in the background is done. This is why this style of programming is also called *evented programming*. We are waiting for *things to happen* (e.g. a file to be opened) and then react (by starting to read).
 
