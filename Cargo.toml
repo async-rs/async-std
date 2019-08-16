@@ -1,6 +1,6 @@
 [package]
 name = "async-std"
-version = "0.99.0"
+version = "0.99.1"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "The async-std Project Developers",
@@ -16,7 +16,7 @@ categories = ["asynchronous", "concurrency", "network-programming"]
 
 [package.metadata.docs.rs]
 features = ["docs"]
-rustdoc-args = ["--features docs"]
+rustdoc-args = ["--features", "docs"]
 
 [features]
 docs = []
