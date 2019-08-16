@@ -1,4 +1,5 @@
 # Tasks
+
 Now that we know what Futures are, we now want to run them!
 
 In `async-std`, the `tasks` (TODO: link) module is responsible for this. The simplest way is using the `block_on` function:
@@ -10,7 +11,7 @@ use async_std::task;
 async fn read_file(path: &str) -> Result<String, io::Error> {
     let mut file = File.open(path).await?;
     let mut contents = String::new();
-    file.read_to_string(&mut contents).await?; 
+    file.read_to_string(&mut contents).await?;
     contents
 }
 
@@ -54,11 +55,9 @@ task::spawn(async { })
 
 For now, it is enough to know that once you `spawn`ed a task, it will continue running in the background. The `JoinHandle` in itself is a future that will finish once the `Task` ran to conclusion. Much like with `threads` and the `join` function, we can now call `block_on` on the handle to *block* the program (or the calling thread, to be specific) to wait for it to finish.
 
-
 ## Tasks in `async_std`
 
 Tasks in `async_std` are one of the core abstractions. Much like Rust’s `thread`s, they provide some practical functionality over the raw concept. `Tasks` have a relationship to the runtime, but they are in themselves separate. `async_std` tasks have a number of desirable properties:
-
 
 - They are allocated in one single allocation
 - All tasks have a *backchannel*, which allows them to propagate results and errors to the spawning task through the `JoinHandle`
@@ -98,7 +97,7 @@ fn main() {
 }
 ```
 
-```
+```text
 thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 ```
@@ -115,7 +114,7 @@ task::block_on(async {
 })
 ```
 
-```
+```text
 thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 Aborted (core dumped)
