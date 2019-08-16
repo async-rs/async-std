@@ -16,7 +16,7 @@ async fn read_file(path: &str) -> Result<String, io::Error> {
 }
 
 fn main() {
-    let task = task::spawn(async {
+    let reader_task = task::spawn(async {
         let result = read_file("data.csv");
         match result {
             Ok(s) => println!("{}", s),
@@ -24,7 +24,7 @@ fn main() {
         }
     });
     println!("Started task!");
-    task::block_on(task);
+    task::block_on(reader_task);
     println!("Stopped task!");
 }
 ```
