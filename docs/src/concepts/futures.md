@@ -20,8 +20,6 @@ Note how we avoided any word like *"thread"*, but instead opted for "computation
 
 To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs, their data sharing. It does so in a very lightweight fashion; the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
 
-To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs: their data sharing. It does so in a very lightweight fashion: the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
-
 ## An easy view of computation
 
 While computation is a subject to write a whole [book](https://computationbook.com/) about, a very simplified view suffices for us:
