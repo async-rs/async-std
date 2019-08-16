@@ -58,6 +58,7 @@ We use `select` macro for this purpose:
 
 ```rust
 use futures::select;
+use futures::FutureExt;
 
 async fn client_writer(
     messages: &mut Receiver<String>,
@@ -67,11 +68,11 @@ async fn client_writer(
     let mut stream = &*stream;
     loop { // 2
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {}, // 3
                 None => break,
             }
@@ -105,6 +106,7 @@ use std::{
 use futures::{
     channel::mpsc,
     SinkExt,
+    FutureExt,
     select,
 };
 
@@ -185,11 +187,11 @@ async fn client_writer(
     let mut stream = &*stream;
     loop {
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {},
                 None => break,
             }

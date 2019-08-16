@@ -17,7 +17,7 @@
   - [Connecting Readers and Writers](./tutorial/connecting_readers_and_writers.md)
   - [All Together](./tutorial/all_together.md)
   - [Clean Shutdown](./tutorial/clean_shutdown.md)
-  - [Handling Disconnections](./tutorial/handling_disconnections.md)
+  - [Handling Disconnection](./tutorial/handling_disconnection.md)
   - [Implementing a Client](./tutorial/implementing_a_client.md)
 - [TODO: Async Patterns](./patterns.md)
   - [TODO: Collected Small Patterns](./patterns/small-patterns.md)
