@@ -1,6 +1,7 @@
 //! Async version of the Rust standard library.
 //!
 //! This crate is an async version of [`std`].
+//!
 //! Higher-level documentation in the form of the book
 //! ["Async programming in Rust with async-std"][book]
 //! is available.
@@ -23,42 +24,8 @@
 //! }
 //! ```
 //!
-//! Use sockets in a familiar way, with low-friction built-in timeouts:
-//!
-//! ```no_run
-//! #![feature(async_await)]
-//!
-//! use std::time::Duration;
-//! 
-//! use async_std::{
-//!     prelude::*,
-//!     task,
-//!     io,
-//!     net::TcpStream,
-//! };
-//!
-//! async fn get() -> io::Result<Vec<u8>> {
-//!     let mut stream = TcpStream::connect("example.com:80").await?;
-//!     stream.write_all(b"GET /index.html HTTP/1.0\r\n\r\n").await?;
-//! 
-//!     let mut buf = vec![];
-//! 
-//!     io::timeout(Duration::from_secs(5), async {
-//!         stream.read_to_end(&mut buf).await?;
-//!         Ok(buf)
-//!     })
-//!     .await
-//! }
-//!
-//! fn main() {
-//!     task::block_on(async {
-//!         let raw_response = get().await.expect("request");
-//!         let response = String::from_utf8(raw_response)
-//!             .expect("utf8 conversion");
-//!         println!("received: {}", response);
-//!     });
-//! }
-//! ```
+//! See [here](https://github.com/async-rs/async-std/tree/master/examples)
+//! for more examples.
 
 #![feature(async_await)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
