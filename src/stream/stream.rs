@@ -114,6 +114,35 @@ pub trait Stream {
             remaining: n,
         }
     }
+
+    /// Applies a given function to each item
+    /// of this `Stream` before returning it
+    /// from `poll`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #![feature(async_await)]
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    ///
+    /// let seven = stream::once(7);
+    /// let mut seven_squared = seven.map(|item| item * item);
+    ///
+    /// assert_eq!(seven_squared.next().await, Some(49));
+    /// assert_eq!(seven_squared.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn map<F, U>(self, f: F) -> Map<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(Self::Item) -> U,
+    {
+        Map { stream: self, f }
+    }
 }
 
 impl<T: futures::Stream + Unpin + ?Sized> Stream for T {
@@ -169,5 +198,43 @@ impl<S: futures::Stream> futures::Stream for Take<S> {
             }
             Poll::Ready(next)
         }
+    }
+}
+
+/// A `Stream` whose items are mapped using
+/// a provided function.
+#[derive(Clone, Debug)]
+pub struct Map<S, F> {
+    stream: S,
+    f: F,
+}
+
+impl<S: Unpin, F> Unpin for Map<S, F> {}
+
+impl<S, F, U> Map<S, F>
+where
+    S: futures::Stream,
+    F: FnMut(S::Item) -> U,
+{
+    pin_utils::unsafe_pinned!(stream: S);
+    pin_utils::unsafe_unpinned!(f: F);
+
+    /// Consumes this `Map` and returns the inner
+    /// `Stream` that it was mapping over.
+    pub fn unmap(self) -> S {
+        self.stream
+    }
+}
+
+impl<S, F, U> futures::Stream for Map<S, F>
+where
+    S: futures::Stream,
+    F: FnMut(S::Item) -> U,
+{
+    type Item = U;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<U>> {
+        let next = futures::ready!(self.as_mut().stream().poll_next(cx));
+        Poll::Ready(next.map(|item| (self.as_mut().f())(item)))
     }
 }

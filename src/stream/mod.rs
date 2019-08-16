@@ -25,7 +25,7 @@
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Stream, Take};
+pub use stream::{Map, Stream, Take};
 
 mod empty;
 mod once;
