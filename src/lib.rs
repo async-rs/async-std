@@ -1,6 +1,7 @@
 //! Async version of the Rust standard library.
 //!
 //! This crate is an async version of [`std`].
+//!
 //! Higher-level documentation in the form of the book
 //! ["Async programming in Rust with async-std"][book]
 //! is available.
@@ -22,6 +23,9 @@
 //!     })
 //! }
 //! ```
+//!
+//! See [here](https://github.com/async-rs/async-std/tree/master/examples)
+//! for more examples.
 
 #![feature(async_await)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
@@ -39,6 +43,5 @@ pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
-pub mod time;
 
 pub(crate) mod utils;

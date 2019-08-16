@@ -1,30 +1,6 @@
 //! The async prelude.
 //!
-//! The prelude re-exports the most commonly used traits in async programming.
-//!
-//! # Examples
-//!
-//! Import the prelude to use the [`timeout`] combinator:
-//!
-//! ```no_run
-//! # #![feature(async_await)]
-//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-//! #
-//! use std::time::Duration;
-//!
-//! use async_std::io;
-//! use async_std::prelude::*;
-//!
-//! let stdin = io::stdin();
-//! let mut line = String::new();
-//! let dur = Duration::from_secs(5);
-//!
-//! stdin.read_line(&mut line).timeout(dur).await??;
-//! #
-//! # Ok(()) }) }
-//! ```
-//!
-//! [`timeout`]: ../time/trait.Timeout.html#method.timeout
+//! The prelude re-exports the most commonly used traits in this crate.
 
 #[doc(no_inline)]
 pub use crate::future::Future;
@@ -40,5 +16,3 @@ pub use crate::io::Write as _;
 pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::task_local;
-#[doc(no_inline)]
-pub use crate::time::Timeout as _;
