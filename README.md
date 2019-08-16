@@ -13,7 +13,7 @@ This crate provides an async version of [`std`]. It provides all the interfaces 
 
 ## Documentation
 
-`async-std` comes with [extensive API domentation][docs] and a [book][book].
+`async-std` comes with [extensive API documentation][docs] and a [book][book].
 
 [docs]: https://docs.rs/async-std
 [book]: https://book.async.rs
