@@ -6,26 +6,28 @@ Futures abstract over *computation*. They describe the "what", independent of th
 
 ## Send and Sync
 
-Luckily, concurrent Rust already has two well-known and effective concepts abstracting over sharing between Rust concurrent parts of a program: Send and Sync. Notably, both the Send and Sync traits abstract over *strategies* of concurrent work, compose neatly, and don't prescribe an implementation.
+Luckily, concurrent Rust already has two well-known and effective concepts abstracting over sharing between concurrent parts of a program: Send and Sync. Notably, both the Send and Sync traits abstract over *strategies* of concurrent work, compose neatly, and don't prescribe an implementation.
 
-As a quick summary, `Send` abstracts over passing data in a computation over to another concurrent computation (let's call it the receiver), losing access to it on the sender side. In many programming languages, this strategy is commonly implemented, but missing support from the language side expects you to keep up this behaviour yourself. This is a regular source of bugs: senders keeping handles to sent things around and maybe even working with them after sending. Rust mitigates this problem by making this behaviour known. Types can be `Send` or not (by implementing the appropriate marker trait), allowing or disallowing sending them around.
+As a quick summary, `Send` abstracts over passing data in a computation over to another concurrent computation (let's call it the receiver), losing access to it on the sender side. In many programming languages, this strategy is commonly implemented, but missing support from the language side expects you to enforce the "losing access" behaviour yourself. This is a regular source of bugs: senders keeping handles to sent things around and maybe even working with them after sending. Rust mitigates this problem by making this behaviour known. Types can be `Send` or not (by implementing the appropriate marker trait), allowing or disallowing sending them around, and the ownership and borrowing rules prevent subsequent access.
 
 Note how we avoided any word like *"thread"*, but instead opted for "computation". The full power of `Send` (and subsequently also `Sync`) is that they relieve you of the burden of knowing *what* shares. At the point of implementation, you only need to know which method of sharing is appropriate for the type at hand. This keeps reasoning local and is not influenced by whatever implementation the user of that type later uses.
-`Sync` is about sharing data between two concurrent parts of a program. This is another common pattern: as writing to a memory location or reading while another party is writing is inherently unsafe, this access needs to be moderated through synchronisation.[^1] There are many common ways of two parties to agree on not using the same part in memory at the same time, for example mutexes and spinlocks. Again, Rust gives you the option of (safely!) not caring. Rust gives you the ability to express that something *needs* synchronisation while not being specific about the *how*.
+
+`Sync` is about sharing data between two concurrent parts of a program. This is another common pattern: as writing to a memory location or reading while another party is writing is inherently unsafe, this access needs to be moderated through synchronisation.[^1] There are many common ways for two parties to agree on not using the same part in memory at the same time, for example mutexes and spinlocks. Again, Rust gives you the option of (safely!) not caring. Rust gives you the ability to express that something *needs* synchronisation while not being specific about the *how*.
 
 `Send` and `Sync` can be composed in interesting fashions, but that's beyond the scope here. You can find examples in the [Rust Book][rust-book-sync].
 
 [rust-book-sync]: https://doc.rust-lang.org/stable/book/ch16-04-extensible-concurrency-sync-and-send.html
 
-To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs: their data sharing. It does so in a very lightweight fashion: the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
+To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs, their data sharing. It does so in a very lightweight fashion; the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
 
 ## An easy view of computation
 
-While computation is a subject to write a whole [book](https://computationbook.com/) about, a very simplified view of them suffices for us:
+While computation is a subject to write a whole [book](https://computationbook.com/) about, a very simplified view suffices for us:
 
 - computation is a sequence of composable operations
 - they can branch based on a decision
-- they either run to succession and yield a result or they can yield an error
+- they either run to succession and yield a result, or they can yield an error
+
 ## Deferring computation
 
 As mentioned above `Send` and `Sync` are about data. But programs are not only about data, they also talk about *computing* the data. And that's what [`Futures`][futures] do. We are going to have a close look at how that works in the next chapter. Let's look at what Futures allow us to express, in English. Futures go from this plan:
@@ -82,13 +84,12 @@ Every call to `poll()` can result in one of these two cases:
 1. The future is done, `poll` will return [`Poll::Ready`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Ready)
 2. The future has not finished executing, it will return [`Poll::Pending`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Pending)
 
-This allows us to externally check if a `Future` has finished doing its work, or is finally done and can give us the value. The most simple way (but not efficient) would be to just constantly poll futures in a loop. There's optimistions here, and this is what a good runtime is does for you.
+This allows us to externally check if a `Future` has finished doing its work, or is finally done and can give us the value. The most simple way (but not efficient) would be to just constantly poll futures in a loop. There's optimisations here, and this is what a good runtime is does for you.
 Note that calling `poll` after case 1 happened may result in confusing behaviour. See the [futures-docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
 
 ## Async
 
 While the `Future` trait has existed in Rust for a while, it was inconvenient to build and describe them. For this, Rust now has a special syntax: `async`. The example from above, implemented in `async-std`, would look like this:
-
 
     use async_std::fs::File;
     
@@ -115,7 +116,7 @@ When executing 2 or more of these functions at the same time, our runtime system
 
 Working from values, we searched for something that expresses *working towards a value available sometime later*. From there, we talked about the concept of polling.
 
-A `Future` is any data type that does not represent a value, but the ability to *produce a value at some point in the future*. Implementations of this are very varied and detailled depending on use-case, but the interface is simple.
+A `Future` is any data type that does not represent a value, but the ability to *produce a value at some point in the future*. Implementations of this are very varied and detailed depending on use-case, but the interface is simple.
 
 Next, we will introduce you to `tasks`, which we need to actually *run* Futures.
 
