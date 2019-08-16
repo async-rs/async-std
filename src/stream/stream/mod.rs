@@ -270,10 +270,7 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn fuse(self) -> Fuse<Self>
-    where
-        Self: Sized,
-    {
+    fn fuse(self) -> Fuse<Self> {
         Fuse {
             stream: self,
             done: false,
