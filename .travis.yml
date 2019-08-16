@@ -11,13 +11,15 @@ matrix:
   include:
     - rust: nightly
       os: linux
+      env: BUILD_DOCS=1
     - rust: nightly
       os: osx
-#    - rust: nightly-x86_64-pc-windows-msvc
-#      os: windows
+      env: BUILD_DOCS=1
+    - rust: nightly-x86_64-pc-windows-msvc
+      os: windows
 
 script:
-  - cargo fmt --all -- --check
   - cargo check --all --benches --bins --examples --tests
   - cargo test --all
-  - cargo doc --features docs
+  - cargo fmt --all -- --check
+  - if [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
