@@ -15,6 +15,8 @@ Note how we avoided any word like *"thread"*, but instead opted for "computation
 
 `Send` and `Sync` can be composed in interesting fashions, but that's beyond the scope here. You can find examples in the [Rust Book][rust-book-sync].
 
+[rust-book-sync]: https://doc.rust-lang.org/stable/book/ch16-04-extensible-concurrency-sync-and-send.html
+
 To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs: their data sharing. It does so in a very lightweight fashion: the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
 
 ## An easy view of computation
@@ -26,7 +28,7 @@ While computation is a subject to write a whole [book](https://computationbook.c
 - they either run to succession and yield a result or they can yield an error
 ## Deferring computation
 
-As mentioned above `Send` and `Sync` are about data. But programs are not only about data, they also talk about *computing* the data. And that's what \[Futures\][futures] do. We are going to have a close look at how that works in the next chapter. Let's look at what Futures allow us to express, in English. Futures go from this plan:
+As mentioned above `Send` and `Sync` are about data. But programs are not only about data, they also talk about *computing* the data. And that's what [`Futures`][futures] do. We are going to have a close look at how that works in the next chapter. Let's look at what Futures allow us to express, in English. Futures go from this plan:
 
 - Do X
 - If X succeeds, do Y
@@ -37,6 +39,8 @@ towards
 - Once X succeeds, start doing Y
 
 Remember the talk about "deferred computation" in the intro? That's all it is. Instead of telling the computer what to execute and decide upon *now*, you tell it what to start doing and how to react on potential events the... well... `Future`.
+
+[futures]: https://doc.rust-lang.org/std/future/trait.Future.html
 
 ## Orienting towards the beginning
 
@@ -75,8 +79,8 @@ What we are searching is something that represents ongoing work towards a result
 Ignore `Pin` and `Context` for now, you don't need them for high-level understanding. Looking at it closely, we see the following: it is generic over the `Output`. It provides a function called `poll`, which allows us to check on the state of the current computation.
 Every call to `poll()` can result in one of these two cases:
 
-1. The future is done, `poll` will return `[Poll::Ready](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Ready)`
-2. The future has not finished executing, it will return `[Poll::Pending](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Pending)`
+1. The future is done, `poll` will return [`Poll::Ready`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Ready)
+2. The future has not finished executing, it will return [`Poll::Pending`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Pending)
 
 This allows us to externally check if a `Future` has finished doing its work, or is finally done and can give us the value. The most simple way (but not efficient) would be to just constantly poll futures in a loop. There's optimistions here, and this is what a good runtime is does for you.
 Note that calling `poll` after case 1 happened may result in confusing behaviour. See the [futures-docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
