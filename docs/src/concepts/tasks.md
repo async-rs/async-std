@@ -60,21 +60,68 @@ For now, it is enough to know that once you `spawn`ed a task, it will continue r
 Tasks in `async_std` are one of the core abstractions. Much like Rust’s `thread`s, they provide some practical functionality over the raw concept. `Tasks` have a relationship to the runtime, but they are in themselves separate. `async_std` tasks have a number of desirable properties:
 
 
-- They are single-allocated
+- They are allocated in one single allocation
 - All tasks have a *backchannel*, which allows them to propagate results and errors to the spawning task through the `JoinHandle`
 - The carry desirable metadata for debugging
 - They support task local storage
 
-`async_std` s task api handles setup and teardown of a backing runtime for you and doesn’t rely on a runtime being started.
+`async_std`s task api handles setup and teardown of a backing runtime for you and doesn’t rely on a runtime being started.
 
 ## Blocking
 
-TODO: fill me in
+`Task`s are assumed to run _concurrently_, potentially by sharing a thread of execution. This means that operations blocking an _operating system thread_, such as `std::thread::sleep` or io function from Rusts stdlib will _stop execution of all tasks sharing this thread_. Other libraries (such as database drivers) have similar behaviour. Note that _blocking the current thread_ is not in and by itself bad behaviour, just something that does not mix well with they concurrent execution model of `async-std`. Essentially, never do this:
+
+```rust
+fn main() {
+    task::block_on(async {
+        // this is std::fs, which blocks
+        std::fs::read_to_string("test_file");
+    })
+}
+```
+
+If you want to mix operation kinds, consider putting such operations on a `thread`.
 
 ## Errors and panics
 
-TODO: fill me in
+`Task`s report errors through normal channels: If they are fallible, their `Output` should be of kind `Result<T,E>`.
 
+In case of `panic`, behaviour differs depending on if there's a reasonable part that addresses the `panic`. If not, the program _aborts_.
+
+In practice, that means that `block_on` propagates panics to the blocking component:
+
+```rust
+fn main() {
+    task::block_on(async {
+        panic!("test");
+    });
+}
+```
+
+```
+thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
+```
+
+While panicing a spawned tasks will abort:
+
+```rust
+task::spawn(async {
+    panic!("test");
+});
+
+task::block_on(async {
+    task::sleep(Duration::from_millis(10000)).await;
+})
+```
+
+```
+thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
+Aborted (core dumped)
+```
+
+That might seem odd at first, but the other option would be to silently ignore panics in spawned tasks. The current behaviour can be changed by catching panics in the spawned task and reacting with custom behaviour. This gives users the choice of panic handling strategy.
 
 ## Conclusion
 

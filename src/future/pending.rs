@@ -8,10 +8,13 @@
 /// use std::time::Duration;
 ///
 /// use async_std::future::pending;
-/// use async_std::prelude::*;
+/// use async_std::io;
 ///
 /// let dur = Duration::from_secs(1);
-/// assert!(pending::<()>().timeout(dur).await.is_err());
+/// let fut = pending();
+///
+/// let res: io::Result<()> = io::timeout(dur, fut).await;
+/// assert!(res.is_err());
 /// #
 /// # }) }
 /// ```

@@ -1,8 +1,7 @@
 use std::time::Duration;
 
-use futures::future;
-
-use crate::time::Timeout;
+use crate::future;
+use crate::io;
 
 /// Sleeps for the specified amount of time.
 ///
@@ -27,5 +26,5 @@ use crate::time::Timeout;
 /// # }) }
 /// ```
 pub async fn sleep(dur: Duration) {
-    let _ = future::pending::<()>().timeout(dur).await;
+    let _: io::Result<()> = io::timeout(dur, future::pending()).await;
 }

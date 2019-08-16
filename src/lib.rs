@@ -44,9 +44,10 @@
 //!     let mut buf = vec![];
 //! 
 //!     io::timeout(Duration::from_secs(5), async {
-//!         stream.read_to_end(&mut buf).await?
+//!         stream.read_to_end(&mut buf).await?;
 //!         Ok(buf)
 //!     })
+//!     .await
 //! }
 //!
 //! fn main() {
@@ -75,6 +76,5 @@ pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
-pub mod time;
 
 pub(crate) mod utils;
