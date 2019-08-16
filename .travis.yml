@@ -19,7 +19,7 @@ matrix:
       os: windows
 
 script:
-  - if [[ -v "BUILD_DOCS" ]]; then cargo doc --features docs; fi
+  - if [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
 #
 #  - cargo fmt --all -- --check
 #  - cargo check --all --benches --bins --examples --tests
