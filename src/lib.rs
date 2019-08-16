@@ -6,7 +6,7 @@
 //! is available.
 //!
 //! [`std`]: https://doc.rust-lang.org/std/index.html
-//! [here]: https://book.async.rs
+//! [book]: https://book.async.rs
 //!
 //! # Examples
 //!
