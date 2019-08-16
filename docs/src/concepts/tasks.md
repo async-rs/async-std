@@ -8,7 +8,7 @@ use async_std::fs::File;
 use async_std::task;
 
 async fn read_file(path: &str) -> Result<String, io::Error> {
-    let mut file = File.open(path).await?;
+    let mut file = File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?; 
     contents
