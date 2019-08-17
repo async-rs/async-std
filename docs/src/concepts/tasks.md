@@ -1,6 +1,6 @@
 # Tasks
 
-Now that we know what Futures are, we now want to run them!
+Now that we know what Futures are, we want to run them!
 
 In `async-std`, the [`tasks`][tasks] module is responsible for this. The simplest way is using the `block_on` function:
 
@@ -51,9 +51,11 @@ task::spawn(async { })
 
 ```
 
-`spawn` takes a Future and starts running it on a `Task`. It returns a `JoinHandle`. Futures in Rust are sometimes called *cold* Futures. You need something that starts running them. To run a Future, there may be some additional bookkeeping required, e.g. if it's running or finished, where it is being placed in memory and what the current state is. This bookkeeping part is abstracted away in a `Task`. A `Task` is similar to a `Thread`, with some minor differences: it will be scheduled by the program instead of the operating system kernel and if it encounters a point where it needs to wait, the program itself responsible for waking it up again. We'll talk a little bit about that later. An `async_std` task can also has a name and an ID, just like a thread.
+`spawn` takes a `Future` and starts running it on a `Task`. It returns a `JoinHandle`. Futures in Rust are sometimes called *cold* Futures. You need something that starts running them. To run a Future, there may be some additional bookkeeping required, e.g. whether it's running or finished, where it is being placed in memory and what the current state is. This bookkeeping part is abstracted away in a `Task`.
 
-For now, it is enough to know that once you `spawn`ed a task, it will continue running in the background. The `JoinHandle` in itself is a future that will finish once the `Task` ran to conclusion. Much like with `threads` and the `join` function, we can now call `block_on` on the handle to *block* the program (or the calling thread, to be specific) to wait for it to finish.
+A `Task` is similar to a `Thread`, with some minor differences: it will be scheduled by the program instead of the operating system kernel, and if it encounters a point where it needs to wait, the program itself is responsible for waking it up again. We'll talk a little bit about that later. An `async_std` task can also have a name and an ID, just like a thread.
+
+For now, it is enough to know that once you have `spawn`ed a task, it will continue running in the background. The `JoinHandle` is itself a future that will finish once the `Task` has run to conclusion. Much like with `threads` and the `join` function, we can now call `block_on` on the handle to *block* the program (or the calling thread, to be specific) and wait for it to finish.
 
 ## Tasks in `async_std`
 
@@ -61,14 +63,14 @@ Tasks in `async_std` are one of the core abstractions. Much like Rust's `thread`
 
 - They are allocated in one single allocation
 - All tasks have a *backchannel*, which allows them to propagate results and errors to the spawning task through the `JoinHandle`
-- The carry desirable metadata for debugging
+- The carry useful metadata for debugging
 - They support task local storage
 
-`async_std`s task api handles setup and teardown of a backing runtime for you and doesn't rely on a runtime being started.
+`async_std`s task api handles setup and teardown of a backing runtime for you and doesn't rely on a runtime being explicitly started.
 
 ## Blocking
 
-`Task`s are assumed to run _concurrently_, potentially by sharing a thread of execution. This means that operations blocking an _operating system thread_, such as `std::thread::sleep` or io function from Rusts stdlib will _stop execution of all tasks sharing this thread_. Other libraries (such as database drivers) have similar behaviour. Note that _blocking the current thread_ is not in and by itself bad behaviour, just something that does not mix well with they concurrent execution model of `async-std`. Essentially, never do this:
+`Task`s are assumed to run _concurrently_, potentially by sharing a thread of execution. This means that operations blocking an _operating system thread_, such as `std::thread::sleep` or io function from Rust's `std` library will _stop execution of all tasks sharing this thread_. Other libraries (such as database drivers) have similar behaviour. Note that _blocking the current thread_ is not in and by itself bad behaviour, just something that does not mix well with the concurrent execution model of `async-std`. Essentially, never do this:
 
 ```rust
 fn main() {
@@ -79,13 +81,13 @@ fn main() {
 }
 ```
 
-If you want to mix operation kinds, consider putting such operations on a `thread`.
+If you want to mix operation kinds, consider putting such blocking operations on a separate `thread`.
 
 ## Errors and panics
 
-`Task`s report errors through normal channels: If they are fallible, their `Output` should be of kind `Result<T,E>`.
+Tasks report errors through normal patterns: If they are fallible, their `Output` should be of kind `Result<T,E>`.
 
-In case of `panic`, behaviour differs depending on if there's a reasonable part that addresses the `panic`. If not, the program _aborts_.
+In case of `panic`, behaviour differs depending on whether there's a reasonable part that addresses the `panic`. If not, the program _aborts_.
 
 In practice, that means that `block_on` propagates panics to the blocking component:
 
@@ -102,7 +104,7 @@ thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 ```
 
-While panicing a spawned tasks will abort:
+While panicing a spawned task will abort:
 
 ```rust
 task::spawn(async {
