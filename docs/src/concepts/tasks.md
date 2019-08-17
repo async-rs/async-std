@@ -4,15 +4,17 @@ Now that we know what Futures are, we want to run them!
 
 In `async-std`, the [`tasks`][tasks] module is responsible for this. The simplest way is using the `block_on` function:
 
-```rust
-use async_std::fs::File;
-use async_std::task;
-
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::{fs::File, io::Read, task};
+# use std::io;
+#
 async fn read_file(path: &str) -> Result<String, io::Error> {
     let mut file = File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?;
-    contents
+    Ok(contents)
 }
 
 fn main() {
@@ -31,24 +33,37 @@ fn main() {
 
 This asks the runtime baked into `async_std` to execute the code that reads a file. Let's go one by one, though, inside to outside.
 
-```rust
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::{fs::File, io::Read, task};
+# use std::io;
+#
+# async fn read_file(path: &str) -> Result<String, io::Error> {
+#     let mut file = File::open(path).await?;
+#     let mut contents = String::new();
+#     file.read_to_string(&mut contents).await?;
+#     Ok(contents)
+# }
+#
 async {
     let result = read_file("data.csv").await;
     match result {
         Ok(s) => println!("{}", s),
         Err(e) => println!("Error reading file: {:?}", e)
     }
-}
+};
 ```
 
 This is an `async` *block*. Async blocks are necessary to call `async` functions, and will instruct the compiler to include all the relevant instructions to do so. In Rust, all blocks return a value and `async` blocks happen to return a value of the kind `Future`.
 
 But let's get to the interesting part:
 
-```rust
-
-task::spawn(async { })
-
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::task;
+task::spawn(async { });
 ```
 
 `spawn` takes a `Future` and starts running it on a `Task`. It returns a `JoinHandle`. Futures in Rust are sometimes called *cold* Futures. You need something that starts running them. To run a Future, there may be some additional bookkeeping required, e.g. whether it's running or finished, where it is being placed in memory and what the current state is. This bookkeeping part is abstracted away in a `Task`.
@@ -72,7 +87,10 @@ Tasks in `async_std` are one of the core abstractions. Much like Rust's `thread`
 
 `Task`s are assumed to run _concurrently_, potentially by sharing a thread of execution. This means that operations blocking an _operating system thread_, such as `std::thread::sleep` or io function from Rust's `std` library will _stop execution of all tasks sharing this thread_. Other libraries (such as database drivers) have similar behaviour. Note that _blocking the current thread_ is not in and by itself bad behaviour, just something that does not mix well with the concurrent execution model of `async-std`. Essentially, never do this:
 
-```rust
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::task;
 fn main() {
     task::block_on(async {
         // this is std::fs, which blocks
@@ -91,7 +109,10 @@ In case of `panic`, behaviour differs depending on whether there's a reasonable 
 
 In practice, that means that `block_on` propagates panics to the blocking component:
 
-```rust
+```rust,edition2018,should_panic
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::task;
 fn main() {
     task::block_on(async {
         panic!("test");
@@ -106,7 +127,11 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 
 While panicing a spawned task will abort:
 
-```rust
+```rust,edition2018,should_panic
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::task;
+# use std::time::Duration;
 task::spawn(async {
     panic!("test");
 });
