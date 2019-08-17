@@ -10,7 +10,48 @@ We can create a dedicated broker tasks which owns the `peers` map and communicat
 By hiding `peers` inside such an "actor" task, we remove the need for mutxes and also make serialization point explicit.
 The order of events "Bob sends message to Alice" and "Alice joins" is determined by the order of the corresponding events in the broker's event queue.
 
-```rust
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures;
+# use async_std::{
+#     io::{Write},
+#     net::TcpStream,
+#     prelude::{Future, Stream},
+#     task,
+# };
+# use futures::channel::mpsc;
+# use futures::SinkExt;
+# use std::{
+#     collections::hash_map::{Entry, HashMap},
+#     sync::Arc,
+# };
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+#
+# async fn client_writer(
+#     mut messages: Receiver<String>,
+#     stream: Arc<TcpStream>,
+# ) -> Result<()> {
+#     let mut stream = &*stream;
+#     while let Some(msg) = messages.next().await {
+#         stream.write_all(msg.as_bytes()).await?;
+#     }
+#     Ok(())
+# }
+#
+# fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
+# where
+#     F: Future<Output = Result<()>> + Send + 'static,
+# {
+#     task::spawn(async move {
+#         if let Err(e) = fut.await {
+#             eprintln!("{}", e)
+#         }
+#     })
+# }
+#
 #[derive(Debug)]
 enum Event { // 1
     NewPeer {
