@@ -21,8 +21,8 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 1. `async_std` uses `std` types where appropriate.
     We'll need `ToSocketAddrs` to specify address to listen on.
-2. `prelude` re-exports some traits required to work with futures and streams
-3. The `task` module roughtly corresponds to `std::thread` module, but tasks are much lighter weight.
+2. `prelude` re-exports some traits required to work with futures and streams.
+3. The `task` module roughly corresponds to the `std::thread` module, but tasks are much lighter weight.
    A single thread can run many tasks.
 4. For the socket type, we use `TcpListener` from `async_std`, which is just like `std::net::TcpListener`, but is non-blocking and uses `async` API.
 5. We will skip implementing comprehensive error handling in this example.
@@ -43,7 +43,7 @@ async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
 }
 ```
 
-1. We mark `server` function as `async`, which allows us to use `.await` syntax inside.
+1. We mark the `server` function as `async`, which allows us to use `.await` syntax inside.
 2. `TcpListener::bind` call returns a future, which we `.await` to extract the `Result`, and then `?` to get a `TcpListener`.
    Note how `.await` and `?` work nicely together.
    This is exactly how `std::net::TcpListener` works, but with `.await` added.
@@ -73,4 +73,4 @@ The crucial thing to realise that is in Rust, unlike other languages, calling an
 Async functions only construct futures, which are inert state machines.
 To start stepping through the future state-machine in an async function, you should use `.await`.
 In a non-async function, a way to execute a future is to handle it to the executor.
-In this case, we use `task::block_on` to execute future on the current thread and block until it's done.
+In this case, we use `task::block_on` to execute a future on the current thread and block until it's done.

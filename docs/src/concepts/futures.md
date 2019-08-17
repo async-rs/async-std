@@ -40,7 +40,7 @@ towards
 - Start doing X
 - Once X succeeds, start doing Y
 
-Remember the talk about "deferred computation" in the intro? That's all it is. Instead of telling the computer what to execute and decide upon *now*, you tell it what to start doing and how to react on potential events the... well... `Future`.
+Remember the talk about "deferred computation" in the intro? That's all it is. Instead of telling the computer what to execute and decide upon *now*, you tell it what to start doing and how to react on potential events in the... well... `Future`.
 
 [futures]: https://doc.rust-lang.org/std/future/trait.Future.html
 
@@ -55,7 +55,7 @@ Let's have a look at a simple function, specifically the return value:
         contents
     }
 
-You can call that at any time, so you are in full control on when you call it. But here's the problem: the moment you call it, you transfer control to the called function. It returns a value.
+You can call that at any time, so you are in full control of when you call it. But here's the problem: the moment you call it, you transfer control to the called function. It returns a value.
 Note that this return value talks about the past. The past has a drawback: all decisions have been made. It has an advantage: the outcome is visible. We can unwrap the presents of program past and then decide what to do with it.
 
 But here's a problem: we wanted to abstract over *computation* to be allowed to let someone else choose how to run it. That's fundamentally incompatible with looking at the results of previous computation all the time. So, let's find a type that describes a computation without running it. Let's look at the function again:
@@ -84,8 +84,8 @@ Every call to `poll()` can result in one of these two cases:
 1. The future is done, `poll` will return [`Poll::Ready`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Ready)
 2. The future has not finished executing, it will return [`Poll::Pending`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Pending)
 
-This allows us to externally check if a `Future` has finished doing its work, or is finally done and can give us the value. The most simple way (but not efficient) would be to just constantly poll futures in a loop. There's optimisations here, and this is what a good runtime is does for you.
-Note that calling `poll` after case 1 happened may result in confusing behaviour. See the [futures-docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
+This allows us to externally check if a `Future` has finished doing its work, or is finally done and can give us the value. The most simple way (but not efficient) would be to just constantly poll futures in a loop. There's optimisations here, and this is what a good runtime does for you.
+Note that calling `poll` after case 1 happened may result in confusing behaviour. See the [Future docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
 
 ## Async
 
@@ -121,3 +121,5 @@ A `Future` is any data type that does not represent a value, but the ability to 
 Next, we will introduce you to `tasks`, which we need to actually *run* Futures.
 
 [^1]: Two parties reading while it is guaranteed that no one is writing is always safe.
+
+[futures]: https://rust-lang.github.io/async-book/02_execution/02_future.html

@@ -3,7 +3,7 @@
 ## Specification
 
 The chat uses a simple text protocol over TCP.
-Protocol consists of utf-8 messages, separated by `\n`.
+The protocol consists of utf-8 messages, separated by `\n`.
 
 The client connects to the server and sends login as a first line.
 After that, the client can send messages to other clients using the following syntax:

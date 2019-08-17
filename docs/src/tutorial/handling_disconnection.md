@@ -11,11 +11,11 @@ If the read side finishes we will notify the write side that it should stop as w
 That is, we need to add an ability to signal shutdown for the writer task.
 
 One way to approach this is a `shutdown: Receiver<()>` channel.
-There's a more minimal solution however, which makes a clever use of RAII.
+There's a more minimal solution however, which makes clever use of RAII.
 Closing a channel is a synchronization event, so we don't need to send a shutdown message, we can just drop the sender.
 This way, we statically guarantee that we issue shutdown exactly once, even if we early return via `?` or panic.
 
-First, let's add shutdown channel to the `client`:
+First, let's add a shutdown channel to the `client`:
 
 ```rust
 #[derive(Debug)]
@@ -51,10 +51,10 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
 
 1. To enforce that no messages are send along the shutdown channel, we use an uninhabited type.
 2. We pass the shutdown channel to the writer task
-3. In the reader, we create an `_shutdown_sender` whose only purpose is to get dropped.
+3. In the reader, we create a `_shutdown_sender` whose only purpose is to get dropped.
 
-In the `client_writer`, we now need to chose between shutdown and message channels.
-We use `select` macro for this purpose:
+In the `client_writer`, we now need to choose between shutdown and message channels.
+We use the `select` macro for this purpose:
 
 ```rust
 use futures::select;
@@ -83,12 +83,12 @@ async fn client_writer(
 ```
 
 1. We add shutdown channel as an argument.
-2. Because of `select`, we can't use a `white let` loop, so we desugar it further into a `loop`.
+2. Because of `select`, we can't use a `while let` loop, so we desugar it further into a `loop`.
 3. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
 
 Another problem is that between the moment we detect disconnection in `client_writer` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
-To not lose these messages completely, we'll return the messages channel back to broker.
-This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and make the broker itself infailable.
+To not lose these messages completely, we'll return the messages channel back to the broker.
+This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infailable.
 
 ## Final Code
 
@@ -280,7 +280,7 @@ where
 2. The broker's main loop exits when the input events channel is exhausted (that is, when all readers exit).
 3. Because broker itself holds a `disconnect_sender`, we know that the disconnections channel can't be fully drained in the main loop.
 4. We send peer's name and pending messages to the disconnections channel in both the happy and the not-so-happy path.
-   Again, we can safely unwrap because broker outlives writers.
+   Again, we can safely unwrap because the broker outlives writers.
 5. We drop `peers` map to close writers' messages channel and shut down the writers for sure.
    It is not strictly necessary in the current setup, where the broker waits for readers' shutdown anyway.
    However, if we add a server-initiated shutdown (for example, kbd:[ctrl+c] handling), this will be a way for the broker to shutdown the writers.

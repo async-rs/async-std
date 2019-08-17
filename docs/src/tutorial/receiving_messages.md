@@ -46,7 +46,7 @@ async fn client(stream: TcpStream) -> Result<()> {
 
 1. We use `task::spawn` function to spawn an independent task for working with each client.
    That is, after accepting the client the `server` loop immediately starts waiting for the next one.
-   This is the core benefit of event-driven architecture: we serve many number of clients concurrently, without spending many hardware threads.
+   This is the core benefit of event-driven architecture: we serve many clients concurrently, without spending many hardware threads.
 
 2. Luckily, the "split byte stream into lines" functionality is already implemented.
    `.lines()` call returns a stream of `String`'s.
@@ -60,7 +60,7 @@ async fn client(stream: TcpStream) -> Result<()> {
 ## Managing Errors
 
 One serious problem in the above solution is that, while we correctly propagate errors in the `client`, we just drop the error on the floor afterwards!
-That is, `task::spawn` does not return error immediately (it can't, it needs to run the future to completion first), only after it is joined.
+That is, `task::spawn` does not return an error immediately (it can't, it needs to run the future to completion first), only after it is joined.
 We can "fix" it by waiting for the task to be joined, like this:
 
 ```rust

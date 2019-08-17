@@ -1,7 +1,7 @@
 
 ## All Together
 
-At this point, we only need to start broker to get a fully-functioning (in the happy case!) chat:
+At this point, we only need to start the broker to get a fully-functioning (in the happy case!) chat:
 
 ```rust
 #![feature(async_await)]
@@ -129,7 +129,7 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
 }
 ```
 
-1. Inside the `server`, we create broker's channel and `task`.
+1. Inside the `server`, we create the broker's channel and `task`.
 2. Inside `client`, we need to wrap `TcpStream` into an `Arc`, to be able to share it with the `client_writer`.
 3. On login, we notify the broker.
    Note that we `.unwrap` on send: broker should outlive all the clients and if that's not the case the broker probably panicked, so we can escalate the panic as well.

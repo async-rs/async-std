@@ -35,6 +35,6 @@ Security fixes will be applied to _all_ minor branches of this library in all _s
 
 ## Credits
 
-This policy is based on [burntsushis regex crate][regex-policy].
+This policy is based on [BurntSushi's regex crate][regex-policy].
 
 [regex-policy]: https://github.com/rust-lang/regex#minimum-rust-version-policy
