@@ -11,10 +11,20 @@ So let's create a `client_writer` task which receives messages over a channel an
 This task would be the point of serialization of messages.
 if Alice and Charley send two messages to Bob at the same time, Bob will see the messages in the same order as they arrive in the channel.
 
-```rust
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# extern crate futures;
+# use async_std::{
+#     io::Write,
+#     net::TcpStream,
+#     prelude::Stream,
+# };
+# use std::sync::Arc;
 use futures::channel::mpsc; // 1
 use futures::SinkExt;
 
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 type Sender<T> = mpsc::UnboundedSender<T>; // 2
 type Receiver<T> = mpsc::UnboundedReceiver<T>;
 
