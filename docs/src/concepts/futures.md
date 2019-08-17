@@ -50,24 +50,28 @@ Remember the talk about "deferred computation" in the intro? That's all it is. I
 
 Let's have a look at a simple function, specifically the return value:
 
-    fn read_file(path: &str) -> Result<String, io::Error> {
-        let mut file = File.open(path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?; 
-        contents
-    }
+```rust
+fn read_file(path: &str) -> Result<String, io::Error> {
+    let mut file = File.open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    contents
+}
+```
 
 You can call that at any time, so you are in full control on when you call it. But here's the problem: the moment you call it, you transfer control to the called function until it returns a value - eventually.
 Note that this return value talks about the past. The past has a drawback: all decisions have been made. It has an advantage: the outcome is visible. We can unwrap the results of the program's past computation, and then decide what to do with it.
 
 But we wanted to abstract over *computation* and let someone else choose how to run it. That's fundamentally incompatible with looking at the results of previous computation all the time. So, let's find a type that *describes* a computation without running it. Let's look at the function again:
 
-    fn read_file(path: &str) -> Result<String, io::Error> {
-        let mut file = File.open(path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?; 
-        contents
-    }
+```rust
+fn read_file(path: &str) -> Result<String, io::Error> {
+    let mut file = File.open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    contents
+}
+```
 
 Speaking in terms of time, we can only take action *before* calling the function or *after* the function returned. This is not desirable, as it takes from us the ability to do something *while* it runs. When working with parallel code, this would take from us the ability to start a parallel task while the first runs (because we gave away control).
 
@@ -75,11 +79,13 @@ This is the moment where we could reach for [threads](https://en.wikipedia.org/w
 
 What we are searching for is something that represents ongoing work towards a result in the future. Whenever we say "something" in Rust, we almost always mean a trait. Let's start with an incomplete definition of the `Future` trait:
 
-    trait Future {
-        type Output;
-    
-        fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
-    }
+```rust
+trait Future {
+    type Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
+}
+```
 
 Looking at it closely, we see the following:
 
@@ -99,14 +105,16 @@ Note that calling `poll` after case 1 happened may result in confusing behaviour
 
 While the `Future` trait has existed in Rust for a while, it was inconvenient to build and describe them. For this, Rust now has a special syntax: `async`. The example from above, implemented with `async-std`, would look like this:
 
-    use async_std::fs::File;
-    
-    async fn read_file(path: &str) -> Result<String, io::Error> {
-        let mut file = File.open(path).await?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).await?; 
-        contents
-    }
+```rust
+use async_std::fs::File;
+
+async fn read_file(path: &str) -> Result<String, io::Error> {
+    let mut file = File.open(path).await?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).await?;
+    contents
+}
+```
 
 Amazingly little difference, right? All we did is label the function `async` and insert 2 special commands: `.await`.
 
