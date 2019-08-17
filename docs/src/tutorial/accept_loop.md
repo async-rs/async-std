@@ -2,19 +2,17 @@
 
 Let's implement the scaffold of the server: a loop that binds a TCP socket to an address and starts accepting connections.
 
-
 First of all, let's add required import boilerplate:
 
-```rust
+```rust,edition2018
 #![feature(async_await)]
-
-use std::net::ToSocketAddrs; // 1
-
+# extern crate async_std;
 use async_std::{
     prelude::*, // 2
-    task,       // 3
+    task, // 3
     net::TcpListener, // 4
 };
+use std::net::ToSocketAddrs; // 1
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 5
 ```
@@ -29,10 +27,19 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
    To propagate the errors, we will use a boxed error trait object.
    Do you know that there's `From<&'_ str> for Box<dyn Error>` implementation in stdlib, which allows you to use strings with `?` operator?
 
-
 Now we can write the server's accept loop:
 
-```rust
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::{
+#     net::TcpListener,
+#     prelude::Stream,
+# };
+# use std::net::ToSocketAddrs;
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
 async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
     let listener = TcpListener::bind(addr).await?; // 2
     let mut incoming = listener.incoming();
@@ -50,20 +57,40 @@ async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
    Mirroring API of `std` is an explicit design goal of `async_std`.
 3. Here, we would like to iterate incoming sockets, just how one would do in `std`:
 
-   ```rust
-   let listener: std::net::TcpListener = unimplemented!();
-   for stream in listener.incoming() {
+```rust,edition2018,should_panic
+let listener: std::net::TcpListener = unimplemented!();
+for stream in listener.incoming() {
+}
+```
 
-   }
-   ```
-
-   Unfortunately this doesn't quite work with `async` yet, because there's no support for `async` for-loops in the language yet.
-   For this reason we have to implement the loop manually, by using `while let Some(item) = iter.next().await` pattern.
+Unfortunately this doesn't quite work with `async` yet, because there's no support for `async` for-loops in the language yet.
+For this reason we have to implement the loop manually, by using `while let Some(item) = iter.next().await` pattern.
 
 Finally, let's add main:
 
-```rust
-fn main() -> Result<()> {
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# use async_std::{
+#     net::TcpListener,
+#     prelude::Stream,
+#     task,
+# };
+# use std::net::ToSocketAddrs;
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
+# async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
+#     let listener = TcpListener::bind(addr).await?; // 2
+#     let mut incoming = listener.incoming();
+#     while let Some(stream) = incoming.next().await { // 3
+#         // TODO
+#     }
+#     Ok(())
+# }
+#
+// main
+fn run() -> Result<()> {
     let fut = server("127.0.0.1:8080");
     task::block_on(fut)
 }
