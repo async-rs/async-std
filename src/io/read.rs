@@ -34,7 +34,7 @@ cfg_if! {
 ///
 /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
 /// [`futures::io::AsyncRead`]:
-/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
+/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
 pub trait Read {
     /// Reads some bytes from the byte stream.
     ///
