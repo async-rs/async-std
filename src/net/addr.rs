@@ -1,8 +1,25 @@
 use crate::future::Future;
 use crate::task::blocking::JoinHandle;
+use cfg_if::cfg_if;
 use futures::future::{ready, Ready};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 pub use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::pin::Pin;
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        #[doc(hidden)]
+        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+
+        macro_rules! ret {
+            ($f:tt, $i:ty) => (ImplFuture<crate::io::Result<$i>>);
+        }
+    } else {
+        macro_rules! ret {
+            ($f:tt, $i:ty) => ($f<$i>);
+        }
+    }
+}
 
 /// A trait for objects which can be converted or resolved to one or more
 /// [`SocketAddr`] values.
@@ -14,8 +31,6 @@ pub trait ToSocketAddrs {
     /// Returned iterator over socket addresses which this type may correspond
     /// to.
     type Iter: Iterator<Item = SocketAddr> + Send;
-    /// Returned Future
-    type Output: Future<Output = crate::io::Result<Self::Iter>> + Send;
     /// Converts this object to an iterator of resolved `SocketAddr`s.
     ///
     /// The returned iterator may not actually yield any values depending on the
@@ -23,109 +38,123 @@ pub trait ToSocketAddrs {
     ///
     /// Note that this function may block a backend thread while resolution is
     /// performed.
-    fn to_socket_addrs(&self) -> Self::Output;
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter);
+}
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub enum ToSocketAddrsFuture<I: Iterator<Item = SocketAddr>> {
+    Join(JoinHandle<crate::io::Result<I>>),
+    Ready(Ready<crate::io::Result<I>>),
+}
+
+impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
+    type Output = crate::io::Result<I>;
+
+    fn poll(
+        self: Pin<&mut Self>,
+        cx: &mut crate::task::Context<'_>,
+    ) -> crate::task::Poll<Self::Output> {
+        match self.get_mut() {
+            ToSocketAddrsFuture::Join(f) => Pin::new(&mut *f).poll(cx),
+            ToSocketAddrsFuture::Ready(f) => Pin::new(&mut *f).poll(cx),
+        }
+    }
 }
 
 impl ToSocketAddrs for SocketAddr {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for SocketAddrV4 {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for SocketAddrV6 {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for (IpAddr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for (Ipv4Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for (Ipv6Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
 impl ToSocketAddrs for (&str, u16) {
     type Iter = std::vec::IntoIter<SocketAddr>;
-    type Output = JoinHandle<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
         let host = self.0.to_string();
         let port = self.1;
-        crate::task::blocking::spawn(async move {
+        let join = crate::task::blocking::spawn(async move {
             std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
-        })
+        });
+        ToSocketAddrsFuture::Join(join)
     }
 }
 
 impl ToSocketAddrs for str {
     type Iter = std::vec::IntoIter<SocketAddr>;
-    type Output = JoinHandle<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        let host = self.to_string();
-        crate::task::blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(&host) })
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        let socket_addrs = self.to_string();
+        let join = crate::task::blocking::spawn(async move {
+            std::net::ToSocketAddrs::to_socket_addrs(&socket_addrs)
+        });
+        ToSocketAddrsFuture::Join(join)
     }
 }
 
 impl<'a> ToSocketAddrs for &'a [SocketAddr] {
     type Iter = std::iter::Cloned<std::slice::Iter<'a, SocketAddr>>;
-    type Output = Ready<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
-        ready(std::net::ToSocketAddrs::to_socket_addrs(self))
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
-impl<T: ToSocketAddrs + ?Sized> ToSocketAddrs for &T {
+impl<T: ToSocketAddrs + Unpin + ?Sized> ToSocketAddrs for &T {
     type Iter = T::Iter;
-    type Output = T::Output;
 
-    fn to_socket_addrs(&self) -> Self::Output {
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
         (**self).to_socket_addrs()
     }
 }
 
 impl ToSocketAddrs for String {
     type Iter = std::vec::IntoIter<SocketAddr>;
-    type Output = JoinHandle<crate::io::Result<Self::Iter>>;
 
-    fn to_socket_addrs(&self) -> Self::Output {
+    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrs::to_socket_addrs(self.as_str())
     }
 }
