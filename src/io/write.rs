@@ -33,7 +33,7 @@ cfg_if! {
 ///
 /// [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
 /// [`futures::io::AsyncWrite`]:
-/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
+/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
 pub trait Write {
     /// Writes some bytes into the byte stream.
     ///
