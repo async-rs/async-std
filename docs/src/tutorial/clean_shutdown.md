@@ -1,6 +1,6 @@
 ## Clean Shutdown
 
-On of the problems of the current implementation is that it doesn't handle graceful shutdown.
+One of the problems of the current implementation is that it doesn't handle graceful shutdown.
 If we break from the accept loop for some reason, all in-flight tasks are just dropped on the floor.
 A more correct shutdown sequence would be:
 
@@ -10,7 +10,7 @@ A more correct shutdown sequence would be:
 
 A clean shutdown in a channel based architecture is easy, although it can appear a magic trick at first.
 In Rust, receiver side of a channel is closed as soon as all senders are dropped.
-That is, as soon as producers exit and drop their senders, the rest of the system shutdowns naturally.
+That is, as soon as producers exit and drop their senders, the rest of the system shuts down naturally.
 In `async_std` this translates to two rules:
 
 1. Make sure that channels form an acyclic graph.
