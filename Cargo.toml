@@ -36,6 +36,7 @@ mio-uds = "0.6.7"
 num_cpus = "1.10.0"
 pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
+surf = "1.0.1"
 
 [dev-dependencies]
 femme = "1.1.0"
