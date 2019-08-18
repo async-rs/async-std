@@ -28,9 +28,11 @@
 //! # }) }
 //! ```
 
+pub use self::addr::{SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};
 pub use tcp::{Incoming, TcpListener, TcpStream};
 pub use udp::UdpSocket;
 
+mod addr;
 pub(crate) mod driver;
 mod tcp;
 mod udp;
