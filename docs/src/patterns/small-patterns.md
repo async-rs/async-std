@@ -6,11 +6,12 @@ A collection of small, useful patterns.
 
 `async-std` doesn't provide a `split()` method on `io` handles. Instead, splitting a stream into a read and write half can be done like this:
 
-```rust
-use async_std::io;
-
-async fn echo(stream: io::TcpStream) {
+```rust,edition2018
+#![feature(async_await)]
+# extern crate async_std;
+use async_std::{io, net::TcpStream};
+async fn echo(stream: TcpStream) {
     let (reader, writer) = &mut (&stream, &stream);
-    io::copy(reader, writer).await?;
+    io::copy(reader, writer).await;
 }
 ```
