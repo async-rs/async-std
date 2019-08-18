@@ -102,7 +102,7 @@ While the `Future` trait has existed in Rust for a while, it was inconvenient to
 
 Amazingly little difference, right? All we did is label the function `async` and insert 2 special commands: `.await`.
 
-This function sets up a deferred computation. When this function is called, it will produce a `Future<Output=Result<String, io::Error>>` instead of immediately returning the `Result`. (Or, more precisely, generate a type for you that implements `Future<Output=Result<String, io::Error>>`.)
+This function sets up a deferred computation. When this function is called, it will produce a `Future<Output=Result<String, io::Error>>` instead of immediately returning a `Result<String, io::Error>`. (Or, more precisely, generate a type for you that implements `Future<Output=Result<String, io::Error>>`.)
 
 ## What does `.await` do?
 
