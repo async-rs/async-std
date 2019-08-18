@@ -5,8 +5,6 @@ env:
 
 before_script:
   - rustup component add rustfmt
-  - if [[ -n "$BUILD_DOCS" ]]; then (cargo install mdbook --force || true); fi
-  - if [[ -n "$BUILD_DOCS" ]]; then (cargo install mdbook-linkcheck --force || true); fi
 
 matrix:
   fast_finish: true
