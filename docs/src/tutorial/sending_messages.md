@@ -33,4 +33,4 @@ async fn client_writer(
 1. We will use channels from the `futures` crate.
 2. For simplicity, we will use `unbounded` channels, and won't be discussing backpressure in this tutorial.
 3. As `client` and `client_writer` share the same `TcpStream`, we need to put it into an `Arc`.
-   Note that because `client` only reads from and `client_writer` only writes to the stream, so we don't get a race here.
+   Note that because `client` only reads from the stream and `client_writer` only writes to the stream, we don't get a race here.

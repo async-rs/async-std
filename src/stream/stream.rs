@@ -53,7 +53,7 @@ cfg_if! {
 ///
 /// [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
 /// [`futures::stream::Stream`]:
-/// https://docs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
 pub trait Stream {
     /// The type of items yielded by this stream.
     type Item;

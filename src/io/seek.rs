@@ -31,7 +31,7 @@ cfg_if! {
 ///
 /// [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
 /// [`futures::io::AsyncSeek`]:
-/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
+/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
 pub trait Seek {
     /// Seeks to a new position in a byte stream.
     ///

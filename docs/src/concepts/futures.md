@@ -99,7 +99,7 @@ Every call to `poll()` can result in one of these two cases:
 2. The computation has not finished executing, it will return [`Poll::Pending`](https://doc.rust-lang.org/std/task/enum.Poll.html#variant.Pending)
 
 This allows us to externally check if a `Future` still has unfinished work, or is finally done and can give us the value. The most simple (but not efficient) way would be to just constantly poll futures in a loop. There are optimisations possible, and this is what a good runtime does for you.
-Note that calling `poll` after case 1 happened may result in confusing behaviour. See the [futures-docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
+Note that calling `poll` again after case 1 happened may result in confusing behaviour. See the [futures-docs](https://doc.rust-lang.org/std/future/trait.Future.html) for details.
 
 ## Async
 
@@ -118,7 +118,7 @@ async fn read_file(path: &str) -> Result<String, io::Error> {
 
 Amazingly little difference, right? All we did is label the function `async` and insert 2 special commands: `.await`.
 
-This `async` function sets up a deferred computation. When this function is called, instead of returning the computed `String`, it will produce a `Future<Output=String>`. (Or, more precisely, will generate a type for you that implements `Future<Output=String>`.)
+This `async` function sets up a deferred computation. When this function is called, it will produce a `Future<Output=Result<String, io::Error>>` instead of immediately returning a `Result<String, io::Error>`. (Or, more precisely, generate a type for you that implements `Future<Output=Result<String, io::Error>>`.)
 
 ## What does `.await` do?
 
@@ -137,3 +137,5 @@ A `Future` is any data type that does not represent a value, but the ability to 
 Next, we will introduce you to `tasks`, which we need to actually *run* Futures.
 
 [^1]: Two parties reading while it is guaranteed that no one is writing is always safe.
+
+[futures]: https://rust-lang.github.io/async-book/02_execution/02_future.html

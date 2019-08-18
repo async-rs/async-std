@@ -3,7 +3,7 @@
 Let's now implement the client for the chat.
 Because the protocol is line-based, the implementation is pretty straightforward:
 
-* Lines read from stdin should be send over the socket.
+* Lines read from stdin should be sent over the socket.
 * Lines read from the socket should be echoed to stdout.
 
 Unlike the server, the client needs only limited concurrency, as it interacts with only a single user.
@@ -67,6 +67,6 @@ async fn try_main(addr: impl ToSocketAddrs) -> Result<()> {
 }
 ```
 
-1. Here we split `TcpStream` into read and write halfs: there's `impl AsyncRead for &'_ TcpStream`, just like the one in std.
-2. We crate a steam of lines for both the socket and stdin.
-3. In the main select loop, we print the lines we receive from server and send the lines we read from the console.
+1. Here we split `TcpStream` into read and write halves: there's `impl AsyncRead for &'_ TcpStream`, just like the one in std.
+2. We create a stream of lines for both the socket and stdin.
+3. In the main select loop, we print the lines we receive from the server and send the lines we read from the console.

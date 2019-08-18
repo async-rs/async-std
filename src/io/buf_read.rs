@@ -33,7 +33,7 @@ cfg_if! {
 ///
 /// [`std::io::BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
 /// [`futures::io::AsyncBufRead`]:
-/// https://docs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
+/// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
 pub trait BufRead {
     /// Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
     ///
