@@ -17,7 +17,18 @@ This way, we statically guarantee that we issue shutdown exactly once, even if w
 
 First, let's add a shutdown channel to the `client`:
 
-```rust
+```rust,edition2018
+# #![feature(async_await)]
+# extern crate async_std;
+# extern crate futures;
+# use async_std::net::TcpStream;
+# use futures::{channel::mpsc, SinkExt};
+# use std::sync::Arc;
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+#
 #[derive(Debug)]
 enum Void {} // 1
 
@@ -35,17 +46,17 @@ enum Event {
     },
 }
 
-async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn client(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()> {
     // ...
-
+#   let name: String = unimplemented!();
     let (_shutdown_sender, shutdown_receiver) = mpsc::unbounded::<Void>(); // 3
     broker.send(Event::NewPeer {
         name: name.clone(),
         stream: Arc::clone(&stream),
         shutdown: shutdown_receiver,
     }).await.unwrap();
-
     // ...
+#   unimplemented!()
 }
 ```
 
@@ -56,23 +67,36 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
 In the `client_writer`, we now need to choose between shutdown and message channels.
 We use the `select` macro for this purpose:
 
-```rust
-use futures::select;
-use futures::FutureExt;
+```rust,edition2018
+#![feature(async_await)]
+# extern crate async_std;
+# extern crate futures;
+# use async_std::{io::Write, net::TcpStream};
+use futures::{channel::mpsc, select, FutureExt, StreamExt};
+# use std::sync::Arc;
+
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+
+# #[derive(Debug)]
+# enum Void {} // 1
 
 async fn client_writer(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>, // 1
+    shutdown: Receiver<Void>, // 1
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
-            msg = messages.next().fuse() => match msg {
+            msg = messages.next() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next().fuse() => match void {
+            void = shutdown.next() => match void {
                 Some(void) => match void {}, // 3
                 None => break,
             }
@@ -94,27 +118,20 @@ This also allows us to establish a useful invariant that the message channel str
 
 The final code looks like this:
 
-```rust
+```rust,edition2018
 #![feature(async_await)]
-
+# extern crate async_std;
+# extern crate futures;
+use async_std::{
+    io::{BufReader, BufRead, Write},
+    net::{TcpListener, TcpStream},
+    task,
+};
+use futures::{channel::mpsc, future::Future, select, FutureExt, SinkExt, StreamExt};
 use std::{
+    collections::hash_map::{Entry, HashMap},
     net::ToSocketAddrs,
     sync::Arc,
-    collections::hash_map::{HashMap, Entry},
-};
-
-use futures::{
-    channel::mpsc,
-    SinkExt,
-    FutureExt,
-    select,
-};
-
-use async_std::{
-    io::BufReader,
-    prelude::*,
-    task,
-    net::{TcpListener, TcpStream},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -124,13 +141,13 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #[derive(Debug)]
 enum Void {}
 
-fn main() -> Result<()> {
+// main
+fn run() -> Result<()> {
     task::block_on(server("127.0.0.1:8080"))
 }
 
 async fn server(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
-
     let (broker_sender, broker_receiver) = mpsc::unbounded();
     let broker = task::spawn(broker(broker_receiver));
     let mut incoming = listener.incoming();
@@ -182,16 +199,18 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
 async fn client_writer(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>,
+    shutdown: Receiver<Void>,
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop {
         select! {
-            msg = messages.next().fuse() => match msg {
+            msg = messages.next() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next().fuse() => match void {
+            void = shutdown.next() => match void {
                 Some(void) => match void {},
                 None => break,
             }
@@ -214,11 +233,11 @@ enum Event {
     },
 }
 
-async fn broker(mut events: Receiver<Event>) {
+async fn broker(events: Receiver<Event>) {
     let (disconnect_sender, mut disconnect_receiver) = // 1
         mpsc::unbounded::<(String, Receiver<String>)>();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
-
+    let mut events = events.fuse();
     loop {
         let event = select! {
             event = events.next() => match event {
