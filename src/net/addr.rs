@@ -21,7 +21,7 @@ pub trait ToSocketAddrs {
     /// The returned iterator may not actually yield any values depending on the
     /// outcome of any resolution performed.
     ///
-    /// Note that this function may block the current thread while resolution is
+    /// Note that this function may block a backend thread while resolution is
     /// performed.
     fn to_socket_addrs(&self) -> Self::Output;
 }
@@ -132,9 +132,8 @@ impl ToSocketAddrs for String {
 
 #[cfg(all(test, not(target_os = "emscripten")))]
 mod tests {
-    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-
     use crate::net::*;
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
     fn tsa<A: ToSocketAddrs>(a: A) -> Result<Vec<SocketAddr>, String> {
         let socket_addrs = crate::task::block_on(a.to_socket_addrs());
