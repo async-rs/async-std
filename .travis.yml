@@ -24,3 +24,4 @@ script:
   - cargo test --all
   - cargo fmt --all -- --check
   - if [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
+  - if [[ -n "$BUILD_BOOK" ]]; then cargo build --all && mdbook test -L ./target/debug/deps docs && mdbook build docs; fi
