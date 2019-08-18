@@ -4,3 +4,10 @@ language = "en"
 multilingual = false
 src = "src"
 title = "Async programming in Rust with async-std"
+
+[build]
+create-missing = false
+
+[output.html]
+git-repository-url = "https://github.com/async-rs/async-std"
+git-repository-icon = "fa-github"
