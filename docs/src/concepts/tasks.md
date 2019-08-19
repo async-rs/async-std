@@ -63,10 +63,10 @@ Tasks in `async_std` are one of the core abstractions. Much like Rust's `thread`
 
 - They are allocated in one single allocation
 - All tasks have a *backchannel*, which allows them to propagate results and errors to the spawning task through the `JoinHandle`
-- The carry useful metadata for debugging
+- They carry useful metadata for debugging
 - They support task local storage
 
-`async_std`s task api handles setup and teardown of a backing runtime for you and doesn't rely on a runtime being explicitly started.
+`async_std`s task API handles setup and teardown of a backing runtime for you and doesn't rely on a runtime being explicitly started.
 
 ## Blocking
 
