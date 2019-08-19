@@ -11,7 +11,7 @@ matrix:
   include:
     - rust: nightly
       os: linux
-      env: BUILD_DOCS=1
+      env: BUILD_DOCS=1 BUILD_BOOK=1
     - rust: nightly
       os: osx
       osx_image: xcode9.2
