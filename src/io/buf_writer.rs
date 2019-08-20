@@ -389,7 +389,7 @@ mod tests {
             assert_eq!(*writer.get_ref(), []);
             writer.flush().await.unwrap();
             assert_eq!(*writer.get_ref(), [0, 1]);
-2            writer.write(&[0, b'\n', 1, b'\n']).await.unwrap();
+            writer.write(&[0, b'\n', 1, b'\n']).await.unwrap();
             assert_eq!(*writer.get_ref(), [0, 1, 0, b'\n', 1, b'\n']);
             writer.flush().await.unwrap();
             //assert_eq!(*writer.get_ref(), [0, 1, 0, b'\n', 1, b'\n', 2]);
