@@ -32,8 +32,11 @@ matrix:
     - name: docs
       rust: nightly
       os: linux
+      before_script:
+        - test -x $HOME/.cargo/bin/cargo-deadlinks || ./ci/install-cargo-deadlinks.sh
       script:
         - cargo doc --features docs
+        - cargo deadlinks --check-http
 
     - name: book
       rust: nightly
