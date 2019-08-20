@@ -149,7 +149,7 @@ pub trait BufRead {
     /// let mut lines = BufReader::new(file).lines();
     /// let mut count = 0;
     ///
-    /// for line in lines.next().await {
+    /// while let Some(line) = lines.next().await {
     ///     line?;
     ///     count += 1;
     /// }
