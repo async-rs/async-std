@@ -49,17 +49,20 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// overhead of a system call per byte written. We can fix this with a
 /// `BufWriter`:
 ///
-/*/ ```no_run
-/ use std::io::prelude::*;
-/ use std::io::BufWriter;
-/ use std::net::TcpStream;
-/
-/ let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").unwrap());
-/
-/ for i in 0..10 {
-/     stream.write(&[i+1]).unwrap();
-/ }
-/ ```*/
+/// ```no_run
+/// use async_std::io::prelude::*;
+/// use async_std::io::BufWriter;
+/// use async_std::net::TcpStream;
+/// use futures::AsyncWrite;
+/// use async_std::io::Write;
+///
+/// async_std::task::block_on(async {
+///     let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").unwrap());
+///     for i in 0..10 {
+///         stream.write(&[i+1]).await;
+///     }
+/// });
+/// ```
 ///
 /// By wrapping the stream with a `BufWriter`, these ten writes are all grouped
 /// together by the buffer, and will all be written out in one system call when
@@ -115,10 +118,38 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
         }
     }
 
+    /// Gets a reference to the underlying writer.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    ///
+    /// let mut buffer = BufWriter::new(TcpStream::connect("127.0.0.1:34254").unwrap());
+    ///
+    /// // we can use reference just like buffer
+    /// let reference = buffer.get_ref();
+    /// ```
     pub fn get_ref(&self) -> &W {
         &self.inner
     }
 
+    /// Gets a mutable reference to the underlying writer.
+    ///
+    /// It is inadvisable to directly write to the underlying writer.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    ///
+    /// let mut buffer = BufWriter::new(TcpStream::connect("127.0.0.1:34254").unwrap());
+    ///
+    /// // we can use reference just like buffer
+    /// let reference = buffer.get_mut();
+    /// ```
     pub fn get_mut(&mut self) -> &mut W {
         &mut self.inner
     }
@@ -141,6 +172,19 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
         unimplemented!("poll into inner method")
     }
 
+    /// Returns a reference to the internally buffered data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    ///
+    /// let buf_writer = BufWriter::new(TcpStream::connect("127.0.0.1:34254").unwrap());
+    ///
+    /// // See how many bytes are currently buffered
+    /// let bytes_buffered = buf_writer.buffer().len();
+    /// ```
     pub fn buffer(&self) -> &[u8] {
         &self.buf
     }
@@ -192,7 +236,7 @@ impl<W: AsyncWrite + Unpin> AsyncWrite for BufWriter<W> {
         if buf.len() >= self.buf.capacity() {
             self.inner().poll_write(cx, buf)
         } else {
-            self.buf().write(buf).poll()
+            self.buf().write(buf).poll(cx)
         }
     }
 
