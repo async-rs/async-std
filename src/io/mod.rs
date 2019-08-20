@@ -21,11 +21,14 @@
 //! # Ok(()) }) }
 //! ```
 
+pub(crate) const DEFAULT_CAPACITY: usize = 8 * 1024;
+
 #[doc(inline)]
 pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
+pub use buf_writer::BufWriter;
 pub use copy::copy;
 pub use empty::{empty, Empty};
 pub use read::Read;
@@ -39,6 +42,7 @@ pub use write::Write;
 
 mod buf_read;
 mod buf_reader;
+mod buf_writer;
 mod copy;
 mod empty;
 mod read;
