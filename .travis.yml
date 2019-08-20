@@ -26,4 +26,4 @@ script:
   - cargo check --all --benches --bins --examples --tests
   - cargo test --all
   - cargo fmt --all -- --check
-  - if [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
+  - if [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs && cargo deadlinks --check-http; fi
