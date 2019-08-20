@@ -1,6 +1,5 @@
 use std::io::{IoSlice, IoSliceMut};
 use std::mem;
-use std::net::{self, SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
@@ -9,6 +8,7 @@ use futures::io::{AsyncRead, AsyncWrite};
 
 use crate::io;
 use crate::net::driver::IoHandle;
+use crate::net::{SocketAddr, ToSocketAddrs};
 use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
@@ -88,7 +88,7 @@ impl TcpStream {
 
         let mut last_err = None;
 
-        for addr in addrs.to_socket_addrs()? {
+        for addr in addrs.to_socket_addrs().await? {
             let mut state = {
                 match mio::net::TcpStream::connect(&addr) {
                     Ok(mio_stream) => {
@@ -444,9 +444,9 @@ impl AsyncWrite for &TcpStream {
     }
 }
 
-impl From<net::TcpStream> for TcpStream {
+impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
-    fn from(stream: net::TcpStream) -> TcpStream {
+    fn from(stream: std::net::TcpStream) -> TcpStream {
         let mio_stream = mio::net::TcpStream::from_stream(stream).unwrap();
 
         #[cfg(unix)]
@@ -487,7 +487,7 @@ cfg_if! {
 
         impl FromRawFd for TcpStream {
             unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
-                net::TcpStream::from_raw_fd(fd).into()
+                std::net::TcpStream::from_raw_fd(fd).into()
             }
         }
 
