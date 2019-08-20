@@ -28,7 +28,7 @@ pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
-pub use buf_writer::BufWriter;
+pub use buf_writer::{BufWriter, LineWriter};
 pub use copy::copy;
 pub use empty::{empty, Empty};
 pub use read::Read;
