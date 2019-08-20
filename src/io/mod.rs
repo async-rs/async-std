@@ -21,8 +21,6 @@
 //! # Ok(()) }) }
 //! ```
 
-pub(crate) const DEFAULT_CAPACITY: usize = 8 * 1024;
-
 #[doc(inline)]
 pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
