@@ -3,9 +3,6 @@ language: rust
 env:
   - RUSTFLAGS="-D warnings"
 
-before_script:
-  - rustup component add rustfmt
-
 matrix:
   fast_finish: true
   include:
@@ -18,6 +15,12 @@ matrix:
       env: BUILD_DOCS=1
     - rust: nightly-x86_64-pc-windows-msvc
       os: windows
+
+before_script:
+  - rustup component add rustfmt
+  - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+  - (test -x $HOME/.cargo/bin/cargo-deadlinks || cargo install --vers "^0.3" cargo-deadlinks)
+  - cargo install-update -a
 
 script:
   - cargo check --all --benches --bins --examples --tests
