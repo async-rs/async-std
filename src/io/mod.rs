@@ -22,7 +22,7 @@
 //! ```
 
 #[doc(inline)]
-pub use std::io::{ErrorKind, Result, SeekFrom};
+pub use std::io::{Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
@@ -69,5 +69,22 @@ cfg_if! {
     } else {
         #[doc(inline)]
         pub use std::io::Error;
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        /// A list specifying general categories of I/O error.
+        ///
+        /// This list is intended to grow over time and it is not recommended to
+        /// exhaustively match against it.
+        ///
+        /// It is used with the [`io::Error`] type.
+        ///
+        /// [`io::Error`]: struct.Error.html
+        pub enum ErrorKind {}
+    } else {
+        #[doc(inline)]
+        pub use std::io::ErrorKind;
     }
 }
