@@ -38,8 +38,6 @@ $ cargo add async-std
 ## Hello world
 
 ```rust
-#![feature(async_await)]
-
 use async_std::task;
 
 fn main() {
@@ -52,8 +50,6 @@ fn main() {
 ## Low-Friction Sockets with Built-In Timeouts
 
 ```rust
-#![feature(async_await)]
-
 use std::time::Duration;
 
 use async_std::{

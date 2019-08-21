@@ -12,8 +12,6 @@
 //! $ cargo run --example tcp-client
 //! ```
 
-#![feature(async_await)]
-
 use async_std::io;
 use async_std::net::TcpStream;
 use async_std::prelude::*;

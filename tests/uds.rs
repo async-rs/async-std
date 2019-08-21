@@ -1,5 +1,4 @@
 #![cfg(unix)]
-#![feature(async_await)]
 
 use async_std::io;
 use async_std::os::unix::net::UnixDatagram;

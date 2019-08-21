@@ -10,7 +10,6 @@
 //! Spawn a task and await its result:
 //!
 //! ```
-//! # #![feature(async_await)]
 //! # fn main() { async_std::task::block_on(async {
 //! #
 //! use async_std::task;

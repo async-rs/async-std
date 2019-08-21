@@ -65,7 +65,6 @@ impl<T> JoinHandle<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::task;
@@ -98,7 +97,6 @@ impl<T> Future for JoinHandle<T> {
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// #
 /// use async_std::task;
 ///

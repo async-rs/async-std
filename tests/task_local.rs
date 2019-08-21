@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use async_std::task;

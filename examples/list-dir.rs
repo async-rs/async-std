@@ -1,7 +1,5 @@
 //! Lists files in a directory given as an argument.
 
-#![feature(async_await)]
-
 use std::env::args;
 
 use async_std::fs;

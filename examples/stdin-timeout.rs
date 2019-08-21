@@ -1,7 +1,5 @@
 //! Reads a line from stdin, or exits with an error if nothing is read in 5 seconds.
 
-#![feature(async_await)]
-
 use std::time::Duration;
 
 use async_std::io;

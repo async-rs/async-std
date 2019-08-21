@@ -9,7 +9,6 @@
 //! Spawn a task that updates an integer protected by a mutex:
 //!
 //! ```
-//! # #![feature(async_await)]
 //! # fn main() { async_std::task::block_on(async {
 //! #
 //! use std::sync::Arc;

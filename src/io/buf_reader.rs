@@ -31,7 +31,6 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::File;
@@ -60,7 +59,6 @@ impl<R: AsyncRead> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -79,7 +77,6 @@ impl<R: AsyncRead> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -117,7 +114,6 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -139,7 +135,6 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -161,7 +156,6 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -183,7 +177,6 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;

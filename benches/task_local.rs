@@ -1,4 +1,4 @@
-#![feature(async_await, test)]
+#![feature(test)]
 
 extern crate test;
 

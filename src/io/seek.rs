@@ -43,7 +43,6 @@ pub trait Seek {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;

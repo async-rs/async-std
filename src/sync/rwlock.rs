@@ -33,7 +33,6 @@ const READ_COUNT_MASK: usize = !(ONE_READ - 1);
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::sync::RwLock;
@@ -90,7 +89,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
@@ -213,7 +211,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
@@ -256,7 +253,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
@@ -378,7 +374,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
@@ -419,7 +414,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// use async_std::sync::RwLock;
     ///
     /// let lock = RwLock::new(10);
@@ -437,7 +431,6 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;

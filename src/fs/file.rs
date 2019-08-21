@@ -33,7 +33,6 @@ use crate::task::{blocking, Context, Poll};
 /// Create a new file and write some bytes to it:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::File;
@@ -48,7 +47,6 @@ use crate::task::{blocking, Context, Poll};
 /// Read the contents of a file into a `Vec<u8>`:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::File;
@@ -124,7 +122,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -171,7 +168,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -218,7 +214,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -274,7 +269,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -334,7 +328,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -381,7 +374,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -433,7 +425,6 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;

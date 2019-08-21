@@ -20,7 +20,6 @@ use super::pool;
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// #
 /// use std::cell::Cell;
 ///
@@ -92,7 +91,6 @@ impl<T: Send + 'static> LocalKey<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// #
     /// use std::cell::Cell;
     ///
@@ -132,7 +130,6 @@ impl<T: Send + 'static> LocalKey<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// #
     /// use std::cell::Cell;
     ///

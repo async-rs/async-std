@@ -1,7 +1,5 @@
 //! Spawns a named task that prints its name.
 
-#![feature(async_await)]
-
 use async_std::task;
 
 async fn print_name() {

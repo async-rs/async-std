@@ -11,7 +11,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```rust
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;

@@ -4,8 +4,6 @@
 At this point, we only need to start the broker to get a fully-functioning (in the happy case!) chat:
 
 ```rust
-#![feature(async_await)]
-
 use std::{
     net::ToSocketAddrs,
     sync::Arc,

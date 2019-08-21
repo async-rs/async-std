@@ -95,8 +95,6 @@ This also allows us to establish a useful invariant that the message channel str
 The final code looks like this:
 
 ```rust
-#![feature(async_await)]
-
 use std::{
     net::ToSocketAddrs,
     sync::Arc,
