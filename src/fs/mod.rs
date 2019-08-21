@@ -27,7 +27,7 @@ pub use open_options::OpenOptions;
 pub use read_dir::ReadDir;
 
 #[doc(inline)]
-pub use std::fs::{FileType, Metadata, Permissions};
+pub use std::fs::{FileType, Metadata};
 
 pub use canonicalize::canonicalize;
 pub use copy::copy;
@@ -68,3 +68,26 @@ mod rename;
 mod set_permissions;
 mod symlink_metadata;
 mod write;
+
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        /// Representation of the various permissions on a file.
+        ///
+        /// This module only currently provides one bit of information, [`readonly`],
+        /// which is exposed on all currently supported platforms. Unix-specific
+        /// functionality, such as mode bits, is available through the
+        /// [`PermissionsExt`] trait.
+        ///
+        /// [`readonly`]: struct.Permissions.html#method.readonly
+        /// [`PermissionsExt`]: ../os/unix/fs/trait.PermissionsExt.html
+        #[derive(Clone, PartialEq, Eq, Debug)]
+        pub struct Permissions {
+            _private: ()
+        }
+    } else {
+        #[doc(inline)]
+        pub use std::fs::Permissions;
+    }
+}

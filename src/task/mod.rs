@@ -22,7 +22,7 @@
 //! ```
 
 #[doc(inline)]
-pub use std::task::{Context, Poll, Waker};
+pub use std::task::{Context, Poll};
 
 pub use block_on::block_on;
 pub use local::{AccessError, LocalKey};
@@ -37,3 +37,23 @@ mod sleep;
 mod task;
 
 pub(crate) mod blocking;
+
+use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        /// A `Waker` is a handle for waking up a task by notifying its executor
+        /// that it is ready to be run.
+        ///
+        /// This handle encapsulates a [`RawWaker`][`std::task::RawWaker`]
+        /// instance, which defines the executor-specific wakeup behavior.
+        ///
+        /// Implements [`Clone`], [`trait@Send`], and [`trait@Sync`].
+        pub struct Waker {
+            _private: (),
+        }
+    } else {
+        #[doc(inline)]
+        pub use std::task::Waker;
+    }
+}

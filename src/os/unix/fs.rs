@@ -40,14 +40,25 @@ cfg_if! {
             /// `0o777`.
             fn mode(&mut self, mode: u32) -> &mut Self;
         }
+    } else {
+        #[doc(inline)]
+        pub use std::os::unix::fs::DirBuilderExt;
+    }
+}
 
+cfg_if! {
+    if #[cfg(feature = "docs")] {
         /// Unix-specific extension methods for `DirEntry`.
         pub trait DirEntryExt {
             /// Returns the underlying `d_ino` field in the contained `dirent`
             /// structure.
             fn ino(&self) -> u64;
         }
+    }
+}
 
+cfg_if! {
+    if #[cfg(feature = "docs")] {
         /// Unix-specific extensions to `OpenOptions`.
         pub trait OpenOptionsExt {
             /// Sets the mode bits that a new file will be created with.
@@ -70,6 +81,68 @@ cfg_if! {
         }
     } else {
         #[doc(inline)]
-        pub use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+        pub use std::os::unix::fs::OpenOptionsExt;
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        /// Unix-specific extensions to [`fs::Permissions`].
+        ///
+        /// [`fs::Permissions`]: ../../../fs/struct.Permissions.html
+        pub trait PermissionsExt {
+            /// Returns the underlying raw `st_mode` bits that contain the standard
+            /// Unix permissions for this file.
+            ///
+            /// # Examples
+            ///
+            /// ```no_run
+            /// use std::fs::File;
+            /// use std::os::unix::fs::PermissionsExt;
+            ///
+            /// fn main() -> std::io::Result<()> {
+            ///     let f = File::create("foo.txt")?;
+            ///     let metadata = f.metadata()?;
+            ///     let permissions = metadata.permissions();
+            ///
+            ///     println!("permissions: {:o}", permissions.mode());
+            ///     Ok(()) }
+            /// ```
+            fn mode(&self) -> u32;
+
+            /// Sets the underlying raw bits for this set of permissions.
+            ///
+            /// # Examples
+            ///
+            /// ```no_run
+            /// use std::fs::File;
+            /// use std::os::unix::fs::PermissionsExt;
+            ///
+            /// fn main() -> std::io::Result<()> {
+            ///     let f = File::create("foo.txt")?;
+            ///     let metadata = f.metadata()?;
+            ///     let mut permissions = metadata.permissions();
+            ///
+            ///     permissions.set_mode(0o644); // Read/write for owner and read for others.
+            ///     assert_eq!(permissions.mode(), 0o644);
+            ///     Ok(()) }
+            /// ```
+            fn set_mode(&mut self, mode: u32);
+
+            /// Creates a new instance of `Permissions` from the given set of Unix
+            /// permission bits.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use std::fs::Permissions;
+            /// use std::os::unix::fs::PermissionsExt;
+            ///
+            /// // Read/write for owner and read for others.
+            /// let permissions = Permissions::from_mode(0o644);
+            /// assert_eq!(permissions.mode(), 0o644);
+            /// ```
+            fn from_mode(mode: u32) -> Self;
+        }
     }
 }

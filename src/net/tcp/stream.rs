@@ -62,10 +62,8 @@ impl TcpStream {
     /// Creates a new TCP stream connected to the specified address.
     ///
     /// This method will create a new TCP socket and attempt to connect it to the `addr`
-    /// provided. The [returned future] will be resolved once the stream has successfully
+    /// provided. The returned future will be resolved once the stream has successfully
     /// connected, or it will return an error if one occurs.
-    ///
-    /// [returned future]: struct.Connect.html
     ///
     /// # Examples
     ///
