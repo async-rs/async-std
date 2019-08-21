@@ -6,8 +6,6 @@ Let's implement the scaffold of the server: a loop that binds a TCP socket to an
 First of all, let's add required import boilerplate:
 
 ```rust
-#![feature(async_await)]
-
 use std::net::ToSocketAddrs; // 1
 
 use async_std::{

@@ -1,7 +1,5 @@
 //! Creates a task-local value.
 
-#![feature(async_await)]
-
 use std::cell::Cell;
 
 use async_std::prelude::*;

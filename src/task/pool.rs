@@ -29,7 +29,6 @@ use crate::io;
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::task;
@@ -51,7 +50,6 @@ pub fn current() -> Task {
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::task;
@@ -83,7 +81,6 @@ where
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// use async_std::task;
 ///
 /// fn main() {

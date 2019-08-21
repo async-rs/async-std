@@ -14,7 +14,6 @@ use crate::io;
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;

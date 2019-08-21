@@ -1,7 +1,5 @@
 //! Counts the number of lines in a file given as an argument.
 
-#![feature(async_await)]
-
 use std::env::args;
 
 use async_std::fs::File;

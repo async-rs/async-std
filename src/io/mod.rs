@@ -9,7 +9,6 @@
 //! Read a line from the standard input:
 //!
 //! ```no_run
-//! # #![feature(async_await)]
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
 //! use async_std::io;

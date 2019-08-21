@@ -32,7 +32,6 @@ use crate::task::blocking;
 /// Opening a file for reading:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::OpenOptions;
@@ -48,7 +47,6 @@ use crate::task::blocking;
 /// Opening a file for both reading and writing, creating it if it doesn't exist:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::OpenOptions;
@@ -73,7 +71,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -96,7 +93,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -123,7 +119,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -169,7 +164,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -196,7 +190,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -226,7 +219,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -263,7 +255,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;
@@ -316,7 +307,6 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::OpenOptions;

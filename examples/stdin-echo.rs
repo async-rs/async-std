@@ -1,7 +1,5 @@
 //! Echoes lines read on stdin to stdout.
 
-#![feature(async_await)]
-
 use async_std::io;
 use async_std::prelude::*;
 use async_std::task;

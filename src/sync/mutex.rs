@@ -24,7 +24,6 @@ const BLOCKED: usize = 1 << 1;
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use std::sync::Arc;
@@ -83,7 +82,6 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
@@ -198,7 +196,6 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
@@ -252,7 +249,6 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::sync::Mutex;

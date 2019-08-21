@@ -15,8 +15,6 @@ Programming this with threads is cumbersome, especially when implementing clean 
 With async, we can just use the `select!` macro.
 
 ```rust
-#![feature(async_await)]
-
 use std::net::ToSocketAddrs;
 
 use futures::select;

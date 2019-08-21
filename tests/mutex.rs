@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 use std::sync::Arc;
 
 use async_std::prelude::*;

@@ -29,7 +29,6 @@ use crate::task::Poll;
 /// ## Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::net::UdpSocket;
@@ -65,7 +64,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::net::UdpSocket;
@@ -114,7 +112,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     ///	use async_std::net::UdpSocket;
@@ -135,7 +132,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::net::UdpSocket;
@@ -188,7 +184,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::net::UdpSocket;
@@ -230,7 +225,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     ///	use async_std::net::UdpSocket;
@@ -265,7 +259,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::net::UdpSocket;
@@ -308,7 +301,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::net::UdpSocket;
@@ -442,7 +434,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use std::net::Ipv4Addr;
@@ -472,7 +463,6 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use std::net::{Ipv6Addr, SocketAddr};

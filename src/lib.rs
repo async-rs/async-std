@@ -14,7 +14,6 @@
 //! Spawn a task and block the current thread on its result:
 //!
 //! ```
-//! # #![feature(async_await)]
 //! use async_std::task;
 //!
 //! fn main() {
@@ -27,7 +26,6 @@
 //! See [here](https://github.com/async-rs/async-std/tree/master/examples)
 //! for more examples.
 
-#![feature(async_await)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
