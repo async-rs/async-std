@@ -49,3 +49,6 @@ mod stdin;
 mod stdout;
 mod timeout;
 mod write;
+
+use cfg_if::cfg_if;
+
