@@ -22,7 +22,7 @@
 //! ```
 
 #[doc(inline)]
-pub use std::io::{Error, ErrorKind, Result, SeekFrom};
+pub use std::io::{ErrorKind, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
@@ -52,3 +52,22 @@ mod write;
 
 use cfg_if::cfg_if;
 
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        /// The error type for I/O operations of the [`Read`], [`Write`], [`Seek`], and
+        /// associated traits.
+        ///
+        /// Errors mostly originate from the underlying OS, but custom instances of
+        /// `Error` can be created with crafted error messages and a particular value of
+        /// [`ErrorKind`].
+        ///
+        /// [`Read`]: ../io/trait.Read.html
+        /// [`Write`]: ../io/trait.Write.html
+        /// [`Seek`]: ../io/trait.Seek.html
+        /// [`ErrorKind`]: enum.ErrorKind.html
+        pub struct Error {}
+    } else {
+        #[doc(inline)]
+        pub use std::io::Error;
+    }
+}
