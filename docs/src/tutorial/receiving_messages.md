@@ -8,6 +8,7 @@ We need to:
 3. parse the rest of the lines as a  `login: message`
 
 ```rust
+use async_std::io::BufReader;
 use async_std::net::TcpStream;
 
 async fn server(addr: impl ToSocketAddrs) -> Result<()> {
