@@ -14,6 +14,7 @@ if Alice and Charley send two messages to Bob at the same time, Bob will see the
 ```rust
 use futures::channel::mpsc; // 1
 use futures::SinkExt;
+use std::sync::Arc;
 
 type Sender<T> = mpsc::UnboundedSender<T>; // 2
 type Receiver<T> = mpsc::UnboundedReceiver<T>;
