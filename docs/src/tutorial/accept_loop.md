@@ -70,5 +70,5 @@ fn main() -> Result<()> {
 The crucial thing to realise that is in Rust, unlike other languages, calling an async function does **not** run any code.
 Async functions only construct futures, which are inert state machines.
 To start stepping through the future state-machine in an async function, you should use `.await`.
-In a non-async function, a way to execute a future is to handle it to the executor.
+In a non-async function, a way to execute a future is to hand it to the executor.
 In this case, we use `task::block_on` to execute a future on the current thread and block until it's done.
