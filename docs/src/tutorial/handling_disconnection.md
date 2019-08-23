@@ -219,11 +219,11 @@ async fn broker(mut events: Receiver<Event>) {
 
     loop {
         let event = select! {
-            event = events.next() => match event {
+            event = events.next().fuse() => match event {
                 None => break, // 2
                 Some(event) => event,
             },
-            disconnect = disconnect_receiver.next() => {
+            disconnect = disconnect_receiver.next().fuse() => {
                 let (name, _pending_messages) = disconnect.unwrap(); // 3
                 assert!(peers.remove(&name).is_some());
                 continue;
