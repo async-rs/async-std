@@ -125,6 +125,18 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
     }
     Ok(())
 }
+
+fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
+where
+    F: Future<Output = Result<()>> + Send + 'static,
+{
+    task::spawn(async move {
+        if let Err(e) = fut.await {
+            eprintln!("{}", e)
+        }
+    })
+}
+
 ```
 
 1. Inside the `server`, we create the broker's channel and `task`.
