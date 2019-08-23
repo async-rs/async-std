@@ -1,5 +1,6 @@
 use std::io::{IoSlice, IoSliceMut};
 use std::mem;
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
@@ -8,7 +9,7 @@ use futures::io::{AsyncRead, AsyncWrite};
 
 use crate::io;
 use crate::net::driver::IoHandle;
-use crate::net::{SocketAddr, ToSocketAddrs};
+use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
