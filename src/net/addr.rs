@@ -1,10 +1,14 @@
-use crate::future::Future;
-use crate::task::blocking::JoinHandle;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::pin::Pin;
+
 use cfg_if::cfg_if;
 use futures::future::{ready, Ready};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-pub use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::pin::Pin;
+
+use crate::future::Future;
+use crate::io;
+use crate::task::blocking;
+use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -12,7 +16,7 @@ cfg_if! {
         pub struct ImplFuture<T>(std::marker::PhantomData<T>);
 
         macro_rules! ret {
-            ($f:tt, $i:ty) => (ImplFuture<crate::io::Result<$i>>);
+            ($f:tt, $i:ty) => (ImplFuture<io::Result<$i>>);
         }
     } else {
         macro_rules! ret {
@@ -21,40 +25,35 @@ cfg_if! {
     }
 }
 
-/// A trait for objects which can be converted or resolved to one or more
-/// [`SocketAddr`] values.
+/// A trait for objects which can be converted or resolved to one or more [`SocketAddr`] values.
 ///
 /// This trait is an async version of [`std::net::ToSocketAddrs`].
 ///
 /// [`std::net::ToSocketAddrs`]: https://doc.rust-lang.org/std/net/trait.ToSocketAddrs.html
 pub trait ToSocketAddrs {
-    /// Returned iterator over socket addresses which this type may correspond
-    /// to.
+    /// Returned iterator over socket addresses which this type may correspond to.
     type Iter: Iterator<Item = SocketAddr> + Send;
+
     /// Converts this object to an iterator of resolved `SocketAddr`s.
     ///
-    /// The returned iterator may not actually yield any values depending on the
-    /// outcome of any resolution performed.
+    /// The returned iterator may not actually yield any values depending on the outcome of any
+    /// resolution performed.
     ///
-    /// Note that this function may block a backend thread while resolution is
-    /// performed.
+    /// Note that this function may block a backend thread while resolution is performed.
     fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter);
 }
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub enum ToSocketAddrsFuture<I: Iterator<Item = SocketAddr>> {
-    Join(JoinHandle<crate::io::Result<I>>),
-    Ready(Ready<crate::io::Result<I>>),
+    Join(blocking::JoinHandle<io::Result<I>>),
+    Ready(Ready<io::Result<I>>),
 }
 
 impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
-    type Output = crate::io::Result<I>;
+    type Output = io::Result<I>;
 
-    fn poll(
-        self: Pin<&mut Self>,
-        cx: &mut crate::task::Context<'_>,
-    ) -> crate::task::Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.get_mut() {
             ToSocketAddrsFuture::Join(f) => Pin::new(&mut *f).poll(cx),
             ToSocketAddrsFuture::Ready(f) => Pin::new(&mut *f).poll(cx),
@@ -116,7 +115,7 @@ impl ToSocketAddrs for (&str, u16) {
     fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
         let host = self.0.to_string();
         let port = self.1;
-        let join = crate::task::blocking::spawn(async move {
+        let join = blocking::spawn(async move {
             std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
         });
         ToSocketAddrsFuture::Join(join)
@@ -128,9 +127,8 @@ impl ToSocketAddrs for str {
 
     fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
         let socket_addrs = self.to_string();
-        let join = crate::task::blocking::spawn(async move {
-            std::net::ToSocketAddrs::to_socket_addrs(&socket_addrs)
-        });
+        let join =
+            blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(&socket_addrs) });
         ToSocketAddrsFuture::Join(join)
     }
 }

@@ -28,7 +28,9 @@
 //! # }) }
 //! ```
 
-pub use addr::{SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};
+pub use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+
+pub use addr::ToSocketAddrs;
 pub use tcp::{Incoming, TcpListener, TcpStream};
 pub use udp::UdpSocket;
 
