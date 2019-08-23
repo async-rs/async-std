@@ -25,7 +25,7 @@ async fn server(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
 
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker = task::spawn(broker(broker_receiver));
+    let broker_handle = task::spawn(broker(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
@@ -33,7 +33,7 @@ async fn server(addr: impl ToSocketAddrs) -> Result<()> {
         spawn_and_log_error(client(broker_sender.clone(), stream));
     }
     drop(broker_sender); // 1
-    broker.await?; // 5
+    broker_handle.await?; // 5
     Ok(())
 }
 ```
