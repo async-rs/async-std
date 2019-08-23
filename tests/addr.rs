@@ -1,6 +1,6 @@
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
-use async_std::net::{SocketAddr, ToSocketAddrs};
+use async_std::net::ToSocketAddrs;
 use async_std::task;
 
 fn tsa<A: ToSocketAddrs>(a: A) -> Result<Vec<SocketAddr>, String> {

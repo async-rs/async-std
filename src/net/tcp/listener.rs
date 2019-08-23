@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
@@ -7,7 +8,7 @@ use super::TcpStream;
 use crate::future::Future;
 use crate::io;
 use crate::net::driver::IoHandle;
-use crate::net::{SocketAddr, ToSocketAddrs};
+use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
 /// A TCP socket server, listening for connections.

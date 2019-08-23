@@ -1,11 +1,12 @@
 use std::io;
+use std::net::SocketAddr;
 
 use cfg_if::cfg_if;
 use futures::future;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::net::driver::IoHandle;
-use crate::net::{SocketAddr, ToSocketAddrs};
+use crate::net::ToSocketAddrs;
 use crate::task::Poll;
 
 /// A UDP socket.
