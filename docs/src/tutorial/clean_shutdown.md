@@ -69,7 +69,7 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
     }
     drop(peers); // 3
     for writer in writers { // 4
-        writer.await?;
+        writer.await;
     }
     Ok(())
 }

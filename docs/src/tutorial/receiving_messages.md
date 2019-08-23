@@ -10,6 +10,7 @@ We need to:
 ```rust
 use async_std::io::BufReader;
 use async_std::net::TcpStream;
+use async_std::io::BufReader;
 
 async fn server(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
