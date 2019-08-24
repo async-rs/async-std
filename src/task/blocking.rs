@@ -29,7 +29,7 @@ static CURRENT_POOL_SIZE: AtomicU64 = AtomicU64::new(LOW_WATERMARK);
 
 struct Pool {
     sender: Sender<async_task::Task<()>>,
-    receiver: Receiver<async_task::Task<()>>
+    receiver: Receiver<async_task::Task<()>>,
 }
 
 lazy_static! {
