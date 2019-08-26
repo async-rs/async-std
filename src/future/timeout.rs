@@ -22,7 +22,7 @@ use crate::task::{Context, Poll};
 /// use async_std::future;
 ///
 /// let never = future::pending::<()>();
-/// let dur = Duration::from_secs(5);
+/// let dur = Duration::from_millis(5);
 /// assert!(future::timeout(dur, never).await.is_err());
 /// #
 /// # Ok(()) }) }
