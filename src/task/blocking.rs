@@ -60,10 +60,10 @@ lazy_static! {
 
 fn calculate_dispatch_frequency() {
     // Calculate current message processing rate here
-    let previous_freq = FREQUENCY.fetch_sub(1, Ordering::Relaxed);
+    let current_freq = FREQUENCY.fetch_sub(1, Ordering::Relaxed);
     let avr_freq = AVR_FREQUENCY.load(Ordering::Relaxed);
     let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::Relaxed);
-    let frequency = (avr_freq as f64 + previous_freq as f64 / current_pool_size as f64) as u64;
+    let frequency = (avr_freq as f64 + current_freq as f64 / current_pool_size as f64) as u64;
     AVR_FREQUENCY.store(frequency, Ordering::Relaxed);
 
     // Adapt the thread count of pool
