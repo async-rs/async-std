@@ -37,7 +37,7 @@ pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 
 [dependencies.futures-preview]
-version = "0.3.0-alpha.17"
+version = "0.3.0-alpha.18"
 features = ["async-await", "nightly"]
 
 [dev-dependencies]

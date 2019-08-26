@@ -19,7 +19,6 @@ if Alice and Charley send two messages to Bob at the same time, Bob will see the
 #     net::TcpStream,
 #     prelude::Stream,
 # };
-# use std::sync::Arc;
 use futures::channel::mpsc; // 1
 use futures::SinkExt;
 use std::sync::Arc;
