@@ -14,44 +14,39 @@ Specifically, the client should *simultaneously* read from stdin and from the so
 Programming this with threads is cumbersome, especially when implementing clean shutdown.
 With async, we can just use the `select!` macro.
 
-```rust
-use std::net::ToSocketAddrs;
-
-use futures::select;
-use futures::FutureExt;
-
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures;
 use async_std::{
-    prelude::*,
+    io::{stdin, BufRead, BufReader, Write},
     net::TcpStream,
     task,
-    io::{stdin, BufReader},
 };
+use futures::{select, FutureExt, StreamExt};
+use std::net::ToSocketAddrs;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-
-fn main() -> Result<()> {
-    task::block_on(try_main("127.0.0.1:8080"))
+// main
+fn run() -> Result<()> {
+    task::block_on(try_run("127.0.0.1:8080"))
 }
 
-async fn try_main(addr: impl ToSocketAddrs) -> Result<()> {
+async fn try_run(addr: impl ToSocketAddrs) -> Result<()> {
     let stream = TcpStream::connect(addr).await?;
     let (reader, mut writer) = (&stream, &stream); // 1
-    let reader = BufReader::new(reader);
-    let mut lines_from_server = futures::StreamExt::fuse(reader.lines()); // 2
-
-    let stdin = BufReader::new(stdin());
-    let mut lines_from_stdin = futures::StreamExt::fuse(stdin.lines()); // 2
+    let mut lines_from_server = BufReader::new(reader).lines().fuse(); // 2
+    let mut lines_from_stdin = BufReader::new(stdin()).lines().fuse(); // 2
     loop {
         select! { // 3
-            line = lines_from_server.next().fuse() => match line {
+            line = lines_from_server.next() => match line {
                 Some(line) => {
                     let line = line?;
                     println!("{}", line);
                 },
                 None => break,
             },
-            line = lines_from_stdin.next().fuse() => match line {
+            line = lines_from_stdin.next() => match line {
                 Some(line) => {
                     let line = line?;
                     writer.write_all(line.as_bytes()).await?;

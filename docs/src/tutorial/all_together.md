@@ -1,34 +1,44 @@
-
 ## All Together
 
 At this point, we only need to start the broker to get a fully-functioning (in the happy case!) chat:
 
-```rust
-use std::{
-    net::ToSocketAddrs,
-    sync::Arc,
-    collections::hash_map::{HashMap, Entry},
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures;
+use async_std::{
+    io::{self, BufReader},
+    net::{TcpListener, TcpStream},
+    prelude::*,
+    task,
 };
-
 use futures::{
     channel::mpsc,
     SinkExt,
 };
-
-use async_std::{
-    io::BufReader,
-    prelude::*,
-    task,
-    net::{TcpListener, TcpStream},
+use std::{
+    collections::hash_map::{HashMap, Entry},
+    net::ToSocketAddrs,
+    sync::Arc,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 type Sender<T> = mpsc::UnboundedSender<T>;
 type Receiver<T> = mpsc::UnboundedReceiver<T>;
 
-
-fn main() -> Result<()> {
+// main
+fn run() -> Result<()> {
     task::block_on(server("127.0.0.1:8080"))
+}
+
+fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
+where
+    F: Future<Output = Result<()>> + Send + 'static,
+{
+    task::spawn(async move {
+        if let Err(e) = fut.await {
+            eprintln!("{}", e)
+        }
+    })
 }
 
 async fn server(addr: impl ToSocketAddrs) -> Result<()> {

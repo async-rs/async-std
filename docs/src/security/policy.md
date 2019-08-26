@@ -32,7 +32,7 @@ This policy is adapted from the [Rust project](https://www.rust-lang.org/policie
 
 ## PGP Key
 
-```
+```text
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQENBF1Wu/ABCADJaGt4HwSlqKB9BGHWYKZj/6mTMbmc29vsEOcCSQKo6myCf9zc
