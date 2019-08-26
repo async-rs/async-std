@@ -100,12 +100,12 @@ fn create_blocking_thread() {
         .spawn(move || {
             let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
 
-            CURRENT_POOL_SIZE.fetch_add(1, Ordering::Relaxed);
+            CURRENT_POOL_SIZE.fetch_add(1, Ordering::SeqCst);
             while let Ok(task) = POOL.receiver.recv_timeout(wait_limit) {
                 abort_on_panic(|| task.run());
                 calculate_dispatch_frequency();
             }
-            CURRENT_POOL_SIZE.fetch_sub(1, Ordering::Relaxed);
+            CURRENT_POOL_SIZE.fetch_sub(1, Ordering::SeqCst);
         })
         .expect("cannot start a dynamic thread driving blocking tasks");
 }
@@ -123,7 +123,7 @@ fn schedule(t: async_task::Task<()>) {
     // expected pool size is above the MAX_THREADS (which is a
     // case won't happen)
     let pool_size = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
-    let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::Relaxed);
+    let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::SeqCst);
     let reward = (AVR_FREQUENCY.load(Ordering::Relaxed) as f64 / 2.0_f64) as u64;
 
     if pool_size > current_pool_size && pool_size <= MAX_THREADS {
