@@ -75,7 +75,7 @@ fn calculate_dispatch_frequency() {
     } else {
         // There is no need for the extra threads, schedule them to be closed.
         let expected = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
-        if 1 + LOW_WATERMARK < expected {
+        if 2 * LOW_WATERMARK < expected {
             // Substract amount of low watermark
             EXPECTED_POOL_SIZE.fetch_sub(LOW_WATERMARK, Ordering::Relaxed);
         }
@@ -144,7 +144,7 @@ fn schedule(t: async_task::Task<()>) {
         POOL.sender.send(err.into_inner()).unwrap();
     } else {
         // Every successful dispatch, rewarded with negative
-        if reward + LOW_WATERMARK < pool_size {
+        if reward + (2 * LOW_WATERMARK) < pool_size {
             EXPECTED_POOL_SIZE.fetch_sub(reward, Ordering::Relaxed);
         }
     }
