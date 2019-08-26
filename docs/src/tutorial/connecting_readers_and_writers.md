@@ -21,10 +21,7 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 # };
 # use futures::channel::mpsc;
 # use futures::SinkExt;
-# use std::{
-#     collections::hash_map::{Entry, HashMap},
-#     sync::Arc,
-# };
+# use std::sync::Arc;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 # type Sender<T> = mpsc::UnboundedSender<T>;
@@ -52,6 +49,8 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 #     })
 # }
 #
+use std::collections::hash_map::{Entry, HashMap};
+
 #[derive(Debug)]
 enum Event { // 1
     NewPeer {

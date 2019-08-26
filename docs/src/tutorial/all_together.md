@@ -74,7 +74,7 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
             Some(idx) => (&line[..idx], line[idx + 1 ..].trim()),
         };
         let dest: Vec<String> = dest.split(',').map(|name| name.trim().to_string()).collect();
-        let msg: String = msg.trim().to_string();
+        let msg: String = msg.to_string();
 
         broker.send(Event::Message { // 4
             from: name.clone(),
