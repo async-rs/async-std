@@ -74,7 +74,11 @@ fn calculate_dispatch_frequency() {
         EXPECTED_POOL_SIZE.store(current_pool_size + 1, Ordering::Relaxed);
     } else {
         // There is no need for the extra threads, schedule them to be closed.
-        EXPECTED_POOL_SIZE.fetch_sub(2, Ordering::Relaxed);
+        let expected = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
+        if 1 + LOW_WATERMARK < expected {
+            // Substract amount of low watermark
+            EXPECTED_POOL_SIZE.fetch_sub(LOW_WATERMARK, Ordering::Relaxed);
+        }
     }
 }
 
@@ -120,10 +124,13 @@ fn schedule(t: async_task::Task<()>) {
     // case won't happen)
     let pool_size = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
     let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::Relaxed);
-    if pool_size > current_pool_size && pool_size <= MAX_THREADS {
-        let needed = pool_size - current_pool_size;
+    let reward = (AVR_FREQUENCY.load(Ordering::Relaxed) as f64 / 2.0_f64) as u64;
 
-        // For safety, check boundaries before spawning threads
+    if pool_size > current_pool_size && pool_size <= MAX_THREADS {
+        let needed = pool_size.saturating_sub(current_pool_size);
+
+        // For safety, check boundaries before spawning threads.
+        // This also won't be expected to happen. But better safe than sorry.
         if needed > 0 && (needed < pool_size || needed < current_pool_size) {
             (0..needed).for_each(|_| {
                 create_blocking_thread();
@@ -137,8 +144,9 @@ fn schedule(t: async_task::Task<()>) {
         POOL.sender.send(err.into_inner()).unwrap();
     } else {
         // Every successful dispatch, rewarded with negative
-        let reward = AVR_FREQUENCY.load(Ordering::Relaxed) as f64 / 2.0_f64;
-        EXPECTED_POOL_SIZE.fetch_sub(reward as u64, Ordering::Relaxed);
+        if reward + LOW_WATERMARK < pool_size {
+            EXPECTED_POOL_SIZE.fetch_sub(reward, Ordering::Relaxed);
+        }
     }
 }
 
