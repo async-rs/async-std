@@ -66,9 +66,9 @@ async fn get() -> io::Result<Vec<u8>> {
     let mut buf = vec![];
 
     io::timeout(Duration::from_secs(5), async {
-        stream.read_to_end(&mut buf).await?
+        stream.read_to_end(&mut buf).await?;
         Ok(buf)
-    })
+    }).await
 }
 
 fn main() {
