@@ -60,9 +60,9 @@ lazy_static! {
 
 fn calculate_dispatch_frequency() {
     // Calculate current message processing rate here
-    let current_freq = FREQUENCY.fetch_sub(1, Ordering::Relaxed);
+    let current_freq = FREQUENCY.fetch_sub(1, Ordering::Release);
     let avr_freq = AVR_FREQUENCY.load(Ordering::Relaxed);
-    let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::Relaxed);
+    let current_pool_size = LOW_WATERMARK.max(CURRENT_POOL_SIZE.load(Ordering::Acquire));
     let frequency = (avr_freq as f64 + current_freq as f64 / current_pool_size as f64) as u64;
     AVR_FREQUENCY.store(frequency, Ordering::Relaxed);
 
@@ -116,7 +116,7 @@ fn create_blocking_thread() {
 // if there is not a thread ready to accept the work or not.
 fn schedule(t: async_task::Task<()>) {
     // Add up for every incoming task schedule
-    FREQUENCY.fetch_add(1, Ordering::Relaxed);
+    FREQUENCY.fetch_add(1, Ordering::Acquire);
 
     // Calculate the amount of threads needed to spin up
     // then retry sending while blocking. It doesn't spin if
@@ -124,7 +124,7 @@ fn schedule(t: async_task::Task<()>) {
     // case won't happen)
     let pool_size = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
     let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::SeqCst);
-    let reward = (AVR_FREQUENCY.load(Ordering::Relaxed) as f64 / 2.0_f64) as u64;
+    let reward = (AVR_FREQUENCY.load(Ordering::Acquire) as f64 / 2.0_f64) as u64;
 
     if pool_size > current_pool_size && pool_size <= MAX_THREADS {
         let needed = pool_size.saturating_sub(current_pool_size);
