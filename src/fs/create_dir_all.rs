@@ -1,8 +1,8 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use crate::task::blocking;
 use crate::io;
+use crate::task::blocking;
 
 /// Creates a new, empty directory and all of its parents if they are missing.
 ///
