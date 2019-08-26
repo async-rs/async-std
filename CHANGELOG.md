@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+- Expose `fs::create_dir_all`
+
 # [0.99.4] - 2019-08-21
 
 ## Changes
