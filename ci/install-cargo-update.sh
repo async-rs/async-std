@@ -12,8 +12,7 @@ main() {
                         | sort --version-sort \
                         | tail -n1)
 
-    curl -LSfs https://japaric.github.io/trust/install.sh | \
-        sh -s -- --git nabijaczleweli/cargo-update --tag $tag
+    $(dirname $(realpath $0))/install-tbz2.sh --git nabijaczleweli/cargo-update --tag $tag --crate cargo-install-update
 }
 
 main
