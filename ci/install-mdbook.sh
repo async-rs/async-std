@@ -9,7 +9,7 @@ main() {
                     https://github.com/rust-lang-nursery/mdbook \
                         | cut -d/ -f3 \
                         | grep -E '^v0\.3\.[0-9]+$' \
-                        | sort --version-sort \
+                        | sort \
                         | tail -n1)
 
     curl -LSfs https://japaric.github.io/trust/install.sh | \
