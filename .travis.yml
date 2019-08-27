@@ -18,9 +18,7 @@ matrix:
 
 before_script:
   - rustup component add rustfmt
-  - (test -x $HOME/.cargo/bin/cargo-install-update || ./ci/install-cargo-update.sh)
   - (test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh)
-  - cargo install-update -a
 
 script:
   - if ![[ -n "$BUILD_BOOK" ]]; then cargo check --all --benches --bins --examples --tests && cargo test --all; fi
