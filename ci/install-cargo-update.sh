@@ -4,16 +4,16 @@ set -euxo pipefail
 # https://github.com/rust-embedded/book/blob/master/ci/install.sh
 
 main() {
-    # Note - this will only accept releases tagged with v0.3.x
+    # Note - this will accept any tagged release
     local tag=$(git ls-remote --tags --refs --exit-code \
-                    https://github.com/rust-lang-nursery/mdbook \
+                    https://github.com/nabijaczleweli/cargo-update \
                         | cut -d/ -f3 \
-                        | grep -E '^v0\.3\.[0-9]+$' \
+                        | grep -E '^v[0-9\.]+$' \
                         | sort --version-sort \
                         | tail -n1)
 
     curl -LSfs https://japaric.github.io/trust/install.sh | \
-        sh -s -- --git rust-lang-nursery/mdbook --tag $tag
+        sh -s -- --git nabijaczleweli/cargo-update --tag $tag
 }
 
 main
