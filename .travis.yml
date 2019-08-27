@@ -1,30 +1,26 @@
 language: rust
 
-env:
-  - RUSTFLAGS="-D warnings"
-
 matrix:
   fast_finish: true
   include:
     - rust: nightly
       os: linux
-      env: BUILD_DOCS=1 BUILD_BOOK=1
+      env: RUSTFLAGS="-D warnings" BUILD_DOCS=1 BUILD_BOOK=1
     - rust: nightly
       os: osx
       osx_image: xcode9.2
-      env: BUILD_DOCS=1
+      env: RUSTFLAGS="-D warnings" BUILD_DOCS=1
     - rust: nightly-x86_64-pc-windows-msvc
       os: windows
+      env: RUSTFLAGS="-D warnings"
 
 before_script:
   - rustup component add rustfmt
-  - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
-  - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
-  - cargo install-update -a
+  - if   [[ -n "$BUILD_BOOK" ]]; then (test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh); fi
 
 script:
-  - if ![[ -n "$BUILD_BOOK" ]]; then cargo check --all --benches --bins --examples --tests && cargo test --all; fi
-  - if  [[ -n "$BUILD_BOOK" ]]; then cargo test  --all --benches --bins --examples --tests; fi
+  - if ! [[ -n "$BUILD_BOOK" ]]; then cargo check --all --benches --bins --examples --tests && cargo test --all; fi
+  - if   [[ -n "$BUILD_BOOK" ]]; then cargo test  --all --benches --bins --examples --tests; fi
   - cargo fmt --all -- --check
-  - if  [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
-  - if  [[ -n "$BUILD_BOOK" ]]; then mdbook build docs && mdbook test -L ./target/debug/deps docs; fi
+  - if   [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
+  - if   [[ -n "$BUILD_BOOK" ]]; then mdbook build docs && mdbook test -L ./target/debug/deps docs; fi
