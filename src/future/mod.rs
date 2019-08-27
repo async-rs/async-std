@@ -3,10 +3,17 @@
 #[doc(inline)]
 pub use std::future::Future;
 
+use cfg_if::cfg_if;
+
 pub use pending::pending;
 pub use ready::ready;
-pub use timeout::{timeout, TimeoutError};
 
 mod pending;
 mod ready;
-mod timeout;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod timeout;
+        pub use timeout::{timeout, TimeoutError};
+    }
+}

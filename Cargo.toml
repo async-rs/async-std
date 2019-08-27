@@ -21,6 +21,7 @@ rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
 docs = []
+unstable = []
 
 [dependencies]
 async-task = "1.0.0"

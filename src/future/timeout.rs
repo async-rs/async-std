@@ -4,7 +4,6 @@ use std::pin::Pin;
 use std::time::Duration;
 
 use futures_timer::Delay;
-use pin_utils::unsafe_pinned;
 
 use crate::future::Future;
 use crate::task::{Context, Poll};
@@ -14,7 +13,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
@@ -27,6 +25,7 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub async fn timeout<F, T>(dur: Duration, f: F) -> Result<T, TimeoutError>
 where
     F: Future<Output = T>,
@@ -47,8 +46,8 @@ struct TimeoutFuture<F> {
 }
 
 impl<F> TimeoutFuture<F> {
-    unsafe_pinned!(future: F);
-    unsafe_pinned!(delay: Delay);
+    pin_utils::unsafe_pinned!(future: F);
+    pin_utils::unsafe_pinned!(delay: Delay);
 }
 
 impl<F: Future> Future for TimeoutFuture<F> {
@@ -58,7 +57,7 @@ impl<F: Future> Future for TimeoutFuture<F> {
         match self.as_mut().future().poll(cx) {
             Poll::Ready(v) => Poll::Ready(Ok(v)),
             Poll::Pending => match self.delay().poll(cx) {
-                Poll::Ready(_) => Poll::Ready(Err(TimeoutError)),
+                Poll::Ready(_) => Poll::Ready(Err(TimeoutError { _priv: () })),
                 Poll::Pending => Poll::Pending,
             },
         }
@@ -66,8 +65,11 @@ impl<F: Future> Future for TimeoutFuture<F> {
 }
 
 /// An error returned when a future times out.
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct TimeoutError;
+pub struct TimeoutError {
+    _priv: (),
+}
 
 impl Error for TimeoutError {}
 
