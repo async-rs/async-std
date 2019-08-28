@@ -1,7 +1,8 @@
+use futures::lock::Mutex;
 use std::io;
 use std::pin::Pin;
 use std::sync::Arc;
-use futures::lock::Mutex;
+use std::sync::Mutex as StdMutex;
 
 use cfg_if::cfg_if;
 use futures::io::{AsyncRead, Initializer};
@@ -29,7 +30,11 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn stdin() -> Stdin {
-    Stdin(Arc::new(Mutex::new(io::stdin())))
+    Stdin(Mutex::new(Arc::new(StdMutex::new(Inner {
+        stdin: io::stdin(),
+        line: Default::default(),
+        buf: Default::default(),
+    }))))
 }
 
 /// A handle to the standard input of the current process.
@@ -40,8 +45,8 @@ pub fn stdin() -> Stdin {
 ///
 /// [`stdin`]: fn.stdin.html
 /// [`std::io::Stdin`]: https://doc.rust-lang.org/std/io/struct.Stdin.html
-#[derive(Debug, Clone)]
-pub struct Stdin(Arc<Mutex<io::Stdin>>);
+#[derive(Debug)]
+pub struct Stdin(Mutex<Arc<StdMutex<Inner>>>);
 
 /// Inner representation of the asynchronous stdin.
 #[derive(Debug)]
@@ -73,19 +78,26 @@ impl Stdin {
     /// # Ok(()) }) }
     /// ```
     pub async fn read_line(&self, buf: &mut String) -> io::Result<usize> {
-        let this = self.clone();
+        let future_lock = self.0.lock().await;
 
+        let mutex = future_lock.clone();
+        // Start the operation asynchronously.
         let handle = blocking::spawn(async move {
-            let io = this.0.lock().await;
+            let mut guard = mutex.lock().unwrap();
+            let inner: &mut Inner = &mut guard;
 
-            let mut line = String::new();
-            let res = io.read_line(&mut line);
-            (res, line)
+            inner.line.clear();
+            inner.stdin.read_line(&mut inner.line)
         });
-        let (res, line) = handle.await;
 
+        let res = handle.await;
         let n = res?;
-        buf.push_str(&line);
+
+        let mutex = future_lock.clone();
+        let inner = mutex.lock().unwrap();
+
+        // Copy the read data into the buffer and return.
+        buf.push_str(&inner.line);
 
         Ok(n)
     }
@@ -97,27 +109,34 @@ impl AsyncRead for Stdin {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let this = self.clone();
         let len = buf.len();
 
-        let handle = blocking::spawn(async move {
-            let mut io = this.0.lock().await;
+        let future_lock = self.0.lock();
+        pin_utils::pin_mut!(future_lock);
+        let future_lock = futures::ready!(future_lock.poll(cx));
 
-            let mut inner_buf: Vec<u8> = Vec::with_capacity(len);
-            unsafe {
-                inner_buf.set_len(len);
+        let mutex = future_lock.clone();
+        let handle = blocking::spawn(async move {
+            let mut guard = mutex.lock().unwrap();
+            let inner: &mut Inner = &mut guard;
+
+            // Set the length of the inner buffer to the length of the provided buffer.
+            if inner.buf.len() < len {
+                inner.buf.reserve(len - inner.buf.len());
             }
-            let res = io::Read::read(&mut *io, &mut inner_buf);
-            res.and_then(|n| {
-                unsafe {
-                    inner_buf.set_len(n);
-                }
-                Ok((n, inner_buf))
-            })
+            unsafe {
+                inner.buf.set_len(len);
+            }
+
+            io::Read::read(&mut inner.stdin, &mut inner.buf)
         });
         pin_utils::pin_mut!(handle);
-        handle.poll(cx).map_ok(|(n, inner_buf)| {
-            buf[..n].copy_from_slice(&inner_buf[..n]);
+        handle.poll(cx).map_ok(|n| {
+            let mutex = future_lock.clone();
+            let inner = mutex.lock().unwrap();
+
+            // Copy the read data into the buffer and return.
+            buf[..n].copy_from_slice(&inner.buf[..n]);
             n
         })
     }
