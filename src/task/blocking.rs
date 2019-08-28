@@ -126,6 +126,8 @@ fn scale_pool() {
     // If current frequency is bigger, we will scale up.
     if let Some(&max_measurement) = freq_queue.iter().max() {
         if frequency > max_measurement {
+            // Don't spawn more than cores.
+            // Default behaviour of most of the linear adapting thread pools.
             let scale_by = num_cpus::get().max(LOW_WATERMARK as usize) as u64;
 
             // Pool size can't reach to max_threads anyway.
