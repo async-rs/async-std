@@ -1,5 +1,6 @@
 //! A thread pool for running blocking functions asynchronously.
 
+use std::collections::VecDeque;
 use std::fmt;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -12,20 +13,29 @@ use lazy_static::lazy_static;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
+use std::sync::{Arc, Mutex};
 
+// Low watermark value, defines the bare minimum of the pool.
+// Spawns initial thread set.
 const LOW_WATERMARK: u64 = 2;
+
+// Pool managers interval time (milliseconds)
+// This is the actual interval which makes adaptation calculation
+const MANAGER_POLL_INTERVAL: u64 = 50;
+
+// Frequency scale factor for thread adaptation calculation
+const FREQUENCY_SCALE_FACTOR: u64 = 200;
+
+// Frequency histogram's sliding window size
+// Defines how many frequencies will be considered for adaptation.
+const FREQUENCY_QUEUE_SIZE: usize = 10;
+
+// Possible max threads (without OS contract)
 const MAX_THREADS: u64 = 10_000;
 
-// Pool task frequency calculation variables
-static AVR_FREQUENCY: AtomicU64 = AtomicU64::new(0);
+// Pool task frequency variable
+// Holds scheduled tasks onto the thread pool for the calculation window
 static FREQUENCY: AtomicU64 = AtomicU64::new(0);
-
-// Pool speedup calculation variables
-static SPEEDUP: AtomicU64 = AtomicU64::new(0);
-
-// Pool size variables
-static EXPECTED_POOL_SIZE: AtomicU64 = AtomicU64::new(LOW_WATERMARK);
-static CURRENT_POOL_SIZE: AtomicU64 = AtomicU64::new(LOW_WATERMARK);
 
 struct Pool {
     sender: Sender<async_task::Task<()>>,
@@ -40,11 +50,21 @@ lazy_static! {
                 .spawn(|| abort_on_panic(|| {
                     for task in &POOL.receiver {
                         task.run();
-                        calculate_dispatch_frequency();
                     }
                 }))
                 .expect("cannot start a thread driving blocking tasks");
         }
+
+        thread::Builder::new()
+            .name("async-pool-manager".to_string())
+            .spawn(|| abort_on_panic(|| {
+                let poll_interval = Duration::from_millis(MANAGER_POLL_INTERVAL);
+                loop {
+                    scale_pool();
+                    thread::sleep(poll_interval);
+                }
+            }))
+            .expect("thread pool manager cannot be started");
 
         // We want to use an unbuffered channel here to help
         // us drive our dynamic control. In effect, the
@@ -56,30 +76,76 @@ lazy_static! {
         let (sender, receiver) = bounded(0);
         Pool { sender, receiver }
     };
+
+    // Pool task frequency calculation variables
+    static ref FREQ_QUEUE: Arc<Mutex<VecDeque<u64>>> = {
+        Arc::new(Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE + 1)))
+    };
+
+    // Pool size variable
+    static ref POOL_SIZE: Arc<Mutex<u64>> = Arc::new(Mutex::new(LOW_WATERMARK));
 }
 
-fn calculate_dispatch_frequency() {
-    // Calculate current message processing rate here
-    let current_freq = FREQUENCY.fetch_sub(1, Ordering::Release);
-    let avr_freq = AVR_FREQUENCY.load(Ordering::Relaxed);
-    let current_pool_size = LOW_WATERMARK.max(CURRENT_POOL_SIZE.load(Ordering::Acquire));
-    let frequency = (avr_freq as f64 + current_freq as f64 / current_pool_size as f64) as u64;
-    AVR_FREQUENCY.store(frequency, Ordering::Relaxed);
+// Gets the current pool size
+// Used for pool size boundary checking in pool manager
+fn get_current_pool_size() -> u64 {
+    let current_arc = POOL_SIZE.clone();
+    let current_pool_size = *current_arc.lock().unwrap();
+    LOW_WATERMARK.max(current_pool_size)
+}
 
-    // Adapt the thread count of pool
-    let speedup = SPEEDUP.load(Ordering::Relaxed);
-    if frequency > speedup {
-        // Speedup can be gained. Scale the pool up here.
-        SPEEDUP.store(frequency, Ordering::Relaxed);
-        EXPECTED_POOL_SIZE.store(current_pool_size + 1, Ordering::Relaxed);
-    } else {
-        // There is no need for the extra threads, schedule them to be closed.
-        let expected = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
-        if 2 * LOW_WATERMARK < expected {
-            // Substract amount of low watermark
-            EXPECTED_POOL_SIZE.fetch_sub(LOW_WATERMARK, Ordering::Relaxed);
+// Adaptive pool scaling function
+//
+// This allows to spawn new threads to make room for incoming task pressure.
+// Works in the background detached from the pool system and scales up the pool based
+// on the request rate.
+//
+// It uses frequency based calculation to define work. Utilizing average processing rate.
+fn scale_pool() {
+    // Fetch current frequency, it does matter that operations are ordered in this approach.
+    let current_frequency = FREQUENCY.load(Ordering::SeqCst);
+    let freq_queue_arc = FREQ_QUEUE.clone();
+    let mut freq_queue = freq_queue_arc.lock().unwrap();
+
+    // Make it safe to start for calculations by adding initial frequency scale
+    if freq_queue.len() == 0 {
+        freq_queue.push_back(0);
+    }
+
+    // Calculate message rate at the given time window
+    // Factor is there for making adaptation linear.
+    // Exponential bursts may create idle threads which won't be utilized.
+    // They may actually cause slowdown.
+    let current_freq_factorized = current_frequency as f64 * FREQUENCY_SCALE_FACTOR as f64;
+    let frequency = (current_freq_factorized / MANAGER_POLL_INTERVAL as f64) as u64;
+
+    // Adapts the thread count of pool
+    //
+    // Sliding window of frequencies visited by the pool manager.
+    // Select the maximum from the window and check against the current task dispatch frequency.
+    // If current frequency is bigger, we will scale up.
+    if let Some(&max_measurement) = freq_queue.iter().max() {
+        if frequency > max_measurement {
+            let scale_by = num_cpus::get().max(LOW_WATERMARK as usize) as u64;
+
+            // Pool size can't reach to max_threads anyway.
+            // Pool manager backpressures itself while visiting message rate frequencies.
+            // You will get an error before hitting to limits by OS.
+            if get_current_pool_size() < MAX_THREADS {
+                (0..scale_by).for_each(|_| {
+                    create_blocking_thread();
+                });
+            }
         }
     }
+
+    // Add seen frequency data to the frequency histogram.
+    freq_queue.push_back(frequency);
+    if freq_queue.len() == FREQUENCY_QUEUE_SIZE + 1 {
+        freq_queue.pop_front();
+    }
+
+    FREQUENCY.store(0, Ordering::Release);
 }
 
 // Creates yet another thread to receive tasks.
@@ -100,12 +166,18 @@ fn create_blocking_thread() {
         .spawn(move || {
             let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
 
-            CURRENT_POOL_SIZE.fetch_add(1, Ordering::SeqCst);
+            // Adjust the pool size counter before and after spawn
+            {
+                let current_arc = POOL_SIZE.clone();
+                *current_arc.lock().unwrap() += 1;
+            }
             while let Ok(task) = POOL.receiver.recv_timeout(wait_limit) {
                 abort_on_panic(|| task.run());
-                calculate_dispatch_frequency();
             }
-            CURRENT_POOL_SIZE.fetch_sub(1, Ordering::SeqCst);
+            {
+                let current_arc = POOL_SIZE.clone();
+                *current_arc.lock().unwrap() -= 1;
+            }
         })
         .expect("cannot start a dynamic thread driving blocking tasks");
 }
@@ -118,35 +190,10 @@ fn schedule(t: async_task::Task<()>) {
     // Add up for every incoming task schedule
     FREQUENCY.fetch_add(1, Ordering::Acquire);
 
-    // Calculate the amount of threads needed to spin up
-    // then retry sending while blocking. It doesn't spin if
-    // expected pool size is above the MAX_THREADS (which is a
-    // case won't happen)
-    let pool_size = EXPECTED_POOL_SIZE.load(Ordering::Relaxed);
-    let current_pool_size = CURRENT_POOL_SIZE.load(Ordering::SeqCst);
-    let reward = (AVR_FREQUENCY.load(Ordering::Acquire) as f64 / 2.0_f64) as u64;
-
-    if pool_size > current_pool_size && pool_size <= MAX_THREADS {
-        let needed = pool_size.saturating_sub(current_pool_size);
-
-        // For safety, check boundaries before spawning threads.
-        // This also won't be expected to happen. But better safe than sorry.
-        if needed > 0 && (needed < pool_size || needed < current_pool_size) {
-            (0..needed).for_each(|_| {
-                create_blocking_thread();
-            });
-        }
-    }
-
     if let Err(err) = POOL.sender.try_send(t) {
         // We were not able to send to the channel without
         // blocking.
         POOL.sender.send(err.into_inner()).unwrap();
-    } else {
-        // Every successful dispatch, rewarded with negative
-        if reward + (2 * LOW_WATERMARK) < pool_size {
-            EXPECTED_POOL_SIZE.fetch_sub(reward, Ordering::Relaxed);
-        }
     }
 }
 

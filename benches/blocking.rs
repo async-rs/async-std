@@ -9,6 +9,7 @@ use std::thread;
 use std::time::Duration;
 use test::Bencher;
 
+// Benchmark for a 10K burst task spawn
 #[bench]
 fn blocking(b: &mut Bencher) {
     b.iter(|| {
@@ -22,5 +23,16 @@ fn blocking(b: &mut Bencher) {
             .collect::<Vec<JoinHandle<()>>>();
 
         task::block_on(join_all(handles));
+    });
+}
+
+// Benchmark for a single blocking task spawn
+#[bench]
+fn blocking_single(b: &mut Bencher) {
+    b.iter(|| {
+        task::blocking::spawn(async {
+            let duration = Duration::from_millis(1);
+            thread::sleep(duration);
+        })
     });
 }
