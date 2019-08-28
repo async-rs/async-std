@@ -4,10 +4,10 @@ use std::fmt;
 use std::net::Shutdown;
 use std::path::Path;
 
-use futures::future;
 use mio_uds;
 
 use super::SocketAddr;
+use crate::future;
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};

@@ -6,11 +6,11 @@ use std::net::Shutdown;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
 use futures::io::{AsyncRead, AsyncWrite};
 use mio_uds;
 
 use super::SocketAddr;
+use crate::future;
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};

@@ -4,12 +4,11 @@ use std::fmt;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
 use mio_uds;
 
 use super::SocketAddr;
 use super::UnixStream;
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};

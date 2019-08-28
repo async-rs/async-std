@@ -2,10 +2,9 @@ use std::net::{self, SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::future;
 
 use super::TcpStream;
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::task::{Context, Poll};

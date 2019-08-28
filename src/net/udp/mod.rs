@@ -2,8 +2,8 @@ use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 
 use cfg_if::cfg_if;
-use futures::future;
 
+use crate::future;
 use crate::net::driver::IoHandle;
 use crate::task::Poll;
 

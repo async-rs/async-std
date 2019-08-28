@@ -3,10 +3,9 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::future;
 use futures::io::{AsyncRead, Initializer};
 
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard input of the current process.

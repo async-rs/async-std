@@ -4,9 +4,9 @@ use std::net::{self, SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::future;
 use futures::io::{AsyncRead, AsyncWrite};
 
+use crate::future;
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::task::{Context, Poll};

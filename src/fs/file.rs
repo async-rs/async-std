@@ -7,10 +7,10 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::future::{self, FutureExt, TryFutureExt};
+use futures::future::{FutureExt, TryFutureExt};
 use futures::io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
 use crate::task::{blocking, Context, Poll};
 
