@@ -7,6 +7,7 @@ use std::time::Instant;
 
 // Test for slow joins without task bursts during joins.
 #[test]
+#[ignore]
 fn slow_join() {
     let thread_join_time_max = 11_000;
     let start = Instant::now();
@@ -50,6 +51,7 @@ fn slow_join() {
 
 // Test for slow joins with task burst.
 #[test]
+#[ignore]
 fn slow_join_interrupted() {
     let thread_join_time_max = 2_000;
     let start = Instant::now();
