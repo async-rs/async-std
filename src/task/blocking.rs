@@ -55,6 +55,8 @@ lazy_static! {
                 .expect("cannot start a thread driving blocking tasks");
         }
 
+        // Pool manager to check frequency of task rates
+        // and take action by scaling the pool accordingly.
         thread::Builder::new()
             .name("async-pool-manager".to_string())
             .spawn(|| abort_on_panic(|| {
