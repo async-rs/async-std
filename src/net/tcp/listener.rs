@@ -1,5 +1,4 @@
 use std::net::{self, SocketAddr, ToSocketAddrs};
-use std::pin::Pin;
 
 use cfg_if::cfg_if;
 use futures::future;
@@ -8,7 +7,7 @@ use super::TcpStream;
 use crate::future::Future;
 use crate::io;
 use crate::net::driver::IoHandle;
-use crate::task::{Context, Poll};
+use crate::task::Poll;
 
 /// A TCP socket server, listening for connections.
 ///
@@ -184,8 +183,13 @@ impl TcpListener {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn incoming(&self) -> Incoming<'_> {
-        Incoming(self)
+    pub fn incoming(&self) -> impl futures::Stream<Item = io::Result<TcpStream>> + '_ {
+        futures::stream::poll_fn(move |cx| {
+            let accept = self.accept();
+            pin_utils::pin_mut!(accept);
+
+            accept.poll(cx).map_ok(|(stream, _addr)| stream).map(Some)
+        })
     }
 
     /// Returns the local address that this listener is bound to.
@@ -207,32 +211,6 @@ impl TcpListener {
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io_handle.get_ref().local_addr()
-    }
-}
-
-/// A stream of incoming TCP connections.
-///
-/// This stream is infinite, i.e awaiting the next connection will never result in [`None`]. It is
-/// created by the [`incoming`] method on [`TcpListener`].
-///
-/// This type is an async version of [`std::net::Incoming`].
-///
-/// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
-/// [`incoming`]: struct.TcpListener.html#method.incoming
-/// [`TcpListener`]: struct.TcpListener.html
-/// [`std::net::Incoming`]: https://doc.rust-lang.org/std/net/struct.Incoming.html
-#[derive(Debug)]
-pub struct Incoming<'a>(&'a TcpListener);
-
-impl<'a> futures::Stream for Incoming<'a> {
-    type Item = io::Result<TcpStream>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let future = self.0.accept();
-        pin_utils::pin_mut!(future);
-
-        let (socket, _) = futures::ready!(future.poll(cx))?;
-        Poll::Ready(Some(Ok(socket)))
     }
 }
 

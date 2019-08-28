@@ -28,7 +28,7 @@
 //! # }) }
 //! ```
 
-pub use tcp::{Incoming, TcpListener, TcpStream};
+pub use tcp::{TcpListener, TcpStream};
 pub use udp::UdpSocket;
 
 pub(crate) mod driver;

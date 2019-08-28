@@ -1,4 +1,4 @@
-pub use listener::{Incoming, TcpListener};
+pub use listener::TcpListener;
 pub use stream::TcpStream;
 
 mod listener;
