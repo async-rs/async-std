@@ -30,6 +30,7 @@ cfg_if! {
 /// This trait is an async version of [`std::net::ToSocketAddrs`].
 ///
 /// [`std::net::ToSocketAddrs`]: https://doc.rust-lang.org/std/net/trait.ToSocketAddrs.html
+/// [`SocketAddr`]: https://doc.rust-lang.org/std/net/enum.SocketAddr.html
 pub trait ToSocketAddrs {
     /// Returned iterator over socket addresses which this type may correspond to.
     type Iter: Iterator<Item = SocketAddr> + Send;
