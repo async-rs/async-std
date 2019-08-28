@@ -1,9 +1,9 @@
 use std::io;
 use std::pin::Pin;
-use std::sync::Mutex;
+use std::sync::Arc;
+use futures::lock::Mutex;
 
 use cfg_if::cfg_if;
-use futures::future;
 use futures::io::{AsyncRead, Initializer};
 
 use crate::future::Future;
@@ -29,12 +29,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn stdin() -> Stdin {
-    Stdin(Mutex::new(State::Idle(Some(Inner {
-        stdin: io::stdin(),
-        line: String::new(),
-        buf: Vec::new(),
-        last_op: None,
-    }))))
+    Stdin(Arc::new(Mutex::new(io::stdin())))
 }
 
 /// A handle to the standard input of the current process.
@@ -45,22 +40,8 @@ pub fn stdin() -> Stdin {
 ///
 /// [`stdin`]: fn.stdin.html
 /// [`std::io::Stdin`]: https://doc.rust-lang.org/std/io/struct.Stdin.html
-#[derive(Debug)]
-pub struct Stdin(Mutex<State>);
-
-/// The state of the asynchronous stdin.
-///
-/// The stdin can be either idle or busy performing an asynchronous operation.
-#[derive(Debug)]
-enum State {
-    /// The stdin is idle.
-    Idle(Option<Inner>),
-
-    /// The stdin is blocked on an asynchronous operation.
-    ///
-    /// Awaiting this operation will result in the new state of the stdin.
-    Busy(blocking::JoinHandle<State>),
-}
+#[derive(Debug, Clone)]
+pub struct Stdin(Arc<Mutex<io::Stdin>>);
 
 /// Inner representation of the asynchronous stdin.
 #[derive(Debug)]
@@ -73,16 +54,6 @@ struct Inner {
 
     /// The write buffer.
     buf: Vec<u8>,
-
-    /// The result of the last asynchronous operation on the stdin.
-    last_op: Option<Operation>,
-}
-
-/// Possible results of an asynchronous operation on the stdin.
-#[derive(Debug)]
-enum Operation {
-    ReadLine(io::Result<usize>),
-    Read(io::Result<usize>),
 }
 
 impl Stdin {
@@ -102,89 +73,53 @@ impl Stdin {
     /// # Ok(()) }) }
     /// ```
     pub async fn read_line(&self, buf: &mut String) -> io::Result<usize> {
-        future::poll_fn(|cx| {
-            let state = &mut *self.0.lock().unwrap();
+        let this = self.clone();
 
-            loop {
-                match state {
-                    State::Idle(opt) => {
-                        let inner = opt.as_mut().unwrap();
+        let handle = blocking::spawn(async move {
+            let io = this.0.lock().await;
 
-                        // Check if the operation has completed.
-                        if let Some(Operation::ReadLine(res)) = inner.last_op.take() {
-                            let n = res?;
+            let mut line = String::new();
+            let res = io.read_line(&mut line);
+            (res, line)
+        });
+        let (res, line) = handle.await;
 
-                            // Copy the read data into the buffer and return.
-                            buf.push_str(&inner.line);
-                            return Poll::Ready(Ok(n));
-                        } else {
-                            let mut inner = opt.take().unwrap();
+        let n = res?;
+        buf.push_str(&line);
 
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                inner.line.clear();
-                                let res = inner.stdin.read_line(&mut inner.line);
-                                inner.last_op = Some(Operation::ReadLine(res));
-                                State::Idle(Some(inner))
-                            }));
-                        }
-                    }
-                    // Poll the asynchronous operation the stdin is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
-        })
-        .await
+        Ok(n)
     }
 }
 
 impl AsyncRead for Stdin {
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let state = &mut *self.0.lock().unwrap();
+        let this = self.clone();
+        let len = buf.len();
 
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    let inner = opt.as_mut().unwrap();
+        let handle = blocking::spawn(async move {
+            let mut io = this.0.lock().await;
 
-                    // Check if the operation has completed.
-                    if let Some(Operation::Read(res)) = inner.last_op.take() {
-                        let n = res?;
-
-                        // If more data was read than fits into the buffer, let's retry the read
-                        // operation.
-                        if n <= buf.len() {
-                            // Copy the read data into the buffer and return.
-                            buf[..n].copy_from_slice(&inner.buf[..n]);
-                            return Poll::Ready(Ok(n));
-                        }
-                    } else {
-                        let mut inner = opt.take().unwrap();
-
-                        // Set the length of the inner buffer to the length of the provided buffer.
-                        if inner.buf.len() < buf.len() {
-                            inner.buf.reserve(buf.len() - inner.buf.len());
-                        }
-                        unsafe {
-                            inner.buf.set_len(buf.len());
-                        }
-
-                        // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Read::read(&mut inner.stdin, &mut inner.buf);
-                            inner.last_op = Some(Operation::Read(res));
-                            State::Idle(Some(inner))
-                        }));
-                    }
-                }
-                // Poll the asynchronous operation the stdin is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+            let mut inner_buf: Vec<u8> = Vec::with_capacity(len);
+            unsafe {
+                inner_buf.set_len(len);
             }
-        }
+            let res = io::Read::read(&mut *io, &mut inner_buf);
+            res.and_then(|n| {
+                unsafe {
+                    inner_buf.set_len(n);
+                }
+                Ok((n, inner_buf))
+            })
+        });
+        pin_utils::pin_mut!(handle);
+        handle.poll(cx).map_ok(|(n, inner_buf)| {
+            buf[..n].copy_from_slice(&inner_buf[..n]);
+            n
+        })
     }
 
     #[inline]
