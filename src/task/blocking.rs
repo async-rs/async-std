@@ -21,14 +21,15 @@ const LOW_WATERMARK: u64 = 2;
 
 // Pool managers interval time (milliseconds)
 // This is the actual interval which makes adaptation calculation
-const MANAGER_POLL_INTERVAL: u64 = 50;
-
-// Frequency scale factor for thread adaptation calculation
-const FREQUENCY_SCALE_FACTOR: u64 = 200;
+const MANAGER_POLL_INTERVAL: u64 = 200;
 
 // Frequency histogram's sliding window size
 // Defines how many frequencies will be considered for adaptation.
 const FREQUENCY_QUEUE_SIZE: usize = 10;
+
+// Exponential moving average smoothing coefficient for limited window
+// Smoothing factor is estimated with: 2 / (N + 1) where N is sample size.
+const EMA_COEFFICIENT: f64 = 2_f64 / (FREQUENCY_QUEUE_SIZE as f64 + 1_f64);
 
 // Possible max threads (without OS contract)
 const MAX_THREADS: u64 = 10_000;
@@ -96,6 +97,12 @@ fn get_current_pool_size() -> u64 {
     LOW_WATERMARK.max(current_pool_size)
 }
 
+fn calculate_ema(freq_queue: &VecDeque<u64>) -> f64 {
+    freq_queue.iter().enumerate().fold(0_f64, |acc, (i, freq)| {
+        acc + ((*freq as f64) * ((1_f64 - EMA_COEFFICIENT).powf(i as f64) as f64))
+    }) * EMA_COEFFICIENT as f64
+}
+
 // Adaptive pool scaling function
 //
 // This allows to spawn new threads to make room for incoming task pressure.
@@ -114,39 +121,41 @@ fn scale_pool() {
         freq_queue.push_back(0);
     }
 
-    // Calculate message rate at the given time window
-    // Factor is there for making adaptation linear.
-    // Exponential bursts may create idle threads which won't be utilized.
-    // They may actually cause slowdown.
-    let current_freq_factorized = current_frequency as f64 * FREQUENCY_SCALE_FACTOR as f64;
-    let frequency = (current_freq_factorized / MANAGER_POLL_INTERVAL as f64) as u64;
+    // Calculate message rate for the given time window
+    let frequency = (current_frequency as f64 / MANAGER_POLL_INTERVAL as f64) as u64;
 
     // Adapts the thread count of pool
     //
     // Sliding window of frequencies visited by the pool manager.
     // Select the maximum from the window and check against the current task dispatch frequency.
     // If current frequency is bigger, we will scale up.
-    if let Some(&max_measurement) = freq_queue.iter().max() {
-        if frequency > max_measurement {
-            // Don't spawn more than cores.
-            // Default behaviour of most of the linear adapting thread pools.
-            let scale_by = num_cpus::get().max(LOW_WATERMARK as usize) as u64;
-
-            // Pool size can't reach to max_threads anyway.
-            // Pool manager backpressures itself while visiting message rate frequencies.
-            // You will get an error before hitting to limits by OS.
-            if get_current_pool_size() < MAX_THREADS {
-                (0..scale_by).for_each(|_| {
-                    create_blocking_thread();
-                });
-            }
-        }
-    }
+    let prev_ema_frequency = calculate_ema(&freq_queue);
 
     // Add seen frequency data to the frequency histogram.
     freq_queue.push_back(frequency);
     if freq_queue.len() == FREQUENCY_QUEUE_SIZE + 1 {
         freq_queue.pop_front();
+    }
+
+    let curr_ema_frequency = calculate_ema(&freq_queue);
+
+    if curr_ema_frequency > prev_ema_frequency {
+        let scale_by: f64 = curr_ema_frequency - prev_ema_frequency;
+        let scale = ((LOW_WATERMARK as f64 * scale_by) + LOW_WATERMARK as f64) as u64;
+
+        // Pool size shouldn't reach to max_threads anyway.
+        // Pool manager backpressures itself while visiting message rate frequencies.
+        // You will get an error before hitting to limits by OS.
+        (0..scale).for_each(|_| {
+            create_blocking_thread();
+        });
+    } else if curr_ema_frequency == prev_ema_frequency && current_frequency != 0 {
+        // Throughput is low. Allocate more threads to unblock flow.
+        let scale = LOW_WATERMARK * current_frequency + 1;
+
+        (0..scale).for_each(|_| {
+            create_blocking_thread();
+        });
     }
 
     FREQUENCY.store(0, Ordering::Release);
