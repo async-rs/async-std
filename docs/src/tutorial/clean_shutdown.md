@@ -25,7 +25,7 @@ Let's add waiting to the server:
 # extern crate futures;
 # use async_std::{
 #     io::{self, BufReader},
-#     net::{TcpListener, TcpStream},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
@@ -35,7 +35,6 @@ Let's add waiting to the server:
 # };
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
-#     net::ToSocketAddrs,
 #     sync::Arc,
 # };
 #
@@ -160,7 +159,7 @@ And to the broker:
 # extern crate futures;
 # use async_std::{
 #     io::{self, BufReader},
-#     net::{TcpListener, TcpStream},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
@@ -170,7 +169,6 @@ And to the broker:
 # };
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
-#     net::ToSocketAddrs,
 #     sync::Arc,
 # };
 #

@@ -19,11 +19,10 @@ With async, we can just use the `select!` macro.
 # extern crate futures;
 use async_std::{
     io::{stdin, BufRead, BufReader, Write},
-    net::TcpStream,
+    net::{TcpStream, ToSocketAddrs},
     task,
 };
 use futures::{select, FutureExt, StreamExt};
-use std::net::ToSocketAddrs;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
