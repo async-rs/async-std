@@ -1,3 +1,6 @@
+use std::pin::Pin;
+
+use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// Creates a new future wrapping around a function returning [`Poll`].
@@ -24,5 +27,23 @@ pub async fn poll_fn<F, T>(f: F) -> T
 where
     F: FnMut(&mut Context<'_>) -> Poll<T>,
 {
-    futures::future::poll_fn(f).await
+    let fut = PollFn { f };
+    fut.await
+}
+
+struct PollFn<F> {
+    f: F,
+}
+
+impl<F> Unpin for PollFn<F> {}
+
+impl<T, F> Future for PollFn<F>
+where
+    F: FnMut(&mut Context<'_>) -> Poll<T>,
+{
+    type Output = T;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
+        (&mut self.f)(cx)
+    }
 }

@@ -1,3 +1,9 @@
+use std::marker::PhantomData;
+use std::pin::Pin;
+
+use crate::future::Future;
+use crate::task::{Context, Poll};
+
 /// Never resolves to a value.
 ///
 /// # Examples
@@ -19,5 +25,20 @@
 /// # }) }
 /// ```
 pub async fn pending<T>() -> T {
-    futures::future::pending::<T>().await
+    let fut = Pending {
+        _marker: PhantomData,
+    };
+    fut.await
+}
+
+struct Pending<T> {
+    _marker: PhantomData<T>,
+}
+
+impl<T> Future for Pending<T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<T> {
+        Poll::Pending
+    }
 }
