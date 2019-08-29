@@ -50,13 +50,14 @@ use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
 
+use super::from_stream::FromStream;
+use crate::future::Future;
+use crate::task::{Context, Poll};
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-
-use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -76,6 +77,21 @@ cfg_if! {
             ($a:lifetime, $f:tt, $o:ty, $t1:ty) => ($f<$a, Self, $t1>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty, $t3:ty) => ($f<$a, Self, $t1, $t2, $t3>);
+        }
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "docs")] {
+        #[doc(hidden)]
+        pub struct DynFuture<'a, T>(std::marker::PhantomData<&'a T>);
+
+        macro_rules! dyn_ret {
+            ($a:lifetime, $o:ty) => (DynFuture<$a, $o>);
+        }
+    } else {
+        macro_rules! dyn_ret {
+            ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + 'a>>)
         }
     }
 }
@@ -528,7 +544,6 @@ pub trait Stream {
     ///
     /// Basic usage:
     ///
-    /// ```
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::prelude::*;
@@ -651,6 +666,48 @@ pub trait Stream {
         U: Stream,
     {
         Zip::new(self, other)
+    }
+
+    /// Transforms a stream into a collection.
+    ///
+    /// `collect()` can take anything streamable, and turn it into a relevant
+    /// collection. This is one of the more powerful methods in the async
+    /// standard library, used in a variety of contexts.
+    ///
+    /// The most basic pattern in which `collect()` is used is to turn one
+    /// collection into another. You take a collection, call [`stream`] on it,
+    /// do a bunch of transformations, and then `collect()` at the end.
+    ///
+    /// Because `collect()` is so general, it can cause problems with type
+    /// inference. As such, `collect()` is one of the few times you'll see
+    /// the syntax affectionately known as the 'turbofish': `::<>`. This
+    /// helps the inference algorithm understand specifically which collection
+    /// you're trying to collect into.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    ///
+    /// let s = stream::repeat(9u8).take(3);
+    /// let buf: Vec<u8> = s.collect().await;
+    ///
+    /// assert_eq!(buf, vec![9; 3]);
+    /// #
+    /// # }) }
+    /// ```
+    ///
+    /// [`stream`]: trait.Stream.html#tymethod.next
+    #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
+    fn collect<'a, B>(self) -> dyn_ret!('a, B)
+    where
+        Self: futures_core::stream::Stream + Sized + 'a,
+        B: FromStream<<Self as futures_core::stream::Stream>::Item>,
+    {
+        FromStream::from_stream(self)
     }
 }
 

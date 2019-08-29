@@ -23,12 +23,16 @@
 
 pub use double_ended_stream::DoubleEndedStream;
 pub use empty::{empty, Empty};
+pub use from_stream::FromStream;
+pub use into_stream::IntoStream;
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use stream::{Scan, Stream, Take, Zip};
 
 mod double_ended_stream;
 mod empty;
+mod from_stream;
+mod into_stream;
 mod once;
 mod repeat;
 mod stream;
