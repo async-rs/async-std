@@ -11,7 +11,7 @@ We need to:
 # extern crate async_std;
 # use async_std::{
 #     io::{BufRead, BufReader},
-#     net::{TcpListener, TcpStream. ToSocketAddrs},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::Stream,
 #     task,
 # };
