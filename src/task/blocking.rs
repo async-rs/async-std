@@ -11,6 +11,7 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
 use crate::future::Future;
+use crate::io::ErrorKind;
 use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
 use std::sync::{Arc, Mutex};
@@ -31,12 +32,12 @@ const FREQUENCY_QUEUE_SIZE: usize = 10;
 // Smoothing factor is estimated with: 2 / (N + 1) where N is sample size.
 const EMA_COEFFICIENT: f64 = 2_f64 / (FREQUENCY_QUEUE_SIZE as f64 + 1_f64);
 
-// Possible max threads (without OS contract)
-const MAX_THREADS: u64 = 10_000;
-
 // Pool task frequency variable
 // Holds scheduled tasks onto the thread pool for the calculation window
 static FREQUENCY: AtomicU64 = AtomicU64::new(0);
+
+// Possible max threads (without OS contract)
+static MAX_THREADS: AtomicU64 = AtomicU64::new(10_000);
 
 struct Pool {
     sender: Sender<async_task::Task<()>>,
@@ -89,14 +90,19 @@ lazy_static! {
     static ref POOL_SIZE: Arc<Mutex<u64>> = Arc::new(Mutex::new(LOW_WATERMARK));
 }
 
-// Gets the current pool size
-// Used for pool size boundary checking in pool manager
-fn get_current_pool_size() -> u64 {
-    let current_arc = POOL_SIZE.clone();
-    let current_pool_size = *current_arc.lock().unwrap();
-    LOW_WATERMARK.max(current_pool_size)
-}
-
+// Exponentially Weighted Moving Average calculation
+//
+// This allows us to find the EMA value.
+// This value represents the trend of tasks mapped onto the thread pool.
+// Calculation is following:
+//
+// α    :: EMA_COEFFICIENT :: smoothing factor between 0 and 1
+// Yt   :: freq            :: frequency sample at time t
+// St   :: acc             :: EMA at time t
+//
+// Under these definitions formula is following:
+// EMA = α * [ Yt + (1 - α)*Yt-1 + ((1 - α)^2)*Yt-2 + ((1 - α)^3)*Yt-3 ... ] + St
+#[inline]
 fn calculate_ema(freq_queue: &VecDeque<u64>) -> f64 {
     freq_queue.iter().enumerate().fold(0_f64, |acc, (i, freq)| {
         acc + ((*freq as f64) * ((1_f64 - EMA_COEFFICIENT).powf(i as f64) as f64))
@@ -124,11 +130,7 @@ fn scale_pool() {
     // Calculate message rate for the given time window
     let frequency = (current_frequency as f64 / MANAGER_POLL_INTERVAL as f64) as u64;
 
-    // Adapts the thread count of pool
-    //
-    // Sliding window of frequencies visited by the pool manager.
-    // Select the maximum from the window and check against the current task dispatch frequency.
-    // If current frequency is bigger, we will scale up.
+    // Calculates current time window's EMA value (including last sample)
     let prev_ema_frequency = calculate_ema(&freq_queue);
 
     // Add seen frequency data to the frequency histogram.
@@ -137,22 +139,35 @@ fn scale_pool() {
         freq_queue.pop_front();
     }
 
+    // Calculates current time window's EMA value (including last sample)
     let curr_ema_frequency = calculate_ema(&freq_queue);
 
+    // Adapts the thread count of pool
+    //
+    // Sliding window of frequencies visited by the pool manager.
+    // Pool manager creates EMA value for previous window and current window.
+    // Compare them to determine scaling amount based on the trends.
+    // If current EMA value is bigger, we will scale up.
     if curr_ema_frequency > prev_ema_frequency {
+        // "Scale by" amount can be seen as "how much load is coming".
+        // "Scale" amount is "how many threads we should spawn".
         let scale_by: f64 = curr_ema_frequency - prev_ema_frequency;
         let scale = ((LOW_WATERMARK as f64 * scale_by) + LOW_WATERMARK as f64) as u64;
 
-        // Pool size shouldn't reach to max_threads anyway.
-        // Pool manager backpressures itself while visiting message rate frequencies.
-        // You will get an error before hitting to limits by OS.
+        // It is time to scale the pool!
         (0..scale).for_each(|_| {
             create_blocking_thread();
         });
-    } else if curr_ema_frequency == prev_ema_frequency && current_frequency != 0 {
+    } else if (curr_ema_frequency - prev_ema_frequency).abs() < std::f64::EPSILON
+        && current_frequency != 0
+    {
         // Throughput is low. Allocate more threads to unblock flow.
+        // If we fall to this case, scheduler is congested by longhauling tasks.
+        // For unblock the flow we should add up some threads to the pool, but not that much to
+        // stagger the program's operation.
         let scale = LOW_WATERMARK * current_frequency + 1;
 
+        // Scale it up!
         (0..scale).for_each(|_| {
             create_blocking_thread();
         });
@@ -165,6 +180,16 @@ fn scale_pool() {
 // Dynamic threads will terminate themselves if they don't
 // receive any work after between one and ten seconds.
 fn create_blocking_thread() {
+    // Check that thread is spawnable.
+    // If it hits to the OS limits don't spawn it.
+    {
+        let current_arc = POOL_SIZE.clone();
+        let pool_size = *current_arc.lock().unwrap();
+        if pool_size >= MAX_THREADS.load(Ordering::SeqCst) {
+            MAX_THREADS.store(10_000, Ordering::SeqCst);
+            return;
+        }
+    }
     // We want to avoid having all threads terminate at
     // exactly the same time, causing thundering herd
     // effects. We want to stagger their destruction over
@@ -174,7 +199,7 @@ fn create_blocking_thread() {
     // Generate a simple random number of milliseconds
     let rand_sleep_ms = u64::from(random(10_000));
 
-    thread::Builder::new()
+    let _ = thread::Builder::new()
         .name("async-blocking-driver-dynamic".to_string())
         .spawn(move || {
             let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
@@ -192,7 +217,22 @@ fn create_blocking_thread() {
                 *current_arc.lock().unwrap() -= 1;
             }
         })
-        .expect("cannot start a dynamic thread driving blocking tasks");
+        .map_err(|err| {
+            match err.kind() {
+                ErrorKind::WouldBlock => {
+                    // Maximum allowed threads per process is varying from system to system.
+                    // Some systems has it(like MacOS), some doesn't(Linux)
+                    // This case expected to not happen.
+                    // But when happened this shouldn't throw a panic.
+                    let current_arc = POOL_SIZE.clone();
+                    MAX_THREADS.store(*current_arc.lock().unwrap() - 1, Ordering::SeqCst);
+                }
+                _ => eprintln!(
+                    "cannot start a dynamic thread driving blocking tasks: {}",
+                    err
+                ),
+            }
+        });
 }
 
 // Enqueues work, attempting to send to the threadpool in a
@@ -200,7 +240,7 @@ fn create_blocking_thread() {
 // based on the previous statistics without relying on
 // if there is not a thread ready to accept the work or not.
 fn schedule(t: async_task::Task<()>) {
-    // Add up for every incoming task schedule
+    // Add up for every incoming scheduled task
     FREQUENCY.fetch_add(1, Ordering::Acquire);
 
     if let Err(err) = POOL.sender.try_send(t) {

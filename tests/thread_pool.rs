@@ -103,7 +103,7 @@ fn longhauling_task_join() {
     let start = Instant::now();
 
     // First batch of overhauling tasks
-    let handles = (0..100_000)
+    let _ = (0..100_000)
         .map(|_| {
             task::blocking::spawn(async {
                 let duration = Duration::from_millis(1000);
@@ -111,8 +111,6 @@ fn longhauling_task_join() {
             })
         })
         .collect::<Vec<JoinHandle<()>>>();
-
-    task::block_on(join_all(handles));
 
     // Let them join to see how it behaves under different workloads.
     let duration = Duration::from_millis(thread_join_time_max);
