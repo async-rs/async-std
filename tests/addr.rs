@@ -62,20 +62,13 @@ fn to_socket_addr_str() {
 #[test]
 fn to_socket_addr_string() {
     let a = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(77, 88, 21, 11), 24352));
-    assert_eq!(
-        Ok(vec![a]),
-        blocking_resolve(&*format!("{}:{}", "77.88.21.11", "24352"))
-    );
-    assert_eq!(
-        Ok(vec![a]),
-        blocking_resolve(&format!("{}:{}", "77.88.21.11", "24352"))
-    );
-    assert_eq!(
-        Ok(vec![a]),
-        blocking_resolve(format!("{}:{}", "77.88.21.11", "24352"))
-    );
+    let s: &str = "77.88.21.11:24352";
+    assert_eq!(Ok(vec![a]), blocking_resolve(s));
 
-    let s = "77.88.21.11:24352";
+    let s: &String = &"77.88.21.11:24352".to_string();
+    assert_eq!(Ok(vec![a]), blocking_resolve(s));
+
+    let s: String = "77.88.21.11:24352".to_string();
     assert_eq!(Ok(vec![a]), blocking_resolve(s));
 }
 
