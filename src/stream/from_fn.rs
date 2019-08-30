@@ -11,6 +11,28 @@ use futures::stream::Stream;
 /// This allows creating a custom iterator with any behavior
 /// without using the more verbose syntax of creating a dedicated type
 /// and implementing the `Iterator` trait for it.
+///
+/// # Examples
+/// 
+/// ```
+/// # fn main() { async_std::task::block_on(async {
+/// #
+/// let mut count = 0;
+/// let counter = async_std::stream::from_fn(|| async move {
+///     // Increment our count. This is why we started at zero.
+///     count += 1;
+///
+///     // Check to see if we've finished counting or not.
+///     if count < 6 {
+///         Some(count)
+///     } else {
+///         None
+///     }
+/// });
+/// assert_eq!(counter.collect::<Vec<_>>().await, &[1, 2, 3, 4, 5]);
+/// #
+/// # }) }
+/// ```
 #[inline]
 pub fn from_fn<T, F>(f: F) -> FromFn<F, T>
     where F: FnMut() -> Box<dyn Future<Output = Option<T>>>,
