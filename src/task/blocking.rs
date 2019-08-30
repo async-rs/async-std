@@ -13,18 +13,43 @@
 //!
 //! ## Trend Estimator
 //! Hold up to the given number of frequencies to create an estimation.
-//! This pool holds 10 frequencies at a time.
+//! Trend estimator holds 10 frequencies at a time.
+//! This value is stored as constant in [FREQUENCY_QUEUE_SIZE](constant.FREQUENCY_QUEUE_SIZE.html).
 //! Estimation algorithm and prediction uses Exponentially Weighted Moving Average algorithm.
 //!
-//! Algorithm is altered and adapted from [A Novel Predictive and Self–Adaptive Dynamic Thread Pool Management](https://doi.org/10.1109/ISPA.2011.61).
+//! This algorithm is adapted from [A Novel Predictive and Self–Adaptive Dynamic Thread Pool Management](https://doi.org/10.1109/ISPA.2011.61)
+//! and altered to:
+//! * use instead of heavy calculation of trend, utilize thread redundancy which is the sum of the differences between the predicted and observed value.
+//! * use instead of linear trend estimation, it uses exponential trend estimation where formula is:
+//! ```text
+//! LOW_WATERMARK * (predicted - observed) + LOW_WATERMARK
+//! ```
+//! *NOTE:* If this algorithm wants to be tweaked increasing [LOW_WATERMARK](constant.LOW_WATERMARK.html) will automatically adapt the additional dynamic thread spawn count
+//! * operate without watermarking by timestamps (in paper which is used to measure algorithms own performance during the execution)
+//! * operate extensive subsampling. Extensive subsampling congests the pool manager thread.
+//! * operate without keeping track of idle time of threads or job out queue like TEMA and FOPS implementations.
 //!
 //! ## Predictive Upscaler
-//! Selects upscaling amount based on estimation or when throughput hogs based on amount of tasks mapped.
+//! Upscaler has three cases (also can be seen in paper):
+//! * The rate slightly increases and there are many idle threads.
+//! * The number of worker threads tends to be reduced since the workload of the system is descending.
+//! * The system has no request or stalled. (Our case here is when the current tasks block further tasks from being processed – throughput hogs)
+//!
+//! For the first two EMA calculation and exponential trend estimation gives good performance.
+//! For the last case, upscaler selects upscaling amount by amount of tasks mapped when throughput hogs happen.
+//!
+//! **example scenario:** Let's say we have 10_000 tasks where every one of them is blocking for 1 second. Scheduler will map plenty of tasks but will got rejected.
+//! This makes estimation calculation nearly 0 for both entering and exiting parts. When this happens and we still see tasks mapped from scheduler.
+//! We start to slowly increase threads by amount of frequency linearly. High increase of this value either make us hit to the thread threshold on
+//! some OS or make congestion on the other thread utilizations of the program, because of context switch.
+//!
 //! Throughput hogs determined by a combination of job in / job out frequency and current scheduler task assignment frequency.
+//! Threshold of EMA difference is eluded by machine epsilon for floating point arithmetic errors.
 //!
 //! ## Time-based Downscaler
-//! After dynamic tasks spawned with upscaler they will continue working in between 1 second and 10 seconds.
-//! When tasks are detached from the channels after this amount they join back.
+//! When threads becomes idle, they will not shut down immediately.
+//! Instead, they wait a random amount between 1 and 11 seconds
+//! to even out the load.
 
 use std::collections::VecDeque;
 use std::fmt;
@@ -59,7 +84,7 @@ const FREQUENCY_QUEUE_SIZE: usize = 10;
 const EMA_COEFFICIENT: f64 = 2_f64 / (FREQUENCY_QUEUE_SIZE as f64 + 1_f64);
 
 /// Pool task frequency variable.
-/// Holds scheduled tasks onto the thread pool for the calculation window.
+/// Holds scheduled tasks onto the thread pool for the calculation time window.
 static FREQUENCY: AtomicU64 = AtomicU64::new(0);
 
 /// Possible max threads (without OS contract).
