@@ -3,6 +3,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+use futures::ready;
 use futures::stream::Stream;
 
 /// Creates a new stream where each iteration calls the provided closure.
@@ -27,7 +28,6 @@ pub fn from_fn<T, F>(f: F) -> FromFn<F, T>
 /// See its documentation for more.
 ///
 /// [`stream::from_fn`]: fn.from_fn.html
-#[derive(Clone)]
 pub struct FromFn<F, T> {
     closure: F,
     fut: Option<Box<dyn Future<Output = Option<T>>>>,
@@ -44,8 +44,11 @@ impl<T, F: Unpin> Stream for FromFn<F, T>
             self.fut = Some((self.closure)());
         }
         
-        let pinned = unsafe { Pin::new_unchecked(&mut self.fut.unwrap()) };
-        pinned.poll(cx)
+        let pinned = unsafe { Pin::new_unchecked(&mut self.fut.as_mut().unwrap()) };
+        let out = ready!(pinned.poll(cx));
+
+        self.fut = None;
+        Poll::Ready(out)
     }
 }
 
