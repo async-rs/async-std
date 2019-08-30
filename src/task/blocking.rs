@@ -136,7 +136,7 @@ lazy_static! {
 
     /// Sliding window for pool task frequency calculation
     static ref FREQ_QUEUE: Mutex<VecDeque<u64>> = {
-        Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE + 1))
+        Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE.saturating_add(1)))
     };
 
     /// Dynamic pool thread count variable
@@ -196,7 +196,7 @@ fn scale_pool() {
 
     // Add seen frequency data to the frequency histogram.
     freq_queue.push_back(frequency);
-    if freq_queue.len() == FREQUENCY_QUEUE_SIZE + 1 {
+    if freq_queue.len() == FREQUENCY_QUEUE_SIZE.saturating_add(1) {
         freq_queue.pop_front();
     }
 
@@ -255,12 +255,14 @@ fn create_blocking_thread() {
     // background noise.
     //
     // Generate a simple random number of milliseconds
-    let rand_sleep_ms = u64::from(random(10_000));
+    let rand_sleep_ms = 1000_u64
+        .checked_add(u64::from(random(10_000)))
+        .expect("shouldn't overflow");
 
     let _ = thread::Builder::new()
         .name("async-blocking-driver-dynamic".to_string())
         .spawn(move || {
-            let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
+            let wait_limit = Duration::from_millis(rand_sleep_ms);
 
             // Adjust the pool size counter before and after spawn
             *POOL_SIZE.lock().unwrap() += 1;
@@ -276,7 +278,12 @@ fn create_blocking_thread() {
                     // Also, some systems have it(like macOS), and some don't(Linux).
                     // This case expected not to happen.
                     // But when happened this shouldn't throw a panic.
-                    MAX_THREADS.store(*POOL_SIZE.lock().unwrap() - 1, Ordering::SeqCst);
+                    let guarded_count = POOL_SIZE
+                        .lock()
+                        .unwrap()
+                        .checked_sub(1)
+                        .expect("shouldn't underflow");
+                    MAX_THREADS.store(guarded_count, Ordering::SeqCst);
                 }
                 _ => eprintln!(
                     "cannot start a dynamic thread driving blocking tasks: {}",
