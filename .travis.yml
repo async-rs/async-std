@@ -19,8 +19,8 @@ before_script:
   - if   [[ -n "$BUILD_BOOK" ]]; then (test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh); fi
 
 script:
-  - if ! [[ -n "$BUILD_BOOK" ]]; then cargo check --all --benches --bins --examples --tests && cargo test --all; fi
-  - if   [[ -n "$BUILD_BOOK" ]]; then cargo test  --all --benches --bins --examples --tests; fi
+  - if ! [[ -n "$BUILD_BOOK" ]]; then cargo check --features unstable --all --benches --bins --examples --tests && cargo test --features unstable --all; fi
+  - if   [[ -n "$BUILD_BOOK" ]]; then cargo test  --features unstable --all --benches --bins --examples --tests; fi
   - cargo fmt --all -- --check
   - if   [[ -n "$BUILD_DOCS" ]]; then cargo doc --features docs; fi
   - if   [[ -n "$BUILD_BOOK" ]]; then mdbook build docs && mdbook test -L ./target/debug/deps docs; fi
