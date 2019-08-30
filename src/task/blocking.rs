@@ -96,9 +96,13 @@ lazy_static! {
 // This value represents the trend of tasks mapped onto the thread pool.
 // Calculation is following:
 //
-// α    :: EMA_COEFFICIENT :: smoothing factor between 0 and 1
-// Yt   :: freq            :: frequency sample at time t
-// St   :: acc             :: EMA at time t
+// +--------+-----------------+----------------------------------+
+// | Symbol |   Identifier    |           Explanation            |
+// +--------+-----------------+----------------------------------+
+// | α      | EMA_COEFFICIENT | smoothing factor between 0 and 1 |
+// | Yt     | freq            | frequency sample at time t       |
+// | St     | acc             | EMA at time t                    |
+// +--------+-----------------+----------------------------------+
 //
 // Under these definitions formula is following:
 // EMA = α * [ Yt + (1 - α)*Yt-1 + ((1 - α)^2)*Yt-2 + ((1 - α)^3)*Yt-3 ... ] + St
@@ -163,7 +167,7 @@ fn scale_pool() {
     {
         // Throughput is low. Allocate more threads to unblock flow.
         // If we fall to this case, scheduler is congested by longhauling tasks.
-        // For unblock the flow we should add up some threads to the pool, but not that much to
+        // For unblock the flow we should add up some threads to the pool, but not that many to
         // stagger the program's operation.
         let scale = LOW_WATERMARK * current_frequency + 1;
 
@@ -221,8 +225,8 @@ fn create_blocking_thread() {
             match err.kind() {
                 ErrorKind::WouldBlock => {
                     // Maximum allowed threads per process is varying from system to system.
-                    // Some systems has it(like MacOS), some doesn't(Linux)
-                    // This case expected to not happen.
+                    // Also, some systems have it(like macOS), and some don't(Linux).
+                    // This case expected not to happen.
                     // But when happened this shouldn't throw a panic.
                     let current_arc = POOL_SIZE.clone();
                     MAX_THREADS.store(*current_arc.lock().unwrap() - 1, Ordering::SeqCst);
@@ -235,7 +239,7 @@ fn create_blocking_thread() {
         });
 }
 
-// Enqueues work, attempting to send to the threadpool in a
+// Enqueues work, attempting to send to the thread pool in a
 // nonblocking way and spinning up needed amount of threads
 // based on the previous statistics without relying on
 // if there is not a thread ready to accept the work or not.
