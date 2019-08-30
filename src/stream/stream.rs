@@ -156,10 +156,6 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    /// Stopping at the first `false`:
-    ///
-    /// TODO: add example here
-    /// TODO: add more examples
     #[inline]
     fn all<F>(&mut self, f: F) -> AllFuture<'_, Self, F, Self::Item>
     where
