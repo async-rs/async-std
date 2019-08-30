@@ -1,4 +1,30 @@
 //! A thread pool for running blocking functions asynchronously.
+//!
+//! Blocking thread pool consists of four elements:
+//! * Frequency Detector
+//! * Trend Estimator
+//! * Predictive Upscaler
+//! * Time-based Downscaler
+//!
+//! ## Frequency Detector
+//! Detects how many tasks are submitted from scheduler to thread pool in a given time frame.
+//! Pool manager thread does this sampling every 200 milliseconds.
+//! This value is going to be used for trend estimation phase.
+//!
+//! ## Trend Estimator
+//! Hold up to the given number of frequencies to create an estimation.
+//! This pool holds 10 frequencies at a time.
+//! Estimation algorithm and prediction uses Exponentially Weighted Moving Average algorithm.
+//!
+//! Algorithm is altered and adapted from [A Novel Predictive and Self–Adaptive Dynamic Thread Pool Management](https://doi.org/10.1109/ISPA.2011.61).
+//!
+//! ## Predictive Upscaler
+//! Selects upscaling amount based on estimation or when throughput hogs based on amount of tasks mapped.
+//! Throughput hogs determined by a combination of job in / job out frequency and current scheduler task assignment frequency.
+//!
+//! ## Time-based Downscaler
+//! After dynamic tasks spawned with upscaler they will continue working in between 1 second and 10 seconds.
+//! When tasks are detached from the channels after this amount they join back.
 
 use std::collections::VecDeque;
 use std::fmt;
@@ -16,35 +42,37 @@ use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
 use std::sync::{Arc, Mutex};
 
-// Low watermark value, defines the bare minimum of the pool.
-// Spawns initial thread set.
+/// Low watermark value, defines the bare minimum of the pool.
+/// Spawns initial thread set.
 const LOW_WATERMARK: u64 = 2;
 
-// Pool managers interval time (milliseconds)
-// This is the actual interval which makes adaptation calculation
+/// Pool managers interval time (milliseconds).
+/// This is the actual interval which makes adaptation calculation.
 const MANAGER_POLL_INTERVAL: u64 = 200;
 
-// Frequency histogram's sliding window size
-// Defines how many frequencies will be considered for adaptation.
+/// Frequency histogram's sliding window size.
+/// Defines how many frequencies will be considered for adaptation.
 const FREQUENCY_QUEUE_SIZE: usize = 10;
 
-// Exponential moving average smoothing coefficient for limited window
-// Smoothing factor is estimated with: 2 / (N + 1) where N is sample size.
+/// Exponential moving average smoothing coefficient for limited window.
+/// Smoothing factor is estimated with: 2 / (N + 1) where N is sample size.
 const EMA_COEFFICIENT: f64 = 2_f64 / (FREQUENCY_QUEUE_SIZE as f64 + 1_f64);
 
-// Pool task frequency variable
-// Holds scheduled tasks onto the thread pool for the calculation window
+/// Pool task frequency variable.
+/// Holds scheduled tasks onto the thread pool for the calculation window.
 static FREQUENCY: AtomicU64 = AtomicU64::new(0);
 
-// Possible max threads (without OS contract)
+/// Possible max threads (without OS contract).
 static MAX_THREADS: AtomicU64 = AtomicU64::new(10_000);
 
+/// Pool interface between the scheduler and thread pool
 struct Pool {
     sender: Sender<async_task::Task<()>>,
     receiver: Receiver<async_task::Task<()>>,
 }
 
 lazy_static! {
+    /// Blocking pool with static starting thread count.
     static ref POOL: Pool = {
         for _ in 0..LOW_WATERMARK {
             thread::Builder::new()
@@ -81,31 +109,36 @@ lazy_static! {
         Pool { sender, receiver }
     };
 
-    // Pool task frequency calculation variables
+    /// Sliding window for pool task frequency calculation
     static ref FREQ_QUEUE: Arc<Mutex<VecDeque<u64>>> = {
         Arc::new(Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE + 1)))
     };
 
-    // Pool size variable
+    /// Dynamic pool thread count variable
     static ref POOL_SIZE: Arc<Mutex<u64>> = Arc::new(Mutex::new(LOW_WATERMARK));
 }
 
-// Exponentially Weighted Moving Average calculation
-//
-// This allows us to find the EMA value.
-// This value represents the trend of tasks mapped onto the thread pool.
-// Calculation is following:
-//
-// +--------+-----------------+----------------------------------+
-// | Symbol |   Identifier    |           Explanation            |
-// +--------+-----------------+----------------------------------+
-// | α      | EMA_COEFFICIENT | smoothing factor between 0 and 1 |
-// | Yt     | freq            | frequency sample at time t       |
-// | St     | acc             | EMA at time t                    |
-// +--------+-----------------+----------------------------------+
-//
-// Under these definitions formula is following:
-// EMA = α * [ Yt + (1 - α)*Yt-1 + ((1 - α)^2)*Yt-2 + ((1 - α)^3)*Yt-3 ... ] + St
+/// Exponentially Weighted Moving Average calculation
+///
+/// This allows us to find the EMA value.
+/// This value represents the trend of tasks mapped onto the thread pool.
+/// Calculation is following:
+/// ```
+/// +--------+-----------------+----------------------------------+
+/// | Symbol |   Identifier    |           Explanation            |
+/// +--------+-----------------+----------------------------------+
+/// | α      | EMA_COEFFICIENT | smoothing factor between 0 and 1 |
+/// | Yt     | freq            | frequency sample at time t       |
+/// | St     | acc             | EMA at time t                    |
+/// +--------+-----------------+----------------------------------+
+/// ```
+/// Under these definitions formula is following:
+/// ```
+/// EMA = α * [ Yt + (1 - α)*Yt-1 + ((1 - α)^2)*Yt-2 + ((1 - α)^3)*Yt-3 ... ] + St
+/// ```
+/// # Arguments
+///
+/// * `freq_queue` - Sliding window of frequency samples
 #[inline]
 fn calculate_ema(freq_queue: &VecDeque<u64>) -> f64 {
     freq_queue.iter().enumerate().fold(0_f64, |acc, (i, freq)| {
@@ -113,13 +146,13 @@ fn calculate_ema(freq_queue: &VecDeque<u64>) -> f64 {
     }) * EMA_COEFFICIENT as f64
 }
 
-// Adaptive pool scaling function
-//
-// This allows to spawn new threads to make room for incoming task pressure.
-// Works in the background detached from the pool system and scales up the pool based
-// on the request rate.
-//
-// It uses frequency based calculation to define work. Utilizing average processing rate.
+/// Adaptive pool scaling function
+///
+/// This allows to spawn new threads to make room for incoming task pressure.
+/// Works in the background detached from the pool system and scales up the pool based
+/// on the request rate.
+///
+/// It uses frequency based calculation to define work. Utilizing average processing rate.
 fn scale_pool() {
     // Fetch current frequency, it does matter that operations are ordered in this approach.
     let current_frequency = FREQUENCY.load(Ordering::SeqCst);
@@ -180,9 +213,9 @@ fn scale_pool() {
     FREQUENCY.store(0, Ordering::Release);
 }
 
-// Creates yet another thread to receive tasks.
-// Dynamic threads will terminate themselves if they don't
-// receive any work after between one and ten seconds.
+/// Creates blocking thread to receive tasks
+/// Dynamic threads will terminate themselves if they don't
+/// receive any work after between one and ten seconds.
 fn create_blocking_thread() {
     // Check that thread is spawnable.
     // If it hits to the OS limits don't spawn it.
@@ -239,10 +272,10 @@ fn create_blocking_thread() {
         });
 }
 
-// Enqueues work, attempting to send to the thread pool in a
-// nonblocking way and spinning up needed amount of threads
-// based on the previous statistics without relying on
-// if there is not a thread ready to accept the work or not.
+/// Enqueues work, attempting to send to the thread pool in a
+/// nonblocking way and spinning up needed amount of threads
+/// based on the previous statistics without relying on
+/// if there is not a thread ready to accept the work or not.
 fn schedule(t: async_task::Task<()>) {
     // Add up for every incoming scheduled task
     FREQUENCY.fetch_add(1, Ordering::Acquire);
