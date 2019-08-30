@@ -1,6 +1,5 @@
 //! Definition of the `PollFn` adapter combinator
 
-use core::fmt;
 use core::pin::Pin;
 use std::future::Future;
 use std::task::{Context, Poll};
@@ -30,19 +29,13 @@ impl<F> Unpin for PollFn<F> {}
 /// }
 ///
 /// let read_future = poll_fn(read_line);
-/// assert_eq!(read_future.await, "Hello, World!".to_owned());
+/// assert_eq!(read_future.await, "Hello, World!");
 /// #
 /// # }) }
 /// ```
 pub async fn poll_fn<T>(f: impl FnMut(&mut Context<'_>) -> Poll<T>) -> T {
     let fut = PollFn { f };
     fut.await
-}
-
-impl<F> fmt::Debug for PollFn<F> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PollFn").finish()
-    }
 }
 
 impl<T, F> Future for PollFn<F>
