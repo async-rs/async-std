@@ -256,7 +256,6 @@ impl<S, F> Future for AllFuture<'_, S, F, S::Item>
 where
     S: futures::Stream + Unpin + Sized,
     F: FnMut(S::Item) -> bool,
-    S::Item: std::fmt::Debug,
 {
     type Output = bool;
 
