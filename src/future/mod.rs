@@ -5,6 +5,10 @@ pub use std::future::Future;
 
 use cfg_if::cfg_if;
 
+// Re-export the `ready!` definition from an external crate to expose it from
+// this submodule.
+pub use futures::ready;
+
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
