@@ -6,8 +6,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-/// Creates a new stream where each iteration calls the provided closure
-/// `F: FnMut() -> Option<T>`.
+/// Creates a new stream where each iteration calls the provided closure.
 ///
 /// This allows creating a custom stream with any behavior
 /// without using the more verbose syntax of creating a dedicated type
@@ -50,7 +49,12 @@ where
     FromFn { f, fut: None }
 }
 
-/// Stream for the [`from_fn`] function.
+/// A stream where each iteration calls the provided closure.
+///
+/// This `struct` is created by the [`stream::from_fn`] function.
+/// See its documentation for more.
+///
+/// [`stream::from_fn`]: fn.from_fn.html
 #[must_use = "streams do nothing unless polled"]
 pub struct FromFn<F, Fut> {
     f: F,
@@ -64,7 +68,7 @@ where
     Fut: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FromFn").field("fut", &self.fut).finish()
+        f.debug_struct("FromFn").finish()
     }
 }
 
