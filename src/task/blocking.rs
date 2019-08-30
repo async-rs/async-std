@@ -65,7 +65,7 @@ use crate::future::Future;
 use crate::io::ErrorKind;
 use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 /// Low watermark value, defines the bare minimum of the pool.
 /// Spawns initial thread set.
@@ -135,12 +135,12 @@ lazy_static! {
     };
 
     /// Sliding window for pool task frequency calculation
-    static ref FREQ_QUEUE: Arc<Mutex<VecDeque<u64>>> = {
-        Arc::new(Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE + 1)))
+    static ref FREQ_QUEUE: Mutex<VecDeque<u64>> = {
+        Mutex::new(VecDeque::with_capacity(FREQUENCY_QUEUE_SIZE + 1))
     };
 
     /// Dynamic pool thread count variable
-    static ref POOL_SIZE: Arc<Mutex<u64>> = Arc::new(Mutex::new(LOW_WATERMARK));
+    static ref POOL_SIZE: Mutex<u64> = Mutex::new(LOW_WATERMARK);
 }
 
 /// Exponentially Weighted Moving Average calculation
@@ -180,9 +180,8 @@ fn calculate_ema(freq_queue: &VecDeque<u64>) -> f64 {
 /// It uses frequency based calculation to define work. Utilizing average processing rate.
 fn scale_pool() {
     // Fetch current frequency, it does matter that operations are ordered in this approach.
-    let current_frequency = FREQUENCY.load(Ordering::SeqCst);
-    let freq_queue_arc = FREQ_QUEUE.clone();
-    let mut freq_queue = freq_queue_arc.lock().unwrap();
+    let current_frequency = FREQUENCY.swap(0, Ordering::SeqCst);
+    let mut freq_queue = FREQ_QUEUE.lock().unwrap();
 
     // Make it safe to start for calculations by adding initial frequency scale
     if freq_queue.len() == 0 {
@@ -227,15 +226,13 @@ fn scale_pool() {
         // If we fall to this case, scheduler is congested by longhauling tasks.
         // For unblock the flow we should add up some threads to the pool, but not that many to
         // stagger the program's operation.
-        let scale = LOW_WATERMARK * current_frequency + 1;
+        let scale = ((current_frequency as f64).powf(LOW_WATERMARK as f64) + 1_f64) as u64;
 
         // Scale it up!
         (0..scale).for_each(|_| {
             create_blocking_thread();
         });
     }
-
-    FREQUENCY.store(0, Ordering::Release);
 }
 
 /// Creates blocking thread to receive tasks
@@ -245,8 +242,7 @@ fn create_blocking_thread() {
     // Check that thread is spawnable.
     // If it hits to the OS limits don't spawn it.
     {
-        let current_arc = POOL_SIZE.clone();
-        let pool_size = *current_arc.lock().unwrap();
+        let pool_size = *POOL_SIZE.lock().unwrap();
         if pool_size >= MAX_THREADS.load(Ordering::SeqCst) {
             MAX_THREADS.store(10_000, Ordering::SeqCst);
             return;
@@ -267,17 +263,11 @@ fn create_blocking_thread() {
             let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
 
             // Adjust the pool size counter before and after spawn
-            {
-                let current_arc = POOL_SIZE.clone();
-                *current_arc.lock().unwrap() += 1;
-            }
+            *POOL_SIZE.lock().unwrap() += 1;
             while let Ok(task) = POOL.receiver.recv_timeout(wait_limit) {
                 abort_on_panic(|| task.run());
             }
-            {
-                let current_arc = POOL_SIZE.clone();
-                *current_arc.lock().unwrap() -= 1;
-            }
+            *POOL_SIZE.lock().unwrap() -= 1;
         })
         .map_err(|err| {
             match err.kind() {
@@ -286,8 +276,7 @@ fn create_blocking_thread() {
                     // Also, some systems have it(like macOS), and some don't(Linux).
                     // This case expected not to happen.
                     // But when happened this shouldn't throw a panic.
-                    let current_arc = POOL_SIZE.clone();
-                    MAX_THREADS.store(*current_arc.lock().unwrap() - 1, Ordering::SeqCst);
+                    MAX_THREADS.store(*POOL_SIZE.lock().unwrap() - 1, Ordering::SeqCst);
                 }
                 _ => eprintln!(
                     "cannot start a dynamic thread driving blocking tasks: {}",
