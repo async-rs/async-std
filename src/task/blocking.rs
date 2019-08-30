@@ -123,7 +123,7 @@ lazy_static! {
 /// This allows us to find the EMA value.
 /// This value represents the trend of tasks mapped onto the thread pool.
 /// Calculation is following:
-/// ```
+/// ```text
 /// +--------+-----------------+----------------------------------+
 /// | Symbol |   Identifier    |           Explanation            |
 /// +--------+-----------------+----------------------------------+
@@ -133,7 +133,7 @@ lazy_static! {
 /// +--------+-----------------+----------------------------------+
 /// ```
 /// Under these definitions formula is following:
-/// ```
+/// ```text
 /// EMA = α * [ Yt + (1 - α)*Yt-1 + ((1 - α)^2)*Yt-2 + ((1 - α)^3)*Yt-3 ... ] + St
 /// ```
 /// # Arguments
