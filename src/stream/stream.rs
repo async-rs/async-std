@@ -153,7 +153,6 @@ pub trait Stream {
     ///
     /// let mut s = stream::empty::<u32>();
     /// assert!(s.all(|_| false).await);
-    ///
     /// #
     /// # }) }
     /// ```
