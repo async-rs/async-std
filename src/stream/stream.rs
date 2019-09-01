@@ -36,10 +36,15 @@ cfg_if! {
 
         macro_rules! ret {
             ($a:lifetime, $f:tt, $o:ty) => (ImplFuture<$a, $o>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty) => (ImplFuture<$a, $o>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => (ImplFuture<$a, $o>);
+
         }
     } else {
         macro_rules! ret {
             ($a:lifetime, $f:tt, $o:ty) => ($f<$a, Self>);
+            ($a:lifetime, $f:tt, $t1:ty) => ($f<$a, Self, $t1>);
+            ($a:lifetime, $f:tt, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
         }
     }
 }
@@ -81,7 +86,7 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn next<'a>(&'a mut self) -> ret!('a, NextFuture, Option<Self::Item>)
+    fn next(&mut self) -> ret!('_, NextFuture, Option<Self::Item>)
     where
         Self: Unpin;
 
@@ -157,7 +162,7 @@ pub trait Stream {
     /// # }) }
     /// ```
     #[inline]
-    fn all<F>(&mut self, f: F) -> AllFuture<'_, Self, F, Self::Item>
+    fn all<F>(&mut self, f: F) -> ret!('_, AllFuture, F, Self::Item)
     where
         Self: Sized,
         F: FnMut(Self::Item) -> bool,
@@ -214,7 +219,7 @@ pub trait Stream {
     /// # }) }
     /// ```
     #[inline]
-    fn any<F>(&mut self, f: F) -> AnyFuture<'_, Self, F, Self::Item>
+    fn any<F>(&mut self, f: F) -> ret!('_, AnyFuture, F, Self::Item)
     where
         Self: Sized,
         F: FnMut(Self::Item) -> bool,
@@ -231,7 +236,7 @@ pub trait Stream {
 impl<T: futures::Stream + Unpin + ?Sized> Stream for T {
     type Item = <Self as futures::Stream>::Item;
 
-    fn next<'a>(&'a mut self) -> ret!('a, NextFuture, Option<Self::Item>)
+    fn next(&mut self) -> ret!('_, NextFuture, Option<Self::Item>)
     where
         Self: Unpin,
     {
