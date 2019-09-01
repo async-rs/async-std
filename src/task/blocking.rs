@@ -213,7 +213,8 @@ fn scale_pool() {
         // "Scale by" amount can be seen as "how much load is coming".
         // "Scale" amount is "how many threads we should spawn".
         let scale_by: f64 = curr_ema_frequency - prev_ema_frequency;
-        let scale = ((LOW_WATERMARK as f64 * scale_by) + LOW_WATERMARK as f64) as u64;
+        let scale = num_cpus::get()
+            .min(((LOW_WATERMARK as f64 * scale_by) + LOW_WATERMARK as f64) as usize);
 
         // It is time to scale the pool!
         (0..scale).for_each(|_| {
@@ -226,10 +227,7 @@ fn scale_pool() {
         // If we fall to this case, scheduler is congested by longhauling tasks.
         // For unblock the flow we should add up some threads to the pool, but not that many to
         // stagger the program's operation.
-        let scale = ((current_frequency as f64).powf(LOW_WATERMARK as f64) + 1_f64) as u64;
-
-        // Scale it up!
-        (0..scale).for_each(|_| {
+        (0..LOW_WATERMARK).for_each(|_| {
             create_blocking_thread();
         });
     }
