@@ -7,7 +7,6 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::future::{FutureExt, TryFutureExt};
 use futures::io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
 use crate::future::{self, Future};
@@ -251,10 +250,10 @@ impl File {
                 }
             }
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await
+        .ok_or_else(|| io_error("file closed"))?
+        .await
+        .map_err(|_| io_error("blocking task failed"))?
     }
 
     /// Similar to [`sync_all`], except that it may not synchronize file metadata.
@@ -306,10 +305,10 @@ impl File {
                 }
             }
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await
+        .ok_or_else(|| io_error("file closed"))?
+        .await
+        .map_err(|_| io_error("blocking task failed"))?
     }
 
     /// Truncates or extends the underlying file.
@@ -363,10 +362,10 @@ impl File {
                 }
             }
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await
+        .ok_or_else(|| io_error("file closed"))?
+        .await
+        .map_err(|_| io_error("blocking task failed"))?
     }
 
     /// Queries metadata about the file.
@@ -409,10 +408,10 @@ impl File {
                 }
             }
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await
+        .ok_or_else(|| io_error("file closed"))?
+        .await
+        .map_err(|_| io_error("blocking task failed"))?
     }
 
     /// Changes the permissions on the underlying file.
@@ -466,10 +465,10 @@ impl File {
                 }
             }
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await
+        .ok_or_else(|| io_error("file closed"))?
+        .await
+        .map_err(|_| io_error("blocking task failed"))?
     }
 }
 
