@@ -43,8 +43,8 @@ cfg_if! {
     } else {
         macro_rules! ret {
             ($a:lifetime, $f:tt, $o:ty) => ($f<$a, Self>);
-            ($a:lifetime, $f:tt, $t1:ty) => ($f<$a, Self, $t1>);
-            ($a:lifetime, $f:tt, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty) => ($f<$a, Self, $t1>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
         }
     }
 }
@@ -162,7 +162,7 @@ pub trait Stream {
     /// # }) }
     /// ```
     #[inline]
-    fn all<F>(&mut self, f: F) -> ret!('_, AllFuture, F, Self::Item)
+    fn all<F>(&mut self, f: F) -> ret!('_, AllFuture, bool, F, Self::Item)
     where
         Self: Sized,
         F: FnMut(Self::Item) -> bool,
@@ -219,7 +219,7 @@ pub trait Stream {
     /// # }) }
     /// ```
     #[inline]
-    fn any<F>(&mut self, f: F) -> ret!('_, AnyFuture, F, Self::Item)
+    fn any<F>(&mut self, f: F) -> ret!('_, AnyFuture, bool, F, Self::Item)
     where
         Self: Sized,
         F: FnMut(Self::Item) -> bool,
