@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::str;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncRead;
+use futures_io::AsyncRead;
 
 use crate::future::Future;
 use crate::io;
@@ -290,7 +290,7 @@ impl<T: AsyncRead + Unpin + ?Sized> Future for ReadToStringFuture<'_, T> {
         } = &mut *self;
         let reader = Pin::new(reader);
 
-        let ret = futures::ready!(read_to_end_internal(reader, cx, bytes, *start_len));
+        let ret = futures_core::ready!(read_to_end_internal(reader, cx, bytes, *start_len));
         if str::from_utf8(&bytes).is_err() {
             Poll::Ready(ret.and_then(|_| {
                 Err(io::Error::new(
@@ -321,7 +321,7 @@ impl<T: AsyncRead + Unpin + ?Sized> Future for ReadExactFuture<'_, T> {
         let Self { reader, buf } = &mut *self;
 
         while !buf.is_empty() {
-            let n = futures::ready!(Pin::new(&mut *reader).poll_read(cx, buf))?;
+            let n = futures_core::ready!(Pin::new(&mut *reader).poll_read(cx, buf))?;
             let (_, rest) = mem::replace(buf, &mut []).split_at_mut(n);
             *buf = rest;
 
@@ -377,7 +377,7 @@ pub fn read_to_end_internal<R: AsyncRead + ?Sized>(
             }
         }
 
-        match futures::ready!(rd.as_mut().poll_read(cx, &mut g.buf[g.len..])) {
+        match futures_core::ready!(rd.as_mut().poll_read(cx, &mut g.buf[g.len..])) {
             Ok(0) => {
                 ret = Poll::Ready(Ok(g.len - start_len));
                 break;

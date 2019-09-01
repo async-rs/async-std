@@ -3,7 +3,7 @@ use std::mem;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncWrite;
+use futures_io::AsyncWrite;
 
 use crate::future::Future;
 use crate::io;
@@ -201,7 +201,7 @@ impl<T: AsyncWrite + Unpin + ?Sized> Future for WriteAllFuture<'_, T> {
         let Self { writer, buf } = &mut *self;
 
         while !buf.is_empty() {
-            let n = futures::ready!(Pin::new(&mut **writer).poll_write(cx, buf))?;
+            let n = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, buf))?;
             let (_, rest) = mem::replace(buf, &[]).split_at(n);
             *buf = rest;
 

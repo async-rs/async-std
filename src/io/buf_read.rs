@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::str;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncBufRead;
+use futures_io::AsyncBufRead;
 
 use crate::future::Future;
 use crate::io;
@@ -212,7 +212,7 @@ impl<T: AsyncBufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
         } = &mut *self;
         let reader = Pin::new(reader);
 
-        let ret = futures::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
+        let ret = futures_core::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
         if str::from_utf8(&bytes).is_err() {
             Poll::Ready(ret.and_then(|_| {
                 Err(io::Error::new(
@@ -247,7 +247,7 @@ pub struct Lines<R> {
     read: usize,
 }
 
-impl<R: AsyncBufRead> futures::Stream for Lines<R> {
+impl<R: AsyncBufRead> futures_core::stream::Stream for Lines<R> {
     type Item = io::Result<String>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -258,7 +258,7 @@ impl<R: AsyncBufRead> futures::Stream for Lines<R> {
             read,
         } = unsafe { self.get_unchecked_mut() };
         let reader = unsafe { Pin::new_unchecked(reader) };
-        let n = futures::ready!(read_line_internal(reader, cx, buf, bytes, read))?;
+        let n = futures_core::ready!(read_line_internal(reader, cx, buf, bytes, read))?;
         if n == 0 && buf.is_empty() {
             return Poll::Ready(None);
         }
@@ -279,7 +279,7 @@ pub fn read_line_internal<R: AsyncBufRead + ?Sized>(
     bytes: &mut Vec<u8>,
     read: &mut usize,
 ) -> Poll<io::Result<usize>> {
-    let ret = futures::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
+    let ret = futures_core::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
     if str::from_utf8(&bytes).is_err() {
         Poll::Ready(ret.and_then(|_| {
             Err(io::Error::new(
@@ -305,7 +305,7 @@ pub fn read_until_internal<R: AsyncBufRead + ?Sized>(
 ) -> Poll<io::Result<usize>> {
     loop {
         let (done, used) = {
-            let available = futures::ready!(reader.as_mut().poll_fill_buf(cx))?;
+            let available = futures_core::ready!(reader.as_mut().poll_fill_buf(cx))?;
             if let Some(i) = memchr::memchr(byte, available) {
                 buf.extend_from_slice(&available[..=i]);
                 (true, i + 1)

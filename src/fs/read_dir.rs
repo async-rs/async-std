@@ -81,7 +81,7 @@ impl ReadDir {
     }
 }
 
-impl futures::Stream for ReadDir {
+impl futures_core::stream::Stream for ReadDir {
     type Item = io::Result<DirEntry>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -98,7 +98,7 @@ impl futures::Stream for ReadDir {
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
                 State::Busy(task) => {
-                    let (inner, opt) = futures::ready!(Pin::new(task).poll(cx));
+                    let (inner, opt) = futures_core::ready!(Pin::new(task).poll(cx));
                     self.0 = State::Idle(Some(inner));
                     return Poll::Ready(opt.map(|res| res.map(DirEntry::new)));
                 }

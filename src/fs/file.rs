@@ -7,7 +7,7 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
+use futures_io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
 use crate::future::{self, Future};
 use crate::io;
@@ -233,7 +233,7 @@ impl File {
                     State::Idle(opt) => match opt.take() {
                         None => return Poll::Ready(None),
                         Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
+                            let (s, r) = futures_channel::oneshot::channel();
 
                             // Start the operation asynchronously.
                             *state = State::Busy(blocking::spawn(async move {
@@ -246,7 +246,7 @@ impl File {
                         }
                     },
                     // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -288,7 +288,7 @@ impl File {
                     State::Idle(opt) => match opt.take() {
                         None => return Poll::Ready(None),
                         Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
+                            let (s, r) = futures_channel::oneshot::channel();
 
                             // Start the operation asynchronously.
                             *state = State::Busy(blocking::spawn(async move {
@@ -301,7 +301,7 @@ impl File {
                         }
                     },
                     // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -345,7 +345,7 @@ impl File {
                     State::Idle(opt) => match opt.take() {
                         None => return Poll::Ready(None),
                         Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
+                            let (s, r) = futures_channel::oneshot::channel();
 
                             // Start the operation asynchronously.
                             *state = State::Busy(blocking::spawn(async move {
@@ -358,7 +358,7 @@ impl File {
                         }
                     },
                     // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -391,7 +391,7 @@ impl File {
                     State::Idle(opt) => match opt.take() {
                         None => return Poll::Ready(None),
                         Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
+                            let (s, r) = futures_channel::oneshot::channel();
 
                             // Start the operation asynchronously.
                             *state = State::Busy(blocking::spawn(async move {
@@ -404,7 +404,7 @@ impl File {
                         }
                     },
                     // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -447,7 +447,7 @@ impl File {
                     State::Idle(opt) => match opt.take() {
                         None => return Poll::Ready(None),
                         Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
+                            let (s, r) = futures_channel::oneshot::channel();
                             let perm = perm.take().unwrap();
 
                             // Start the operation asynchronously.
@@ -461,7 +461,7 @@ impl File {
                         }
                     },
                     // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -542,7 +542,7 @@ impl AsyncRead for &File {
                     }));
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -618,7 +618,7 @@ impl AsyncWrite for &File {
                     }
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -651,7 +651,7 @@ impl AsyncWrite for &File {
                     }
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -676,7 +676,7 @@ impl AsyncWrite for &File {
                     }));
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -722,7 +722,7 @@ impl AsyncSeek for &File {
                     }
                 }
                 // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }

@@ -7,7 +7,7 @@ use std::ptr;
 use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
-use futures::future::FutureExt;
+use futures_util::future::FutureExt;
 use lazy_static::lazy_static;
 
 use super::task;
@@ -108,7 +108,7 @@ where
         };
 
         // Pin the future onto the stack.
-        futures::pin_mut!(future);
+        pin_utils::pin_mut!(future);
 
         // Transmute the future into one that is static and sendable.
         let future = mem::transmute::<
@@ -117,7 +117,7 @@ where
         >(future);
 
         // Spawn the future and wait for it to complete.
-        futures::executor::block_on(spawn_with_builder(Builder::new(), future, "block_on"));
+        futures_executor::block_on(spawn_with_builder(Builder::new(), future, "block_on"));
 
         // Take out the result.
         match (*out.get()).take().unwrap() {

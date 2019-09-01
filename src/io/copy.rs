@@ -1,4 +1,5 @@
-use futures::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+use futures_io::{AsyncRead, AsyncWrite};
+use futures_util::io::AsyncReadExt;
 
 use crate::io;
 

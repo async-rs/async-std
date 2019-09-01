@@ -127,7 +127,7 @@ impl TcpListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+            futures_core::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().accept_std() {
                 Ok((io, addr)) => {
@@ -223,14 +223,14 @@ impl TcpListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a TcpListener);
 
-impl<'a> futures::Stream for Incoming<'a> {
+impl<'a> futures_core::stream::Stream for Incoming<'a> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let future = self.0.accept();
         pin_utils::pin_mut!(future);
 
-        let (socket, _) = futures::ready!(future.poll(cx))?;
+        let (socket, _) = futures_core::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
 }

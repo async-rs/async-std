@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncWrite;
+use futures_io::AsyncWrite;
 
 use crate::future::Future;
 use crate::task::{blocking, Context, Poll};
@@ -125,7 +125,7 @@ impl AsyncWrite for Stdout {
                     }
                 }
                 // Poll the asynchronous operation the stdout is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -153,7 +153,7 @@ impl AsyncWrite for Stdout {
                     }
                 }
                 // Poll the asynchronous operation the stdout is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }

@@ -113,8 +113,8 @@ pub trait Stream {
     }
 }
 
-impl<T: futures::Stream + Unpin + ?Sized> Stream for T {
-    type Item = <Self as futures::Stream>::Item;
+impl<T: futures_core::stream::Stream + Unpin + ?Sized> Stream for T {
+    type Item = <Self as futures_core::stream::Stream>::Item;
 
     fn next<'a>(&'a mut self) -> ret!('a, NextFuture, Option<Self::Item>)
     where
@@ -130,7 +130,7 @@ pub struct NextFuture<'a, T: Unpin + ?Sized> {
     stream: &'a mut T,
 }
 
-impl<T: futures::Stream + Unpin + ?Sized> Future for NextFuture<'_, T> {
+impl<T: futures_core::stream::Stream + Unpin + ?Sized> Future for NextFuture<'_, T> {
     type Output = Option<T::Item>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -147,19 +147,19 @@ pub struct Take<S> {
 
 impl<S: Unpin> Unpin for Take<S> {}
 
-impl<S: futures::Stream> Take<S> {
+impl<S: futures_core::stream::Stream> Take<S> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_unpinned!(remaining: usize);
 }
 
-impl<S: futures::Stream> futures::Stream for Take<S> {
+impl<S: futures_core::stream::Stream> futures_core::stream::Stream for Take<S> {
     type Item = S::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
         if self.remaining == 0 {
             Poll::Ready(None)
         } else {
-            let next = futures::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
             match next {
                 Some(_) => *self.as_mut().remaining() -= 1,
                 None => *self.as_mut().remaining() = 0,

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::io::{AsyncRead, Initializer};
+use futures_io::{AsyncRead, Initializer};
 
 use crate::future::{self, Future};
 use crate::task::{blocking, Context, Poll};
@@ -129,7 +129,7 @@ impl Stdin {
                         }
                     }
                     // Poll the asynchronous operation the stdin is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                    State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
                 }
             }
         })
@@ -181,7 +181,7 @@ impl AsyncRead for Stdin {
                     }
                 }
                 // Poll the asynchronous operation the stdin is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }

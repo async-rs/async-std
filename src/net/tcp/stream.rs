@@ -4,7 +4,7 @@ use std::net::{self, SocketAddr, ToSocketAddrs};
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::io::{AsyncRead, AsyncWrite};
+use futures_io::{AsyncRead, AsyncWrite};
 
 use crate::future;
 use crate::io;
@@ -258,7 +258,7 @@ impl TcpStream {
     /// ```
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         let res = future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+            futures_core::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().peek(buf) {
                 Ok(len) => Poll::Ready(Ok(len)),

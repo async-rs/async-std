@@ -203,7 +203,7 @@ impl UnixDatagram {
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+            futures_core::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().recv_from(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -236,7 +236,7 @@ impl UnixDatagram {
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
+            futures_core::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().recv(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -268,7 +268,7 @@ impl UnixDatagram {
     /// ```
     pub async fn send_to<P: AsRef<Path>>(&self, buf: &[u8], path: P) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
+            futures_core::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send_to(buf, path.as_ref()) {
                 Ok(n) => Poll::Ready(Ok(n)),
@@ -301,7 +301,7 @@ impl UnixDatagram {
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
+            futures_core::ready!(self.io_handle.poll_writable(cx)?);
 
             match self.io_handle.get_ref().send(buf) {
                 Ok(n) => Poll::Ready(Ok(n)),

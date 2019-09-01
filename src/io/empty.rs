@@ -1,7 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures::io::{AsyncBufRead, AsyncRead, Initializer};
+use futures_io::{AsyncBufRead, AsyncRead, Initializer};
 
 use crate::io;
 use crate::task::{Context, Poll};

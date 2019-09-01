@@ -35,7 +35,7 @@ pub struct Empty<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T> futures::Stream for Empty<T> {
+impl<T> futures_core::stream::Stream for Empty<T> {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
