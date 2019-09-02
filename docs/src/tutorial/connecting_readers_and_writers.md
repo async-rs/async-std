@@ -20,7 +20,7 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 #     task,
 # };
 # use futures::channel::mpsc;
-# use futures::SinkExt;
+# use futures::sink::SinkExt;
 # use std::sync::Arc;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

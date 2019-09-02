@@ -20,7 +20,7 @@ if Alice and Charley send two messages to Bob at the same time, Bob will see the
 #     prelude::Stream,
 # };
 use futures::channel::mpsc; // 1
-use futures::SinkExt;
+use futures::sink::SinkExt;
 use std::sync::Arc;
 
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
