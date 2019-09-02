@@ -51,7 +51,7 @@ pub struct BufReader<R> {
     cap: usize,
 }
 
-impl<R: AsyncRead> BufReader<R> {
+impl<R: io::Read> BufReader<R> {
     /// Creates a buffered reader with default buffer capacity.
     ///
     /// The default capacity is currently 8 KB, but may change in the future.
@@ -87,17 +87,11 @@ impl<R: AsyncRead> BufReader<R> {
     /// # Ok(()) }) }
     /// ```
     pub fn with_capacity(capacity: usize, inner: R) -> BufReader<R> {
-        unsafe {
-            let mut buffer = Vec::with_capacity(capacity);
-            buffer.set_len(capacity);
-            inner.initializer().initialize(&mut buffer);
-
-            BufReader {
-                inner,
-                buf: buffer.into_boxed_slice(),
-                pos: 0,
-                cap: 0,
-            }
+        BufReader {
+            inner,
+            buf: vec![0; capacity].into_boxed_slice(),
+            pos: 0,
+            cap: 0,
         }
     }
 }
@@ -272,7 +266,7 @@ impl<R: AsyncRead> AsyncBufRead for BufReader<R> {
     }
 }
 
-impl<R: AsyncRead + fmt::Debug> fmt::Debug for BufReader<R> {
+impl<R: io::Read + fmt::Debug> fmt::Debug for BufReader<R> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BufReader")
             .field("reader", &self.inner)

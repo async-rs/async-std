@@ -1,19 +1,19 @@
 use std::cell::{Cell, UnsafeCell};
 use std::fmt::Arguments;
 use std::mem;
-use std::panic::{self, AssertUnwindSafe};
+use std::panic::{self, AssertUnwindSafe, UnwindSafe};
 use std::pin::Pin;
 use std::ptr;
 use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
-use futures_util::future::FutureExt;
 use lazy_static::lazy_static;
 
 use super::task;
 use super::{JoinHandle, Task};
 use crate::future::Future;
 use crate::io;
+use crate::task::{Context, Poll};
 
 /// Returns a handle to the current task.
 ///
@@ -94,6 +94,22 @@ where
     F: Future<Output = T> + Send,
     T: Send,
 {
+    struct CatchUnwindFuture<F> {
+        future: F,
+    }
+
+    impl<F> CatchUnwindFuture<F> {
+        pin_utils::unsafe_pinned!(future: F);
+    }
+
+    impl<F: Future + UnwindSafe> Future for CatchUnwindFuture<F> {
+        type Output = thread::Result<F::Output>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            panic::catch_unwind(AssertUnwindSafe(|| self.future().poll(cx)))?.map(Ok)
+        }
+    }
+
     unsafe {
         // A place on the stack where the result will be stored.
         let out = &mut UnsafeCell::new(None);
@@ -101,9 +117,12 @@ where
         // Wrap the future into one that stores the result into `out`.
         let future = {
             let out = out.get();
+
             async move {
-                let v = AssertUnwindSafe(future).catch_unwind().await;
-                *out = Some(v);
+                let future = CatchUnwindFuture {
+                    future: AssertUnwindSafe(future),
+                };
+                *out = Some(future.await);
             }
         };
 
