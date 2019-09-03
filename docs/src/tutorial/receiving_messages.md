@@ -12,18 +12,18 @@ use async_std::io::BufReader;
 use async_std::net::TcpStream;
 use async_std::io::BufReader;
 
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        let _handle = task::spawn(client(stream)); // 1
+        let _handle = task::spawn(connection_loop(stream)); // 1
     }
     Ok(())
 }
 
-async fn client(stream: TcpStream) -> Result<()> {
+async fn connection_loop(stream: TcpStream) -> Result<()> {
     let reader = BufReader::new(&stream); // 2
     let mut lines = reader.lines();
 
@@ -47,7 +47,7 @@ async fn client(stream: TcpStream) -> Result<()> {
 ```
 
 1. We use `task::spawn` function to spawn an independent task for working with each client.
-   That is, after accepting the client the `server` loop immediately starts waiting for the next one.
+   That is, after accepting the client the `accept_loop` immediately starts waiting for the next one.
    This is the core benefit of event-driven architecture: we serve many clients concurrently, without spending many hardware threads.
 
 2. Luckily, the "split byte stream into lines" functionality is already implemented.
@@ -61,12 +61,12 @@ async fn client(stream: TcpStream) -> Result<()> {
 
 ## Managing Errors
 
-One serious problem in the above solution is that, while we correctly propagate errors in the `client`, we just drop the error on the floor afterwards!
+One serious problem in the above solution is that, while we correctly propagate errors in the `connection_loop`, we just drop the error on the floor afterwards!
 That is, `task::spawn` does not return an error immediately (it can't, it needs to run the future to completion first), only after it is joined.
 We can "fix" it by waiting for the task to be joined, like this:
 
 ```rust
-let handle = task::spawn(client(stream));
+let handle = task::spawn(connection_loop(stream));
 handle.await?
 ```
 

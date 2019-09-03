@@ -21,16 +21,16 @@ However, we never wait for broker and writers, which might cause some messages t
 Let's add waiting to the server:
 
 ```rust
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
 
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker = task::spawn(broker(broker_receiver));
+    let broker = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        spawn_and_log_error(client(broker_sender.clone(), stream));
+        spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender); // 1
     broker.await?; // 5
@@ -41,7 +41,7 @@ async fn server(addr: impl ToSocketAddrs) -> Result<()> {
 And to the broker:
 
 ```rust
-async fn broker(mut events: Receiver<Event>) -> Result<()> {
+async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
     let mut writers = Vec::new();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
 
@@ -60,7 +60,7 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
                     Entry::Vacant(entry) => {
                         let (client_sender, client_receiver) = mpsc::unbounded();
                         entry.insert(client_sender);
-                        let handle = spawn_and_log_error(client_writer(client_receiver, stream));
+                        let handle = spawn_and_log_error(connection_writer_loop(client_receiver, stream));
                         writers.push(handle); // 4
                     }
                 }
