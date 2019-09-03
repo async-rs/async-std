@@ -3,7 +3,7 @@ use std::pin::Pin;
 use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite};
 
 use crate::future::Future;
-use crate::io;
+use crate::io::{self, BufReader};
 use crate::task::{Context, Poll};
 
 /// Copies the entire contents of a reader into a writer.
@@ -48,13 +48,13 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    pub struct CopyBufIntoFuture<'a, R, W: ?Sized> {
+    pub struct CopyFuture<'a, R, W: ?Sized> {
         reader: R,
         writer: &'a mut W,
         amt: u64,
     }
 
-    impl<R, W: Unpin + ?Sized> CopyBufIntoFuture<'_, R, W> {
+    impl<R, W: Unpin + ?Sized> CopyFuture<'_, R, W> {
         fn project(self: Pin<&mut Self>) -> (Pin<&mut R>, Pin<&mut W>, &mut u64) {
             unsafe {
                 let this = self.get_unchecked_mut();
@@ -67,7 +67,7 @@ where
         }
     }
 
-    impl<R, W> Future for CopyBufIntoFuture<'_, R, W>
+    impl<R, W> Future for CopyFuture<'_, R, W>
     where
         R: AsyncBufRead,
         W: AsyncWrite + Unpin + ?Sized,
@@ -93,8 +93,8 @@ where
         }
     }
 
-    let future = CopyBufIntoFuture {
-        reader: io::BufReader::new(reader),
+    let future = CopyFuture {
+        reader: BufReader::new(reader),
         writer,
         amt: 0,
     };
