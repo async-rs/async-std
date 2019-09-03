@@ -20,7 +20,7 @@ are used to, but in an async version and ready for Rust's `async`/`await` syntax
 
 ## Quickstart
 
-Add the following lines to you `Cargo.toml`:
+Add the following lines to your `Cargo.toml`:
 
 ```toml
 [dependencies]
