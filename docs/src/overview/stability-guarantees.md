@@ -5,7 +5,7 @@
 In short: we are versioning our software as `MAJOR.MINOR.PATCH`. We increase the:
 
 * MAJOR version when there are incompatible API changes,
-* MINOR version when we introducece functionality in a backwards-compatible manner
+* MINOR version when we introduce functionality in a backwards-compatible manner
 * PATCH version when we make backwards-compatible bug fixes
 
 We will provide migration documentation between major versions.

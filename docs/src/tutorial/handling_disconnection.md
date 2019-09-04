@@ -121,13 +121,12 @@ The final code looks like this:
 # extern crate futures;
 use async_std::{
     io::{BufReader, BufRead, Write},
-    net::{TcpListener, TcpStream},
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     task,
 };
 use futures::{channel::mpsc, future::Future, select, FutureExt, SinkExt, StreamExt};
 use std::{
     collections::hash_map::{Entry, HashMap},
-    net::ToSocketAddrs,
     sync::Arc,
 };
 

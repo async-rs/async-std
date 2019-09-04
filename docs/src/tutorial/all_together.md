@@ -7,7 +7,7 @@ At this point, we only need to start the broker to get a fully-functioning (in t
 # extern crate futures;
 use async_std::{
     io::{self, BufReader},
-    net::{TcpListener, TcpStream},
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
@@ -17,7 +17,6 @@ use futures::{
 };
 use std::{
     collections::hash_map::{HashMap, Entry},
-    net::ToSocketAddrs,
     sync::Arc,
 };
 
