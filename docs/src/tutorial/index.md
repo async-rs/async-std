@@ -8,5 +8,4 @@ How do you distribute the messages?
 
 In this tutorial, we will show you how to write one in `async-std`.
 
-You can also find the tutorial in [our repository](https://github.com/async-rs/a-chat).
-
+You can also find the tutorial in [our repository](https://github.com/async-rs/async-std/blob/master/examples/a-chat).
