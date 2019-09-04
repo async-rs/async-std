@@ -11,11 +11,10 @@ We need to:
 # extern crate async_std;
 # use async_std::{
 #     io::{BufRead, BufReader},
-#     net::{TcpListener, TcpStream},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::Stream,
 #     task,
 # };
-# use std::net::ToSocketAddrs;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
@@ -77,11 +76,10 @@ We can "fix" it by waiting for the task to be joined, like this:
 # extern crate async_std;
 # use async_std::{
 #     io::{BufRead, BufReader},
-#     net::{TcpListener, TcpStream},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::Stream,
 #     task,
 # };
-# use std::net::ToSocketAddrs;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #

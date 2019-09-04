@@ -1,10 +1,12 @@
 use std::io;
-use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 
 use cfg_if::cfg_if;
 use futures::future;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::net::driver::IoHandle;
+use crate::net::ToSocketAddrs;
 use crate::task::Poll;
 
 /// A UDP socket.
@@ -75,7 +77,7 @@ impl UdpSocket {
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
         let mut last_err = None;
 
-        for addr in addr.to_socket_addrs()? {
+        for addr in addr.to_socket_addrs().await? {
             match mio::net::UdpSocket::bind(&addr) {
                 Ok(mio_socket) => {
                     #[cfg(unix)]
@@ -152,7 +154,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn send_to<A: ToSocketAddrs>(&self, buf: &[u8], addrs: A) -> io::Result<usize> {
-        let addr = match addrs.to_socket_addrs()?.next() {
+        let addr = match addrs.to_socket_addrs().await?.next() {
             Some(addr) => addr,
             None => {
                 return Err(io::Error::new(
@@ -237,7 +239,7 @@ impl UdpSocket {
     pub async fn connect<A: ToSocketAddrs>(&self, addrs: A) -> io::Result<()> {
         let mut last_err = None;
 
-        for addr in addrs.to_socket_addrs()? {
+        for addr in addrs.to_socket_addrs().await? {
             match self.io_handle.get_ref().connect(addr) {
                 Ok(()) => return Ok(()),
                 Err(err) => last_err = Some(err),
@@ -506,9 +508,9 @@ impl UdpSocket {
     }
 }
 
-impl From<net::UdpSocket> for UdpSocket {
+impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
-    fn from(socket: net::UdpSocket) -> UdpSocket {
+    fn from(socket: std::net::UdpSocket) -> UdpSocket {
         let mio_socket = mio::net::UdpSocket::from_socket(socket).unwrap();
 
         #[cfg(unix)]
@@ -549,7 +551,7 @@ cfg_if! {
 
         impl FromRawFd for UdpSocket {
             unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
-                net::UdpSocket::from_raw_fd(fd).into()
+                std::net::UdpSocket::from_raw_fd(fd).into()
             }
         }
 

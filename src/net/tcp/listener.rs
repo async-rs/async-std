@@ -1,4 +1,4 @@
-use std::net::{self, SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
@@ -8,6 +8,7 @@ use super::TcpStream;
 use crate::future::Future;
 use crate::io;
 use crate::net::driver::IoHandle;
+use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
 /// A TCP socket server, listening for connections.
@@ -82,7 +83,7 @@ impl TcpListener {
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
 
-        for addr in addrs.to_socket_addrs()? {
+        for addr in addrs.to_socket_addrs().await? {
             match mio::net::TcpListener::bind(&addr) {
                 Ok(mio_listener) => {
                     #[cfg(unix)]
@@ -236,9 +237,9 @@ impl<'a> futures::Stream for Incoming<'a> {
     }
 }
 
-impl From<net::TcpListener> for TcpListener {
+impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
-    fn from(listener: net::TcpListener) -> TcpListener {
+    fn from(listener: std::net::TcpListener) -> TcpListener {
         let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
 
         #[cfg(unix)]
@@ -279,7 +280,7 @@ cfg_if! {
 
         impl FromRawFd for TcpListener {
             unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
-                net::TcpListener::from_raw_fd(fd).into()
+                std::net::TcpListener::from_raw_fd(fd).into()
             }
         }
 

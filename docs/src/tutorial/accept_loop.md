@@ -6,23 +6,20 @@ First of all, let's add required import boilerplate:
 
 ```rust,edition2018
 # extern crate async_std;
-use std::net::ToSocketAddrs; // 1
 use async_std::{
-    prelude::*, // 2
-    task, // 3
-    net::TcpListener, // 4
+    prelude::*, // 1
+    task, // 2
+    net::{TcpListener, ToSocketAddrs}, // 3
 };
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 5
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 4
 ```
 
-1. `async_std` uses `std` types where appropriate.
-   We'll need `ToSocketAddrs` to specify address to listen on.
-2. `prelude` re-exports some traits required to work with futures and streams.
-3. The `task` module roughly corresponds to the `std::thread` module, but tasks are much lighter weight.
+1. `prelude` re-exports some traits required to work with futures and streams.
+2. The `task` module roughly corresponds to the `std::thread` module, but tasks are much lighter weight.
    A single thread can run many tasks.
-4. For the socket type, we use `TcpListener` from `async_std`, which is just like `std::net::TcpListener`, but is non-blocking and uses `async` API.
-5. We will skip implementing comprehensive error handling in this example.
+3. For the socket type, we use `TcpListener` from `async_std`, which is just like `std::net::TcpListener`, but is non-blocking and uses `async` API.
+4. We will skip implementing comprehensive error handling in this example.
    To propagate the errors, we will use a boxed error trait object.
    Do you know that there's `From<&'_ str> for Box<dyn Error>` implementation in stdlib, which allows you to use strings with `?` operator?
 
@@ -31,10 +28,9 @@ Now we can write the server's accept loop:
 ```rust,edition2018
 # extern crate async_std;
 # use async_std::{
-#     net::TcpListener,
+#     net::{TcpListener, ToSocketAddrs},
 #     prelude::Stream,
 # };
-# use std::net::ToSocketAddrs;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
@@ -69,11 +65,10 @@ Finally, let's add main:
 ```rust,edition2018
 # extern crate async_std;
 # use async_std::{
-#     net::TcpListener,
+#     net::{TcpListener, ToSocketAddrs},
 #     prelude::Stream,
 #     task,
 # };
-# use std::net::ToSocketAddrs;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
