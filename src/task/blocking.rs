@@ -2,7 +2,7 @@
 
 use std::fmt;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -13,9 +13,9 @@ use crate::future::Future;
 use crate::task::{Context, Poll};
 use crate::utils::abort_on_panic;
 
-const MAX_THREADS: u64 = 10_000;
+const MAX_THREADS: u32 = 10_000;
 
-static DYNAMIC_THREAD_COUNT: AtomicU64 = AtomicU64::new(0);
+static DYNAMIC_THREAD_COUNT: AtomicU32 = AtomicU32::new(0);
 
 struct Pool {
     sender: Sender<async_task::Task<()>>,

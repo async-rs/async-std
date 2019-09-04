@@ -1,9 +1,9 @@
 use std::fmt;
-use std::i64;
+use std::i32;
 use std::mem;
-use std::num::NonZeroU64;
+use std::num::NonZeroU32;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use super::local;
@@ -105,22 +105,22 @@ impl<T> Future for JoinHandle<T> {
 /// })
 /// ```
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
-pub struct TaskId(NonZeroU64);
+pub struct TaskId(NonZeroU32);
 
 impl TaskId {
     pub(crate) fn new() -> TaskId {
-        static COUNTER: AtomicU64 = AtomicU64::new(1);
+        static COUNTER: AtomicU32 = AtomicU32::new(1);
 
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
 
-        if id > i64::MAX as u64 {
+        if id > i32::MAX as u32 {
             std::process::abort();
         }
-        unsafe { TaskId(NonZeroU64::new_unchecked(id)) }
+        unsafe { TaskId(NonZeroU32::new_unchecked(id)) }
     }
 
     pub(crate) fn as_u64(&self) -> u64 {
-        self.0.get()
+        self.0.get() as u64
     }
 }
 
