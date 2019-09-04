@@ -9,18 +9,19 @@ use crate::future::Future;
 use crate::io;
 use crate::task::blocking;
 use crate::task::{Context, Poll};
+use std::marker::PhantomData;
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
         #[doc(hidden)]
-        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+        pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
 
         macro_rules! ret {
-            ($f:tt, $i:ty) => (ImplFuture<io::Result<$i>>);
+            ($a:lifetime, $f:tt, $i:ty) => (ImplFuture<$a, io::Result<$i>>);
         }
     } else {
         macro_rules! ret {
-            ($f:tt, $i:ty) => ($f<$i>);
+            ($a:lifetime, $f:tt, $i:ty) => ($f<$a, $i>);
         }
     }
 }
@@ -41,23 +42,25 @@ pub trait ToSocketAddrs {
     /// resolution performed.
     ///
     /// Note that this function may block a backend thread while resolution is performed.
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter);
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter);
 }
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub enum ToSocketAddrsFuture<I: Iterator<Item = SocketAddr>> {
+pub enum ToSocketAddrsFuture<'a, I: Iterator<Item = SocketAddr>> {
+    Phantom(PhantomData<&'a ()>),
     Join(blocking::JoinHandle<io::Result<I>>),
     Ready(Ready<io::Result<I>>),
 }
 
-impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
+impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<'_, I> {
     type Output = io::Result<I>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.get_mut() {
             ToSocketAddrsFuture::Join(f) => Pin::new(&mut *f).poll(cx),
             ToSocketAddrsFuture::Ready(f) => Pin::new(&mut *f).poll(cx),
+            _ => unreachable!(),
         }
     }
 }
@@ -65,7 +68,7 @@ impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
 impl ToSocketAddrs for SocketAddr {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -73,7 +76,7 @@ impl ToSocketAddrs for SocketAddr {
 impl ToSocketAddrs for SocketAddrV4 {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -81,7 +84,7 @@ impl ToSocketAddrs for SocketAddrV4 {
 impl ToSocketAddrs for SocketAddrV6 {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -89,7 +92,7 @@ impl ToSocketAddrs for SocketAddrV6 {
 impl ToSocketAddrs for (IpAddr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -97,7 +100,7 @@ impl ToSocketAddrs for (IpAddr, u16) {
 impl ToSocketAddrs for (Ipv4Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -105,7 +108,7 @@ impl ToSocketAddrs for (Ipv4Addr, u16) {
 impl ToSocketAddrs for (Ipv6Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -113,7 +116,7 @@ impl ToSocketAddrs for (Ipv6Addr, u16) {
 impl ToSocketAddrs for (&str, u16) {
     type Iter = std::vec::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         let host = self.0.to_string();
         let port = self.1;
         let join = blocking::spawn(async move {
@@ -126,7 +129,7 @@ impl ToSocketAddrs for (&str, u16) {
 impl ToSocketAddrs for str {
     type Iter = std::vec::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         let socket_addrs = self.to_string();
         let join =
             blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(&socket_addrs) });
@@ -137,7 +140,7 @@ impl ToSocketAddrs for str {
 impl<'a> ToSocketAddrs for &'a [SocketAddr] {
     type Iter = std::iter::Cloned<std::slice::Iter<'a, SocketAddr>>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
@@ -145,7 +148,7 @@ impl<'a> ToSocketAddrs for &'a [SocketAddr] {
 impl<T: ToSocketAddrs + ?Sized> ToSocketAddrs for &T {
     type Iter = T::Iter;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         (**self).to_socket_addrs()
     }
 }
@@ -153,7 +156,7 @@ impl<T: ToSocketAddrs + ?Sized> ToSocketAddrs for &T {
 impl ToSocketAddrs for String {
     type Iter = std::vec::IntoIter<SocketAddr>;
 
-    fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {
+    fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
         ToSocketAddrs::to_socket_addrs(self.as_str())
     }
 }
