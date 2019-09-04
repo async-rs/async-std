@@ -33,7 +33,7 @@ cfg_if! {
 /// [`SocketAddr`]: https://doc.rust-lang.org/std/net/enum.SocketAddr.html
 pub trait ToSocketAddrs {
     /// Returned iterator over socket addresses which this type may correspond to.
-    type Iter: Iterator<Item = SocketAddr> + Send;
+    type Iter: Iterator<Item = SocketAddr>;
 
     /// Converts this object to an iterator of resolved `SocketAddr`s.
     ///
@@ -142,7 +142,7 @@ impl<'a> ToSocketAddrs for &'a [SocketAddr] {
     }
 }
 
-impl<T: ToSocketAddrs + Unpin + ?Sized> ToSocketAddrs for &T {
+impl<T: ToSocketAddrs + ?Sized> ToSocketAddrs for &T {
     type Iter = T::Iter;
 
     fn to_socket_addrs(&self) -> ret!(ToSocketAddrsFuture, Self::Iter) {

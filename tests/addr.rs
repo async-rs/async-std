@@ -3,7 +3,11 @@ use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use async_std::net::ToSocketAddrs;
 use async_std::task;
 
-fn blocking_resolve<A: ToSocketAddrs>(a: A) -> Result<Vec<SocketAddr>, String> {
+fn blocking_resolve<A>(a: A) -> Result<Vec<SocketAddr>, String>
+where
+    A: ToSocketAddrs,
+    A::Iter: Send,
+{
     let socket_addrs = task::block_on(a.to_socket_addrs());
     match socket_addrs {
         Ok(a) => Ok(a.collect()),
