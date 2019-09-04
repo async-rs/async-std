@@ -4,12 +4,11 @@ use std::fmt;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
 use mio_uds;
 
 use super::SocketAddr;
 use super::UnixStream;
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
@@ -97,7 +96,7 @@ impl UnixListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+            futures_core::ready!(self.io_handle.poll_readable(cx)?);
 
             match self.io_handle.get_ref().accept_std() {
                 Ok(Some((io, addr))) => {
@@ -198,14 +197,14 @@ impl fmt::Debug for UnixListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a UnixListener);
 
-impl futures::Stream for Incoming<'_> {
+impl futures_core::stream::Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let future = self.0.accept();
-        futures::pin_mut!(future);
+        pin_utils::pin_mut!(future);
 
-        let (socket, _) = futures::ready!(future.poll(cx))?;
+        let (socket, _) = futures_core::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
 }

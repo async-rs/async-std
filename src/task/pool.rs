@@ -1,13 +1,10 @@
-use std::cell::{Cell, UnsafeCell};
+use std::cell::Cell;
 use std::fmt::Arguments;
 use std::mem;
-use std::panic::{self, AssertUnwindSafe};
-use std::pin::Pin;
 use std::ptr;
 use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
-use futures::future::FutureExt;
 use lazy_static::lazy_static;
 
 use super::task;
@@ -68,63 +65,6 @@ where
     T: Send + 'static,
 {
     spawn_with_builder(Builder::new(), future, "spawn")
-}
-
-/// Spawns a task and blocks the current thread on its result.
-///
-/// Calling this function is similar to [spawning] a thread and immediately [joining] it, except an
-/// asynchronous task will be spawned.
-///
-/// [spawning]: https://doc.rust-lang.org/std/thread/fn.spawn.html
-/// [joining]: https://doc.rust-lang.org/std/thread/struct.JoinHandle.html#method.join
-///
-/// # Examples
-///
-/// ```no_run
-/// use async_std::task;
-///
-/// fn main() {
-///     task::block_on(async {
-///         println!("Hello, world!");
-///     })
-/// }
-/// ```
-pub fn block_on<F, T>(future: F) -> T
-where
-    F: Future<Output = T> + Send,
-    T: Send,
-{
-    unsafe {
-        // A place on the stack where the result will be stored.
-        let out = &mut UnsafeCell::new(None);
-
-        // Wrap the future into one that stores the result into `out`.
-        let future = {
-            let out = out.get();
-            async move {
-                let v = AssertUnwindSafe(future).catch_unwind().await;
-                *out = Some(v);
-            }
-        };
-
-        // Pin the future onto the stack.
-        futures::pin_mut!(future);
-
-        // Transmute the future into one that is static and sendable.
-        let future = mem::transmute::<
-            Pin<&mut dyn Future<Output = ()>>,
-            Pin<&'static mut (dyn Future<Output = ()> + Send)>,
-        >(future);
-
-        // Spawn the future and wait for it to complete.
-        futures::executor::block_on(spawn_with_builder(Builder::new(), future, "block_on"));
-
-        // Take out the result.
-        match (*out.get()).take().unwrap() {
-            Ok(v) => v,
-            Err(err) => panic::resume_unwind(err),
-        }
-    }
 }
 
 /// Task builder that configures the settings of a new task.

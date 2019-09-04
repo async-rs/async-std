@@ -2,7 +2,7 @@ use std::io::{IoSliceMut, Read as _};
 use std::pin::Pin;
 use std::{cmp, fmt};
 
-use futures::io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
+use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
 
 use crate::io::{self, SeekFrom};
 use crate::task::{Context, Poll};
@@ -51,7 +51,7 @@ pub struct BufReader<R> {
     cap: usize,
 }
 
-impl<R: AsyncRead> BufReader<R> {
+impl<R: io::Read> BufReader<R> {
     /// Creates a buffered reader with default buffer capacity.
     ///
     /// The default capacity is currently 8 KB, but may change in the future.
@@ -87,17 +87,11 @@ impl<R: AsyncRead> BufReader<R> {
     /// # Ok(()) }) }
     /// ```
     pub fn with_capacity(capacity: usize, inner: R) -> BufReader<R> {
-        unsafe {
-            let mut buffer = Vec::with_capacity(capacity);
-            buffer.set_len(capacity);
-            inner.initializer().initialize(&mut buffer);
-
-            BufReader {
-                inner,
-                buf: buffer.into_boxed_slice(),
-                pos: 0,
-                cap: 0,
-            }
+        BufReader {
+            inner,
+            buf: vec![0; capacity].into_boxed_slice(),
+            pos: 0,
+            cap: 0,
         }
     }
 }
@@ -209,11 +203,11 @@ impl<R: AsyncRead> AsyncRead for BufReader<R> {
         // (larger than our internal buffer), bypass our internal buffer
         // entirely.
         if self.pos == self.cap && buf.len() >= self.buf.len() {
-            let res = futures::ready!(self.as_mut().inner().poll_read(cx, buf));
+            let res = futures_core::ready!(self.as_mut().inner().poll_read(cx, buf));
             self.discard_buffer();
             return Poll::Ready(res);
         }
-        let mut rem = futures::ready!(self.as_mut().poll_fill_buf(cx))?;
+        let mut rem = futures_core::ready!(self.as_mut().poll_fill_buf(cx))?;
         let nread = rem.read(buf)?;
         self.consume(nread);
         Poll::Ready(Ok(nread))
@@ -226,11 +220,11 @@ impl<R: AsyncRead> AsyncRead for BufReader<R> {
     ) -> Poll<io::Result<usize>> {
         let total_len = bufs.iter().map(|b| b.len()).sum::<usize>();
         if self.pos == self.cap && total_len >= self.buf.len() {
-            let res = futures::ready!(self.as_mut().inner().poll_read_vectored(cx, bufs));
+            let res = futures_core::ready!(self.as_mut().inner().poll_read_vectored(cx, bufs));
             self.discard_buffer();
             return Poll::Ready(res);
         }
-        let mut rem = futures::ready!(self.as_mut().poll_fill_buf(cx))?;
+        let mut rem = futures_core::ready!(self.as_mut().poll_fill_buf(cx))?;
         let nread = rem.read_vectored(bufs)?;
         self.consume(nread);
         Poll::Ready(Ok(nread))
@@ -261,7 +255,7 @@ impl<R: AsyncRead> AsyncBufRead for BufReader<R> {
         // to tell the compiler that the pos..cap slice is always valid.
         if *pos >= *cap {
             debug_assert!(*pos == *cap);
-            *cap = futures::ready!(inner.as_mut().poll_read(cx, buf))?;
+            *cap = futures_core::ready!(inner.as_mut().poll_read(cx, buf))?;
             *pos = 0;
         }
         Poll::Ready(Ok(&buf[*pos..*cap]))
@@ -272,7 +266,7 @@ impl<R: AsyncRead> AsyncBufRead for BufReader<R> {
     }
 }
 
-impl<R: AsyncRead + fmt::Debug> fmt::Debug for BufReader<R> {
+impl<R: io::Read + fmt::Debug> fmt::Debug for BufReader<R> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BufReader")
             .field("reader", &self.inner)
@@ -316,25 +310,26 @@ impl<R: AsyncSeek> AsyncSeek for BufReader<R> {
             // support seeking by i64::min_value() so we need to handle underflow when subtracting
             // remainder.
             if let Some(offset) = n.checked_sub(remainder) {
-                result = futures::ready!(
+                result = futures_core::ready!(
                     self.as_mut()
                         .inner()
                         .poll_seek(cx, SeekFrom::Current(offset))
                 )?;
             } else {
                 // seek backwards by our remainder, and then by the offset
-                futures::ready!(
+                futures_core::ready!(
                     self.as_mut()
                         .inner()
                         .poll_seek(cx, SeekFrom::Current(-remainder))
                 )?;
                 self.as_mut().discard_buffer();
-                result =
-                    futures::ready!(self.as_mut().inner().poll_seek(cx, SeekFrom::Current(n)))?;
+                result = futures_core::ready!(
+                    self.as_mut().inner().poll_seek(cx, SeekFrom::Current(n))
+                )?;
             }
         } else {
             // Seeking with Start/End doesn't care about our buffer length.
-            result = futures::ready!(self.as_mut().inner().poll_seek(cx, pos))?;
+            result = futures_core::ready!(self.as_mut().inner().poll_seek(cx, pos))?;
         }
         self.discard_buffer();
         Poll::Ready(Ok(result))

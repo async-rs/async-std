@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncSeek;
+use futures_io::AsyncSeek;
 
 use crate::future::Future;
 use crate::io::{self, SeekFrom};

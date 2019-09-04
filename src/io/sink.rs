@@ -1,7 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures::io::AsyncWrite;
+use futures_io::AsyncWrite;
 
 use crate::io;
 use crate::task::{Context, Poll};

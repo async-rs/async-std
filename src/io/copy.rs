@@ -1,6 +1,10 @@
-use futures::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+use std::pin::Pin;
 
-use crate::io;
+use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite};
+
+use crate::future::Future;
+use crate::io::{self, BufReader};
+use crate::task::{Context, Poll};
 
 /// Copies the entire contents of a reader into a writer.
 ///
@@ -44,6 +48,55 @@ where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let bytes_read = reader.copy_into(writer).await?;
-    Ok(bytes_read)
+    pub struct CopyFuture<'a, R, W: ?Sized> {
+        reader: R,
+        writer: &'a mut W,
+        amt: u64,
+    }
+
+    impl<R, W: Unpin + ?Sized> CopyFuture<'_, R, W> {
+        fn project(self: Pin<&mut Self>) -> (Pin<&mut R>, Pin<&mut W>, &mut u64) {
+            unsafe {
+                let this = self.get_unchecked_mut();
+                (
+                    Pin::new_unchecked(&mut this.reader),
+                    Pin::new(&mut *this.writer),
+                    &mut this.amt,
+                )
+            }
+        }
+    }
+
+    impl<R, W> Future for CopyFuture<'_, R, W>
+    where
+        R: AsyncBufRead,
+        W: AsyncWrite + Unpin + ?Sized,
+    {
+        type Output = io::Result<u64>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let (mut reader, mut writer, amt) = self.project();
+            loop {
+                let buffer = futures_core::ready!(reader.as_mut().poll_fill_buf(cx))?;
+                if buffer.is_empty() {
+                    futures_core::ready!(writer.as_mut().poll_flush(cx))?;
+                    return Poll::Ready(Ok(*amt));
+                }
+
+                let i = futures_core::ready!(writer.as_mut().poll_write(cx, buffer))?;
+                if i == 0 {
+                    return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
+                }
+                *amt += i as u64;
+                reader.as_mut().consume(i);
+            }
+        }
+    }
+
+    let future = CopyFuture {
+        reader: BufReader::new(reader),
+        writer,
+        amt: 0,
+    };
+    future.await
 }

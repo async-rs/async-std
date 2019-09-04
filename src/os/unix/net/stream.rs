@@ -6,11 +6,11 @@ use std::net::Shutdown;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
-use futures::io::{AsyncRead, AsyncWrite};
+use futures_io::{AsyncRead, AsyncWrite};
 use mio_uds;
 
 use super::SocketAddr;
+use crate::future;
 use crate::io;
 use crate::net::driver::IoHandle;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
@@ -81,7 +81,7 @@ impl UnixStream {
         future::poll_fn(|cx| {
             match &mut state {
                 State::Waiting(stream) => {
-                    futures::ready!(stream.io_handle.poll_writable(cx)?);
+                    futures_core::ready!(stream.io_handle.poll_writable(cx)?);
 
                     if let Some(err) = stream.io_handle.get_ref().take_error()? {
                         return Poll::Ready(Err(err));

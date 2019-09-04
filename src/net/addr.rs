@@ -1,15 +1,14 @@
+use std::marker::PhantomData;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::future::{ready, Ready};
 
 use crate::future::Future;
 use crate::io;
 use crate::task::blocking;
 use crate::task::{Context, Poll};
-use std::marker::PhantomData;
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -47,19 +46,22 @@ pub trait ToSocketAddrs {
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub enum ToSocketAddrsFuture<'a, I: Iterator<Item = SocketAddr>> {
+pub enum ToSocketAddrsFuture<'a, I> {
     Phantom(PhantomData<&'a ()>),
     Join(blocking::JoinHandle<io::Result<I>>),
-    Ready(Ready<io::Result<I>>),
+    Ready(Option<io::Result<I>>),
 }
 
 impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<'_, I> {
     type Output = io::Result<I>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.get_mut() {
+        match unsafe { self.get_unchecked_mut() } {
             ToSocketAddrsFuture::Join(f) => Pin::new(&mut *f).poll(cx),
-            ToSocketAddrsFuture::Ready(f) => Pin::new(&mut *f).poll(cx),
+            ToSocketAddrsFuture::Ready(res) => {
+                let res = res.take().expect("polled a completed future");
+                Poll::Ready(res)
+            }
             _ => unreachable!(),
         }
     }
@@ -69,7 +71,7 @@ impl ToSocketAddrs for SocketAddr {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -77,7 +79,7 @@ impl ToSocketAddrs for SocketAddrV4 {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -85,7 +87,7 @@ impl ToSocketAddrs for SocketAddrV6 {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -93,7 +95,7 @@ impl ToSocketAddrs for (IpAddr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -101,7 +103,7 @@ impl ToSocketAddrs for (Ipv4Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -109,7 +111,7 @@ impl ToSocketAddrs for (Ipv6Addr, u16) {
     type Iter = std::option::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 
@@ -141,7 +143,7 @@ impl<'a> ToSocketAddrs for &'a [SocketAddr] {
     type Iter = std::iter::Cloned<std::slice::Iter<'a, SocketAddr>>;
 
     fn to_socket_addrs(&self) -> ret!('_, ToSocketAddrsFuture, Self::Iter) {
-        ToSocketAddrsFuture::Ready(ready(std::net::ToSocketAddrs::to_socket_addrs(self)))
+        ToSocketAddrsFuture::Ready(Some(std::net::ToSocketAddrs::to_socket_addrs(self)))
     }
 }
 

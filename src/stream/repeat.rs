@@ -36,7 +36,7 @@ pub struct Repeat<T> {
     item: T,
 }
 
-impl<T: Clone> futures::Stream for Repeat<T> {
+impl<T: Clone> futures_core::stream::Stream for Repeat<T> {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {

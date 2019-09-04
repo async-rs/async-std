@@ -24,11 +24,13 @@
 #[doc(inline)]
 pub use std::task::{Context, Poll, Waker};
 
+pub use block_on::block_on;
 pub use local::{AccessError, LocalKey};
-pub use pool::{block_on, current, spawn, Builder};
+pub use pool::{current, spawn, Builder};
 pub use sleep::sleep;
 pub use task::{JoinHandle, Task, TaskId};
 
+mod block_on;
 mod local;
 mod pool;
 mod sleep;
