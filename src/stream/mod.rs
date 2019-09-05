@@ -27,6 +27,7 @@ pub use repeat::{repeat, Repeat};
 pub use stream::{Stream, Take};
 
 mod empty;
+mod min_by;
 mod once;
 mod repeat;
 mod stream;
