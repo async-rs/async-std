@@ -122,7 +122,7 @@ pub trait Stream {
 
     /// Returns the element that gives the minimum value with respect to the
     /// specified comparison function. If several elements are equally minimum,
-    /// the first element is returned. If the stream is empty, None is returned.
+    /// the first element is returned. If the stream is empty, `None` is returned.
     ///
     /// # Examples
     ///
