@@ -42,8 +42,6 @@ use crate::task::{blocking, Context, Poll};
 pub struct UnixStream {
     #[cfg(not(feature = "docs"))]
     pub(super) io_handle: IoHandle<mio_uds::UnixStream>,
-
-    pub(super) raw_fd: RawFd,
 }
 
 impl UnixStream {
@@ -71,7 +69,6 @@ impl UnixStream {
         let mut state = {
             match blocking::spawn(async move { mio_uds::UnixStream::connect(path) }).await {
                 Ok(mio_stream) => State::Waiting(UnixStream {
-                    raw_fd: mio_stream.as_raw_fd(),
                     io_handle: IoHandle::new(mio_stream),
                 }),
                 Err(err) => State::Error(err),
@@ -124,11 +121,9 @@ impl UnixStream {
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
         let (a, b) = mio_uds::UnixStream::pair()?;
         let a = UnixStream {
-            raw_fd: a.as_raw_fd(),
             io_handle: IoHandle::new(a),
         };
         let b = UnixStream {
-            raw_fd: b.as_raw_fd(),
             io_handle: IoHandle::new(b),
         };
         Ok((a, b))
@@ -271,7 +266,6 @@ impl From<std::os::unix::net::UnixStream> for UnixStream {
     fn from(stream: std::os::unix::net::UnixStream) -> UnixStream {
         let mio_stream = mio_uds::UnixStream::from_stream(stream).unwrap();
         UnixStream {
-            raw_fd: mio_stream.as_raw_fd(),
             io_handle: IoHandle::new(mio_stream),
         }
     }
@@ -279,7 +273,7 @@ impl From<std::os::unix::net::UnixStream> for UnixStream {
 
 impl AsRawFd for UnixStream {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.io_handle.get_ref().as_raw_fd()
     }
 }
 
@@ -292,6 +286,6 @@ impl FromRawFd for UnixStream {
 
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.io_handle.into_inner().into_raw_fd()
     }
 }

@@ -50,9 +50,6 @@ use crate::task::{Context, Poll};
 #[derive(Debug)]
 pub struct TcpListener {
     io_handle: IoHandle<mio::net::TcpListener>,
-
-    #[cfg(unix)]
-    raw_fd: std::os::unix::io::RawFd,
     // #[cfg(windows)]
     // raw_socket: std::os::windows::io::RawSocket,
 }
@@ -87,7 +84,6 @@ impl TcpListener {
                 Ok(mio_listener) => {
                     #[cfg(unix)]
                     let listener = TcpListener {
-                        raw_fd: mio_listener.as_raw_fd(),
                         io_handle: IoHandle::new(mio_listener),
                     };
 
@@ -136,7 +132,6 @@ impl TcpListener {
 
                     #[cfg(unix)]
                     let stream = TcpStream {
-                        raw_fd: mio_stream.as_raw_fd(),
                         io_handle: IoHandle::new(mio_stream),
                     };
 
@@ -243,7 +238,6 @@ impl From<std::net::TcpListener> for TcpListener {
 
         #[cfg(unix)]
         let listener = TcpListener {
-            raw_fd: mio_listener.as_raw_fd(),
             io_handle: IoHandle::new(mio_listener),
         };
 
@@ -273,7 +267,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpListener {
             fn as_raw_fd(&self) -> RawFd {
-                self.raw_fd
+                self.io_handle.get_ref().as_raw_fd()
             }
         }
 
@@ -285,7 +279,7 @@ cfg_if! {
 
         impl IntoRawFd for TcpListener {
             fn into_raw_fd(self) -> RawFd {
-                self.raw_fd
+                self.io_handle.into_inner().into_raw_fd()
             }
         }
     }

@@ -51,9 +51,6 @@ use crate::task::{Context, Poll};
 #[derive(Debug)]
 pub struct TcpStream {
     pub(super) io_handle: IoHandle<mio::net::TcpStream>,
-
-    #[cfg(unix)]
-    pub(super) raw_fd: std::os::unix::io::RawFd,
     // #[cfg(windows)]
     // pub(super) raw_socket: std::os::windows::io::RawSocket,
 }
@@ -103,7 +100,6 @@ impl TcpStream {
         let stream = mio::net::TcpStream::connect(&addr).map(|mio_stream| {
             #[cfg(unix)]
             let stream = TcpStream {
-                raw_fd: mio_stream.as_raw_fd(),
                 io_handle: IoHandle::new(mio_stream),
             };
 
@@ -445,7 +441,6 @@ impl From<std::net::TcpStream> for TcpStream {
 
         #[cfg(unix)]
         let stream = TcpStream {
-            raw_fd: mio_stream.as_raw_fd(),
             io_handle: IoHandle::new(mio_stream),
         };
 
@@ -475,7 +470,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpStream {
             fn as_raw_fd(&self) -> RawFd {
-                self.raw_fd
+                self.io_handle.get_ref().as_raw_fd()
             }
         }
 
@@ -487,7 +482,7 @@ cfg_if! {
 
         impl IntoRawFd for TcpStream {
             fn into_raw_fd(self) -> RawFd {
-                self.raw_fd
+                self.io_handle.into_inner().into_raw_fd()
             }
         }
     }

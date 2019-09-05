@@ -44,15 +44,12 @@ use crate::task::{blocking, Poll};
 pub struct UnixDatagram {
     #[cfg(not(feature = "docs"))]
     io_handle: IoHandle<mio_uds::UnixDatagram>,
-
-    raw_fd: RawFd,
 }
 
 impl UnixDatagram {
     #[cfg(not(feature = "docs"))]
     fn new(socket: mio_uds::UnixDatagram) -> UnixDatagram {
         UnixDatagram {
-            raw_fd: socket.as_raw_fd(),
             io_handle: IoHandle::new(socket),
         }
     }
@@ -362,7 +359,6 @@ impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
     fn from(datagram: std::os::unix::net::UnixDatagram) -> UnixDatagram {
         let mio_datagram = mio_uds::UnixDatagram::from_datagram(datagram).unwrap();
         UnixDatagram {
-            raw_fd: mio_datagram.as_raw_fd(),
             io_handle: IoHandle::new(mio_datagram),
         }
     }
@@ -370,7 +366,7 @@ impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
 
 impl AsRawFd for UnixDatagram {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.io_handle.get_ref().as_raw_fd()
     }
 }
 
@@ -383,6 +379,6 @@ impl FromRawFd for UnixDatagram {
 
 impl IntoRawFd for UnixDatagram {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.io_handle.into_inner().into_raw_fd()
     }
 }

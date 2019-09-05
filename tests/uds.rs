@@ -38,5 +38,4 @@ fn into_raw_fd() -> io::Result<()> {
 
         Ok(())
     })
-
 }

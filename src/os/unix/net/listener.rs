@@ -50,8 +50,6 @@ use crate::task::{blocking, Context, Poll};
 pub struct UnixListener {
     #[cfg(not(feature = "docs"))]
     io_handle: IoHandle<mio_uds::UnixListener>,
-
-    raw_fd: RawFd,
 }
 
 impl UnixListener {
@@ -73,7 +71,6 @@ impl UnixListener {
         let listener = blocking::spawn(async move { mio_uds::UnixListener::bind(path) }).await?;
 
         Ok(UnixListener {
-            raw_fd: listener.as_raw_fd(),
             io_handle: IoHandle::new(listener),
         })
     }
@@ -102,7 +99,6 @@ impl UnixListener {
                 Ok(Some((io, addr))) => {
                     let mio_stream = mio_uds::UnixStream::from_stream(io)?;
                     let stream = UnixStream {
-                        raw_fd: mio_stream.as_raw_fd(),
                         io_handle: IoHandle::new(mio_stream),
                     };
                     Poll::Ready(Ok((stream, addr)))
@@ -214,7 +210,6 @@ impl From<std::os::unix::net::UnixListener> for UnixListener {
     fn from(listener: std::os::unix::net::UnixListener) -> UnixListener {
         let mio_listener = mio_uds::UnixListener::from_listener(listener).unwrap();
         UnixListener {
-            raw_fd: mio_listener.as_raw_fd(),
             io_handle: IoHandle::new(mio_listener),
         }
     }
@@ -222,7 +217,7 @@ impl From<std::os::unix::net::UnixListener> for UnixListener {
 
 impl AsRawFd for UnixListener {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.io_handle.get_ref().as_raw_fd()
     }
 }
 
@@ -235,6 +230,6 @@ impl FromRawFd for UnixListener {
 
 impl IntoRawFd for UnixListener {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.io_handle.into_inner().into_raw_fd()
     }
 }

@@ -48,9 +48,6 @@ use crate::task::Poll;
 #[derive(Debug)]
 pub struct UdpSocket {
     io_handle: IoHandle<mio::net::UdpSocket>,
-
-    #[cfg(unix)]
-    raw_fd: std::os::unix::io::RawFd,
     // #[cfg(windows)]
     // raw_socket: std::os::windows::io::RawSocket,
 }
@@ -82,7 +79,6 @@ impl UdpSocket {
                 Ok(mio_socket) => {
                     #[cfg(unix)]
                     let socket = UdpSocket {
-                        raw_fd: mio_socket.as_raw_fd(),
                         io_handle: IoHandle::new(mio_socket),
                     };
 
@@ -515,7 +511,6 @@ impl From<std::net::UdpSocket> for UdpSocket {
 
         #[cfg(unix)]
         let socket = UdpSocket {
-            raw_fd: mio_socket.as_raw_fd(),
             io_handle: IoHandle::new(mio_socket),
         };
 
@@ -545,7 +540,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for UdpSocket {
             fn as_raw_fd(&self) -> RawFd {
-                self.raw_fd
+                self.io_handle.get_ref().as_raw_fd()
             }
         }
 
@@ -557,7 +552,7 @@ cfg_if! {
 
         impl IntoRawFd for UdpSocket {
             fn into_raw_fd(self) -> RawFd {
-                self.raw_fd
+                self.io_handle.into_inner().into_raw_fd()
             }
         }
     }
