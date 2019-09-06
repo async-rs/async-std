@@ -59,6 +59,29 @@ pub trait BufRead {
     /// #
     /// # Ok(()) }) }
     /// ```
+    ///
+    /// Multiple successful calls to `read_until` append all bytes up to and including to `buf`:
+    /// ```
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
+    ///
+    /// let from: &[u8] = b"append\nexample\n";
+    /// let mut reader = BufReader::new(from);
+    /// let mut buf = vec![];
+    ///
+    /// let mut size = reader.read_until(b'\n', &mut buf).await?;
+    /// assert_eq!(size, 7);
+    /// assert_eq!(buf, b"append\n");
+    ///
+    /// size += reader.read_until(b'\n', &mut buf).await?;
+    /// assert_eq!(size, from.len());
+    ///
+    /// assert_eq!(buf, from);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
     fn read_until<'a>(
         &'a mut self,
         byte: u8,
