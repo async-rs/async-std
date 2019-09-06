@@ -54,7 +54,7 @@ pub trait BufRead {
     ///
     /// let mut file = BufReader::new(File::open("a.txt").await?);
     ///
-    /// let mut buf = vec![0; 1024];
+    /// let mut buf = Vec::with_capacity(1024);
     /// let n = file.read_until(b'\n', &mut buf).await?;
     /// #
     /// # Ok(()) }) }
