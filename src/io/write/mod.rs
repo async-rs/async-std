@@ -1,11 +1,11 @@
 mod flush;
-mod write_all;
 mod write;
+mod write_all;
 mod write_vectored;
 
 use flush::FlushFuture;
-use write_all::WriteAllFuture;
 use write::WriteFuture;
+use write_all::WriteAllFuture;
 use write_vectored::WriteVectoredFuture;
 
 use std::io::IoSlice;

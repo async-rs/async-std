@@ -2,8 +2,8 @@ use crate::future::Future;
 use crate::task::{Context, Poll};
 
 use std::io;
-use std::pin::Pin;
 use std::io::IoSlice;
+use std::pin::Pin;
 
 use futures_io::AsyncWrite;
 

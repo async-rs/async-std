@@ -1,11 +1,11 @@
+use super::read_to_end_internal;
 use crate::future::Future;
 use crate::task::{Context, Poll};
-use super::read_to_end_internal;
 
 use std::io;
+use std::mem;
 use std::pin::Pin;
 use std::str;
-use std::mem;
 
 use futures_io::AsyncRead;
 

@@ -1,14 +1,14 @@
 mod read;
-mod read_vectored;
-mod read_to_end;
 mod read_exact;
+mod read_to_end;
 mod read_to_string;
+mod read_vectored;
 
-use read_to_string::ReadToStringFuture;
-use read_to_end::{ReadToEndFuture, read_to_end_internal};
 use read::ReadFuture;
-use read_vectored::ReadVectoredFuture;
 use read_exact::ReadExactFuture;
+use read_to_end::{read_to_end_internal, ReadToEndFuture};
+use read_to_string::ReadToStringFuture;
+use read_vectored::ReadVectoredFuture;
 
 use std::io::IoSliceMut;
 use std::mem;
