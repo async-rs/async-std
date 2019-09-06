@@ -21,10 +21,12 @@
 //! # }) }
 //! ```
 
+use std::cmp::Ordering;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
 
+use super::min_by::MinBy;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 use std::marker::PhantomData;
@@ -116,6 +118,39 @@ pub trait Stream {
             stream: self,
             remaining: n,
         }
+    }
+
+    /// Returns the element that gives the minimum value with respect to the
+    /// specified comparison function. If several elements are equally minimum,
+    /// the first element is returned. If the stream is empty, `None` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    ///
+    /// let min = Stream::min_by(s.clone(), |x, y| x.cmp(y)).await;
+    /// assert_eq!(min, Some(1));
+    ///
+    /// let min = Stream::min_by(s, |x, y| y.cmp(x)).await;
+    /// assert_eq!(min, Some(3));
+    ///
+    /// let min = Stream::min_by(VecDeque::<usize>::new(), |x, y| x.cmp(y)).await;
+    /// assert_eq!(min, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn min_by<F>(self, compare: F) -> MinBy<Self, F>
+    where
+        Self: Sized + Unpin,
+        F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+    {
+        MinBy::new(self, compare)
     }
 
     /// Tests if every element of the stream matches a predicate.
