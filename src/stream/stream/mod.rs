@@ -21,18 +21,18 @@
 //! # }) }
 //! ```
 
-mod min_by;
-mod any;
 mod all;
-mod take;
+mod any;
+mod min_by;
 mod next;
+mod take;
 
 pub use take::Take;
 
+use all::AllFuture;
+use any::AnyFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
-use any::AnyFuture;
-use all::AllFuture;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
