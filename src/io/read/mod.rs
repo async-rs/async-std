@@ -10,7 +10,7 @@ use read_to_end::{read_to_end_internal, ReadToEndFuture};
 use read_to_string::ReadToStringFuture;
 use read_vectored::ReadVectoredFuture;
 
-use std::io::IoSliceMut;
+use std::io;
 use std::mem;
 
 use cfg_if::cfg_if;
@@ -86,7 +86,7 @@ pub trait Read {
     /// [`read`]: #tymethod.read
     fn read_vectored<'a>(
         &'a mut self,
-        bufs: &'a mut [IoSliceMut<'a>],
+        bufs: &'a mut [io::IoSliceMut<'a>],
     ) -> ret!('a, ReadVectoredFuture, io::Result<usize>)
     where
         Self: Unpin,

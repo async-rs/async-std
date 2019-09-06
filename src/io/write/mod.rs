@@ -8,7 +8,7 @@ use write::WriteFuture;
 use write_all::WriteAllFuture;
 use write_vectored::WriteVectoredFuture;
 
-use std::io::IoSlice;
+use std::io;
 
 use cfg_if::cfg_if;
 use futures_io::AsyncWrite;
@@ -99,7 +99,7 @@ pub trait Write {
     /// [`write`]: #tymethod.write
     fn write_vectored<'a>(
         &'a mut self,
-        bufs: &'a [IoSlice<'a>],
+        bufs: &'a [io::IoSlice<'a>],
     ) -> ret!('a, WriteVectoredFuture, io::Result<usize>)
     where
         Self: Unpin,
