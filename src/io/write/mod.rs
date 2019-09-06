@@ -1,13 +1,17 @@
+mod flush;
+mod write_all;
+mod write;
+mod write_vectored;
+
+use flush::FlushFuture;
+use write_all::WriteAllFuture;
+use write::WriteFuture;
+use write_vectored::WriteVectoredFuture;
+
 use std::io::IoSlice;
-use std::mem;
-use std::pin::Pin;
 
 use cfg_if::cfg_if;
 use futures_io::AsyncWrite;
-
-use crate::future::Future;
-use crate::io;
-use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -138,78 +142,5 @@ impl<T: AsyncWrite + Unpin + ?Sized> Write for T {
 
     fn flush(&mut self) -> ret!('_, FlushFuture, io::Result<()>) {
         FlushFuture { writer: self }
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct WriteFuture<'a, T: Unpin + ?Sized> {
-    writer: &'a mut T,
-    buf: &'a [u8],
-}
-
-impl<T: AsyncWrite + Unpin + ?Sized> Future for WriteFuture<'_, T> {
-    type Output = io::Result<usize>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let buf = self.buf;
-        Pin::new(&mut *self.writer).poll_write(cx, buf)
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct FlushFuture<'a, T: Unpin + ?Sized> {
-    writer: &'a mut T,
-}
-
-impl<T: AsyncWrite + Unpin + ?Sized> Future for FlushFuture<'_, T> {
-    type Output = io::Result<()>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        Pin::new(&mut *self.writer).poll_flush(cx)
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct WriteVectoredFuture<'a, T: Unpin + ?Sized> {
-    writer: &'a mut T,
-    bufs: &'a [IoSlice<'a>],
-}
-
-impl<T: AsyncWrite + Unpin + ?Sized> Future for WriteVectoredFuture<'_, T> {
-    type Output = io::Result<usize>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let bufs = self.bufs;
-        Pin::new(&mut *self.writer).poll_write_vectored(cx, bufs)
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct WriteAllFuture<'a, T: Unpin + ?Sized> {
-    writer: &'a mut T,
-    buf: &'a [u8],
-}
-
-impl<T: AsyncWrite + Unpin + ?Sized> Future for WriteAllFuture<'_, T> {
-    type Output = io::Result<()>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let Self { writer, buf } = &mut *self;
-
-        while !buf.is_empty() {
-            let n = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, buf))?;
-            let (_, rest) = mem::replace(buf, &[]).split_at(n);
-            *buf = rest;
-
-            if n == 0 {
-                return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
-            }
-        }
-
-        Poll::Ready(Ok(()))
     }
 }
