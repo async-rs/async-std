@@ -1,23 +1,23 @@
 use std::cmp::Ordering;
 use std::pin::Pin;
 
-use super::stream::Stream;
 use crate::future::Future;
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// A future that yields the minimum item in a stream by a given comparison function.
 #[derive(Clone, Debug)]
-pub struct MinBy<S: Stream, F> {
+pub struct MinByFuture<S: Stream, F> {
     stream: S,
     compare: F,
     min: Option<S::Item>,
 }
 
-impl<S: Stream + Unpin, F> Unpin for MinBy<S, F> {}
+impl<S: Stream + Unpin, F> Unpin for MinByFuture<S, F> {}
 
-impl<S: Stream + Unpin, F> MinBy<S, F> {
+impl<S: Stream + Unpin, F> MinByFuture<S, F> {
     pub(super) fn new(stream: S, compare: F) -> Self {
-        MinBy {
+        MinByFuture {
             stream,
             compare,
             min: None,
@@ -25,7 +25,7 @@ impl<S: Stream + Unpin, F> MinBy<S, F> {
     }
 }
 
-impl<S, F> Future for MinBy<S, F>
+impl<S, F> Future for MinByFuture<S, F>
 where
     S: futures_core::stream::Stream + Unpin,
     S::Item: Copy,

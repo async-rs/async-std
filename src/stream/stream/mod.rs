@@ -21,15 +21,23 @@
 //! # }) }
 //! ```
 
+mod min_by;
+mod any;
+mod all;
+mod take;
+mod next;
+
+pub use take::Take;
+
+use min_by::MinByFuture;
+use next::NextFuture;
+use any::AnyFuture;
+use all::AllFuture;
+
 use std::cmp::Ordering;
-use std::pin::Pin;
+use std::marker::PhantomData;
 
 use cfg_if::cfg_if;
-
-use super::min_by::MinBy;
-use crate::future::Future;
-use crate::task::{Context, Poll};
-use std::marker::PhantomData;
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -145,12 +153,12 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn min_by<F>(self, compare: F) -> MinBy<Self, F>
+    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F>
     where
         Self: Sized + Unpin,
         F: FnMut(&Self::Item, &Self::Item) -> Ordering,
     {
-        MinBy::new(self, compare)
+        MinByFuture::new(self, compare)
     }
 
     /// Tests if every element of the stream matches a predicate.
@@ -276,144 +284,5 @@ impl<T: futures_core::stream::Stream + Unpin + ?Sized> Stream for T {
         Self: Unpin,
     {
         NextFuture { stream: self }
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct NextFuture<'a, T: Unpin + ?Sized> {
-    stream: &'a mut T,
-}
-
-impl<T: futures_core::stream::Stream + Unpin + ?Sized> Future for NextFuture<'_, T> {
-    type Output = Option<T::Item>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        Pin::new(&mut *self.stream).poll_next(cx)
-    }
-}
-
-/// A stream that yields the first `n` items of another stream.
-#[derive(Clone, Debug)]
-pub struct Take<S> {
-    stream: S,
-    remaining: usize,
-}
-
-impl<S: Unpin> Unpin for Take<S> {}
-
-impl<S: futures_core::stream::Stream> Take<S> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(remaining: usize);
-}
-
-impl<S: futures_core::stream::Stream> futures_core::stream::Stream for Take<S> {
-    type Item = S::Item;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
-        if self.remaining == 0 {
-            Poll::Ready(None)
-        } else {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
-            match next {
-                Some(_) => *self.as_mut().remaining() -= 1,
-                None => *self.as_mut().remaining() = 0,
-            }
-            Poll::Ready(next)
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct AllFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
-    stream: &'a mut S,
-    f: F,
-    result: bool,
-    __item: PhantomData<T>,
-}
-
-impl<'a, S, F, T> AllFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
-    pin_utils::unsafe_pinned!(stream: &'a mut S);
-    pin_utils::unsafe_unpinned!(result: bool);
-    pin_utils::unsafe_unpinned!(f: F);
-}
-
-impl<S, F> Future for AllFuture<'_, S, F, S::Item>
-where
-    S: futures_core::stream::Stream + Unpin + Sized,
-    F: FnMut(S::Item) -> bool,
-{
-    type Output = bool;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        use futures_core::stream::Stream;
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
-        match next {
-            Some(v) => {
-                let result = (self.as_mut().f())(v);
-                *self.as_mut().result() = result;
-                if result {
-                    // don't forget to wake this task again to pull the next item from stream
-                    cx.waker().wake_by_ref();
-                    Poll::Pending
-                } else {
-                    Poll::Ready(false)
-                }
-            }
-            None => Poll::Ready(self.result),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct AnyFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
-    stream: &'a mut S,
-    f: F,
-    result: bool,
-    __item: PhantomData<T>,
-}
-
-impl<'a, S, F, T> AnyFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
-    pin_utils::unsafe_pinned!(stream: &'a mut S);
-    pin_utils::unsafe_unpinned!(result: bool);
-    pin_utils::unsafe_unpinned!(f: F);
-}
-
-impl<S, F> Future for AnyFuture<'_, S, F, S::Item>
-where
-    S: futures_core::stream::Stream + Unpin + Sized,
-    F: FnMut(S::Item) -> bool,
-{
-    type Output = bool;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        use futures_core::stream::Stream;
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
-        match next {
-            Some(v) => {
-                let result = (self.as_mut().f())(v);
-                *self.as_mut().result() = result;
-                if result {
-                    Poll::Ready(true)
-                } else {
-                    // don't forget to wake this task again to pull the next item from stream
-                    cx.waker().wake_by_ref();
-                    Poll::Pending
-                }
-            }
-            None => Poll::Ready(self.result),
-        }
     }
 }
