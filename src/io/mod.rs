@@ -20,6 +20,8 @@
 //! # Ok(()) }) }
 //! ```
 
+pub mod prelude;
+
 #[doc(inline)]
 pub use std::io::{Error, ErrorKind, Result, SeekFrom};
 
