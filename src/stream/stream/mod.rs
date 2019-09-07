@@ -91,7 +91,7 @@ cfg_if! {
         }
     } else {
         macro_rules! dyn_ret {
-            ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + 'a>>)
+            ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + Send + 'a>>)
         }
     }
 }
@@ -544,6 +544,7 @@ pub trait Stream {
     ///
     /// Basic usage:
     ///
+    /// ```
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::prelude::*;
@@ -551,7 +552,6 @@ pub trait Stream {
     ///
     /// let mut s = stream::repeat::<u32>(42).take(3);
     /// assert!(s.any(|x| x ==  42).await);
-    ///
     /// #
     /// # }) }
     /// ```
@@ -704,7 +704,8 @@ pub trait Stream {
     #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
     fn collect<'a, B>(self) -> dyn_ret!('a, B)
     where
-        Self: futures_core::stream::Stream + Sized + 'a,
+        Self: futures_core::stream::Stream + Sized + Send + 'a,
+        <Self as futures_core::stream::Stream>::Item: Send,
         B: FromStream<<Self as futures_core::stream::Stream>::Item>,
     {
         FromStream::from_stream(self)

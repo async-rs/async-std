@@ -10,7 +10,7 @@ use std::pin::Pin;
 /// See also: [`IntoStream`].
 ///
 /// [`IntoStream`]: trait.IntoStream.html
-pub trait FromStream<T> {
+pub trait FromStream<T: Send> {
     /// Creates a value from a stream.
     ///
     /// # Examples
@@ -22,7 +22,7 @@ pub trait FromStream<T> {
     ///
     /// // let _five_fives = async_std::stream::repeat(5).take(5);
     /// ```
-    fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
+    fn from_stream<'a, S: IntoStream<Item = T> + Send + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>;
+    ) -> Pin<Box<dyn core::future::Future<Output = Self> + Send + 'a>>;
 }

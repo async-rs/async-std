@@ -18,13 +18,13 @@ pub trait IntoStream {
     type Item;
 
     /// Which kind of stream are we turning this into?
-    type IntoStream: Stream<Item = Self::Item>;
+    type IntoStream: Stream<Item = Self::Item> + Send;
 
     /// Creates a stream from a value.
     fn into_stream(self) -> Self::IntoStream;
 }
 
-impl<I: Stream> IntoStream for I {
+impl<I: Stream + Send> IntoStream for I {
     type Item = I::Item;
     type IntoStream = I;
 
