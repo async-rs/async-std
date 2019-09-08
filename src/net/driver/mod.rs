@@ -279,9 +279,9 @@ impl<T: Evented> IoHandle<T> {
         Ok(())
     }
 
-    /// Deregister and return the I/O source
+    /// Deregisters and returns the inner I/O source.
     ///
-    /// This method is to support IntoRawFd in struct that uses IoHandle
+    /// This method is typically used to convert `IoHandle`s to raw file descriptors/handles.
     pub fn into_inner(mut self) -> T {
         let source = self.source.take().unwrap();
         REACTOR
