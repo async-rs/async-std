@@ -419,7 +419,11 @@ cfg_if! {
 
         impl IntoRawFd for File {
             fn into_raw_fd(self) -> RawFd {
-                self.file.as_raw_fd()
+                let file = self.file.clone();
+                drop(self);
+                Arc::try_unwrap(file)
+                    .expect("cannot acquire ownership of file handle after drop")
+                    .into_raw_fd()
             }
         }
     }
@@ -442,7 +446,11 @@ cfg_if! {
 
         impl IntoRawHandle for File {
             fn into_raw_handle(self) -> RawHandle {
-                self.file.as_raw_handle()
+                let file = self.file.clone();
+                drop(self);
+                Arc::try_unwrap(file)
+                    .expect("cannot acquire ownership of file's handle after drop")
+                    .into_raw_handle()
             }
         }
     }
