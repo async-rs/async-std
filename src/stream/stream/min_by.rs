@@ -16,9 +16,7 @@ impl<S, F, T> MinByFuture<S, F, T> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_unpinned!(compare: F);
     pin_utils::unsafe_unpinned!(min: Option<T>);
-}
 
-impl<S, F, T> MinByFuture<S, F, T> {
     pub(super) fn new(stream: S, compare: F) -> Self {
         MinByFuture {
             stream,
