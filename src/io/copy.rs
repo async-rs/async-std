@@ -18,7 +18,7 @@ use crate::task::{Context, Poll};
 /// If you’re wanting to copy the contents of one file to another and you’re
 /// working with filesystem paths, see the [`fs::copy`] function.
 ///
-/// This function is an async version of [`std::fs::write`].
+/// This function is an async version of [`std::io::copy`].
 ///
 /// [`std::io::copy`]: https://doc.rust-lang.org/std/io/fn.copy.html
 /// [`fs::copy`]: ../fs/fn.copy.html
