@@ -7,7 +7,7 @@ use async_std::io;
 use async_std::prelude::*;
 use async_std::task;
 
-const LEN: usize = 4 * 1024 * 1024; // 4 Mb
+const LEN: usize = 16 * 1024; // 16 Kb
 
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");

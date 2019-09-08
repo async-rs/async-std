@@ -27,7 +27,6 @@ unstable = []
 async-task = "1.0.0"
 cfg-if = "0.1.9"
 crossbeam-channel = "0.3.9"
-futures-channel-preview = "0.3.0-alpha.18"
 futures-core-preview = "0.3.0-alpha.18"
 futures-io-preview = "0.3.0-alpha.18"
 futures-timer = "0.4.0"
