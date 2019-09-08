@@ -153,9 +153,9 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F>
+    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F, Self::Item>
     where
-        Self: Sized + Unpin,
+        Self: Sized,
         F: FnMut(&Self::Item, &Self::Item) -> Ordering,
     {
         MinByFuture::new(self, compare)
