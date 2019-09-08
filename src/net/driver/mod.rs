@@ -213,7 +213,11 @@ impl<T: Evented> IoHandle<T> {
         let mut readiness = mio::Ready::from_usize(self.entry.readiness.load(Ordering::SeqCst));
 
         if (readiness & mask).is_empty() {
-            self.entry.readers.lock().unwrap().push(cx.waker().clone());
+            let mut list = self.entry.readers.lock().unwrap();
+            if list.iter().all(|w| !w.will_wake(cx.waker())) {
+                list.push(cx.waker().clone());
+            }
+
             readiness = mio::Ready::from_usize(self.entry.readiness.fetch_or(0, Ordering::SeqCst));
         }
 
@@ -250,7 +254,11 @@ impl<T: Evented> IoHandle<T> {
         let mut readiness = mio::Ready::from_usize(self.entry.readiness.load(Ordering::SeqCst));
 
         if (readiness & mask).is_empty() {
-            self.entry.writers.lock().unwrap().push(cx.waker().clone());
+            let mut list = self.entry.writers.lock().unwrap();
+            if list.iter().all(|w| !w.will_wake(cx.waker())) {
+                list.push(cx.waker().clone());
+            }
+
             readiness = mio::Ready::from_usize(self.entry.readiness.fetch_or(0, Ordering::SeqCst));
         }
 
