@@ -275,7 +275,7 @@ impl File {
 impl Drop for File {
     fn drop(&mut self) {
         // We need to flush the file on drop. Unfortunately, that is not possible to do in a
-        // non-blocking fashion, but our only other option here is data that is residing in the
+        // non-blocking fashion, but our only other option here is losing data remaining in the
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
         let _ = task::block_on(self.flush());
@@ -456,7 +456,7 @@ unsafe impl<T: Send> Send for Lock<T> {}
 unsafe impl<T: Send> Sync for Lock<T> {}
 
 #[derive(Debug)]
-/// The state of the lock.
+/// The state of a lock.
 struct LockState<T> {
     /// Set to `true` when locked.
     locked: AtomicBool,
@@ -495,7 +495,7 @@ impl<T> Lock<T> {
             }
         }
 
-        // The lock was successfully aquired.
+        // The lock was successfully acquired.
         Poll::Ready(LockGuard(self.0.clone()))
     }
 }
@@ -546,9 +546,9 @@ impl<T> DerefMut for LockGuard<T> {
     }
 }
 
-/// The current mode.
+/// Modes a file can be in.
 ///
-/// The file can either be in idle mode, in reading mode, or writing mode.
+/// The file can either be in idle mode, reading mode, or writing mode.
 #[derive(Debug)]
 enum Mode {
     /// The cache is empty.
@@ -688,8 +688,8 @@ impl LockGuard<State> {
 
     /// Invalidates the read cache.
     ///
-    /// This method will also move the file cursor backwards by the number of unconsumed bytes in
-    /// the read cache.
+    /// This method will also move the internal file's cursor backwards by the number of unconsumed
+    /// bytes in the read cache.
     fn poll_unread(mut self, _: &mut Context<'_>) -> Poll<io::Result<Self>> {
         match self.mode {
             Mode::Idle | Mode::Writing => Poll::Ready(Ok(self)),
@@ -790,12 +790,12 @@ impl LockGuard<State> {
 
     /// Flushes the write cache into the file.
     fn poll_flush(mut self, cx: &mut Context<'_>) -> Poll<io::Result<Self>> {
-        // If the file is already in flushed state, do nothing.
+        // If the file is already in flushed state, return.
         if self.is_flushed {
             return Poll::Ready(Ok(self));
         }
 
-        // If there is data in the write cache, drain in.
+        // If there is data in the write cache, drain it.
         self = futures_core::ready!(self.poll_drain(cx))?;
 
         // Register current task's interest in the file lock.
@@ -818,7 +818,7 @@ impl LockGuard<State> {
         Poll::Pending
     }
 
-    // This function does nothing because we're not sure about `AsyncWrite::poll_close()`'s
+    // This function does nothing because we're not sure about `AsyncWrite::poll_close()`'s exact
     // semantics nor whether it will stay in the `AsyncWrite` trait.
     fn poll_close(self, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
