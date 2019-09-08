@@ -144,10 +144,10 @@ impl File {
     /// # Ok(()) }) }
     /// ```
     pub async fn sync_all(&self) -> io::Result<()> {
-        // Drain the write cache before calling `sync_all()`.
+        // Flush the write cache before calling `sync_all()`.
         let state = future::poll_fn(|cx| {
             let state = futures_core::ready!(self.lock.poll_lock(cx));
-            state.poll_drain(cx)
+            state.poll_flush(cx)
         })
         .await?;
 
@@ -214,11 +214,11 @@ impl File {
     /// # Ok(()) }) }
     /// ```
     pub async fn set_len(&self, size: u64) -> io::Result<()> {
-        // Invalidate the read/write cache before calling `set_len()`.
+        // Invalidate the read cache and flush the write cache before calling `set_len()`.
         let state = future::poll_fn(|cx| {
             let state = futures_core::ready!(self.lock.poll_lock(cx));
             let state = futures_core::ready!(state.poll_unread(cx))?;
-            state.poll_drain(cx)
+            state.poll_flush(cx)
         })
         .await?;
 
@@ -604,9 +604,9 @@ impl LockGuard<State> {
             return Poll::Ready((&*self.file).seek(pos));
         }
 
-        // Invalidate the read/write cache before calling `seek()`.
+        // Invalidate the read cache and flush the write cache before calling `seek()`.
         self = futures_core::ready!(self.poll_unread(cx))?;
-        self = futures_core::ready!(self.poll_drain(cx))?;
+        self = futures_core::ready!(self.poll_flush(cx))?;
 
         // Seek to the new position. This call is hopefully not blocking because it should just
         // change the internal offset into the file and not touch the actual file.
@@ -641,8 +641,8 @@ impl LockGuard<State> {
                 }
             }
             Mode::Writing => {
-                // If we're in writing mode, drain the write cache.
-                self = futures_core::ready!(self.poll_drain(cx))?;
+                // If we're in writing mode, flush the write cache.
+                self = futures_core::ready!(self.poll_flush(cx))?;
             }
         }
 
