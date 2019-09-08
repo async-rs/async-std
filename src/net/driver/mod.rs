@@ -183,7 +183,7 @@ pub struct IoHandle<T: Evented> {
     entry: Arc<Entry>,
 
     /// The I/O event source.
-    source: T,
+    source: Option<T>,
 }
 
 impl<T: Evented> IoHandle<T> {
@@ -196,13 +196,13 @@ impl<T: Evented> IoHandle<T> {
             entry: REACTOR
                 .register(&source)
                 .expect("cannot register an I/O event source"),
-            source,
+            source: Some(source),
         }
     }
 
     /// Returns a reference to the inner I/O event source.
     pub fn get_ref(&self) -> &T {
-        &self.source
+        self.source.as_ref().unwrap()
     }
 
     /// Polls the I/O handle for reading.
@@ -286,13 +286,26 @@ impl<T: Evented> IoHandle<T> {
 
         Ok(())
     }
+
+    /// Deregisters and returns the inner I/O source.
+    ///
+    /// This method is typically used to convert `IoHandle`s to raw file descriptors/handles.
+    pub fn into_inner(mut self) -> T {
+        let source = self.source.take().unwrap();
+        REACTOR
+            .deregister(&source, &self.entry)
+            .expect("cannot deregister I/O event source");
+        source
+    }
 }
 
 impl<T: Evented> Drop for IoHandle<T> {
     fn drop(&mut self) {
-        REACTOR
-            .deregister(&self.source, &self.entry)
-            .expect("cannot deregister I/O event source");
+        if let Some(ref source) = self.source {
+            REACTOR
+                .deregister(source, &self.entry)
+                .expect("cannot deregister I/O event source");
+        }
     }
 }
 
@@ -313,7 +326,7 @@ impl<T: Evented + std::io::Read + Unpin> AsyncRead for IoHandle<T> {
     ) -> Poll<io::Result<usize>> {
         futures_core::ready!(Pin::new(&mut *self).poll_readable(cx)?);
 
-        match self.source.read(buf) {
+        match self.source.as_mut().unwrap().read(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_readable(cx)?;
                 Poll::Pending
@@ -334,7 +347,7 @@ where
     ) -> Poll<io::Result<usize>> {
         futures_core::ready!(Pin::new(&mut *self).poll_readable(cx)?);
 
-        match (&self.source).read(buf) {
+        match self.source.as_ref().unwrap().read(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_readable(cx)?;
                 Poll::Pending
@@ -352,7 +365,7 @@ impl<T: Evented + std::io::Write + Unpin> AsyncWrite for IoHandle<T> {
     ) -> Poll<io::Result<usize>> {
         futures_core::ready!(self.poll_writable(cx)?);
 
-        match self.source.write(buf) {
+        match self.source.as_mut().unwrap().write(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_writable(cx)?;
                 Poll::Pending
@@ -364,7 +377,7 @@ impl<T: Evented + std::io::Write + Unpin> AsyncWrite for IoHandle<T> {
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         futures_core::ready!(self.poll_writable(cx)?);
 
-        match self.source.flush() {
+        match self.source.as_mut().unwrap().flush() {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_writable(cx)?;
                 Poll::Pending
@@ -389,7 +402,7 @@ where
     ) -> Poll<io::Result<usize>> {
         futures_core::ready!(self.poll_writable(cx)?);
 
-        match (&self.source).write(buf) {
+        match self.get_ref().write(buf) {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_writable(cx)?;
                 Poll::Pending
@@ -401,7 +414,7 @@ where
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         futures_core::ready!(self.poll_writable(cx)?);
 
-        match (&self.source).flush() {
+        match self.get_ref().flush() {
             Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
                 self.clear_writable(cx)?;
                 Poll::Pending
