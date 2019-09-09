@@ -1,6 +1,16 @@
 language: rust
 
-env: RUSTFLAGS="-D warnings"
+env:
+  - RUSTFLAGS="-D warnings"
+
+# Cache the whole `~/.cargo` directory to keep `~/cargo/.crates.toml`.
+cache:
+  directories:
+    - /home/travis/.cargo
+
+# Don't cache the cargo registry because it's too big.
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
 
 matrix:
   fast_finish: true
