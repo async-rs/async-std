@@ -449,7 +449,7 @@ cfg_if! {
                 let file = self.file.clone();
                 drop(self);
                 Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of file's handle after drop")
+                    .expect("cannot acquire ownership of file handle after drop")
                     .into_raw_handle()
             }
         }
