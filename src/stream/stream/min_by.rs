@@ -4,8 +4,7 @@ use std::pin::Pin;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 
-/// A future that yields the minimum item in a stream by a given comparison function.
-#[derive(Debug)]
+#[allow(missing_debug_implementations)]
 pub struct MinByFuture<S, F, T> {
     stream: S,
     compare: F,
