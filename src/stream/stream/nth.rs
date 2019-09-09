@@ -1,7 +1,7 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-#[derive(Debug)]
+#[allow(missing_debug_implementations)]
 pub struct NthFuture<'a, S> {
     stream: &'a mut S,
     n: usize,
