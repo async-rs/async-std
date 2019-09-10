@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod filter_map;
+mod find;
 mod find_map;
 mod min_by;
 mod next;
@@ -35,6 +36,7 @@ pub use take::Take;
 use all::AllFuture;
 use any::AnyFuture;
 use filter_map::FilterMap;
+use find::FindFuture;
 use find_map::FindMapFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
@@ -319,6 +321,50 @@ pub trait Stream {
             __item: PhantomData,
             f,
         }
+    }
+
+    /// Searches for an element in a stream that satisfies a predicate.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let res = s.find(|x| *x == 2).await;
+    /// assert_eq!(res, Some(2));
+    /// #
+    /// # }) }
+    /// ```
+    ///
+    /// Resuming after a first find:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let res = s.find(|x| *x == 2).await;
+    /// assert_eq!(res, Some(2));
+    ///
+    /// let next = s.next().await;
+    /// assert_eq!(next, Some(3));
+    /// #
+    /// # }) }
+    /// ```
+    fn find<P>(&mut self, p: P) -> ret!('_, FindFuture, Option<Self::Item>, P, Self::Item)
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool,
+    {
+        FindFuture::new(self, p)
     }
 
     /// Applies function to the elements of stream and returns the first non-none result.
