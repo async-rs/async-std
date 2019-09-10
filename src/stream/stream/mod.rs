@@ -23,6 +23,7 @@
 
 mod all;
 mod any;
+mod filter_map;
 mod min_by;
 mod next;
 mod nth;
@@ -32,6 +33,7 @@ pub use take::Take;
 
 use all::AllFuture;
 use any::AnyFuture;
+use filter_map::FilterMap;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -128,6 +130,43 @@ pub trait Stream {
             stream: self,
             remaining: n,
         }
+    }
+
+    /// Both filters and maps a stream.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
+    ///
+    /// let mut parsed = s.filter_map(|a| a.parse::<u32>().ok());
+    ///
+    /// let one = parsed.next().await;
+    /// assert_eq!(one, Some(1));
+    ///
+    /// let three = parsed.next().await;
+    /// assert_eq!(three, Some(3));
+    ///
+    /// let five = parsed.next().await;
+    /// assert_eq!(five, Some(5));
+    ///
+    /// let end = parsed.next().await;
+    /// assert_eq!(end, None);
+    /// #
+    /// # }) }
+    fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
+    where
+        Self: Sized,
+        F: FnMut(Self::Item) -> Option<B>,
+    {
+        FilterMap::new(self, f)
     }
 
     /// Returns the element that gives the minimum value with respect to the
