@@ -23,6 +23,7 @@
 
 mod all;
 mod any;
+mod find_map;
 mod min_by;
 mod next;
 mod take;
@@ -31,6 +32,7 @@ pub use take::Take;
 
 use all::AllFuture;
 use any::AnyFuture;
+use find_map::FindMapFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 
@@ -48,6 +50,7 @@ cfg_if! {
             ($a:lifetime, $f:tt, $o:ty) => (ImplFuture<$a, $o>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty) => (ImplFuture<$a, $o>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => (ImplFuture<$a, $o>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty, $t3:ty) => (ImplFuture<$a, $o>);
 
         }
     } else {
@@ -55,6 +58,7 @@ cfg_if! {
             ($a:lifetime, $f:tt, $o:ty) => ($f<$a, Self>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty) => ($f<$a, Self, $t1>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
+            ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty, $t3:ty) => ($f<$a, Self, $t1, $t2, $t3>);
         }
     }
 }
@@ -216,6 +220,29 @@ pub trait Stream {
             __item: PhantomData,
             f,
         }
+    }
+
+    /// Applies function to the elements of stream and returns the first non-none result.
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let mut s: VecDeque<&str> = vec!["lol", "NaN", "2", "5"].into_iter().collect();
+    /// let first_number = s.find_map(|s| s.parse().ok()).await;
+    ///
+    /// assert_eq!(first_number, Some(2));
+    /// #
+    /// # }) }
+    /// ```
+    fn find_map<F, B>(&mut self, f: F) -> ret!('_, FindMapFuture, Option<B>, F, Self::Item, B)
+    where
+        Self: Sized,
+        F: FnMut(Self::Item) -> Option<B>,
+    {
+        FindMapFuture::new(self, f)
     }
 
     /// Tests if any element of the stream matches a predicate.
