@@ -22,17 +22,16 @@ Let's add waiting to the server:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures;
+# extern crate futures_channel;
+# extern crate futures_util;
 # use async_std::{
 #     io::{self, BufReader},
 #     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
-# use futures::{
-#     channel::mpsc,
-#     SinkExt,
-# };
+# use futures_channel::mpsc;
+# use futures_util::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
 #     sync::Arc,
@@ -156,17 +155,16 @@ And to the broker:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures;
+# extern crate futures_channel;
+# extern crate futures_util;
 # use async_std::{
 #     io::{self, BufReader},
 #     net::{TcpListener, TcpStream, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
-# use futures::{
-#     channel::mpsc,
-#     SinkExt,
-# };
+# use futures_channel::mpsc;
+# use futures_util::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
 #     sync::Arc,

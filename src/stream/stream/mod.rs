@@ -23,18 +23,22 @@
 
 mod all;
 mod any;
+mod filter_map;
 mod find_map;
 mod min_by;
 mod next;
+mod nth;
 mod take;
 
 pub use take::Take;
 
 use all::AllFuture;
 use any::AnyFuture;
+use filter_map::FilterMap;
 use find_map::FindMapFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
+use nth::NthFuture;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
@@ -132,6 +136,43 @@ pub trait Stream {
         }
     }
 
+    /// Both filters and maps a stream.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
+    ///
+    /// let mut parsed = s.filter_map(|a| a.parse::<u32>().ok());
+    ///
+    /// let one = parsed.next().await;
+    /// assert_eq!(one, Some(1));
+    ///
+    /// let three = parsed.next().await;
+    /// assert_eq!(three, Some(3));
+    ///
+    /// let five = parsed.next().await;
+    /// assert_eq!(five, Some(5));
+    ///
+    /// let end = parsed.next().await;
+    /// assert_eq!(end, None);
+    /// #
+    /// # }) }
+    fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
+    where
+        Self: Sized,
+        F: FnMut(Self::Item) -> Option<B>,
+    {
+        FilterMap::new(self, f)
+    }
+
     /// Returns the element that gives the minimum value with respect to the
     /// specified comparison function. If several elements are equally minimum,
     /// the first element is returned. If the stream is empty, `None` is returned.
@@ -157,12 +198,70 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F>
+    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F, Self::Item>
     where
-        Self: Sized + Unpin,
+        Self: Sized,
         F: FnMut(&Self::Item, &Self::Item) -> Ordering,
     {
         MinByFuture::new(self, compare)
+    }
+
+    /// Returns the nth element of the stream.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    ///
+    /// let second = s.nth(1).await;
+    /// assert_eq!(second, Some(2));
+    /// #
+    /// # }) }
+    /// ```
+    /// Calling `nth()` multiple times:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    ///
+    /// let second = s.nth(0).await;
+    /// assert_eq!(second, Some(1));
+    ///
+    /// let second = s.nth(0).await;
+    /// assert_eq!(second, Some(2));
+    /// #
+    /// # }) }
+    /// ```
+    /// Returning `None` if the stream finished before returning `n` elements:
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    ///
+    /// let fourth = s.nth(4).await;
+    /// assert_eq!(fourth, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn nth(&mut self, n: usize) -> ret!('_, NthFuture, Option<Self::Item>)
+    where
+        Self: Sized,
+    {
+        NthFuture::new(self, n)
     }
 
     /// Tests if every element of the stream matches a predicate.

@@ -1,6 +1,16 @@
 language: rust
 
-env: RUSTFLAGS="-D warnings"
+env:
+  - RUSTFLAGS="-D warnings"
+
+# Cache the whole `~/.cargo` directory to keep `~/cargo/.crates.toml`.
+cache:
+  directories:
+    - /home/travis/.cargo
+
+# Don't cache the cargo registry because it's too big.
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
 
 matrix:
   fast_finish: true
@@ -35,16 +45,15 @@ matrix:
       script:
         - cargo doc --features docs
 
-    # TODO(yoshuawuyts): re-enable mdbook
-    # - name: book
-    #   rust: nightly
-    #   os: linux
-    #   before_script:
-    #     - test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
-    #     - cargo build # to find 'extern crate async_std' by `mdbook test`
-    #   script:
-    #     - mdbook build docs
-    #     - mdbook test -L ./target/debug/deps docs
+    - name: book
+      rust: nightly
+      os: linux
+      before_script:
+        - test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
+        - cargo build # to find 'extern crate async_std' by `mdbook test`
+      script:
+        - mdbook build docs
+        - mdbook test -L ./target/debug/deps docs
 
 script:
   - cargo check --features unstable --all --benches --bins --examples --tests
