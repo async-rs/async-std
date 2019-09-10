@@ -108,6 +108,8 @@ impl<T> Cursor<T> {
     /// # Examples
     ///
     /// ```
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::io::Cursor;
     /// use async_std::io::prelude::*;
     /// use async_std::io::SeekFrom;
@@ -116,11 +118,13 @@ impl<T> Cursor<T> {
     ///
     /// assert_eq!(buff.position(), 0);
     ///
-    /// buff.seek(SeekFrom::Current(2)).unwrap();
+    /// buff.seek(SeekFrom::Current(2)).await?;
     /// assert_eq!(buff.position(), 2);
     ///
-    /// buff.seek(SeekFrom::Current(-1)).unwrap();
+    /// buff.seek(SeekFrom::Current(-1)).await?;
     /// assert_eq!(buff.position(), 1);
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn position(&self) -> u64 {
         self.inner.position()
