@@ -137,7 +137,6 @@ pub trait Stream {
     /// Basic usage:
     ///
     /// ```
-    ///
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use std::collections::VecDeque;
@@ -158,7 +157,6 @@ pub trait Stream {
     ///
     /// let end = parsed.next().await;
     /// assert_eq!(end, None);
-    ///
     /// #
     /// # }) }
     fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
