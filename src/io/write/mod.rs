@@ -127,6 +127,8 @@ pub trait Write {
     /// #
     /// # Ok(()) }) }
     /// ```
+    ///
+    /// [`write`]: #tymethod.write
     fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> ret!('a, WriteAllFuture, io::Result<()>)
     where
         Self: Unpin,
