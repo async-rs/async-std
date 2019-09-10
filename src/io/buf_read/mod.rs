@@ -63,6 +63,15 @@ pub trait BufRead {
         FillBufFuture::new(self)
     }
 
+    /// Tells this buffer that `amt` bytes have been consumed from the buffer, so they should no
+    /// longer be returned in calls to `read`.
+    fn consume(&mut self, amt: usize)
+    where
+        Self: AsyncBufRead + Unpin,
+    {
+        AsyncBufRead::consume(Pin::new(self), amt)
+    }
+
     /// Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
     ///
     /// This function will read bytes from the underlying stream until the delimiter or EOF is
