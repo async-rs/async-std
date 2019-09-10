@@ -23,6 +23,7 @@
 
 mod all;
 mod any;
+mod enumerate;
 mod filter_map;
 mod find_map;
 mod min_by;
@@ -34,6 +35,7 @@ pub use take::Take;
 
 use all::AllFuture;
 use any::AnyFuture;
+use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find_map::FindMapFuture;
 use min_by::MinByFuture;
@@ -134,6 +136,36 @@ pub trait Stream {
             stream: self,
             remaining: n,
         }
+    }
+
+    /// Creates a stream that gives the current element's count as well as the next value.
+    ///
+    /// # Overflow behaviour.
+    ///
+    /// This combinator does no guarding against overflows.
+    ///
+    /// # Examples
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    ///
+    /// let mut s = stream::repeat(9).take(4).enumerate();
+    /// let mut c: usize = 0;
+    ///
+    /// while let Some((i, v)) = s.next().await {
+    ///     assert_eq!(c, i);
+    ///     assert_eq!(v, 9);
+    ///     c += 1;
+    /// }
+    /// #
+    /// # }) }
+    fn enumerate(self) -> Enumerate<Self>
+    where
+        Self: Sized,
+    {
+        Enumerate::new(self)
     }
 
     /// Both filters and maps a stream.
