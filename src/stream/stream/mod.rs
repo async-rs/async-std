@@ -51,8 +51,6 @@ use next::NextFuture;
 use nth::NthFuture;
 
 use super::from_stream::FromStream;
-use crate::future::Future;
-use crate::task::{Context, Poll};
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::pin::Pin;
