@@ -1,4 +1,4 @@
-use futures_io::{AsyncRead, AsyncSeek, AsyncWrite};
+use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite};
 
 use std::io::{self, IoSlice, IoSliceMut, SeekFrom};
 use std::pin::Pin;
@@ -182,21 +182,18 @@ where
     }
 }
 
-// impl<T> AsyncBufRead for Cursor<T>
-// where
-//     T: AsRef<[u8]> + Unpin,
-// {
-//     fn poll_fill_buf(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-//         // let amt = cmp::min(self.position(), self.as_ref().len() as u64);
-//         // Poll::Ready(Ok(&self.inner.as_ref()[(amt as usize)..]))
-//         let res = io::BufRead::fill_buf(&mut self.inner);
-//         Poll::Ready(res)
-//     }
+impl<T> AsyncBufRead for Cursor<T>
+where
+    T: AsRef<[u8]> + Unpin,
+{
+    fn poll_fill_buf(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        Poll::Ready(io::BufRead::fill_buf(&mut self.get_mut().inner))
+    }
 
-//     fn consume(mut self: Pin<&mut Self>, amt: usize) {
-//         io::BufRead::consume(&mut self.inner, amt)
-//     }
-// }
+    fn consume(mut self: Pin<&mut Self>, amt: usize) {
+        io::BufRead::consume(&mut self.inner, amt)
+    }
+}
 
 impl AsyncWrite for Cursor<&mut [u8]> {
     fn poll_write(
