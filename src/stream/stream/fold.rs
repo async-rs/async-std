@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 
 use crate::future::Future;
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 #[doc(hidden)]
@@ -30,7 +31,7 @@ impl<S, F, T, B> FoldFuture<S, F, T, B> {
 
 impl<S, F, B> Future for FoldFuture<S, F, S::Item, B>
 where
-    S: futures_core::stream::Stream + Unpin + Sized,
+    S: Stream + Unpin + Sized,
     F: FnMut(B, S::Item) -> B,
 {
     type Output = B;
