@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod enumerate;
+mod filter;
 mod filter_map;
 mod find;
 mod find_map;
@@ -44,6 +45,7 @@ pub use zip::Zip;
 use all::AllFuture;
 use any::AnyFuture;
 use enumerate::Enumerate;
+use filter::Filter;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
@@ -281,6 +283,34 @@ pub trait Stream {
             stream: self,
             done: false,
         }
+    }
+    /// Creates a stream that uses a predicate to determine if an element
+    /// should be yeilded.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    ///```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
+    /// let mut s = s.filter(|i| i % 2 == 0);
+    ///
+    /// assert_eq!(s.next().await, Some(2));
+    /// assert_eq!(s.next().await, Some(4));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    fn filter<P>(self, predicate: P) -> Filter<Self, P, Self::Item>
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool,
+    {
+        Filter::new(self, predicate)
     }
 
     /// Both filters and maps a stream.
