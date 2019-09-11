@@ -157,6 +157,7 @@ pub trait Stream {
     /// assert_eq!(s.next().await, Some((0, 'a')));
     /// assert_eq!(s.next().await, Some((1, 'b')));
     /// assert_eq!(s.next().await, Some((2, 'c')));
+    /// assert_eq!(s.next().await, None);
     ///
     /// #
     /// # }) }
