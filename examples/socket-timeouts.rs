@@ -10,7 +10,7 @@ async fn get() -> io::Result<Vec<u8>> {
 
     let mut buf = vec![];
 
-    io::timeout(Duration::from_secs(5), async {
+    io::timeout(Duration::from_secs(5), async move {
         stream.read_to_end(&mut buf).await?;
         Ok(buf)
     })
