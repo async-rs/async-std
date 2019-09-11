@@ -1,43 +1,36 @@
-use crate::future::Future;
-use crate::task::{Context, Poll};
-
 use std::marker::PhantomData;
 use std::pin::Pin;
 
-#[derive(Debug)]
-pub struct AnyFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
+use crate::future::Future;
+use crate::stream::Stream;
+use crate::task::{Context, Poll};
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct AnyFuture<'a, S, F, T> {
     pub(crate) stream: &'a mut S,
     pub(crate) f: F,
     pub(crate) result: bool,
-    pub(crate) __item: PhantomData<T>,
+    pub(crate) _marker: PhantomData<T>,
 }
 
-impl<'a, S, F, T> AnyFuture<'a, S, F, T>
-where
-    F: FnMut(T) -> bool,
-{
-    pin_utils::unsafe_pinned!(stream: &'a mut S);
-    pin_utils::unsafe_unpinned!(result: bool);
-    pin_utils::unsafe_unpinned!(f: F);
-}
+impl<S: Unpin, F, T> Unpin for AnyFuture<'_, S, F, T> {}
 
 impl<S, F> Future for AnyFuture<'_, S, F, S::Item>
 where
-    S: futures_core::stream::Stream + Unpin + Sized,
+    S: Stream + Unpin + Sized,
     F: FnMut(S::Item) -> bool,
 {
     type Output = bool;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        use futures_core::stream::Stream;
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+        let next = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
+
         match next {
             Some(v) => {
-                let result = (self.as_mut().f())(v);
-                *self.as_mut().result() = result;
+                let result = (&mut self.f)(v);
+                self.result = result;
+
                 if result {
                     Poll::Ready(true)
                 } else {

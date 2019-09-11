@@ -6,7 +6,8 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// A future that yields the minimum item in a stream by a given comparison function.
-#[derive(Clone, Debug)]
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct MinByFuture<S: Stream, F> {
     stream: S,
     compare: F,
@@ -27,7 +28,7 @@ impl<S: Stream + Unpin, F> MinByFuture<S, F> {
 
 impl<S, F> Future for MinByFuture<S, F>
 where
-    S: futures_core::stream::Stream + Unpin,
+    S: Stream + Unpin,
     S::Item: Copy,
     F: FnMut(&S::Item, &S::Item) -> Ordering,
 {
