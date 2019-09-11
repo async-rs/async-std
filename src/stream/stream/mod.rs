@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod enumerate;
 mod filter_map;
+mod find;
 mod find_map;
 mod min_by;
 mod next;
@@ -37,6 +38,7 @@ use all::AllFuture;
 use any::AnyFuture;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
+use find::FindFuture;
 use find_map::FindMapFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
@@ -44,8 +46,11 @@ use nth::NthFuture;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::pin::Pin;
 
 use cfg_if::cfg_if;
+
+use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -83,6 +88,55 @@ pub trait Stream {
     /// The type of items yielded by this stream.
     type Item;
 
+    /// Attempts to receive the next item from the stream.
+    ///
+    /// There are several possible return values:
+    ///
+    /// * `Poll::Pending` means this stream's next value is not ready yet.
+    /// * `Poll::Ready(None)` means this stream has been exhausted.
+    /// * `Poll::Ready(Some(item))` means `item` was received out of the stream.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::pin::Pin;
+    ///
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    /// use async_std::task::{Context, Poll};
+    ///
+    /// fn increment(s: impl Stream<Item = i32> + Unpin) -> impl Stream<Item = i32> + Unpin {
+    ///     struct Increment<S>(S);
+    ///
+    ///     impl<S: Stream<Item = i32> + Unpin> Stream for Increment<S> {
+    ///         type Item = S::Item;
+    ///
+    ///         fn poll_next(
+    ///             mut self: Pin<&mut Self>,
+    ///             cx: &mut Context<'_>,
+    ///         ) -> Poll<Option<Self::Item>> {
+    ///             match Pin::new(&mut self.0).poll_next(cx) {
+    ///                 Poll::Pending => Poll::Pending,
+    ///                 Poll::Ready(None) => Poll::Ready(None),
+    ///                 Poll::Ready(Some(item)) => Poll::Ready(Some(item + 1)),
+    ///             }
+    ///         }
+    ///     }
+    ///
+    ///     Increment(s)
+    /// }
+    ///
+    /// let mut s = increment(stream::once(7));
+    ///
+    /// assert_eq!(s.next().await, Some(8));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
+
     /// Advances the stream and returns the next value.
     ///
     /// Returns [`None`] when iteration is finished. Individual stream implementations may
@@ -108,7 +162,10 @@ pub trait Stream {
     /// ```
     fn next(&mut self) -> ret!('_, NextFuture, Option<Self::Item>)
     where
-        Self: Unpin;
+        Self: Unpin,
+    {
+        NextFuture { stream: self }
+    }
 
     /// Creates a stream that yields its first `n` elements.
     ///
@@ -342,15 +399,59 @@ pub trait Stream {
     #[inline]
     fn all<F>(&mut self, f: F) -> ret!('_, AllFuture, bool, F, Self::Item)
     where
-        Self: Sized,
+        Self: Unpin + Sized,
         F: FnMut(Self::Item) -> bool,
     {
         AllFuture {
             stream: self,
             result: true, // the default if the empty stream
-            __item: PhantomData,
+            _marker: PhantomData,
             f,
         }
+    }
+
+    /// Searches for an element in a stream that satisfies a predicate.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let res = s.find(|x| *x == 2).await;
+    /// assert_eq!(res, Some(2));
+    /// #
+    /// # }) }
+    /// ```
+    ///
+    /// Resuming after a first find:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let res = s.find(|x| *x == 2).await;
+    /// assert_eq!(res, Some(2));
+    ///
+    /// let next = s.next().await;
+    /// assert_eq!(next, Some(3));
+    /// #
+    /// # }) }
+    /// ```
+    fn find<P>(&mut self, p: P) -> ret!('_, FindFuture, Option<Self::Item>, P, Self::Item)
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool,
+    {
+        FindFuture::new(self, p)
     }
 
     /// Applies function to the elements of stream and returns the first non-none result.
@@ -422,13 +523,13 @@ pub trait Stream {
     #[inline]
     fn any<F>(&mut self, f: F) -> ret!('_, AnyFuture, bool, F, Self::Item)
     where
-        Self: Sized,
+        Self: Unpin + Sized,
         F: FnMut(Self::Item) -> bool,
     {
         AnyFuture {
             stream: self,
             result: false, // the default if the empty stream
-            __item: PhantomData,
+            _marker: PhantomData,
             f,
         }
     }
@@ -437,10 +538,7 @@ pub trait Stream {
 impl<T: futures_core::stream::Stream + Unpin + ?Sized> Stream for T {
     type Item = <Self as futures_core::stream::Stream>::Item;
 
-    fn next(&mut self) -> ret!('_, NextFuture, Option<Self::Item>)
-    where
-        Self: Unpin,
-    {
-        NextFuture { stream: self }
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        futures_core::stream::Stream::poll_next(self, cx)
     }
 }

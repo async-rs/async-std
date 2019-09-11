@@ -2,8 +2,10 @@ use std::cmp::Ordering;
 use std::pin::Pin;
 
 use crate::future::Future;
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
+#[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct MinByFuture<S, F, T> {
     stream: S,
@@ -27,7 +29,7 @@ impl<S, F, T> MinByFuture<S, F, T> {
 
 impl<S, F> Future for MinByFuture<S, F, S::Item>
 where
-    S: futures_core::stream::Stream + Unpin + Sized,
+    S: Stream + Unpin + Sized,
     S::Item: Copy,
     F: FnMut(&S::Item, &S::Item) -> Ordering,
 {
