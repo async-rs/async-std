@@ -149,16 +149,15 @@ pub trait Stream {
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::prelude::*;
-    /// use async_std::stream;
+    /// use std::collections::VecDeque;
     ///
-    /// let mut s = stream::repeat(9).take(4).enumerate();
-    /// let mut c: usize = 0;
+    /// let s: VecDeque<_> = vec!['a', 'b', 'c'].into_iter().collect();
+    /// let mut s = s.enumerate();
     ///
-    /// while let Some((i, v)) = s.next().await {
-    ///     assert_eq!(c, i);
-    ///     assert_eq!(v, 9);
-    ///     c += 1;
-    /// }
+    /// assert_eq!(s.next().await, Some((0, 'a')));
+    /// assert_eq!(s.next().await, Some((1, 'b')));
+    /// assert_eq!(s.next().await, Some((2, 'c')));
+    ///
     /// #
     /// # }) }
     fn enumerate(self) -> Enumerate<Self>
