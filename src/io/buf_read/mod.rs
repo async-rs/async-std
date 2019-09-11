@@ -60,7 +60,7 @@ pub trait BufRead {
     where
         Self: Unpin,
     {
-        FillBufFuture::from(self)
+        FillBufFuture::new(self)
     }
 
     /// Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.

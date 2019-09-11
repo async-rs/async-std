@@ -12,8 +12,8 @@ pub struct FillBufFuture<'a, R: ?Sized> {
     reader: &'a mut R,
 }
 
-impl<'a, R: ?Sized> From<&'a mut R> for FillBufFuture<'a, R> {
-    fn from(reader: &'a mut R) -> Self {
+impl<'a, R: ?Sized> FillBufFuture<'a, R> {
+    pub(crate) fn new(reader: &'a mut R) -> Self {
         Self { reader }
     }
 }
