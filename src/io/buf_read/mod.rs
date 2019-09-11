@@ -1,7 +1,9 @@
+mod fill_buf;
 mod lines;
 mod read_line;
 mod read_until;
 
+use fill_buf::FillBufFuture;
 pub use lines::Lines;
 use read_line::ReadLineFuture;
 use read_until::ReadUntilFuture;
@@ -41,6 +43,26 @@ cfg_if! {
 /// [`futures::io::AsyncBufRead`]:
 /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
 pub trait BufRead {
+    /// Returns the contents of the internal buffer, filling it with more data from the inner
+    /// reader if it is empty.
+    ///
+    /// This function is a lower-level call. It needs to be paired with the [`consume`] method to
+    /// function properly. When calling this method, none of the contents will be "read" in the
+    /// sense that later calling `read` may return the same contents. As such, [`consume`] must be
+    /// called with the number of bytes that are consumed from this buffer to ensure that the bytes
+    /// are never returned twice.
+    ///
+    /// [`consume`]: #tymethod.consume
+    ///
+    /// An empty buffer returned indicates that the stream has reached EOF.
+    // TODO: write a proper doctest with `consume`
+    fn fill_buf<'a>(&'a mut self) -> ret!('a, FillBufFuture, io::Result<&'a [u8]>)
+    where
+        Self: Unpin,
+    {
+        FillBufFuture::new(self)
+    }
+
     /// Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
     ///
     /// This function will read bytes from the underlying stream until the delimiter or EOF is
