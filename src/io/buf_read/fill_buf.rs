@@ -27,6 +27,6 @@ impl<'a, R: AsyncBufRead + Unpin + ?Sized> Future for FillBufFuture<'a, R> {
         // This is safe because:
         // 1. The buffer is valid for the lifetime of the reader.
         // 2. Output is unrelated to the wrapper (Self).
-        result.map_ok(|buf| unsafe { std::mem::transmute::<_, &'a [u8]>(buf) })
+        result.map_ok(|buf| unsafe { std::mem::transmute::<&'_ [u8], &'a [u8]>(buf) })
     }
 }
