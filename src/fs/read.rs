@@ -1,25 +1,28 @@
-use std::fs;
 use std::path::Path;
 
 use crate::io;
 use crate::task::blocking;
 
-/// Read the entire contents of a file into a bytes vector.
+/// Reads the entire contents of a file as raw bytes.
 ///
 /// This is a convenience function for reading entire files. It pre-allocates a buffer based on the
-/// file size when available, so it is generally faster than manually opening a file and reading
-/// into a `Vec`.
+/// file size when available, so it is typically faster than manually opening a file and reading
+/// from it.
+///
+/// If you want to read the contents as a string, use [`read_to_string`] instead.
 ///
 /// This function is an async version of [`std::fs::read`].
 ///
+/// [`read_to_string`]: fn.read_to_string.html
 /// [`std::fs::read`]: https://doc.rust-lang.org/std/fs/fn.read.html
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` does not exist.
-/// * The current process lacks permissions to read `path`.
+/// * `path` does not point to an existing file.
+/// * The current process lacks permissions to read the file.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
@@ -34,5 +37,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::read(path) }).await
+    blocking::spawn(async move { std::fs::read(path) }).await
 }

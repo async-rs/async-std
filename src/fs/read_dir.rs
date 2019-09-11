@@ -1,30 +1,29 @@
-use std::fs;
 use std::path::Path;
 use std::pin::Pin;
 
-use super::DirEntry;
+use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
 use crate::task::{blocking, Context, Poll};
 
-/// Returns a stream over the entries within a directory.
+/// Returns a stream of entries in a directory.
 ///
-/// The stream yields items of type [`io::Result`]`<`[`DirEntry`]`>`. New errors may be encountered
-/// after a stream is initially constructed.
+/// The stream yields items of type [`io::Result`]`<`[`DirEntry`]`>`. Note that I/O errors can
+/// occur while reading from the stream.
 ///
 /// This function is an async version of [`std::fs::read_dir`].
 ///
-/// [`io::Result`]: https://doc.rust-lang.org/std/io/type.Result.html
+/// [`io::Result`]: ../io/type.Result.html
 /// [`DirEntry`]: struct.DirEntry.html
 /// [`std::fs::read_dir`]: https://doc.rust-lang.org/std/fs/fn.read_dir.html
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` does not exist.
-/// * `path` does not point at a directory.
-/// * The current process lacks permissions to view the contents of `path`.
+/// * `path` does not point to an existing directory.
+/// * The current process lacks permissions to read the contents of the directory.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
@@ -34,23 +33,23 @@ use crate::task::{blocking, Context, Poll};
 /// use async_std::fs;
 /// use async_std::prelude::*;
 ///
-/// let mut dir = fs::read_dir(".").await?;
+/// let mut entries = fs::read_dir(".").await?;
 ///
-/// while let Some(entry) = dir.next().await {
-///     let entry = entry?;
-///     println!("{:?}", entry.file_name());
+/// while let Some(res) = entries.next().await {
+///     let entry = res?;
+///     println!("{}", entry.file_name().to_string_lossy());
 /// }
 /// #
 /// # Ok(()) }) }
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::read_dir(path) })
+    blocking::spawn(async move { std::fs::read_dir(path) })
         .await
         .map(ReadDir::new)
 }
 
-/// A stream over entries in a directory.
+/// A stream of entries in a directory.
 ///
 /// This stream is returned by [`read_dir`] and yields items of type
 /// [`io::Result`]`<`[`DirEntry`]`>`. Each [`DirEntry`] can then retrieve information like entry's
@@ -59,7 +58,7 @@ pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
 /// This type is an async version of [`std::fs::ReadDir`].
 ///
 /// [`read_dir`]: fn.read_dir.html
-/// [`io::Result`]: https://doc.rust-lang.org/std/io/type.Result.html
+/// [`io::Result`]: ../io/type.Result.html
 /// [`DirEntry`]: struct.DirEntry.html
 /// [`std::fs::ReadDir`]: https://doc.rust-lang.org/std/fs/struct.ReadDir.html
 #[derive(Debug)]
@@ -70,13 +69,13 @@ pub struct ReadDir(State);
 /// The `ReadDir` can be either idle or busy performing an asynchronous operation.
 #[derive(Debug)]
 enum State {
-    Idle(Option<fs::ReadDir>),
-    Busy(blocking::JoinHandle<(fs::ReadDir, Option<io::Result<fs::DirEntry>>)>),
+    Idle(Option<std::fs::ReadDir>),
+    Busy(blocking::JoinHandle<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
 }
 
 impl ReadDir {
     /// Creates an asynchronous `ReadDir` from a synchronous handle.
-    pub(crate) fn new(inner: fs::ReadDir) -> ReadDir {
+    pub(crate) fn new(inner: std::fs::ReadDir) -> ReadDir {
         ReadDir(State::Idle(Some(inner)))
     }
 }

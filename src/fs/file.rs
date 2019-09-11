@@ -1,9 +1,7 @@
-//! Async file implementation.
-
 use std::cell::UnsafeCell;
 use std::cmp;
-use std::fs;
-use std::io::{Read as _, Seek, SeekFrom, Write as _};
+use std::fmt;
+use std::io::{Read as _, Seek as _, Write as _};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::pin::Pin;
@@ -13,22 +11,22 @@ use std::sync::{Arc, Mutex};
 use cfg_if::cfg_if;
 use futures_io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
+use crate::fs::{Metadata, Permissions};
 use crate::future;
-use crate::io::{self, Write};
+use crate::io::{self, SeekFrom, Write};
 use crate::task::{self, blocking, Context, Poll, Waker};
 
-/// A reference to a file on the filesystem.
+/// An open file on the filesystem.
 ///
-/// An instance of a `File` can be read and/or written depending on what options it was opened
-/// with.
+/// Depending on what options the file was opened with, this type can be used for reading and/or
+/// writing.
 ///
-/// Files are automatically closed when they go out of scope. Errors detected on closing are
-/// ignored by the implementation of `Drop`. Use the method [`sync_all`] if these errors must be
-/// manually handled.
+/// Files are automatically closed when they get dropped and any errors detected on closing are
+/// ignored. Use the [`sync_all`] method before dropping a file if such errors need to be handled.
 ///
 /// This type is an async version of [`std::fs::File`].
 ///
-/// [`sync_all`]: struct.File.html#method.sync_all
+/// [`sync_all`]: #method.sync_all
 /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
 ///
 /// # Examples
@@ -47,7 +45,7 @@ use crate::task::{self, blocking, Context, Poll, Waker};
 /// # Ok(()) }) }
 /// ```
 ///
-/// Read the contents of a file into a `Vec<u8>`:
+/// Read the contents of a file into a vector of bytes:
 ///
 /// ```no_run
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
@@ -61,23 +59,30 @@ use crate::task::{self, blocking, Context, Poll, Waker};
 /// #
 /// # Ok(()) }) }
 /// ```
-#[derive(Debug)]
 pub struct File {
-    file: Arc<fs::File>,
+    /// A reference to the inner file.
+    file: Arc<std::fs::File>,
+
+    /// The state of the file protected by an async lock.
     lock: Lock<State>,
 }
 
 impl File {
     /// Opens a file in read-only mode.
     ///
-    /// See the [`OpenOptions::open`] method for more details.
+    /// See the [`OpenOptions::open`] function for more options.
     ///
     /// # Errors
     ///
-    /// This function will return an error if `path` does not already exist.
-    /// Other errors may also be returned according to [`OpenOptions::open`].
+    /// An error will be returned in the following situations:
     ///
-    /// [`OpenOptions::open`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
+    /// * `path` does not point to an existing file.
+    /// * The current process lacks permissions to read the file.
+    /// * Some other I/O error occurred.
+    ///
+    /// For more details, see the list of errors documented by [`OpenOptions::open`].
+    ///
+    /// [`OpenOptions::open`]: struct.OpenOptions.html#method.open
     ///
     /// # Examples
     ///
@@ -92,7 +97,7 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { fs::File::open(&path) }).await?;
+        let file = blocking::spawn(async move { std::fs::File::open(&path) }).await?;
         Ok(file.into())
     }
 
@@ -100,9 +105,19 @@ impl File {
     ///
     /// This function will create a file if it does not exist, and will truncate it if it does.
     ///
-    /// See the [`OpenOptions::open`] function for more details.
+    /// See the [`OpenOptions::open`] function for more options.
     ///
-    /// [`OpenOptions::open`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
+    /// # Errors
+    ///
+    /// An error will be returned in the following situations:
+    ///
+    /// * The file's parent directory does not exist.
+    /// * The current process lacks permissions to write to the file.
+    /// * Some other I/O error occurred.
+    ///
+    /// For more details, see the list of errors documented by [`OpenOptions::open`].
+    ///
+    /// [`OpenOptions::open`]: struct.OpenOptions.html#method.open
     ///
     /// # Examples
     ///
@@ -117,17 +132,16 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { fs::File::create(&path) }).await?;
+        let file = blocking::spawn(async move { std::fs::File::create(&path) }).await?;
         Ok(file.into())
     }
 
-    /// Attempts to synchronize all OS-internal metadata to disk.
+    /// Synchronizes OS-internal buffered contents and metadata to disk.
     ///
-    /// This function will attempt to ensure that all in-memory data reaches the filesystem before
-    /// returning.
+    /// This function will ensure that all in-memory data reaches the filesystem.
     ///
-    /// This can be used to handle errors that would otherwise only be caught when the `File` is
-    /// closed. Dropping a file will ignore errors in synchronizing this in-memory data.
+    /// This can be used to handle errors that would otherwise only be caught when the file is
+    /// closed. When a file is dropped, errors in synchronizing this in-memory data are ignored.
     ///
     /// # Examples
     ///
@@ -154,14 +168,16 @@ impl File {
         blocking::spawn(async move { state.file.sync_all() }).await
     }
 
-    /// Similar to [`sync_all`], except that it may not synchronize file metadata.
+    /// Synchronizes OS-internal buffered contents to disk.
     ///
-    /// This is intended for use cases that must synchronize content, but don't need the metadata
-    /// on disk. The goal of this method is to reduce disk operations.
+    /// This is similar to [`sync_all`], except that file metadata may not be synchronized.
+    ///
+    /// This is intended for use cases that must synchronize the contents of the file, but don't
+    /// need the file metadata synchronized to disk.
     ///
     /// Note that some platforms may simply implement this in terms of [`sync_all`].
     ///
-    /// [`sync_all`]: struct.File.html#method.sync_all
+    /// [`sync_all`]: #method.sync_all
     ///
     /// # Examples
     ///
@@ -188,18 +204,14 @@ impl File {
         blocking::spawn(async move { state.file.sync_data() }).await
     }
 
-    /// Truncates or extends the underlying file.
+    /// Truncates or extends the file.
     ///
-    /// If the `size` is less than the current file's size, then the file will be truncated. If it
-    /// is greater than the current file's size, then the file will be extended to `size` and have
-    /// all of the intermediate data filled in with zeros.
+    /// If `size` is less than the current file size, then the file will be truncated. If it is
+    /// greater than the current file size, then the file will be extended to `size` and have all
+    /// intermediate data filled with zeros.
     ///
-    /// The file's cursor isn't changed. In particular, if the cursor was at the end and the file
-    /// is truncated using this operation, the cursor will now be past the end.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the file is not opened for writing.
+    /// The file's cursor stays at the same position, even if the cursor ends up being past the end
+    /// of the file after this operation.
     ///
     /// # Examples
     ///
@@ -225,7 +237,7 @@ impl File {
         blocking::spawn(async move { state.file.set_len(size) }).await
     }
 
-    /// Queries metadata about the file.
+    /// Reads the file's metadata.
     ///
     /// # Examples
     ///
@@ -239,17 +251,19 @@ impl File {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn metadata(&self) -> io::Result<fs::Metadata> {
+    pub async fn metadata(&self) -> io::Result<Metadata> {
         let file = self.file.clone();
         blocking::spawn(async move { file.metadata() }).await
     }
 
-    /// Changes the permissions on the underlying file.
+    /// Changes the permissions on the file.
     ///
     /// # Errors
     ///
-    /// This function will return an error if the user lacks permission to change attributes on the
-    /// underlying file, but may also return an error in other OS-specific cases.
+    /// An error will be returned in the following situations:
+    ///
+    /// * The current process lacks permissions to change attributes on the file.
+    /// * Some other I/O error occurred.
     ///
     /// # Examples
     ///
@@ -266,7 +280,7 @@ impl File {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn set_permissions(&self, perm: fs::Permissions) -> io::Result<()> {
+    pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         let file = self.file.clone();
         blocking::spawn(async move { file.set_permissions(perm) }).await
     }
@@ -279,6 +293,12 @@ impl Drop for File {
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
         let _ = task::block_on(self.flush());
+    }
+}
+
+impl fmt::Debug for File {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.file.fmt(f)
     }
 }
 
@@ -374,9 +394,9 @@ impl AsyncSeek for &File {
 }
 
 impl From<std::fs::File> for File {
-    /// Converts a `std::fs::File` into its asynchronous equivalent.
-    fn from(file: fs::File) -> File {
+    fn from(file: std::fs::File) -> File {
         let file = Arc::new(file);
+
         File {
             file: file.clone(),
             lock: Lock::new(State {
@@ -413,7 +433,7 @@ cfg_if! {
 
         impl FromRawFd for File {
             unsafe fn from_raw_fd(fd: RawFd) -> File {
-                fs::File::from_raw_fd(fd).into()
+                std::fs::File::from_raw_fd(fd).into()
             }
         }
 
@@ -422,7 +442,7 @@ cfg_if! {
                 let file = self.file.clone();
                 drop(self);
                 Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of file handle after drop")
+                    .expect("cannot acquire ownership of the file handle after drop")
                     .into_raw_fd()
             }
         }
@@ -440,7 +460,7 @@ cfg_if! {
 
         impl FromRawHandle for File {
             unsafe fn from_raw_handle(handle: RawHandle) -> File {
-                fs::File::from_raw_handle(handle).into()
+                std::fs::File::from_raw_handle(handle).into()
             }
         }
 
@@ -449,7 +469,7 @@ cfg_if! {
                 let file = self.file.clone();
                 drop(self);
                 Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of file handle after drop")
+                    .expect("cannot acquire ownership of the file handle after drop")
                     .into_raw_handle()
             }
         }
@@ -457,13 +477,11 @@ cfg_if! {
 }
 
 /// An async mutex with non-borrowing lock guards.
-#[derive(Debug)]
 struct Lock<T>(Arc<LockState<T>>);
 
 unsafe impl<T: Send> Send for Lock<T> {}
 unsafe impl<T: Send> Sync for Lock<T> {}
 
-#[derive(Debug)]
 /// The state of a lock.
 struct LockState<T> {
     /// Set to `true` when locked.
@@ -472,12 +490,12 @@ struct LockState<T> {
     /// The inner value.
     value: UnsafeCell<T>,
 
-    /// A list of tasks interested in locking.
+    /// A list of tasks interested in acquiring the lock.
     wakers: Mutex<Vec<Waker>>,
 }
 
 impl<T> Lock<T> {
-    /// Creates a new lock with the given value.
+    /// Creates a new lock initialized with `value`.
     fn new(value: T) -> Lock<T> {
         Lock(Arc::new(LockState {
             locked: AtomicBool::new(false),
@@ -511,14 +529,13 @@ impl<T> Lock<T> {
 /// A lock guard.
 ///
 /// When dropped, ownership of the inner value is returned back to the lock.
-#[derive(Debug)]
 struct LockGuard<T>(Arc<LockState<T>>);
 
 unsafe impl<T: Send> Send for LockGuard<T> {}
 unsafe impl<T: Sync> Sync for LockGuard<T> {}
 
 impl<T> LockGuard<T> {
-    /// Registers a task interested in locking.
+    /// Registers a task interested in acquiring the lock.
     ///
     /// When this lock guard gets dropped, all registered tasks will be woken up.
     fn register(&self, cx: &Context<'_>) {
@@ -532,8 +549,10 @@ impl<T> LockGuard<T> {
 
 impl<T> Drop for LockGuard<T> {
     fn drop(&mut self) {
+        // Release the lock.
         self.0.locked.store(false, Ordering::Release);
 
+        // Wake up all registered tasks interested in acquiring the lock.
         for w in self.0.wakers.lock().unwrap().drain(..) {
             w.wake();
         }
@@ -557,14 +576,13 @@ impl<T> DerefMut for LockGuard<T> {
 /// Modes a file can be in.
 ///
 /// The file can either be in idle mode, reading mode, or writing mode.
-#[derive(Debug)]
 enum Mode {
     /// The cache is empty.
     Idle,
 
     /// The cache contains data read from the inner file.
     ///
-    /// This `usize` represents how many bytes from the beginning of cache have been consumed.
+    /// The `usize` represents how many bytes from the beginning of cache have been consumed.
     Reading(usize),
 
     /// The cache contains data that needs to be written to the inner file.
@@ -573,14 +591,13 @@ enum Mode {
 
 /// The current state of a file.
 ///
-/// The `File` struct puts this state behind a lock.
+/// The `File` struct protects this state behind a lock.
 ///
-/// Filesystem operations that get spawned as blocking tasks will take ownership of the state and
-/// return it back once the operation completes.
-#[derive(Debug)]
+/// Filesystem operations that get spawned as blocking tasks will acquire the lock, take ownership
+/// of the state and return it back once the operation completes.
 struct State {
     /// The inner file.
-    file: Arc<fs::File>,
+    file: Arc<std::fs::File>,
 
     /// The current mode (idle, reading, or writing).
     mode: Mode,
@@ -588,10 +605,10 @@ struct State {
     /// The read/write cache.
     ///
     /// If in reading mode, the cache contains a chunk of data that has been read from the file.
-    /// If in writing mode, the cache contains data that will eventually be written into the file.
+    /// If in writing mode, the cache contains data that will eventually be written to the file.
     cache: Vec<u8>,
 
-    /// `true` if the file is flushed.
+    /// Set to `true` if the file is flushed.
     ///
     /// When a file is flushed, the write cache and the inner file's buffer are empty.
     is_flushed: bool,
@@ -607,17 +624,45 @@ impl LockGuard<State> {
     /// Seeks to a new position in the file.
     fn poll_seek(mut self, cx: &mut Context<'_>, pos: SeekFrom) -> Poll<io::Result<u64>> {
         // If this operation doesn't move the cursor, then poll the current position inside the
-        // file. This call will hopefully not block.
+        // file. This call should not block because it doesn't touch the actual file on disk.
         if pos == SeekFrom::Current(0) {
-            return Poll::Ready((&*self.file).seek(pos));
+            // Poll the internal file cursor.
+            let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+
+            // Factor in the difference caused by caching.
+            let actual = match self.mode {
+                Mode::Idle => internal,
+                Mode::Reading(start) => internal - self.cache.len() as u64 + start as u64,
+                Mode::Writing => internal + self.cache.len() as u64,
+            };
+            return Poll::Ready(Ok(actual));
+        }
+
+        // If the file is in reading mode and the cache will stay valid after seeking, then adjust
+        // the current position in the read cache without invaliding it.
+        if let Mode::Reading(start) = self.mode {
+            if let SeekFrom::Current(diff) = pos {
+                if let Some(new) = (start as i64).checked_add(diff) {
+                    if 0 <= new && new <= self.cache.len() as i64 {
+                        // Poll the internal file cursor.
+                        let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+
+                        // Adjust the current position in the read cache.
+                        self.mode = Mode::Reading(new as usize);
+
+                        // Factor in the difference caused by caching.
+                        return Poll::Ready(Ok(internal - self.cache.len() as u64 + new as u64));
+                    }
+                }
+            }
         }
 
         // Invalidate the read cache and flush the write cache before calling `seek()`.
         self = futures_core::ready!(self.poll_unread(cx))?;
         self = futures_core::ready!(self.poll_flush(cx))?;
 
-        // Seek to the new position. This call is hopefully not blocking because it should just
-        // change the internal offset into the file and not touch the actual file.
+        // Seek to the new position. This call should not block because it only changes the
+        // internal offset into the file and doesn't touch the actual file on disk.
         Poll::Ready((&*self.file).seek(pos))
     }
 
@@ -702,13 +747,12 @@ impl LockGuard<State> {
         match self.mode {
             Mode::Idle | Mode::Writing => Poll::Ready(Ok(self)),
             Mode::Reading(start) => {
-                // Number of unconsumed bytes in the read cache.
+                // The number of unconsumed bytes in the read cache.
                 let n = self.cache.len() - start;
 
                 if n > 0 {
-                    // Seek `n` bytes backwards. This call is hopefully not blocking because it
-                    // should just change the internal offset into the file and not touch the
-                    // actual file.
+                    // Seek `n` bytes backwards. This call should not block because it only changes
+                    // the internal offset into the file and doesn't touch the actual file on disk.
                     (&*self.file).seek(SeekFrom::Current(-(n as i64)))?;
                 }
 
@@ -731,7 +775,7 @@ impl LockGuard<State> {
         // If we're in reading mode, invalidate the read buffer.
         self = futures_core::ready!(self.poll_unread(cx))?;
 
-        // Make the cache have as much capacity as `buf`.
+        // If necessary, grow the cache to have as much capacity as `buf`.
         if self.cache.capacity() < buf.len() {
             let diff = buf.len() - self.cache.capacity();
             self.cache.reserve(diff);
@@ -740,7 +784,7 @@ impl LockGuard<State> {
         // How many bytes can be written into the cache before filling up.
         let available = self.cache.capacity() - self.cache.len();
 
-        // If there is available space in the cache or if the buffer is empty, we can write data
+        // If there is space available in the cache or if the buffer is empty, we can write data
         // into the cache.
         if available > 0 || buf.is_empty() {
             let n = cmp::min(available, buf.len());

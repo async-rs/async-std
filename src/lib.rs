@@ -1,13 +1,16 @@
 //! Async version of the Rust standard library.
 //!
-//! This crate is an async version of [`std`].
+//! Modules in this crate are organized in the same way as in the standard library, except blocking
+//! functions have been replaced with async functions and threads have been replaced with
+//! lightweight tasks.
 //!
-//! Higher-level documentation in the form of the book
-//! ["Async programming in Rust with async-std"][book]
-//! is available.
+//! More information, reading materials, and other resources:
 //!
-//! [`std`]: https://doc.rust-lang.org/std/index.html
-//! [book]: https://book.async.rs
+//! * [🌐 The async-std website](https://async.rs/)
+//! * [📖 The async-std book](https://book.async.rs)
+//! * [🐙 GitHub repository](https://github.com/async-rs/async-std)
+//! * [📒 List of code examples](https://github.com/async-rs/async-std/tree/master/examples)
+//! * [💬 Discord chat](https://discord.gg/JvZeVNe)
 //!
 //! # Examples
 //!
@@ -23,8 +26,15 @@
 //! }
 //! ```
 //!
-//! See [here](https://github.com/async-rs/async-std/tree/master/examples)
-//! for more examples.
+//! # Features
+//!
+//! Unstable APIs in this crate are available when the `unstable` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "0.99"
+//! features = ["unstable"]
+//! ```
 
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]

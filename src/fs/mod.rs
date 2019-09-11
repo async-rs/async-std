@@ -2,7 +2,12 @@
 //!
 //! This module is an async version of [`std::fs`].
 //!
+//! [`os::unix::fs`]: ../os/unix/fs/index.html
 //! [`std::fs`]: https://doc.rust-lang.org/std/fs/index.html
+//!
+//! # Platform-specific extensions
+//!
+//! * Unix: use the [`os::unix::fs`] module.
 //!
 //! # Examples
 //!
@@ -23,11 +28,11 @@
 pub use dir_builder::DirBuilder;
 pub use dir_entry::DirEntry;
 pub use file::File;
+pub use file_type::FileType;
 pub use open_options::OpenOptions;
+pub use metadata::Metadata;
+pub use permissions::Permissions;
 pub use read_dir::ReadDir;
-
-#[doc(inline)]
-pub use std::fs::{FileType, Metadata, Permissions};
 
 pub use canonicalize::canonicalize;
 pub use copy::copy;
@@ -54,9 +59,11 @@ mod create_dir_all;
 mod dir_builder;
 mod dir_entry;
 mod file;
+mod file_type;
 mod hard_link;
 mod metadata;
 mod open_options;
+mod permissions;
 mod read;
 mod read_dir;
 mod read_link;

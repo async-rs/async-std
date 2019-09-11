@@ -94,7 +94,6 @@ cfg_if! {
             }
         }
     } else {
-        #[doc(inline)]
         pub use std::os::unix::net::SocketAddr;
     }
 }

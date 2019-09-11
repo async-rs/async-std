@@ -1,6 +1,15 @@
 //! The async prelude.
 //!
-//! The prelude re-exports the most commonly used traits in this crate.
+//! The prelude re-exports most commonly used traits and macros from this crate.
+//!
+//! # Examples
+//!
+//! Import the prelude with:
+//!
+//! ```
+//! # #[allow(unused_imports)]
+//! use async_std::prelude::*;
+//! ```
 
 #[doc(no_inline)]
 pub use crate::future::Future;

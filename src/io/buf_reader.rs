@@ -37,10 +37,10 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// use async_std::io::BufReader;
 /// use async_std::prelude::*;
 ///
-/// let mut f = BufReader::new(File::open("a.txt").await?);
+/// let mut file = BufReader::new(File::open("a.txt").await?);
 ///
 /// let mut line = String::new();
-/// f.read_line(&mut line).await?;
+/// file.read_line(&mut line).await?;
 /// #
 /// # Ok(()) }) }
 /// ```
@@ -134,8 +134,8 @@ impl<R> BufReader<R> {
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
     ///
-    /// let mut f = BufReader::new(File::open("a.txt").await?);
-    /// let inner = f.get_mut();
+    /// let mut file = BufReader::new(File::open("a.txt").await?);
+    /// let inner = file.get_mut();
     /// #
     /// # Ok(()) }) }
     /// ```

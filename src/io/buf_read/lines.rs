@@ -16,7 +16,7 @@ use crate::task::{Context, Poll};
 ///
 /// [`lines`]: trait.BufRead.html#method.lines
 /// [`BufRead`]: trait.BufRead.html
-/// [`std::io::Lines`]: https://doc.rust-lang.org/nightly/std/io/struct.Lines.html
+/// [`std::io::Lines`]: https://doc.rust-lang.org/std/io/struct.Lines.html
 #[derive(Debug)]
 pub struct Lines<R> {
     pub(crate) reader: R,

@@ -25,7 +25,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn empty() -> Empty {
-    Empty { _priv: () }
+    Empty { _private: () }
 }
 
 /// A reader that contains no data.
@@ -34,7 +34,7 @@ pub fn empty() -> Empty {
 ///
 /// [`sink`]: fn.sink.html
 pub struct Empty {
-    _priv: (),
+    _private: (),
 }
 
 impl fmt::Debug for Empty {

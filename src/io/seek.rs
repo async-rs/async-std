@@ -49,9 +49,9 @@ pub trait Seek {
     /// use async_std::io::SeekFrom;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::open("a.txt").await?;
+    /// let mut file = File::open("a.txt").await?;
     ///
-    /// let file_len = f.seek(SeekFrom::End(0)).await?;
+    /// let file_len = file.seek(SeekFrom::End(0)).await?;
     /// #
     /// # Ok(()) }) }
     /// ```

@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 use cfg_if::cfg_if;
@@ -7,21 +6,28 @@ use crate::future::Future;
 use crate::io;
 use crate::task::blocking;
 
-/// A builder for creating directories in various manners.
+/// A builder for creating directories with configurable options.
+///
+/// For Unix-specific options, import the [`os::unix::fs::DirBuilderExt`] trait.
 ///
 /// This type is an async version of [`std::fs::DirBuilder`].
 ///
+/// [`os::unix::fs::DirBuilderExt`]: ../os/unix/fs/trait.DirBuilderExt.html
 /// [`std::fs::DirBuilder`]: https://doc.rust-lang.org/std/fs/struct.DirBuilder.html
 #[derive(Debug)]
 pub struct DirBuilder {
+    /// Set to `true` if non-existent parent directories should be created.
     recursive: bool,
 
+    /// Unix mode for newly created directories.
     #[cfg(unix)]
     mode: Option<u32>,
 }
 
 impl DirBuilder {
-    /// Creates a new builder with [`recursive`] set to `false`.
+    /// Creates a blank set of options.
+    ///
+    /// The [`recursive`] option is initially set to `false`.
     ///
     /// [`recursive`]: #method.recursive
     ///
@@ -33,25 +39,24 @@ impl DirBuilder {
     /// let builder = DirBuilder::new();
     /// ```
     pub fn new() -> DirBuilder {
+        #[cfg(not(unix))]
+        let builder = DirBuilder { recursive: false };
+
         #[cfg(unix)]
         let builder = DirBuilder {
             recursive: false,
             mode: None,
         };
 
-        #[cfg(windows)]
-        let builder = DirBuilder { recursive: false };
-
         builder
     }
 
     /// Sets the option for recursive mode.
     ///
-    /// This option, when `true`, means that all parent directories should be created recursively
-    /// if they don't exist. Parents are created with the same security settings and permissions as
-    /// the final directory.
+    /// When set to `true`, this option means all parent directories should be created recursively
+    /// if they don't exist. Parents are created with the same permissions as the final directory.
     ///
-    /// This option defaults to `false`.
+    /// This option is initially set to `false`.
     ///
     /// # Examples
     ///
@@ -70,6 +75,14 @@ impl DirBuilder {
     ///
     /// It is considered an error if the directory already exists unless recursive mode is enabled.
     ///
+    /// # Errors
+    ///
+    /// An error will be returned in the following situations:
+    ///
+    /// * `path` already points to an existing file or directory.
+    /// * The current process lacks permissions to create the directory or its missing parents.
+    /// * Some other I/O error occurred.
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -79,13 +92,13 @@ impl DirBuilder {
     ///
     /// DirBuilder::new()
     ///     .recursive(true)
-    ///     .create("/tmp/foo/bar/baz")
+    ///     .create("./some/directory")
     ///     .await?;
     /// #
     /// # Ok(()) }) }
     /// ```
     pub fn create<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<()>> {
-        let mut builder = fs::DirBuilder::new();
+        let mut builder = std::fs::DirBuilder::new();
         builder.recursive(self.recursive);
 
         #[cfg(unix)]

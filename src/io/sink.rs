@@ -22,7 +22,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn sink() -> Sink {
-    Sink { _priv: () }
+    Sink { _private: () }
 }
 
 /// A writer that consumes and drops all data.
@@ -31,7 +31,7 @@ pub fn sink() -> Sink {
 ///
 /// [`sink`]: fn.sink.html
 pub struct Sink {
-    _priv: (),
+    _private: (),
 }
 
 impl fmt::Debug for Sink {

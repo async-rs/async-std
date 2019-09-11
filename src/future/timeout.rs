@@ -60,7 +60,7 @@ impl<F: Future> Future for TimeoutFuture<F> {
         match self.as_mut().future().poll(cx) {
             Poll::Ready(v) => Poll::Ready(Ok(v)),
             Poll::Pending => match self.delay().poll(cx) {
-                Poll::Ready(_) => Poll::Ready(Err(TimeoutError { _priv: () })),
+                Poll::Ready(_) => Poll::Ready(Err(TimeoutError { _private: () })),
                 Poll::Pending => Poll::Pending,
             },
         }
@@ -71,7 +71,7 @@ impl<F: Future> Future for TimeoutFuture<F> {
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeoutError {
-    _priv: (),
+    _private: (),
 }
 
 impl Error for TimeoutError {}

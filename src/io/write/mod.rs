@@ -56,9 +56,9 @@ pub trait Write {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::create("a.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     ///
-    /// let n = f.write(b"hello world").await?;
+    /// let n = file.write(b"hello world").await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -76,10 +76,10 @@ pub trait Write {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::create("a.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     ///
-    /// f.write_all(b"hello world").await?;
-    /// f.flush().await?;
+    /// file.write_all(b"hello world").await?;
+    /// file.flush().await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -113,6 +113,8 @@ pub trait Write {
     /// an error is returned. This method will not return until the entire buffer has been
     /// successfully written or such an error occurs.
     ///
+    /// [`write`]: #tymethod.write
+    ///
     /// # Examples
     ///
     /// ```no_run
@@ -121,9 +123,9 @@ pub trait Write {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::create("a.txt").await?;
+    /// let mut file = File::create("a.txt").await?;
     ///
-    /// f.write_all(b"hello world").await?;
+    /// file.write_all(b"hello world").await?;
     /// #
     /// # Ok(()) }) }
     /// ```
