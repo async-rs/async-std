@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod filter_map;
 mod find_map;
+mod fold;
 mod min_by;
 mod next;
 mod nth;
@@ -36,6 +37,7 @@ use all::AllFuture;
 use any::AnyFuture;
 use filter_map::FilterMap;
 use find_map::FindMapFuture;
+use fold::FoldFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -342,6 +344,34 @@ pub trait Stream {
         F: FnMut(Self::Item) -> Option<B>,
     {
         FindMapFuture::new(self, f)
+    }
+
+    /// A combinator that applies a function to every element in a stream
+    /// producing a single, final value.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let sum = s.fold(0, |acc, x| acc + x).await;
+    ///
+    /// assert_eq!(sum, 6);
+    /// #
+    /// # }) }
+    /// ```
+    fn fold<B, F>(self, init: B, f: F) -> FoldFuture<Self, F, Self::Item, B>
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        FoldFuture::new(self, init, f)
     }
 
     /// Tests if any element of the stream matches a predicate.
