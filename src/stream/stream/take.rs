@@ -1,6 +1,7 @@
-use crate::task::{Context, Poll};
-
 use std::pin::Pin;
+
+use crate::stream::Stream;
+use crate::task::{Context, Poll};
 
 /// A stream that yields the first `n` items of another stream.
 #[derive(Clone, Debug)]
@@ -11,12 +12,12 @@ pub struct Take<S> {
 
 impl<S: Unpin> Unpin for Take<S> {}
 
-impl<S: futures_core::stream::Stream> Take<S> {
+impl<S: Stream> Take<S> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_unpinned!(remaining: usize);
 }
 
-impl<S: futures_core::stream::Stream> futures_core::stream::Stream for Take<S> {
+impl<S: Stream> futures_core::stream::Stream for Take<S> {
     type Item = S::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
