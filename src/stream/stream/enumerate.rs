@@ -1,6 +1,8 @@
 use crate::task::{Context, Poll};
 use std::pin::Pin;
 
+use crate::stream::Stream;
+
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct Enumerate<S> {
@@ -19,7 +21,7 @@ impl<S> Enumerate<S> {
 
 impl<S> futures_core::stream::Stream for Enumerate<S>
 where
-    S: futures_core::stream::Stream,
+    S: Stream + Unpin + Sized,
 {
     type Item = (usize, S::Item);
 
