@@ -345,7 +345,8 @@ impl AsyncWrite for &TcpStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher.poll_write_with(cx, |mut inner| inner.write(buf))
+        self.watcher
+            .poll_write_with(cx, |mut inner| inner.write(buf))
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {

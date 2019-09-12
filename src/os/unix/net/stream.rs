@@ -1,9 +1,9 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
+use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
 use std::path::Path;
-use std::io::{Read as _, Write as _};
 use std::pin::Pin;
 
 use futures_io::{AsyncRead, AsyncWrite};
@@ -198,7 +198,8 @@ impl AsyncWrite for &UnixStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher.poll_write_with(cx, |mut inner| inner.write(buf))
+        self.watcher
+            .poll_write_with(cx, |mut inner| inner.write(buf))
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
