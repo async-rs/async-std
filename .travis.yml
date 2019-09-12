@@ -12,6 +12,13 @@ cache:
 before_cache:
   - rm -rf /home/travis/.cargo/registry
 
+
+branches:
+  only:
+    - master
+    - staging
+    - trying
+
 matrix:
   fast_finish: true
   include:
