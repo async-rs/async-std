@@ -1,5 +1,4 @@
-use std::io::{IoSlice, IoSliceMut};
-use std::mem;
+use std::io::{IoSlice, IoSliceMut, Read as _, Write as _};
 use std::net::SocketAddr;
 use std::pin::Pin;
 
@@ -8,8 +7,9 @@ use futures_io::{AsyncRead, AsyncWrite};
 
 use crate::future;
 use crate::io;
-use crate::net::driver::IoHandle;
+use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
+use crate::task::blocking;
 use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
@@ -50,9 +50,7 @@ use crate::task::{Context, Poll};
 /// ```
 #[derive(Debug)]
 pub struct TcpStream {
-    pub(super) io_handle: IoHandle<mio::net::TcpStream>,
-    // #[cfg(windows)]
-    // pub(super) raw_socket: std::os::windows::io::RawSocket,
+    pub(super) watcher: Watcher<mio::net::TcpStream>,
 }
 
 impl TcpStream {
@@ -79,7 +77,14 @@ impl TcpStream {
         let mut last_err = None;
 
         for addr in addrs.to_socket_addrs().await? {
-            let res = Self::connect_to(addr).await;
+            let res = blocking::spawn(async move {
+                let std_stream = std::net::TcpStream::connect(addr)?;
+                let mio_stream = mio::net::TcpStream::from_stream(std_stream)?;
+                Ok(TcpStream {
+                    watcher: Watcher::new(mio_stream),
+                })
+            })
+            .await;
 
             match res {
                 Ok(stream) => return Ok(stream),
@@ -93,59 +98,6 @@ impl TcpStream {
                 "could not resolve to any addresses",
             )
         }))
-    }
-
-    /// Creates a new TCP stream connected to the specified address.
-    async fn connect_to(addr: SocketAddr) -> io::Result<TcpStream> {
-        let stream = mio::net::TcpStream::connect(&addr).map(|mio_stream| {
-            #[cfg(unix)]
-            let stream = TcpStream {
-                io_handle: IoHandle::new(mio_stream),
-            };
-
-            #[cfg(windows)]
-            let stream = TcpStream {
-                // raw_socket: mio_stream.as_raw_socket(),
-                io_handle: IoHandle::new(mio_stream),
-            };
-
-            stream
-        });
-
-        enum State {
-            Waiting(TcpStream),
-            Error(io::Error),
-            Done,
-        }
-        let mut state = match stream {
-            Ok(stream) => State::Waiting(stream),
-            Err(err) => State::Error(err),
-        };
-        future::poll_fn(|cx| {
-            match mem::replace(&mut state, State::Done) {
-                State::Waiting(stream) => {
-                    // Once we've connected, wait for the stream to be writable as that's when
-                    // the actual connection has been initiated. Once we're writable we check
-                    // for `take_socket_error` to see if the connect actually hit an error or
-                    // not.
-                    //
-                    // If all that succeeded then we ship everything on up.
-                    if let Poll::Pending = stream.io_handle.poll_writable(cx)? {
-                        state = State::Waiting(stream);
-                        return Poll::Pending;
-                    }
-
-                    if let Some(err) = stream.io_handle.get_ref().take_error()? {
-                        return Poll::Ready(Err(err));
-                    }
-
-                    Poll::Ready(Ok(stream))
-                }
-                State::Error(err) => Poll::Ready(Err(err)),
-                State::Done => panic!("`TcpStream::connect_to()` future polled after completion"),
-            }
-        })
-        .await
     }
 
     /// Returns the local address that this stream is connected to.
@@ -163,7 +115,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().local_addr()
+        self.watcher.get_ref().local_addr()
     }
 
     /// Returns the remote address that this stream is connected to.
@@ -181,7 +133,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().peer_addr()
+        self.watcher.get_ref().peer_addr()
     }
 
     /// Gets the value of the `IP_TTL` option for this socket.
@@ -205,7 +157,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn ttl(&self) -> io::Result<u32> {
-        self.io_handle.get_ref().ttl()
+        self.watcher.get_ref().ttl()
     }
 
     /// Sets the value for the `IP_TTL` option on this socket.
@@ -228,7 +180,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.io_handle.get_ref().set_ttl(ttl)
+        self.watcher.get_ref().set_ttl(ttl)
     }
 
     /// Receives data on the socket from the remote address to which it is connected, without
@@ -254,20 +206,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        let res = future::poll_fn(|cx| {
-            futures_core::ready!(self.io_handle.poll_readable(cx)?);
-
-            match self.io_handle.get_ref().peek(buf) {
-                Ok(len) => Poll::Ready(Ok(len)),
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_readable(cx)?;
-                    Poll::Pending
-                }
-                Err(e) => Poll::Ready(Err(e)),
-            }
-        })
-        .await?;
-        Ok(res)
+        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.peek(buf))).await
     }
 
     /// Gets the value of the `TCP_NODELAY` option on this socket.
@@ -291,7 +230,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn nodelay(&self) -> io::Result<bool> {
-        self.io_handle.get_ref().nodelay()
+        self.watcher.get_ref().nodelay()
     }
 
     /// Sets the value of the `TCP_NODELAY` option on this socket.
@@ -317,7 +256,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
-        self.io_handle.get_ref().set_nodelay(nodelay)
+        self.watcher.get_ref().set_nodelay(nodelay)
     }
 
     /// Shuts down the read, write, or both halves of this connection.
@@ -342,7 +281,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
-        self.io_handle.get_ref().shutdown(how)
+        self.watcher.get_ref().shutdown(how)
     }
 }
 
@@ -370,15 +309,7 @@ impl AsyncRead for &TcpStream {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_read(cx, buf)
-    }
-
-    fn poll_read_vectored(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        bufs: &mut [IoSliceMut<'_>],
-    ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_read_vectored(cx, bufs)
+        self.watcher.poll_read_with(cx, |mut inner| inner.read(buf))
     }
 }
 
@@ -414,23 +345,16 @@ impl AsyncWrite for &TcpStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_write(cx, buf)
-    }
-
-    fn poll_write_vectored(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        bufs: &[IoSlice<'_>],
-    ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_write_vectored(cx, bufs)
+        self.watcher
+            .poll_write_with(cx, |mut inner| inner.write(buf))
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.io_handle).poll_flush(cx)
+        self.watcher.poll_write_with(cx, |mut inner| inner.flush())
     }
 
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.io_handle).poll_close(cx)
+    fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(Ok(()))
     }
 }
 
@@ -438,19 +362,9 @@ impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
     fn from(stream: std::net::TcpStream) -> TcpStream {
         let mio_stream = mio::net::TcpStream::from_stream(stream).unwrap();
-
-        #[cfg(unix)]
-        let stream = TcpStream {
-            io_handle: IoHandle::new(mio_stream),
-        };
-
-        #[cfg(windows)]
-        let stream = TcpStream {
-            // raw_socket: mio_stream.as_raw_socket(),
-            io_handle: IoHandle::new(mio_stream),
-        };
-
-        stream
+        TcpStream {
+            watcher: Watcher::new(mio_stream),
+        }
     }
 }
 
@@ -470,7 +384,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpStream {
             fn as_raw_fd(&self) -> RawFd {
-                self.io_handle.get_ref().as_raw_fd()
+                self.watcher.get_ref().as_raw_fd()
             }
         }
 
@@ -482,7 +396,7 @@ cfg_if! {
 
         impl IntoRawFd for TcpStream {
             fn into_raw_fd(self) -> RawFd {
-                self.io_handle.into_inner().into_raw_fd()
+                self.watcher.into_inner().into_raw_fd()
             }
         }
     }
