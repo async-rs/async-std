@@ -3,6 +3,10 @@
 #[doc(inline)]
 pub use std::future::Future;
 
+#[doc(inline)]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+pub use async_macros::{join, try_join};
+
 use cfg_if::cfg_if;
 
 pub use pending::pending;
