@@ -42,21 +42,12 @@ where
         match next {
             Some(v) => {
                 cx.waker().wake_by_ref();
-                let old = self
-                    .as_mut()
-                    .acc()
-                    .take()
-                    .expect("FoldFuture should never contain None");
+                let old = self.as_mut().acc().take().unwrap();
                 let new = (self.as_mut().f())(old, v);
                 *self.as_mut().acc() = Some(new);
                 Poll::Pending
             }
-            None => Poll::Ready(
-                self.as_mut()
-                    .acc()
-                    .take()
-                    .expect("FoldFuture should never contain None"),
-            ),
+            None => Poll::Ready(self.as_mut().acc().take().unwrap()),
         }
     }
 }
