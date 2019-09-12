@@ -263,6 +263,7 @@ impl<T: Evented> Watcher<T> {
     /// Deregisters and returns the inner I/O source.
     ///
     /// This method is typically used to convert `Watcher`s to raw file descriptors/handles.
+    #[allow(dead_code)]
     pub fn into_inner(mut self) -> T {
         let source = self.source.take().unwrap();
         REACTOR
