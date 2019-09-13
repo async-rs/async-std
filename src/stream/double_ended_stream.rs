@@ -3,13 +3,14 @@ use crate::stream::Stream;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-/// An stream able to yield elements from both ends.
+/// A stream able to yield elements from both ends.
 ///
 /// Something that implements `DoubleEndedStream` has one extra capability
 /// over something that implements [`Stream`]: the ability to also take
 /// `Item`s from the back, as well as the front.
 ///
 /// [`Stream`]: trait.Stream.html
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait DoubleEndedStream: Stream {
     /// Removes and returns an element from the end of the stream.
     ///
