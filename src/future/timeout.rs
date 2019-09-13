@@ -10,6 +10,9 @@ use crate::task::{Context, Poll};
 
 /// Awaits a future or times out after a duration of time.
 ///
+/// If you want to await an I/O future consider using
+/// [`io::timeout`](../io/fn.timeout.html) instead.
+///
 /// # Examples
 ///
 /// ```

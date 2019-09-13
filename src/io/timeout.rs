@@ -7,6 +7,9 @@ use crate::io;
 
 /// Awaits an I/O future or times out after a duration of time.
 ///
+/// If you want to await a non I/O future consider using
+/// [`future::timeout`](../future/fn.timeout.html) instead.
+///
 /// # Examples
 ///
 /// ```no_run
