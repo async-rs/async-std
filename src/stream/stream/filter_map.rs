@@ -2,8 +2,10 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-/// A stream that both filters and maps.
-#[derive(Clone, Debug)]
+use crate::stream::Stream;
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct FilterMap<S, F, T, B> {
     stream: S,
     f: F,
@@ -27,7 +29,7 @@ impl<S, F, T, B> FilterMap<S, F, T, B> {
 
 impl<S, F, B> futures_core::stream::Stream for FilterMap<S, F, S::Item, B>
 where
-    S: futures_core::stream::Stream,
+    S: Stream,
     F: FnMut(S::Item) -> Option<B>,
 {
     type Item = B;
