@@ -22,6 +22,7 @@ use std::task::{Context, Poll};
 /// [`Vec`]: https://doc.rust-lang.org/std/vec/struct.Vec.html
 /// [bytes]: https://doc.rust-lang.org/std/primitive.slice.html
 /// [`File`]: struct.File.html
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Clone, Debug, Default)]
 pub struct Cursor<T> {
     inner: std::io::Cursor<T>,
