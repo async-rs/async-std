@@ -25,7 +25,7 @@ pub use double_ended_stream::DoubleEndedStream;
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Stream, Take};
+pub use stream::{Scan, Stream, Take};
 
 mod double_ended_stream;
 mod empty;
