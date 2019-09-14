@@ -29,8 +29,8 @@ pub use dir_builder::DirBuilder;
 pub use dir_entry::DirEntry;
 pub use file::File;
 pub use file_type::FileType;
-pub use open_options::OpenOptions;
 pub use metadata::Metadata;
+pub use open_options::OpenOptions;
 pub use permissions::Permissions;
 pub use read_dir::ReadDir;
 
