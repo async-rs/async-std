@@ -1,16 +1,16 @@
 use std::cell::Cell;
-use std::fmt::Arguments;
-use std::mem;
 use std::ptr;
 use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
 use lazy_static::lazy_static;
 
+use super::log_utils;
 use super::task;
 use super::{JoinHandle, Task};
 use crate::future::Future;
 use crate::io;
+use crate::utils::abort_on_panic;
 
 /// Returns a handle to the current task.
 ///
@@ -64,7 +64,7 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    spawn_with_builder(Builder::new(), future, "spawn")
+    spawn_with_builder(Builder::new(), future)
 }
 
 /// Task builder that configures the settings of a new task.
@@ -91,15 +91,11 @@ impl Builder {
         F: Future<Output = T> + Send + 'static,
         T: Send + 'static,
     {
-        Ok(spawn_with_builder(self, future, "spawn"))
+        Ok(spawn_with_builder(self, future))
     }
 }
 
-pub(crate) fn spawn_with_builder<F, T>(
-    builder: Builder,
-    future: F,
-    fn_name: &'static str,
-) -> JoinHandle<T>
+pub(crate) fn spawn_with_builder<F, T>(builder: Builder, future: F) -> JoinHandle<T>
 where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
@@ -117,13 +113,9 @@ where
                 thread::Builder::new()
                     .name("async-task-driver".to_string())
                     .spawn(|| {
-                        TAG.with(|tag| {
-                            for job in receiver {
-                                tag.set(job.tag());
-                                abort_on_panic(|| job.run());
-                                tag.set(ptr::null());
-                            }
-                        });
+                        for job in receiver {
+                            set_tag(job.tag(), || abort_on_panic(|| job.run()))
+                        }
                     })
                     .expect("cannot start a thread driving tasks");
             }
@@ -135,11 +127,12 @@ where
     let tag = task::Tag::new(name);
     let schedule = |job| QUEUE.send(job).unwrap();
 
+    // Log this `spawn` operation.
     let child_id = tag.task_id().as_u64();
     let parent_id = get_task(|t| t.id().as_u64()).unwrap_or(0);
-    print(
-        format_args!("{}", fn_name),
-        LogData {
+    log_utils::print(
+        format_args!("spawn"),
+        log_utils::LogData {
             parent_id,
             child_id,
         },
@@ -152,9 +145,9 @@ where
         // Abort on panic because thread-local variables behave the same way.
         abort_on_panic(|| get_task(|task| task.metadata().local_map.clear()));
 
-        print(
-            format_args!("{} completed", fn_name),
-            LogData {
+        log_utils::print(
+            format_args!("spawn completed"),
+            log_utils::LogData {
                 parent_id,
                 child_id,
             },
@@ -171,61 +164,34 @@ thread_local! {
     static TAG: Cell<*const task::Tag> = Cell::new(ptr::null_mut());
 }
 
-pub(crate) fn get_task<F: FnOnce(&Task) -> R, R>(f: F) -> Option<R> {
+pub(crate) fn set_tag<F, R>(tag: *const task::Tag, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    struct ResetTag<'a>(&'a Cell<*const task::Tag>);
+
+    impl Drop for ResetTag<'_> {
+        fn drop(&mut self) {
+            self.0.set(ptr::null());
+        }
+    }
+
+    TAG.with(|t| {
+        t.set(tag);
+        let _guard = ResetTag(t);
+
+        f()
+    })
+}
+
+pub(crate) fn get_task<F, R>(f: F) -> Option<R>
+where
+    F: FnOnce(&Task) -> R,
+{
     let res = TAG.try_with(|tag| unsafe { tag.get().as_ref().map(task::Tag::task).map(f) });
 
     match res {
         Ok(Some(val)) => Some(val),
         Ok(None) | Err(_) => None,
     }
-}
-
-/// Calls a function and aborts if it panics.
-///
-/// This is useful in unsafe code where we can't recover from panics.
-#[inline]
-fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
-    struct Bomb;
-
-    impl Drop for Bomb {
-        fn drop(&mut self) {
-            std::process::abort();
-        }
-    }
-
-    let bomb = Bomb;
-    let t = f();
-    mem::forget(bomb);
-    t
-}
-
-/// This struct only exists because kv logging isn't supported from the macros right now.
-struct LogData {
-    parent_id: u64,
-    child_id: u64,
-}
-
-impl<'a> log::kv::Source for LogData {
-    fn visit<'kvs>(
-        &'kvs self,
-        visitor: &mut dyn log::kv::Visitor<'kvs>,
-    ) -> Result<(), log::kv::Error> {
-        visitor.visit_pair("parent_id".into(), self.parent_id.into())?;
-        visitor.visit_pair("child_id".into(), self.child_id.into())?;
-        Ok(())
-    }
-}
-
-fn print(msg: Arguments<'_>, key_values: impl log::kv::Source) {
-    log::logger().log(
-        &log::Record::builder()
-            .args(msg)
-            .key_values(&key_values)
-            .level(log::Level::Trace)
-            .target(module_path!())
-            .module_path(Some(module_path!()))
-            .file(Some(file!()))
-            .line(Some(line!()))
-            .build(),
-    );
 }
