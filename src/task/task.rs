@@ -46,6 +46,9 @@ impl fmt::Debug for Task {
 
 /// A handle that awaits the result of a task.
 ///
+/// Dropping a [`JoinHandle`] will detach the task, meaning that there is no longer
+/// a handle to the task and no way to `join` on it.
+///
 /// Created when a task is [spawned].
 ///
 /// [spawned]: fn.spawn.html
