@@ -9,7 +9,7 @@ pub struct Scan<S, St, F> {
     state_f: (St, F),
 }
 
-impl<S, St: Unpin, F: Unpin> Scan<S, St, F> {
+impl<S, St, F> Scan<S, St, F> {
     pub(crate) fn new(stream: S, initial_state: St, f: F) -> Self {
         Self {
             stream,
@@ -21,11 +21,12 @@ impl<S, St: Unpin, F: Unpin> Scan<S, St, F> {
     pin_utils::unsafe_unpinned!(state_f: (St, F));
 }
 
+impl<S: Unpin, St, F> Unpin for Scan<S, St, F> {}
+
 impl<S, St, F, B> futures_core::stream::Stream for Scan<S, St, F>
 where
     S: futures_core::stream::Stream,
-    St: Unpin,
-    F: Unpin + FnMut(&mut St, S::Item) -> Option<B>,
+    F: FnMut(&mut St, S::Item) -> Option<B>,
 {
     type Item = B;
 
