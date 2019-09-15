@@ -29,8 +29,10 @@ mod find_map;
 mod min_by;
 mod next;
 mod nth;
+mod scan;
 mod take;
 
+pub use scan::Scan;
 pub use take::Take;
 
 use all::AllFuture;
@@ -500,6 +502,49 @@ pub trait Stream {
             _marker: PhantomData,
             f,
         }
+    }
+
+    /// A stream adaptor similar to [`fold`] that holds internal state and produces a new stream.
+    ///
+    /// [`fold`]: #method.fold
+    ///
+    /// `scan()` takes two arguments: an initial value which seeds the internal state, and a
+    /// closure with two arguments, the first being a mutable reference to the internal state and
+    /// the second a stream element. The closure can assign to the internal state to share state
+    /// between iterations.
+    ///
+    /// On iteration, the closure will be applied to each element of the stream and the return
+    /// value from the closure, an `Option`, is yielded by the stream.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
+    /// let mut s = s.scan(1, |state, x| {
+    ///     *state = *state * x;
+    ///     Some(-*state)
+    /// });
+    ///
+    /// assert_eq!(s.next().await, Some(-1));
+    /// assert_eq!(s.next().await, Some(-2));
+    /// assert_eq!(s.next().await, Some(-6));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    #[inline]
+    fn scan<St, B, F>(self, initial_state: St, f: F) -> Scan<Self, St, F>
+    where
+        Self: Sized,
+        St: Unpin,
+        F: Unpin + FnMut(&mut St, Self::Item) -> Option<B>,
+    {
+        Scan::new(self, initial_state, f)
     }
 }
 
