@@ -25,25 +25,6 @@
 //!
 //! See [here](https://github.com/async-rs/async-std/tree/master/examples)
 //! for more examples.
-//!
-//! # Features
-//!
-//! `async-std` is strongly commited to following semver. This means your code
-//! won't break unless _you_ decide to upgrade.
-//!
-//! However every now and then we come up with something that we think will
-//! work _great_ for `async-std`, and we want to provide a sneak-peek so you
-//! can try it out. This is what we call _"unstable"_ features. You can try out
-//! the unstable features by enabling the `unstable` feature in you `Cargo.toml`
-//! file:
-//!
-//! ```toml
-//! [dependencies]
-//! async-std = { version = "0.99.5", features = ["unstable"] }
-//! ```
-//!
-//! Just be careful when running these features, as they may change between
-//! versions.
 
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
