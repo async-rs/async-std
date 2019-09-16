@@ -4,8 +4,8 @@ use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
 use lazy_static::lazy_static;
+use kv_log_macro::trace;
 
-use super::log_utils;
 use super::task;
 use super::{JoinHandle, Task};
 use crate::future::Future;
@@ -130,13 +130,11 @@ where
     // Log this `spawn` operation.
     let child_id = tag.task_id().as_u64();
     let parent_id = get_task(|t| t.id().as_u64()).unwrap_or(0);
-    log_utils::print(
-        format_args!("spawn"),
-        log_utils::LogData {
-            parent_id,
-            child_id,
-        },
-    );
+
+    trace!("spawn", {
+        parent_id: parent_id,
+        child_id: child_id,
+    });
 
     // Wrap the future into one that drops task-local variables on exit.
     let future = async move {
@@ -145,13 +143,11 @@ where
         // Abort on panic because thread-local variables behave the same way.
         abort_on_panic(|| get_task(|task| task.metadata().local_map.clear()));
 
-        log_utils::print(
-            format_args!("spawn completed"),
-            log_utils::LogData {
-                parent_id,
-                child_id,
-            },
-        );
+        trace!("spawn completed", {
+            parent_id: parent_id,
+            child_id: child_id,
+        });
+
         res
     };
 

@@ -32,7 +32,6 @@ pub use task::{JoinHandle, Task, TaskId};
 
 mod block_on;
 mod local;
-mod log_utils;
 mod pool;
 mod sleep;
 mod task;
