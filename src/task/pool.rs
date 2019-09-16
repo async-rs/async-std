@@ -3,8 +3,8 @@ use std::ptr;
 use std::thread;
 
 use crossbeam_channel::{unbounded, Sender};
-use lazy_static::lazy_static;
 use kv_log_macro::trace;
+use lazy_static::lazy_static;
 
 use super::task;
 use super::{JoinHandle, Task};
