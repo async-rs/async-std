@@ -6,12 +6,13 @@ use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread::{self, Thread};
 
-use super::log_utils;
 use super::pool;
 use super::task;
 use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
 use crate::utils::abort_on_panic;
+
+use kv_log_macro::trace;
 
 /// Spawns a task and blocks the current thread on its result.
 ///
@@ -58,13 +59,11 @@ where
         // Log this `block_on` operation.
         let child_id = tag.task_id().as_u64();
         let parent_id = pool::get_task(|t| t.id().as_u64()).unwrap_or(0);
-        log_utils::print(
-            format_args!("block_on"),
-            log_utils::LogData {
-                parent_id,
-                child_id,
-            },
-        );
+
+        trace!("block_on", {
+            parent_id: parent_id,
+            child_id: child_id,
+        });
 
         // Wrap the future into one that drops task-local variables on exit.
         let future = async move {
@@ -73,13 +72,11 @@ where
             // Abort on panic because thread-local variables behave the same way.
             abort_on_panic(|| pool::get_task(|task| task.metadata().local_map.clear()));
 
-            log_utils::print(
-                format_args!("block_on completed"),
-                log_utils::LogData {
-                    parent_id,
-                    child_id,
-                },
-            );
+            trace!("block_on completed", {
+                parent_id: parent_id,
+                child_id: child_id,
+            });
+
             res
         };
 
