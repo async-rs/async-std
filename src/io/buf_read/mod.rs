@@ -43,6 +43,12 @@ cfg_if! {
 /// [`futures::io::AsyncBufRead`]:
 /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
 pub trait BufRead {
+    /// Tells this buffer that `amt` bytes have been consumed from the buffer, so they should no
+    /// longer be returned in calls to `read`.
+    fn consume(&mut self, amt: usize)
+    where
+        Self: Unpin;
+
     /// Returns the contents of the internal buffer, filling it with more data from the inner
     /// reader if it is empty.
     ///
@@ -217,7 +223,11 @@ pub trait BufRead {
     }
 }
 
-impl<T: AsyncBufRead + Unpin + ?Sized> BufRead for T {}
+impl<T: AsyncBufRead + Unpin + ?Sized> BufRead for T {
+    fn consume(&mut self, amt: usize) {
+        AsyncBufRead::consume(Pin::new(self), amt)
+    }
+}
 
 pub fn read_until_internal<R: AsyncBufRead + ?Sized>(
     mut reader: Pin<&mut R>,
