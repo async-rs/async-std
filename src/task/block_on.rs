@@ -6,10 +6,12 @@ use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread::{self, Thread};
 
+use super::log_utils;
 use super::pool;
-use super::Builder;
+use super::task;
 use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
+use crate::utils::abort_on_panic;
 
 /// Spawns a task and blocks the current thread on its result.
 ///
@@ -32,8 +34,7 @@ use crate::task::{Context, Poll, Waker};
 /// ```
 pub fn block_on<F, T>(future: F) -> T
 where
-    F: Future<Output = T> + Send,
-    T: Send,
+    F: Future<Output = T>,
 {
     unsafe {
         // A place on the stack where the result will be stored.
@@ -51,17 +52,48 @@ where
             }
         };
 
+        // Create a tag for the task.
+        let tag = task::Tag::new(None);
+
+        // Log this `block_on` operation.
+        let child_id = tag.task_id().as_u64();
+        let parent_id = pool::get_task(|t| t.id().as_u64()).unwrap_or(0);
+        log_utils::print(
+            format_args!("block_on"),
+            log_utils::LogData {
+                parent_id,
+                child_id,
+            },
+        );
+
+        // Wrap the future into one that drops task-local variables on exit.
+        let future = async move {
+            let res = future.await;
+
+            // Abort on panic because thread-local variables behave the same way.
+            abort_on_panic(|| pool::get_task(|task| task.metadata().local_map.clear()));
+
+            log_utils::print(
+                format_args!("block_on completed"),
+                log_utils::LogData {
+                    parent_id,
+                    child_id,
+                },
+            );
+            res
+        };
+
         // Pin the future onto the stack.
         pin_utils::pin_mut!(future);
 
-        // Transmute the future into one that is static and sendable.
+        // Transmute the future into one that is static.
         let future = mem::transmute::<
-            Pin<&mut dyn Future<Output = ()>>,
-            Pin<&'static mut (dyn Future<Output = ()> + Send)>,
+            Pin<&'_ mut dyn Future<Output = ()>>,
+            Pin<&'static mut dyn Future<Output = ()>>,
         >(future);
 
-        // Spawn the future and wait for it to complete.
-        block(pool::spawn_with_builder(Builder::new(), future, "block_on"));
+        // Block on the future and and wait for it to complete.
+        pool::set_tag(&tag, || block(future));
 
         // Take out the result.
         match (*out.get()).take().unwrap() {
@@ -87,7 +119,10 @@ impl<F: Future + UnwindSafe> Future for CatchUnwindFuture<F> {
     }
 }
 
-fn block<F: Future>(f: F) -> F::Output {
+fn block<F, T>(f: F) -> T
+where
+    F: Future<Output = T>,
+{
     thread_local! {
         static ARC_THREAD: Arc<Thread> = Arc::new(thread::current());
     }
