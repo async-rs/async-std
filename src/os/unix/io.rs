@@ -51,7 +51,6 @@ cfg_if! {
             fn into_raw_fd(self) -> RawFd;
         }
     } else {
-        #[doc(inline)]
         pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
     }
 }

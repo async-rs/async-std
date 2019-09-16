@@ -63,10 +63,10 @@ pub trait Read {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::open("a.txt").await?;
+    /// let mut file = File::open("a.txt").await?;
     ///
     /// let mut buf = vec![0; 1024];
-    /// let n = f.read(&mut buf).await?;
+    /// let n = file.read(&mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -112,10 +112,10 @@ pub trait Read {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::open("a.txt").await?;
+    /// let mut file = File::open("a.txt").await?;
     ///
     /// let mut buf = Vec::new();
-    /// f.read_to_end(&mut buf).await?;
+    /// file.read_to_end(&mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -149,10 +149,10 @@ pub trait Read {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::open("a.txt").await?;
+    /// let mut file = File::open("a.txt").await?;
     ///
     /// let mut buf = String::new();
-    /// f.read_to_string(&mut buf).await?;
+    /// file.read_to_string(&mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -201,10 +201,10 @@ pub trait Read {
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
     ///
-    /// let mut f = File::open("a.txt").await?;
+    /// let mut file = File::open("a.txt").await?;
     ///
     /// let mut buf = vec![0; 10];
-    /// f.read_exact(&mut buf).await?;
+    /// file.read_exact(&mut buf).await?;
     /// #
     /// # Ok(()) }) }
     /// ```

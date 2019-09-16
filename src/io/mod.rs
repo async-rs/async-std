@@ -23,7 +23,7 @@
 pub mod prelude;
 
 #[doc(inline)]
-pub use std::io::{Error, ErrorKind, Result, SeekFrom};
+pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;

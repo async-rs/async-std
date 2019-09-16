@@ -1,45 +1,28 @@
 use std::ffi::OsString;
-use std::fs;
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use cfg_if::cfg_if;
 
+use crate::fs::{FileType, Metadata};
 use crate::io;
 use crate::task::blocking;
 
-/// An entry inside a directory.
+/// An entry in a directory.
 ///
-/// An instance of `DirEntry` represents an entry inside a directory on the filesystem. Each entry
-/// carriers additional information like the full path or metadata.
+/// A stream of entries in a directory is returned by [`read_dir`].
 ///
 /// This type is an async version of [`std::fs::DirEntry`].
 ///
+/// [`read_dir`]: fn.read_dir.html
 /// [`std::fs::DirEntry`]: https://doc.rust-lang.org/std/fs/struct.DirEntry.html
-#[derive(Debug)]
-pub struct DirEntry {
-    /// The inner synchronous `DirEntry`.
-    inner: Arc<fs::DirEntry>,
-
-    #[cfg(unix)]
-    ino: u64,
-}
+pub struct DirEntry(Arc<std::fs::DirEntry>);
 
 impl DirEntry {
-    /// Creates an asynchronous `DirEntry` from a synchronous handle.
-    pub(crate) fn new(inner: fs::DirEntry) -> DirEntry {
-        #[cfg(unix)]
-        let dir_entry = DirEntry {
-            ino: inner.ino(),
-            inner: Arc::new(inner),
-        };
-
-        #[cfg(windows)]
-        let dir_entry = DirEntry {
-            inner: Arc::new(inner),
-        };
-
-        dir_entry
+    /// Creates an asynchronous `DirEntry` from a synchronous one.
+    pub(crate) fn new(inner: std::fs::DirEntry) -> DirEntry {
+        DirEntry(Arc::new(inner))
     }
 
     /// Returns the full path to this entry.
@@ -59,20 +42,33 @@ impl DirEntry {
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
-    /// while let Some(entry) = dir.next().await {
-    ///     let entry = entry?;
+    /// while let Some(res) = dir.next().await {
+    ///     let entry = res?;
     ///     println!("{:?}", entry.path());
     /// }
     /// #
     /// # Ok(()) }) }
     /// ```
     pub fn path(&self) -> PathBuf {
-        self.inner.path()
+        self.0.path()
     }
 
-    /// Returns the metadata for this entry.
+    /// Reads the metadata for this entry.
     ///
-    /// This function will not traverse symlinks if this entry points at a symlink.
+    /// This function will traverse symbolic links to read the metadata.
+    ///
+    /// If you want to read metadata without following symbolic links, use [`symlink_metadata`]
+    /// instead.
+    ///
+    /// [`symlink_metadata`]: fn.symlink_metadata.html
+    ///
+    /// # Errors
+    ///
+    /// An error will be returned in the following situations:
+    ///
+    /// * This entry does not point to an existing file or directory anymore.
+    /// * The current process lacks permissions to read the metadata.
+    /// * Some other I/O error occurred.
     ///
     /// # Examples
     ///
@@ -84,21 +80,33 @@ impl DirEntry {
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
-    /// while let Some(entry) = dir.next().await {
-    ///     let entry = entry?;
+    /// while let Some(res) = dir.next().await {
+    ///     let entry = res?;
     ///     println!("{:?}", entry.metadata().await?);
     /// }
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn metadata(&self) -> io::Result<fs::Metadata> {
-        let inner = self.inner.clone();
+    pub async fn metadata(&self) -> io::Result<Metadata> {
+        let inner = self.0.clone();
         blocking::spawn(async move { inner.metadata() }).await
     }
 
-    /// Returns the file type for this entry.
+    /// Reads the file type for this entry.
     ///
-    /// This function will not traverse symlinks if this entry points at a symlink.
+    /// This function will not traverse symbolic links if this entry points at one.
+    ///
+    /// If you want to read metadata with following symbolic links, use [`metadata`] instead.
+    ///
+    /// [`metadata`]: #method.metadata
+    ///
+    /// # Errors
+    ///
+    /// An error will be returned in the following situations:
+    ///
+    /// * This entry does not point to an existing file or directory anymore.
+    /// * The current process lacks permissions to read this entry's metadata.
+    /// * Some other I/O error occurred.
     ///
     /// # Examples
     ///
@@ -110,15 +118,15 @@ impl DirEntry {
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
-    /// while let Some(entry) = dir.next().await {
-    ///     let entry = entry?;
+    /// while let Some(res) = dir.next().await {
+    ///     let entry = res?;
     ///     println!("{:?}", entry.file_type().await?);
     /// }
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn file_type(&self) -> io::Result<fs::FileType> {
-        let inner = self.inner.clone();
+    pub async fn file_type(&self) -> io::Result<FileType> {
+        let inner = self.0.clone();
         blocking::spawn(async move { inner.file_type() }).await
     }
 
@@ -134,15 +142,21 @@ impl DirEntry {
     ///
     /// let mut dir = fs::read_dir(".").await?;
     ///
-    /// while let Some(entry) = dir.next().await {
-    ///     let entry = entry?;
-    ///     println!("{:?}", entry.file_name());
+    /// while let Some(res) = dir.next().await {
+    ///     let entry = res?;
+    ///     println!("{}", entry.file_name().to_string_lossy());
     /// }
     /// #
     /// # Ok(()) }) }
     /// ```
     pub fn file_name(&self) -> OsString {
-        self.inner.file_name()
+        self.0.file_name()
+    }
+}
+
+impl fmt::Debug for DirEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("DirEntry").field(&self.path()).finish()
     }
 }
 
@@ -159,7 +173,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl DirEntryExt for DirEntry {
             fn ino(&self) -> u64 {
-                self.ino
+                self.0.ino()
             }
         }
     }

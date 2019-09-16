@@ -1,35 +1,35 @@
-use std::fs;
-use std::io;
 use std::path::Path;
 
 use cfg_if::cfg_if;
 
-use super::File;
+use crate::fs::File;
 use crate::future::Future;
+use crate::io;
 use crate::task::blocking;
 
-/// Options and flags which for configuring how a file is opened.
+/// A builder for opening files with configurable options.
 ///
-/// This builder exposes the ability to configure how a [`File`] is opened and what operations are
-/// permitted on the open file. The [`File::open`] and [`File::create`] methods are aliases for
-/// commonly used options with this builder.
+/// Files can be opened in [`read`] and/or [`write`] mode.
 ///
-/// Generally speaking, when using `OpenOptions`, you'll first call [`new`], then chain calls to
-/// methods to set each option, then call [`open`], passing the path of the file you're trying to
-/// open. This will give you a [`File`] inside that you can further operate on.
+/// The [`append`] option opens files in a special writing mode that moves the file cursor to the
+/// end of file before every write operation.
+///
+/// It is also possible to [`truncate`] the file right after opening, to [`create`] a file if it
+/// doesn't exist yet, or to always create a new file with [`create_new`].
 ///
 /// This type is an async version of [`std::fs::OpenOptions`].
 ///
-/// [`new`]: struct.OpenOptions.html#method.new
-/// [`open`]: struct.OpenOptions.html#method.open
-/// [`File`]: struct.File.html
-/// [`File::open`]: struct.File.html#method.open
-/// [`File::create`]: struct.File.html#method.create
+/// [`read`]: #method.read
+/// [`write`]: #method.write
+/// [`append`]: #method.append
+/// [`truncate`]: #method.truncate
+/// [`create`]: #method.create
+/// [`create_new`]: #method.create_new
 /// [`std::fs::OpenOptions`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
 ///
 /// # Examples
 ///
-/// Opening a file for reading:
+/// Open a file for reading:
 ///
 /// ```no_run
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
@@ -44,7 +44,7 @@ use crate::task::blocking;
 /// # Ok(()) }) }
 /// ```
 ///
-/// Opening a file for both reading and writing, creating it if it doesn't exist:
+/// Open a file for both reading and writing, and create it if it doesn't exist yet:
 ///
 /// ```no_run
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
@@ -61,10 +61,10 @@ use crate::task::blocking;
 /// # Ok(()) }) }
 /// ```
 #[derive(Clone, Debug)]
-pub struct OpenOptions(fs::OpenOptions);
+pub struct OpenOptions(std::fs::OpenOptions);
 
 impl OpenOptions {
-    /// Creates a blank new set of options.
+    /// Creates a blank set of options.
     ///
     /// All options are initially set to `false`.
     ///
@@ -83,12 +83,12 @@ impl OpenOptions {
     /// # Ok(()) }) }
     /// ```
     pub fn new() -> OpenOptions {
-        OpenOptions(fs::OpenOptions::new())
+        OpenOptions(std::fs::OpenOptions::new())
     }
 
-    /// Sets the option for read access.
+    /// Configures the option for read mode.
     ///
-    /// This option, when `true`, will indicate that the file should be readable if opened.
+    /// When set to `true`, this option means the file will be readable after opening.
     ///
     /// # Examples
     ///
@@ -109,11 +109,11 @@ impl OpenOptions {
         self
     }
 
-    /// Sets the option for write access.
+    /// Configures the option for write mode.
     ///
-    /// This option, when `true`, will indicate that the file should be writable if opened.
+    /// When set to `true`, this option means the file will be writable after opening.
     ///
-    /// If the file already exists, any write calls on it will overwrite its contents, without
+    /// If the file already exists, write calls on it will overwrite the previous contents without
     /// truncating it.
     ///
     /// # Examples
@@ -135,31 +135,10 @@ impl OpenOptions {
         self
     }
 
-    /// Sets the option for append mode.
+    /// Configures the option for append mode.
     ///
-    /// This option, when `true`, means that writes will append to a file instead of overwriting
-    /// previous contents. Note that setting `.write(true).append(true)` has the same effect as
-    /// setting only `.append(true)`.
-    ///
-    /// For most filesystems, the operating system guarantees that all writes are atomic: no writes
-    /// get mangled because another process writes at the same time.
-    ///
-    /// One maybe obvious note when using append mode: make sure that all data that belongs
-    /// together is written to the file in one operation. This can be done by concatenating strings
-    /// before writing them, or using a buffered writer (with a buffer of adequate size), and
-    /// flushing when the message is complete.
-    ///
-    /// If a file is opened with both read and append access, beware that after opening and after
-    /// every write, the position for reading may be set at the end of the file. So, before
-    /// writing, save the current position by seeking with a zero offset, and restore it before the
-    /// next read.
-    ///
-    /// ## Note
-    ///
-    /// This function doesn't create the file if it doesn't exist. Use the [`create`] method to do
-    /// so.
-    ///
-    /// [`create`]: #method.create
+    /// When set to `true`, this option means the file will be writable after opening and the file
+    /// cursor will be moved to the end of file before every write operaiton.
     ///
     /// # Examples
     ///
@@ -180,12 +159,14 @@ impl OpenOptions {
         self
     }
 
-    /// Sets the option for truncating a previous file.
+    /// Configures the option for truncating the previous file.
     ///
-    /// If a file is successfully opened with this option set, it will truncate the file to 0
-    /// length if it already exists.
+    /// When set to `true`, the file will be truncated to the length of 0 bytes.
     ///
-    /// The file must be opened with write access for truncation to work.
+    /// The file must be opened in [`write`] or [`append`] mode for truncation to work.
+    ///
+    /// [`write`]: #method.write
+    /// [`append`]: #method.append
     ///
     /// # Examples
     ///
@@ -207,11 +188,11 @@ impl OpenOptions {
         self
     }
 
-    /// Sets the option for creating a new file.
+    /// Configures the option for creating a new file if it doesn't exist.
     ///
-    /// This option indicates whether a new file will be created if the file does not yet exist.
+    /// When set to `true`, this option means a new file will be created if it doesn't exist.
     ///
-    /// In order for the file to be created, [`write`] or [`append`] access must be used.
+    /// The file must be opened in [`write`] or [`append`] mode for file creation to work.
     ///
     /// [`write`]: #method.write
     /// [`append`]: #method.append
@@ -236,21 +217,15 @@ impl OpenOptions {
         self
     }
 
-    /// Sets the option to always create a new file.
+    /// Configures the option for creating a new file or failing if it already exists.
     ///
-    /// This option indicates whether a new file will be created. No file is allowed to exist at
-    /// the target location, also no (dangling) symlink.
+    /// When set to `true`, this option means a new file will be created, or the open operation
+    /// will fail if the file already exists.
     ///
-    /// This option is useful because it is atomic. Otherwise, between checking whether a file
-    /// exists and creating a new one, the file may have been created by another process (a TOCTOU
-    /// race condition / attack).
+    /// The file must be opened in [`write`] or [`append`] mode for file creation to work.
     ///
-    /// If `.create_new(true)` is set, [`.create()`] and [`.truncate()`] are ignored.
-    ///
-    /// The file must be opened with write or append access in order to create a new file.
-    ///
-    /// [`.create()`]: #method.create
-    /// [`.truncate()`]: #method.truncate
+    /// [`write`]: #method.write
+    /// [`append`]: #method.append
     ///
     /// # Examples
     ///
@@ -272,37 +247,27 @@ impl OpenOptions {
         self
     }
 
-    /// Opens a file at specified path with the configured options.
+    /// Opens a file with the configured options.
     ///
     /// # Errors
     ///
-    /// This function will return an error under a number of different circumstances. Some of these
-    /// error conditions are listed here, together with their [`ErrorKind`]. The mapping to
-    /// [`ErrorKind`]s is not part of the compatibility contract of the function, especially the
-    /// `Other` kind might change to more specific kinds in the future.
+    /// An error will be returned in the following situations:
     ///
-    /// * [`NotFound`]: The specified file does not exist and neither `create` or `create_new` is
-    ///   set.
-    /// * [`NotFound`]: One of the directory components of the file path does not exist.
-    /// * [`PermissionDenied`]: The user lacks permission to get the specified access rights for
-    ///   the file.
-    /// * [`PermissionDenied`]: The user lacks permission to open one of the directory components
-    ///   of the specified path.
-    /// * [`AlreadyExists`]: `create_new` was specified and the file already exists.
-    /// * [`InvalidInput`]: Invalid combinations of open options (truncate without write access, no
-    ///   access mode set, etc.).
-    /// * [`Other`]: One of the directory components of the specified file path was not, in fact, a
-    ///   directory.
-    /// * [`Other`]: Filesystem-level errors: full disk, write permission requested on a read-only
-    ///   file system, exceeded disk quota, too many open files, too long filename, too many
-    ///   symbolic links in the specified path (Unix-like systems only), etc.
+    /// * The file does not exist and neither [`create`] nor [`create_new`] were set.
+    /// * The file's parent directory does not exist.
+    /// * The current process lacks permissions to open the file in the configured mode.
+    /// * The file already exists and [`create_new`] was set.
+    /// * Invalid combination of options was used, like [`truncate`] was set but [`write`] wasn't,
+    ///   or none of [`read`], [`write`], and [`append`] modes was set.
+    /// * An OS-level occurred, like too many files are open or the file name is too long.
+    /// * Some other I/O error occurred.
     ///
-    /// [`ErrorKind`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html
-    /// [`AlreadyExists`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.AlreadyExists
-    /// [`InvalidInput`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InvalidInput
-    /// [`NotFound`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.NotFound
-    /// [`Other`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.Other
-    /// [`PermissionDenied`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.PermissionDenied
+    /// [`read`]: #method.read
+    /// [`write`]: #method.write
+    /// [`append`]: #method.append
+    /// [`truncate`]: #method.truncate
+    /// [`create`]: #method.create
+    /// [`create_new`]: #method.create_new
     ///
     /// # Examples
     ///
@@ -311,7 +276,10 @@ impl OpenOptions {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
-    /// let file = OpenOptions::new().open("a.txt").await?;
+    /// let file = OpenOptions::new()
+    ///     .read(true)
+    ///     .open("a.txt")
+    ///     .await?;
     /// #
     /// # Ok(()) }) }
     /// ```

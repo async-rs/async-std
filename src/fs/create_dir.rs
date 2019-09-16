@@ -1,22 +1,26 @@
-use std::fs;
 use std::path::Path;
 
 use crate::io;
 use crate::task::blocking;
 
-/// Creates a new, empty directory.
+/// Creates a new directory.
+///
+/// Note that this function will only create the final directory in `path`. If you want to create
+/// all of its missing parent directories too, use the [`create_dir_all`] function instead.
 ///
 /// This function is an async version of [`std::fs::create_dir`].
 ///
+/// [`create_dir_all`]: fn.create_dir_all.html
 /// [`std::fs::create_dir`]: https://doc.rust-lang.org/std/fs/fn.create_dir.html
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` already exists.
-/// * A parent of the given path does not exist.
-/// * The current process lacks permissions to create directory at `path`.
+/// * `path` already points to an existing file or directory.
+/// * A parent directory in `path` does not exist.
+/// * The current process lacks permissions to create the directory.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
@@ -25,11 +29,11 @@ use crate::task::blocking;
 /// #
 /// use async_std::fs;
 ///
-/// fs::create_dir("./some/dir").await?;
+/// fs::create_dir("./some/directory").await?;
 /// #
 /// # Ok(()) }) }
 /// ```
 pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::create_dir(path) }).await
+    blocking::spawn(async move { std::fs::create_dir(path) }).await
 }
