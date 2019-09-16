@@ -47,10 +47,12 @@ pub mod future;
 pub mod io;
 pub mod net;
 pub mod os;
-pub mod pin;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+pub mod pin;
 
 pub(crate) mod utils;
