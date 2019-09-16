@@ -93,7 +93,9 @@ features by enabling the `unstable` feature in you `Cargo.toml` file:
 
 ```toml
 [dependencies]
-async-std = { version = "0.99.5", features = ["unstable"] }
+[dependencies.async-std]
+version = "0.99"
+features = ["unstable"]
 ```
 
 Just be careful when using these features, as they may change between
