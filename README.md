@@ -96,7 +96,7 @@ features by enabling the `unstable` feature in you `Cargo.toml` file:
 async-std = { version = "0.99.5", features = ["unstable"] }
 ```
 
-Just be careful when running these features, as they may change between
+Just be careful when using these features, as they may change between
 versions.
 
 ## Take a look around
