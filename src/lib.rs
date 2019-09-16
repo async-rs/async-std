@@ -51,5 +51,6 @@ pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
+pub mod pin;
 
 pub(crate) mod utils;
