@@ -89,7 +89,7 @@ break unless _you_ decide to upgrade.
 However every now and then we come up with something that we think will work
 _great_ for `async-std`, and we want to provide a sneak-peek so you can try it
 out. This is what we call _"unstable"_ features. You can try out the unstable
-features by enabling the `unstable` feature in you `Cargo.toml` file:
+features by enabling the `unstable` feature in your `Cargo.toml` file:
 
 ```toml
 [dependencies]
