@@ -6,7 +6,9 @@ use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 
-use super::pool;
+use super::worker;
+use crate::future::Future;
+use crate::utils::abort_on_panic;
 
 /// Declares task-local values.
 ///
@@ -152,7 +154,7 @@ impl<T: Send + 'static> LocalKey<T> {
     where
         F: FnOnce(&T) -> R,
     {
-        pool::get_task(|task| unsafe {
+        worker::get_task(|task| unsafe {
             // Prepare the numeric key, initialization function, and the map of task-locals.
             let key = self.key();
             let init = || Box::new((self.__init)()) as Box<dyn Send>;
@@ -248,5 +250,17 @@ impl Map {
     pub fn clear(&self) {
         let entries = unsafe { &mut *self.entries.get() };
         entries.clear();
+    }
+}
+
+// Wrap the future into one that drops task-local variables on exit.
+pub(crate) unsafe fn add_finalizer<T>(f: impl Future<Output = T>) -> impl Future<Output = T> {
+    async move {
+        let res = f.await;
+
+        // Abort on panic because thread-local variables behave the same way.
+        abort_on_panic(|| worker::get_task(|task| task.metadata().local_map.clear()));
+
+        res
     }
 }

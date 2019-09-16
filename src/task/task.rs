@@ -133,6 +133,8 @@ impl fmt::Display for TaskId {
     }
 }
 
+pub(crate) type Runnable = async_task::Task<Tag>;
+
 pub(crate) struct Metadata {
     pub task_id: TaskId,
     pub name: Option<String>,

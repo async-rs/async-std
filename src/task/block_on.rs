@@ -6,11 +6,11 @@ use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread::{self, Thread};
 
-use super::pool;
+use super::local;
 use super::task;
+use super::worker;
 use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
-use crate::utils::abort_on_panic;
 
 use kv_log_macro::trace;
 
@@ -58,7 +58,7 @@ where
 
         // Log this `block_on` operation.
         let child_id = tag.task_id().as_u64();
-        let parent_id = pool::get_task(|t| t.id().as_u64()).unwrap_or(0);
+        let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
 
         trace!("block_on", {
             parent_id: parent_id,
@@ -66,31 +66,28 @@ where
         });
 
         // Wrap the future into one that drops task-local variables on exit.
+        let future = local::add_finalizer(future);
+
         let future = async move {
             let res = future.await;
-
-            // Abort on panic because thread-local variables behave the same way.
-            abort_on_panic(|| pool::get_task(|task| task.metadata().local_map.clear()));
-
             trace!("block_on completed", {
                 parent_id: parent_id,
                 child_id: child_id,
             });
-
             res
         };
 
         // Pin the future onto the stack.
         pin_utils::pin_mut!(future);
 
-        // Transmute the future into one that is static.
+        // Transmute the future into one that is futurestatic.
         let future = mem::transmute::<
             Pin<&'_ mut dyn Future<Output = ()>>,
             Pin<&'static mut dyn Future<Output = ()>>,
         >(future);
 
         // Block on the future and and wait for it to complete.
-        pool::set_tag(&tag, || block(future));
+        worker::set_tag(&tag, || block(future));
 
         // Take out the result.
         match (*out.get()).take().unwrap() {
