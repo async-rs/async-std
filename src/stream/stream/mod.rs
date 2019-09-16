@@ -541,8 +541,7 @@ pub trait Stream {
     fn scan<St, B, F>(self, initial_state: St, f: F) -> Scan<Self, St, F>
     where
         Self: Sized,
-        St: Unpin,
-        F: Unpin + FnMut(&mut St, Self::Item) -> Option<B>,
+        F: FnMut(&mut St, Self::Item) -> Option<B>,
     {
         Scan::new(self, initial_state, f)
     }
