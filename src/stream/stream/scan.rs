@@ -1,6 +1,7 @@
-use crate::task::{Context, Poll};
-
 use std::pin::Pin;
+
+use crate::stream::Stream;
+use crate::task::{Context, Poll};
 
 /// A stream to maintain state while polling another stream.
 #[derive(Debug)]
@@ -25,7 +26,7 @@ impl<S: Unpin, St, F> Unpin for Scan<S, St, F> {}
 
 impl<S, St, F, B> futures_core::stream::Stream for Scan<S, St, F>
 where
-    S: futures_core::stream::Stream,
+    S: Stream,
     F: FnMut(&mut St, S::Item) -> Option<B>,
 {
     type Item = B;
