@@ -47,10 +47,10 @@ pub mod future;
 pub mod io;
 pub mod net;
 pub mod os;
+pub mod pin;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
-pub mod pin;
 
 pub(crate) mod utils;
