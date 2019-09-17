@@ -54,6 +54,7 @@ use super::from_stream::FromStream;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::pin::Pin;
+use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
 
