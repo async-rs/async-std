@@ -695,6 +695,22 @@ pub trait Stream {
     /// let buf: Vec<u8> = s.collect().await;
     ///
     /// assert_eq!(buf, vec![9; 3]);
+    ///
+    /// // You can also collect streams of Result values
+    /// // into any collection that implements FromStream
+    /// let s = stream::repeat(Ok(9)).take(3);
+    /// // We are using Vec here, but other collections
+    /// // are supported as well
+    /// let buf: Result<Vec<u8>, ()> = s.collect().await;
+    ///
+    /// assert_eq!(buf, Ok(vec![9; 3]));
+    ///
+    /// // The stream will stop on the first Err and
+    /// // return that instead
+    /// let s = stream::repeat(Err(5)).take(3);
+    /// let buf: Result<Vec<u8>, u8> = s.collect().await;
+    ///
+    /// assert_eq!(buf, Err(5));
     /// #
     /// # }) }
     /// ```
