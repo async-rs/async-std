@@ -48,11 +48,11 @@ pub mod io;
 pub mod net;
 pub mod os;
 pub mod prelude;
+mod result;
 pub mod stream;
 pub mod sync;
 pub mod task;
 mod vec;
-mod result;
 
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[cfg(feature = "unstable")]
