@@ -21,7 +21,7 @@ impl<S> Enumerate<S> {
 
 impl<S> futures_core::stream::Stream for Enumerate<S>
 where
-    S: Stream + Unpin + Sized,
+    S: Stream,
 {
     type Item = (usize, S::Item);
 
