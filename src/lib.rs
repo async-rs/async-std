@@ -42,17 +42,24 @@
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 
+use cfg_if::cfg_if;
+
 pub mod fs;
 pub mod future;
 pub mod io;
 pub mod net;
 pub mod os;
 pub mod prelude;
-mod result;
 pub mod stream;
 pub mod sync;
 pub mod task;
-mod vec;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod vec;
+        mod result;
+    }
+}
 
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[cfg(feature = "unstable")]

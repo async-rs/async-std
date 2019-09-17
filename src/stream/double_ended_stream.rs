@@ -11,6 +11,7 @@ use std::task::{Context, Poll};
 ///
 /// [`Stream`]: trait.Stream.html
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
 pub trait DoubleEndedStream: Stream {
     /// Removes and returns an element from the end of the stream.
     ///

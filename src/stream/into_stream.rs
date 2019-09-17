@@ -14,6 +14,7 @@ use futures_core::stream::Stream;
 ///
 /// [`FromStream`]: trait.FromStream.html
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
 pub trait IntoStream {
     /// The type of the elements being iterated over.
     type Item;

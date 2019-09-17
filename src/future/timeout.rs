@@ -29,6 +29,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
 pub async fn timeout<F, T>(dur: Duration, f: F) -> Result<T, TimeoutError>
 where
     F: Future<Output = T>,
@@ -69,6 +70,7 @@ impl<F: Future> Future for TimeoutFuture<F> {
 
 /// An error returned when a future times out.
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeoutError {
     _private: (),
