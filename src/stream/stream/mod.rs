@@ -31,9 +31,11 @@ mod next;
 mod nth;
 mod scan;
 mod take;
+mod zip;
 
 pub use scan::Scan;
 pub use take::Take;
+pub use zip::Zip;
 
 use all::AllFuture;
 use any::AnyFuture;
@@ -544,6 +546,49 @@ pub trait Stream {
         F: FnMut(&mut St, Self::Item) -> Option<B>,
     {
         Scan::new(self, initial_state, f)
+    }
+
+    /// 'Zips up' two streams into a single stream of pairs.
+    ///
+    /// `zip()` returns a new stream that will iterate over two other streams, returning a tuple
+    /// where the first element comes from the first stream, and the second element comes from the
+    /// second stream.
+    ///
+    /// In other words, it zips two streams together, into a single one.
+    ///
+    /// If either stream returns [`None`], [`poll_next`] from the zipped stream will return
+    /// [`None`]. If the first stream returns [`None`], `zip` will short-circuit and `poll_next`
+    /// will not be called on the second stream.
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    /// [`poll_next`]: #tymethod.poll_next
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let l: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
+    /// let r: VecDeque<isize> = vec![4, 5, 6, 7].into_iter().collect();
+    /// let mut s = l.zip(r);
+    ///
+    /// assert_eq!(s.next().await, Some((1, 4)));
+    /// assert_eq!(s.next().await, Some((2, 5)));
+    /// assert_eq!(s.next().await, Some((3, 6)));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    #[inline]
+    fn zip<U>(self, other: U) -> Zip<Self, U>
+    where
+        Self: Sized,
+        U: Stream,
+    {
+        Zip::new(self, other)
     }
 }
 
