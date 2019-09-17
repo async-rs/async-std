@@ -48,6 +48,7 @@ pub mod io;
 pub mod net;
 pub mod os;
 pub mod prelude;
+mod result;
 pub mod stream;
 pub mod sync;
 pub mod task;
