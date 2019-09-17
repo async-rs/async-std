@@ -1,42 +1,17 @@
-use std::cell::Cell;
-use std::ptr;
+use std::iter;
 use std::thread;
 
-use crossbeam_channel::{unbounded, Sender};
+use crossbeam_deque::{Injector, Stealer, Worker};
 use kv_log_macro::trace;
 use lazy_static::lazy_static;
 
+use super::local;
+use super::sleepers::Sleepers;
 use super::task;
-use super::{JoinHandle, Task};
+use super::worker;
+use super::{Builder, JoinHandle};
 use crate::future::Future;
-use crate::io;
 use crate::utils::abort_on_panic;
-
-/// Returns a handle to the current task.
-///
-/// # Panics
-///
-/// This function will panic if not called within the context of a task created by [`block_on`],
-/// [`spawn`], or [`Builder::spawn`].
-///
-/// [`block_on`]: fn.block_on.html
-/// [`spawn`]: fn.spawn.html
-/// [`Builder::spawn`]: struct.Builder.html#method.spawn
-///
-/// # Examples
-///
-/// ```
-/// # fn main() { async_std::task::block_on(async {
-/// #
-/// use async_std::task;
-///
-/// println!("The name of this task is {:?}", task::current().name());
-/// #
-/// # }) }
-/// ```
-pub fn current() -> Task {
-    get_task(|task| task.clone()).expect("`task::current()` called outside the context of a task")
-}
 
 /// Spawns a task.
 ///
@@ -64,130 +39,100 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    spawn_with_builder(Builder::new(), future)
+    Builder::new().spawn(future).expect("cannot spawn future")
 }
 
-/// Task builder that configures the settings of a new task.
-#[derive(Debug)]
-pub struct Builder {
-    pub(crate) name: Option<String>,
+pub(crate) struct Pool {
+    pub injector: Injector<task::Runnable>,
+    pub stealers: Vec<Stealer<task::Runnable>>,
+    pub sleepers: Sleepers,
 }
 
-impl Builder {
-    /// Creates a new builder.
-    pub fn new() -> Builder {
-        Builder { name: None }
-    }
-
-    /// Configures the name of the task.
-    pub fn name(mut self, name: String) -> Builder {
-        self.name = Some(name);
-        self
-    }
-
-    /// Spawns a task with the configured settings.
-    pub fn spawn<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
+impl Pool {
+    /// Spawn a future onto the pool.
+    pub fn spawn<F, T>(&self, future: F, builder: Builder) -> JoinHandle<T>
     where
         F: Future<Output = T> + Send + 'static,
         T: Send + 'static,
     {
-        Ok(spawn_with_builder(self, future))
-    }
-}
+        let tag = task::Tag::new(builder.name);
 
-pub(crate) fn spawn_with_builder<F, T>(builder: Builder, future: F) -> JoinHandle<T>
-where
-    F: Future<Output = T> + Send + 'static,
-    T: Send + 'static,
-{
-    let Builder { name } = builder;
+        // Log this `spawn` operation.
+        let child_id = tag.task_id().as_u64();
+        let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
 
-    type Job = async_task::Task<task::Tag>;
-
-    lazy_static! {
-        static ref QUEUE: Sender<Job> = {
-            let (sender, receiver) = unbounded::<Job>();
-
-            for _ in 0..num_cpus::get().max(1) {
-                let receiver = receiver.clone();
-                thread::Builder::new()
-                    .name("async-task-driver".to_string())
-                    .spawn(|| {
-                        for job in receiver {
-                            set_tag(job.tag(), || abort_on_panic(|| job.run()))
-                        }
-                    })
-                    .expect("cannot start a thread driving tasks");
-            }
-
-            sender
-        };
-    }
-
-    let tag = task::Tag::new(name);
-    let schedule = |job| QUEUE.send(job).unwrap();
-
-    // Log this `spawn` operation.
-    let child_id = tag.task_id().as_u64();
-    let parent_id = get_task(|t| t.id().as_u64()).unwrap_or(0);
-
-    trace!("spawn", {
-        parent_id: parent_id,
-        child_id: child_id,
-    });
-
-    // Wrap the future into one that drops task-local variables on exit.
-    let future = async move {
-        let res = future.await;
-
-        // Abort on panic because thread-local variables behave the same way.
-        abort_on_panic(|| get_task(|task| task.metadata().local_map.clear()));
-
-        trace!("spawn completed", {
+        trace!("spawn", {
             parent_id: parent_id,
             child_id: child_id,
         });
 
-        res
-    };
+        // Wrap the future into one that drops task-local variables on exit.
+        let future = unsafe { local::add_finalizer(future) };
 
-    let (task, handle) = async_task::spawn(future, schedule, tag);
-    task.schedule();
-    JoinHandle::new(handle)
-}
+        // Wrap the future into one that logs completion on exit.
+        let future = async move {
+            let res = future.await;
+            trace!("spawn completed", {
+                parent_id: parent_id,
+                child_id: child_id,
+            });
+            res
+        };
 
-thread_local! {
-    static TAG: Cell<*const task::Tag> = Cell::new(ptr::null_mut());
-}
-
-pub(crate) fn set_tag<F, R>(tag: *const task::Tag, f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    struct ResetTag<'a>(&'a Cell<*const task::Tag>);
-
-    impl Drop for ResetTag<'_> {
-        fn drop(&mut self) {
-            self.0.set(ptr::null());
-        }
+        let (task, handle) = async_task::spawn(future, worker::schedule, tag);
+        task.schedule();
+        JoinHandle::new(handle)
     }
 
-    TAG.with(|t| {
-        t.set(tag);
-        let _guard = ResetTag(t);
-
-        f()
-    })
+    /// Find the next runnable task to run.
+    pub fn find_task(&self, local: &Worker<task::Runnable>) -> Option<task::Runnable> {
+        // Pop a task from the local queue, if not empty.
+        local.pop().or_else(|| {
+            // Otherwise, we need to look for a task elsewhere.
+            iter::repeat_with(|| {
+                // Try stealing a batch of tasks from the injector queue.
+                self.injector
+                    .steal_batch_and_pop(local)
+                    // Or try stealing a bach of tasks from one of the other threads.
+                    .or_else(|| {
+                        self.stealers
+                            .iter()
+                            .map(|s| s.steal_batch_and_pop(local))
+                            .collect()
+                    })
+            })
+            // Loop while no task was stolen and any steal operation needs to be retried.
+            .find(|s| !s.is_retry())
+            // Extract the stolen task, if there is one.
+            .and_then(|s| s.success())
+        })
+    }
 }
 
-pub(crate) fn get_task<F, R>(f: F) -> Option<R>
-where
-    F: FnOnce(&Task) -> R,
-{
-    let res = TAG.try_with(|tag| unsafe { tag.get().as_ref().map(task::Tag::task).map(f) });
+#[inline]
+pub(crate) fn get() -> &'static Pool {
+    lazy_static! {
+        static ref POOL: Pool = {
+            let num_threads = num_cpus::get().max(1);
+            let mut stealers = Vec::new();
 
-    match res {
-        Ok(Some(val)) => Some(val),
-        Ok(None) | Err(_) => None,
+            // Spawn worker threads.
+            for _ in 0..num_threads {
+                let worker = Worker::new_fifo();
+                stealers.push(worker.stealer());
+
+                thread::Builder::new()
+                    .name("async-task-driver".to_string())
+                    .spawn(|| abort_on_panic(|| worker::main_loop(worker)))
+                    .expect("cannot start a thread driving tasks");
+            }
+
+            Pool {
+                injector: Injector::new(),
+                stealers,
+                sleepers: Sleepers::new(),
+            }
+        };
     }
+    &*POOL
 }
