@@ -31,23 +31,23 @@ impl<S, F, T, B> FoldFuture<S, F, T, B> {
 
 impl<S, F, B> Future for FoldFuture<S, F, S::Item, B>
 where
-    S: Stream + Unpin + Sized,
+    S: Stream + Sized,
     F: FnMut(B, S::Item) -> B,
 {
     type Output = B;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+        loop {
+            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
 
-        match next {
-            Some(v) => {
-                cx.waker().wake_by_ref();
-                let old = self.as_mut().acc().take().unwrap();
-                let new = (self.as_mut().f())(old, v);
-                *self.as_mut().acc() = Some(new);
-                Poll::Pending
+            match next {
+                Some(v) => {
+                    let old = self.as_mut().acc().take().unwrap();
+                    let new = (self.as_mut().f())(old, v);
+                    *self.as_mut().acc() = Some(new);
+                }
+                None => return Poll::Ready(self.as_mut().acc().take().unwrap()),
             }
-            None => Poll::Ready(self.as_mut().acc().take().unwrap()),
         }
     }
 }
