@@ -28,6 +28,7 @@ mod filter_map;
 mod find;
 mod find_map;
 mod fold;
+mod fuse;
 mod min_by;
 mod next;
 mod nth;
@@ -35,6 +36,7 @@ mod scan;
 mod take;
 mod zip;
 
+pub use fuse::Fuse;
 pub use scan::Scan;
 pub use take::Take;
 pub use zip::Zip;
@@ -244,6 +246,35 @@ pub trait Stream {
         Self: Sized,
     {
         Enumerate::new(self)
+    }
+
+    /// Transforms this `Stream` into a "fused" `Stream` such that after the first time `poll`
+    /// returns `Poll::Ready(None)`, all future calls to `poll` will also return
+    /// `Poll::Ready(None)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    ///
+    /// let mut s = stream::once(1).fuse();
+    /// assert_eq!(s.next().await, Some(1));
+    /// assert_eq!(s.next().await, None);
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn fuse(self) -> Fuse<Self>
+    where
+        Self: Sized,
+    {
+        Fuse {
+            stream: self,
+            done: false,
+        }
     }
 
     /// Both filters and maps a stream.

@@ -27,7 +27,7 @@ pub use from_stream::FromStream;
 pub use into_stream::IntoStream;
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Scan, Stream, Take, Zip};
+pub use stream::{Fuse, Scan, Stream, Take, Zip};
 
 mod double_ended_stream;
 mod empty;
