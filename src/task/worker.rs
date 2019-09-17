@@ -75,7 +75,7 @@ thread_local! {
     static QUEUE: Cell<Option<Worker<task::Runnable>>> = Cell::new(None);
 }
 
-pub fn is_worker() -> bool {
+pub(crate) fn is_worker() -> bool {
     IS_WORKER.with(|is_worker| is_worker.get())
 }
 
