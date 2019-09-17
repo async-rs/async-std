@@ -52,4 +52,8 @@ pub mod stream;
 pub mod sync;
 pub mod task;
 
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
+pub mod pin;
+
 pub(crate) mod utils;
