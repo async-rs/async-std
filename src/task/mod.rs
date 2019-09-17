@@ -24,11 +24,10 @@
 #[doc(inline)]
 pub use std::task::{Context, Poll, Waker};
 
-pub use block_on::block_on;
-// Re-export the `ready!` definition from an external crate to expose it from
-// this submodule.
-pub use futures_core::ready;
+#[doc(inline)]
+pub use async_macros::ready;
 
+pub use block_on::block_on;
 pub use local::{AccessError, LocalKey};
 pub use pool::{current, spawn, Builder};
 pub use sleep::sleep;
