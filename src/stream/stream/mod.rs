@@ -248,29 +248,29 @@ pub trait Stream {
         Enumerate::new(self)
     }
 
-    /// Transforms this `Stream` into a "fused" `Stream`
-    /// such that after the first time `poll` returns
-    /// `Poll::Ready(None)`, all future calls to
-    /// `poll` will also return `Poll::Ready(None)`.
+    /// Transforms this `Stream` into a "fused" `Stream` such that after the first time `poll`
+    /// returns `Poll::Ready(None)`, all future calls to `poll` will also return
+    /// `Poll::Ready(None)`.
     ///
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::stream;
     ///
-    /// let mut s = stream::repeat(9).take(3);
-    ///
-    /// while let Some(v) = s.next().await {
-    ///     assert_eq!(v, 9);
-    /// }
+    /// let mut s = stream::once(1).fuse();
+    /// assert_eq!(s.next().await, Some(1));
+    /// assert_eq!(s.next().await, None);
+    /// assert_eq!(s.next().await, None);
     /// #
     /// # }) }
     /// ```
-    fn fuse(self) -> Fuse<Self> {
+    fn fuse(self) -> Fuse<Self>
+    where
+        Self: Sized,
+    {
         Fuse {
             stream: self,
             done: false,
