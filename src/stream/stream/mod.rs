@@ -23,6 +23,7 @@
 
 mod all;
 mod any;
+mod enumerate;
 mod filter_map;
 mod find;
 mod find_map;
@@ -39,6 +40,7 @@ pub use zip::Zip;
 
 use all::AllFuture;
 use any::AnyFuture;
+use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
@@ -195,6 +197,36 @@ pub trait Stream {
             stream: self,
             remaining: n,
         }
+    }
+
+    /// Creates a stream that gives the current element's count as well as the next value.
+    ///
+    /// # Overflow behaviour.
+    ///
+    /// This combinator does no guarding against overflows.
+    ///
+    /// # Examples
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let s: VecDeque<_> = vec!['a', 'b', 'c'].into_iter().collect();
+    /// let mut s = s.enumerate();
+    ///
+    /// assert_eq!(s.next().await, Some((0, 'a')));
+    /// assert_eq!(s.next().await, Some((1, 'b')));
+    /// assert_eq!(s.next().await, Some((2, 'c')));
+    /// assert_eq!(s.next().await, None);
+    ///
+    /// #
+    /// # }) }
+    fn enumerate(self) -> Enumerate<Self>
+    where
+        Self: Sized,
+    {
+        Enumerate::new(self)
     }
 
     /// Both filters and maps a stream.
