@@ -64,4 +64,4 @@ matrix:
 
 script:
   - cargo check --features unstable --all --benches --bins --examples --tests
-  - cargo test --features unstable --all
+  - cargo test --all --docs --features unstable

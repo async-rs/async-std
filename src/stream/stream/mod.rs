@@ -96,6 +96,7 @@ cfg_if! {
             ($a:lifetime, $o:ty) => (DynFuture<$a, $o>);
         }
     } else {
+        #[allow(unused_macros)]
         macro_rules! dyn_ret {
             ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + Send + 'a>>)
         }
