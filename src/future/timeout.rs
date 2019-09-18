@@ -70,7 +70,7 @@ impl<F: Future> Future for TimeoutFuture<F> {
 
 /// An error returned when a future times out.
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(feature = "unstable")]
+#[cfg(any(feature = "unstable", feature = "docs"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeoutError {
     _private: (),
