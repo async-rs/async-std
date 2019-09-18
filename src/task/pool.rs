@@ -5,9 +5,9 @@ use crossbeam_deque::{Injector, Stealer, Worker};
 use kv_log_macro::trace;
 use lazy_static::lazy_static;
 
-use super::local;
 use super::sleepers::Sleepers;
 use super::task;
+use super::task_local;
 use super::worker;
 use super::{Builder, JoinHandle};
 use crate::future::Future;
@@ -67,7 +67,7 @@ impl Pool {
         });
 
         // Wrap the future into one that drops task-local variables on exit.
-        let future = unsafe { local::add_finalizer(future) };
+        let future = unsafe { task_local::add_finalizer(future) };
 
         // Wrap the future into one that logs completion on exit.
         let future = async move {

@@ -6,8 +6,8 @@ use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread::{self, Thread};
 
-use super::local;
 use super::task;
+use super::task_local;
 use super::worker;
 use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
@@ -66,7 +66,7 @@ where
         });
 
         // Wrap the future into one that drops task-local variables on exit.
-        let future = local::add_finalizer(future);
+        let future = task_local::add_finalizer(future);
 
         let future = async move {
             let res = future.await;
