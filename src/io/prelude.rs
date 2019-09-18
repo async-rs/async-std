@@ -9,10 +9,10 @@
 //! ```
 
 #[doc(no_inline)]
-pub use super::BufRead as _;
+pub use super::BufRead;
 #[doc(no_inline)]
-pub use super::Read as _;
+pub use super::Read;
 #[doc(no_inline)]
-pub use super::Seek as _;
+pub use super::Seek;
 #[doc(no_inline)]
-pub use super::Write as _;
+pub use super::Write;
