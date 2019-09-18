@@ -52,13 +52,18 @@ use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
 
-use super::from_stream::FromStream;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use cfg_if::cfg_if;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        use crate::stream::FromStream;
+    }
+}
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -91,6 +96,7 @@ cfg_if! {
             ($a:lifetime, $o:ty) => (DynFuture<$a, $o>);
         }
     } else {
+        #[allow(unused_macros)]
         macro_rules! dyn_ret {
             ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + Send + 'a>>)
         }
@@ -748,6 +754,8 @@ pub trait Stream {
     ///
     /// [`stream`]: trait.Stream.html#tymethod.next
     #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
     fn collect<'a, B>(self) -> dyn_ret!('a, B)
     where
         Self: futures_core::stream::Stream + Sized + Send + 'a,
