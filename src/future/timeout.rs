@@ -29,7 +29,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(feature = "unstable")]
+#[cfg(any(feature = "unstable", feature = "docs"))]
 pub async fn timeout<F, T>(dur: Duration, f: F) -> Result<T, TimeoutError>
 where
     F: Future<Output = T>,
