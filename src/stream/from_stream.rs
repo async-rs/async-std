@@ -11,7 +11,7 @@ use std::pin::Pin;
 ///
 /// [`IntoStream`]: trait.IntoStream.html
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(feature = "unstable")]
+#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait FromStream<T: Send> {
     /// Creates a value from a stream.
     ///
