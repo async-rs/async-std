@@ -754,7 +754,7 @@ pub trait Stream {
     /// [`stream`]: trait.Stream.html#tymethod.next
     #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-    #[cfg(feature = "unstable")]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
     fn collect<'a, B>(self) -> dyn_ret!('a, B)
     where
         Self: futures_core::stream::Stream + Sized + Send + 'a,
