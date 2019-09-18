@@ -92,7 +92,6 @@ out. This is what we call _"unstable"_ features. You can try out the unstable
 features by enabling the `unstable` feature in your `Cargo.toml` file:
 
 ```toml
-[dependencies]
 [dependencies.async-std]
 version = "0.99"
 features = ["unstable"]
