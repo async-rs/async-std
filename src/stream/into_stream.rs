@@ -25,12 +25,12 @@ pub trait IntoStream {
     fn into_stream(self) -> Self::IntoStream;
 }
 
-// impl<I: Stream + Send> IntoStream for I {
-//     type Item = I::Item;
-//     type IntoStream = I;
+impl<I: Stream + Send> IntoStream for I {
+    type Item = I::Item;
+    type IntoStream = I;
 
-//     #[inline]
-//     fn into_stream(self) -> I {
-//         self
-//     }
-// }
+    #[inline]
+    fn into_stream(self) -> I {
+        self
+    }
+}
