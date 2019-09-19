@@ -73,7 +73,7 @@ Finally, let's add main:
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
-# async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
+# async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> { // 1
 #     let listener = TcpListener::bind(addr).await?; // 2
 #     let mut incoming = listener.incoming();
 #     while let Some(stream) = incoming.next().await { // 3
