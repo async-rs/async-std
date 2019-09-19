@@ -28,7 +28,7 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 # type Sender<T> = mpsc::UnboundedSender<T>;
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #
-# async fn client_writer(
+# async fn connection_writer_loop(
 #     mut messages: Receiver<String>,
 #     stream: Arc<TcpStream>,
 # ) -> Result<()> {
