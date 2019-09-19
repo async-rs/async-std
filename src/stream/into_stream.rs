@@ -1,4 +1,4 @@
-use futures_core::stream::Stream;
+use crate::stream::Stream;
 
 /// Conversion into a `Stream`.
 ///

@@ -750,18 +750,18 @@ pub trait Stream {
     #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
     fn collect<'a, B>(self) -> dyn_ret!('a, B)
     where
-        Self: futures_core::stream::Stream + Sized + Send + 'a,
-        <Self as futures_core::stream::Stream>::Item: Send,
-        B: FromStream<<Self as futures_core::stream::Stream>::Item>,
+        Self: Stream + Sized + Send + Unpin + 'a,
+        <Self as Stream>::Item: Send + Unpin,
+        B: FromStream<<Self as crate::stream::Stream>::Item>,
     {
         FromStream::from_stream(self)
     }
 }
 
-impl<T: futures_core::stream::Stream + ?Sized> Stream for T {
-    type Item = <Self as futures_core::stream::Stream>::Item;
+// impl<T: futures_core::stream::Stream + ?Sized> Stream for T {
+//     type Item = <Self as futures_core::stream::Stream>::Item;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        futures_core::stream::Stream::poll_next(self, cx)
-    }
-}
+//     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+//         futures_core::stream::Stream::poll_next(self, cx)
+//     }
+// }

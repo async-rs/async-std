@@ -7,7 +7,7 @@ pub struct IntoStream<T> {
     iter: std::vec::IntoIter<T>,
 }
 
-impl<T: Send> crate::stream::IntoStream for Vec<T> {
+impl<T: Send + Unpin> crate::stream::IntoStream for Vec<T> {
     type Item = T;
     type IntoStream = IntoStream<T>;
 
@@ -25,30 +25,30 @@ impl<T: Send> crate::stream::IntoStream for Vec<T> {
     /// }
     /// ```
     #[inline]
-    fn into_stream(mut self) -> IntoStream<T> {
+    fn into_stream(self) -> IntoStream<T> {
         let iter = self.into_iter();
         IntoStream { iter }
     }
 }
 
-impl<T: Send> futures_core::stream::Stream for IntoStream<T> {
+impl<T: Send + Unpin> crate::stream::Stream for IntoStream<T> {
     type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Poll::Ready(self.iter.next())
+        Poll::Ready(Pin::new(&mut *self).iter.next())
     }
 }
 
 /// Slice stream.
 #[derive(Debug)]
-pub struct Stream<'a, T: 'a> {
+pub struct Stream<'a, T> {
     iter: std::slice::Iter<'a, T>,
 }
 
-impl<'a, T: Sync> futures_core::stream::Stream for Stream<'a, T> {
+impl<'a, T: Sync> crate::stream::Stream for Stream<'a, T> {
     type Item = &'a T;
 
-    fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Poll::Ready(self.iter.next())
     }
 }
@@ -65,14 +65,14 @@ impl<'a, T: Sync> crate::stream::IntoStream for &'a Vec<T> {
 
 /// Mutable slice stream.
 #[derive(Debug)]
-pub struct StreamMut<'a, T: 'a> {
+pub struct StreamMut<'a, T> {
     iter: std::slice::IterMut<'a, T>,
 }
 
-impl<'a, T: Sync> futures_core::stream::Stream for StreamMut<'a, T> {
+impl<'a, T: Sync> crate::stream::Stream for StreamMut<'a, T> {
     type Item = &'a mut T;
 
-    fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Poll::Ready(self.iter.next())
     }
 }
