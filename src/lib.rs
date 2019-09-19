@@ -56,6 +56,7 @@ pub mod task;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
         mod vec;
         mod result;
