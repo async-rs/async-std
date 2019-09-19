@@ -758,10 +758,10 @@ pub trait Stream {
     }
 }
 
-// impl<T: futures_core::stream::Stream + ?Sized> Stream for T {
-//     type Item = <Self as futures_core::stream::Stream>::Item;
+impl<T: futures_core::stream::Stream + ?Sized> Stream for T {
+    type Item = <Self as futures_core::stream::Stream>::Item;
 
-//     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-//         futures_core::stream::Stream::poll_next(self, cx)
-//     }
-// }
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        futures_core::stream::Stream::poll_next(self, cx)
+    }
+}
