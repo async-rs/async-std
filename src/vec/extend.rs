@@ -4,7 +4,7 @@ use crate::future::Future;
 use crate::stream::{Extend, IntoStream, Stream};
 
 impl<T> Extend<T> for Vec<T> {
-    fn extend_with_stream<'a, S: IntoStream<Item = T> + 'a>(
+    fn stream_extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {

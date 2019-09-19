@@ -21,7 +21,7 @@ use crate::stream::{IntoStream, Stream};
 ///
 /// let mut v: Vec<usize> = vec![1, 2];
 /// let s = stream::repeat(3usize).take(3);
-/// v.extend_with_stream(s).await;
+/// v.stream_extend(s).await;
 ///
 /// assert_eq!(v, vec![1, 2, 3, 3, 3]);
 /// #
@@ -30,14 +30,14 @@ use crate::stream::{IntoStream, Stream};
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Extend<A> {
     /// Extends a collection with the contents of a stream.
-    fn extend_with_stream<'a, T: IntoStream<Item = A> + 'a>(
+    fn stream_extend<'a, T: IntoStream<Item = A> + 'a>(
         &'a mut self,
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>>;
 }
 
 impl Extend<()> for () {
-    fn extend_with_stream<'a, T: IntoStream<Item = ()> + 'a>(
+    fn stream_extend<'a, T: IntoStream<Item = ()> + 'a>(
         &'a mut self,
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
