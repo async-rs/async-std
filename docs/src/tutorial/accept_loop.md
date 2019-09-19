@@ -2,36 +2,40 @@
 
 Let's implement the scaffold of the server: a loop that binds a TCP socket to an address and starts accepting connections.
 
-
 First of all, let's add required import boilerplate:
 
-```rust
-use std::net::ToSocketAddrs; // 1
-
+```rust,edition2018
+# extern crate async_std;
 use async_std::{
-    prelude::*, // 2
-    task,       // 3
-    net::TcpListener, // 4
+    prelude::*, // 1
+    task, // 2
+    net::{TcpListener, ToSocketAddrs}, // 3
 };
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 5
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 4
 ```
 
-1. `async_std` uses `std` types where appropriate.
-    We'll need `ToSocketAddrs` to specify address to listen on.
-2. `prelude` re-exports some traits required to work with futures and streams.
-3. The `task` module roughly corresponds to the `std::thread` module, but tasks are much lighter weight.
+1. `prelude` re-exports some traits required to work with futures and streams.
+2. The `task` module roughly corresponds to the `std::thread` module, but tasks are much lighter weight.
    A single thread can run many tasks.
-4. For the socket type, we use `TcpListener` from `async_std`, which is just like `std::net::TcpListener`, but is non-blocking and uses `async` API.
-5. We will skip implementing comprehensive error handling in this example.
+3. For the socket type, we use `TcpListener` from `async_std`, which is just like `std::net::TcpListener`, but is non-blocking and uses `async` API.
+4. We will skip implementing comprehensive error handling in this example.
    To propagate the errors, we will use a boxed error trait object.
    Do you know that there's `From<&'_ str> for Box<dyn Error>` implementation in stdlib, which allows you to use strings with `?` operator?
-
 
 Now we can write the server's accept loop:
 
 ```rust
+# extern crate async_std;
+# use async_std::{
+#     net::{TcpListener, ToSocketAddrs},
+#     prelude::Stream,
+# };
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> { // 1
+
     let listener = TcpListener::bind(addr).await?; // 2
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await { // 3
@@ -48,20 +52,38 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> { // 1
    Mirroring API of `std` is an explicit design goal of `async_std`.
 3. Here, we would like to iterate incoming sockets, just how one would do in `std`:
 
-   ```rust
-   let listener: std::net::TcpListener = unimplemented!();
-   for stream in listener.incoming() {
+```rust,edition2018,should_panic
+let listener: std::net::TcpListener = unimplemented!();
+for stream in listener.incoming() {
+}
+```
 
-   }
-   ```
-
-   Unfortunately this doesn't quite work with `async` yet, because there's no support for `async` for-loops in the language yet.
-   For this reason we have to implement the loop manually, by using `while let Some(item) = iter.next().await` pattern.
+Unfortunately this doesn't quite work with `async` yet, because there's no support for `async` for-loops in the language yet.
+For this reason we have to implement the loop manually, by using `while let Some(item) = iter.next().await` pattern.
 
 Finally, let's add main:
 
-```rust
-fn main() -> Result<()> {
+```rust,edition2018
+# extern crate async_std;
+# use async_std::{
+#     net::{TcpListener, ToSocketAddrs},
+#     prelude::Stream,
+#     task,
+# };
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
+# async fn server(addr: impl ToSocketAddrs) -> Result<()> { // 1
+#     let listener = TcpListener::bind(addr).await?; // 2
+#     let mut incoming = listener.incoming();
+#     while let Some(stream) = incoming.next().await { // 3
+#         // TODO
+#     }
+#     Ok(())
+# }
+#
+// main
+fn run() -> Result<()> {
     let fut = accept_loop("127.0.0.1:8080");
     task::block_on(fut)
 }

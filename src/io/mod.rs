@@ -20,14 +20,18 @@
 //! # Ok(()) }) }
 //! ```
 
+pub mod prelude;
+
 #[doc(inline)]
-pub use std::io::{Error, ErrorKind, Result, SeekFrom};
+pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
 pub use copy::copy;
+pub use cursor::Cursor;
 pub use empty::{empty, Empty};
 pub use read::Read;
+pub use repeat::{repeat, Repeat};
 pub use seek::Seek;
 pub use sink::{sink, Sink};
 pub use stderr::{stderr, Stderr};
@@ -39,8 +43,10 @@ pub use write::Write;
 mod buf_read;
 mod buf_reader;
 mod copy;
+mod cursor;
 mod empty;
 mod read;
+mod repeat;
 mod seek;
 mod sink;
 mod stderr;

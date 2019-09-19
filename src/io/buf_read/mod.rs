@@ -1,11 +1,19 @@
+mod fill_buf;
+mod lines;
+mod read_line;
+mod read_until;
+
+use fill_buf::FillBufFuture;
+pub use lines::Lines;
+use read_line::ReadLineFuture;
+use read_until::ReadUntilFuture;
+
 use std::mem;
 use std::pin::Pin;
-use std::str;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncBufRead;
+use futures_io::AsyncBufRead;
 
-use crate::future::Future;
 use crate::io;
 use crate::task::{Context, Poll};
 
@@ -35,6 +43,32 @@ cfg_if! {
 /// [`futures::io::AsyncBufRead`]:
 /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
 pub trait BufRead {
+    /// Tells this buffer that `amt` bytes have been consumed from the buffer, so they should no
+    /// longer be returned in calls to `read`.
+    fn consume(&mut self, amt: usize)
+    where
+        Self: Unpin;
+
+    /// Returns the contents of the internal buffer, filling it with more data from the inner
+    /// reader if it is empty.
+    ///
+    /// This function is a lower-level call. It needs to be paired with the [`consume`] method to
+    /// function properly. When calling this method, none of the contents will be "read" in the
+    /// sense that later calling `read` may return the same contents. As such, [`consume`] must be
+    /// called with the number of bytes that are consumed from this buffer to ensure that the bytes
+    /// are never returned twice.
+    ///
+    /// [`consume`]: #tymethod.consume
+    ///
+    /// An empty buffer returned indicates that the stream has reached EOF.
+    // TODO: write a proper doctest with `consume`
+    fn fill_buf<'a>(&'a mut self) -> ret!('a, FillBufFuture, io::Result<&'a [u8]>)
+    where
+        Self: Unpin,
+    {
+        FillBufFuture::new(self)
+    }
+
     /// Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
     ///
     /// This function will read bytes from the underlying stream until the delimiter or EOF is
@@ -54,8 +88,31 @@ pub trait BufRead {
     ///
     /// let mut file = BufReader::new(File::open("a.txt").await?);
     ///
-    /// let mut buf = vec![0; 1024];
+    /// let mut buf = Vec::with_capacity(1024);
     /// let n = file.read_until(b'\n', &mut buf).await?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    ///
+    /// Multiple successful calls to `read_until` append all bytes up to and including to `buf`:
+    /// ```
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
+    ///
+    /// let from: &[u8] = b"append\nexample\n";
+    /// let mut reader = BufReader::new(from);
+    /// let mut buf = vec![];
+    ///
+    /// let mut size = reader.read_until(b'\n', &mut buf).await?;
+    /// assert_eq!(size, 7);
+    /// assert_eq!(buf, b"append\n");
+    ///
+    /// size += reader.read_until(b'\n', &mut buf).await?;
+    /// assert_eq!(size, from.len());
+    ///
+    /// assert_eq!(buf, from);
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -166,133 +223,9 @@ pub trait BufRead {
     }
 }
 
-impl<T: AsyncBufRead + Unpin + ?Sized> BufRead for T {}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct ReadUntilFuture<'a, T: Unpin + ?Sized> {
-    reader: &'a mut T,
-    byte: u8,
-    buf: &'a mut Vec<u8>,
-    read: usize,
-}
-
-impl<T: AsyncBufRead + Unpin + ?Sized> Future for ReadUntilFuture<'_, T> {
-    type Output = io::Result<usize>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let Self {
-            reader,
-            byte,
-            buf,
-            read,
-        } = &mut *self;
-        read_until_internal(Pin::new(reader), cx, *byte, buf, read)
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct ReadLineFuture<'a, T: Unpin + ?Sized> {
-    reader: &'a mut T,
-    buf: &'a mut String,
-    bytes: Vec<u8>,
-    read: usize,
-}
-
-impl<T: AsyncBufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
-    type Output = io::Result<usize>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let Self {
-            reader,
-            buf,
-            bytes,
-            read,
-        } = &mut *self;
-        let reader = Pin::new(reader);
-
-        let ret = futures::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
-        if str::from_utf8(&bytes).is_err() {
-            Poll::Ready(ret.and_then(|_| {
-                Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "stream did not contain valid UTF-8",
-                ))
-            }))
-        } else {
-            debug_assert!(buf.is_empty());
-            debug_assert_eq!(*read, 0);
-            // Safety: `bytes` is a valid UTF-8 because `str::from_utf8` returned `Ok`.
-            mem::swap(unsafe { buf.as_mut_vec() }, bytes);
-            Poll::Ready(ret)
-        }
-    }
-}
-
-/// A stream of lines in a byte stream.
-///
-/// This stream is created by the [`lines`] method on types that implement [`BufRead`].
-///
-/// This type is an async version of [`std::io::Lines`].
-///
-/// [`lines`]: trait.BufRead.html#method.lines
-/// [`BufRead`]: trait.BufRead.html
-/// [`std::io::Lines`]: https://doc.rust-lang.org/nightly/std/io/struct.Lines.html
-#[derive(Debug)]
-pub struct Lines<R> {
-    reader: R,
-    buf: String,
-    bytes: Vec<u8>,
-    read: usize,
-}
-
-impl<R: AsyncBufRead> futures::Stream for Lines<R> {
-    type Item = io::Result<String>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let Self {
-            reader,
-            buf,
-            bytes,
-            read,
-        } = unsafe { self.get_unchecked_mut() };
-        let reader = unsafe { Pin::new_unchecked(reader) };
-        let n = futures::ready!(read_line_internal(reader, cx, buf, bytes, read))?;
-        if n == 0 && buf.is_empty() {
-            return Poll::Ready(None);
-        }
-        if buf.ends_with('\n') {
-            buf.pop();
-            if buf.ends_with('\r') {
-                buf.pop();
-            }
-        }
-        Poll::Ready(Some(Ok(mem::replace(buf, String::new()))))
-    }
-}
-
-pub fn read_line_internal<R: AsyncBufRead + ?Sized>(
-    reader: Pin<&mut R>,
-    cx: &mut Context<'_>,
-    buf: &mut String,
-    bytes: &mut Vec<u8>,
-    read: &mut usize,
-) -> Poll<io::Result<usize>> {
-    let ret = futures::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
-    if str::from_utf8(&bytes).is_err() {
-        Poll::Ready(ret.and_then(|_| {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "stream did not contain valid UTF-8",
-            ))
-        }))
-    } else {
-        debug_assert!(buf.is_empty());
-        debug_assert_eq!(*read, 0);
-        // Safety: `bytes` is a valid UTF-8 because `str::from_utf8` returned `Ok`.
-        mem::swap(unsafe { buf.as_mut_vec() }, bytes);
-        Poll::Ready(ret)
+impl<T: AsyncBufRead + Unpin + ?Sized> BufRead for T {
+    fn consume(&mut self, amt: usize) {
+        AsyncBufRead::consume(Pin::new(self), amt)
     }
 }
 
@@ -305,7 +238,7 @@ pub fn read_until_internal<R: AsyncBufRead + ?Sized>(
 ) -> Poll<io::Result<usize>> {
     loop {
         let (done, used) = {
-            let available = futures::ready!(reader.as_mut().poll_fill_buf(cx))?;
+            let available = futures_core::ready!(reader.as_mut().poll_fill_buf(cx))?;
             if let Some(i) = memchr::memchr(byte, available) {
                 buf.extend_from_slice(&available[..=i]);
                 (true, i + 1)

@@ -1,18 +1,17 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::mem;
+use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
-use futures::io::{AsyncRead, AsyncWrite};
+use futures_io::{AsyncRead, AsyncWrite};
 use mio_uds;
 
 use super::SocketAddr;
 use crate::io;
-use crate::net::driver::IoHandle;
+use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::task::{blocking, Context, Poll};
 
@@ -40,10 +39,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixStream {
-    #[cfg(not(feature = "docs"))]
-    pub(super) io_handle: IoHandle<mio_uds::UnixStream>,
-
-    pub(super) raw_fd: RawFd,
+    pub(super) watcher: Watcher<mio_uds::UnixStream>,
 }
 
 impl UnixStream {
@@ -61,47 +57,14 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
-        enum State {
-            Waiting(UnixStream),
-            Error(io::Error),
-            Done,
-        }
-
         let path = path.as_ref().to_owned();
-        let mut state = {
-            match blocking::spawn(async move { mio_uds::UnixStream::connect(path) }).await {
-                Ok(mio_stream) => State::Waiting(UnixStream {
-                    raw_fd: mio_stream.as_raw_fd(),
-                    io_handle: IoHandle::new(mio_stream),
-                }),
-                Err(err) => State::Error(err),
-            }
-        };
 
-        future::poll_fn(|cx| {
-            match &mut state {
-                State::Waiting(stream) => {
-                    futures::ready!(stream.io_handle.poll_writable(cx)?);
-
-                    if let Some(err) = stream.io_handle.get_ref().take_error()? {
-                        return Poll::Ready(Err(err));
-                    }
-                }
-                State::Error(_) => {
-                    let err = match mem::replace(&mut state, State::Done) {
-                        State::Error(err) => err,
-                        _ => unreachable!(),
-                    };
-
-                    return Poll::Ready(Err(err));
-                }
-                State::Done => panic!("`UnixStream::connect()` future polled after completion"),
-            }
-
-            match mem::replace(&mut state, State::Done) {
-                State::Waiting(stream) => Poll::Ready(Ok(stream)),
-                _ => unreachable!(),
-            }
+        blocking::spawn(async move {
+            let std_stream = std::os::unix::net::UnixStream::connect(path)?;
+            let mio_stream = mio_uds::UnixStream::from_stream(std_stream)?;
+            Ok(UnixStream {
+                watcher: Watcher::new(mio_stream),
+            })
         })
         .await
     }
@@ -124,12 +87,10 @@ impl UnixStream {
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
         let (a, b) = mio_uds::UnixStream::pair()?;
         let a = UnixStream {
-            raw_fd: a.as_raw_fd(),
-            io_handle: IoHandle::new(a),
+            watcher: Watcher::new(a),
         };
         let b = UnixStream {
-            raw_fd: b.as_raw_fd(),
-            io_handle: IoHandle::new(b),
+            watcher: Watcher::new(b),
         };
         Ok((a, b))
     }
@@ -149,7 +110,7 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().local_addr()
+        self.watcher.get_ref().local_addr()
     }
 
     /// Returns the socket address of the remote half of this connection.
@@ -167,7 +128,7 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().peer_addr()
+        self.watcher.get_ref().peer_addr()
     }
 
     /// Shuts down the read, write, or both halves of this connection.
@@ -189,7 +150,7 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
-        self.io_handle.get_ref().shutdown(how)
+        self.watcher.get_ref().shutdown(how)
     }
 }
 
@@ -209,7 +170,7 @@ impl AsyncRead for &UnixStream {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_read(cx, buf)
+        self.watcher.poll_read_with(cx, |mut inner| inner.read(buf))
     }
 }
 
@@ -237,15 +198,16 @@ impl AsyncWrite for &UnixStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.io_handle).poll_write(cx, buf)
+        self.watcher
+            .poll_write_with(cx, |mut inner| inner.write(buf))
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.io_handle).poll_flush(cx)
+        self.watcher.poll_write_with(cx, |mut inner| inner.flush())
     }
 
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.io_handle).poll_close(cx)
+    fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(Ok(()))
     }
 }
 
@@ -271,15 +233,14 @@ impl From<std::os::unix::net::UnixStream> for UnixStream {
     fn from(stream: std::os::unix::net::UnixStream) -> UnixStream {
         let mio_stream = mio_uds::UnixStream::from_stream(stream).unwrap();
         UnixStream {
-            raw_fd: mio_stream.as_raw_fd(),
-            io_handle: IoHandle::new(mio_stream),
+            watcher: Watcher::new(mio_stream),
         }
     }
 }
 
 impl AsRawFd for UnixStream {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.watcher.get_ref().as_raw_fd()
     }
 }
 
@@ -292,6 +253,6 @@ impl FromRawFd for UnixStream {
 
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.watcher.into_inner().into_raw_fd()
     }
 }

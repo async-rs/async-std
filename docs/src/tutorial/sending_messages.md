@@ -11,11 +11,20 @@ So let's create a `connection_writer_loop` task which receives messages over a c
 This task would be the point of serialization of messages.
 if Alice and Charley send two messages to Bob at the same time, Bob will see the messages in the same order as they arrive in the channel.
 
-```rust
-use futures::channel::mpsc; // 1
-use futures::SinkExt;
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
+# use async_std::{
+#     io::Write,
+#     net::TcpStream,
+#     prelude::Stream,
+# };
+use futures_channel::mpsc; // 1
+use futures_util::sink::SinkExt;
 use std::sync::Arc;
 
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 type Sender<T> = mpsc::UnboundedSender<T>; // 2
 type Receiver<T> = mpsc::UnboundedReceiver<T>;
 

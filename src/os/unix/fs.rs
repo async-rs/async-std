@@ -69,7 +69,6 @@ cfg_if! {
             fn custom_flags(&mut self, flags: i32) -> &mut Self;
         }
     } else {
-        #[doc(inline)]
         pub use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
     }
 }

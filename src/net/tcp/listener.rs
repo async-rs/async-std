@@ -1,13 +1,13 @@
-use std::net::{self, SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures::future;
 
 use super::TcpStream;
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
-use crate::net::driver::IoHandle;
+use crate::net::driver::Watcher;
+use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
 /// A TCP socket server, listening for connections.
@@ -49,12 +49,7 @@ use crate::task::{Context, Poll};
 /// ```
 #[derive(Debug)]
 pub struct TcpListener {
-    io_handle: IoHandle<mio::net::TcpListener>,
-
-    #[cfg(unix)]
-    raw_fd: std::os::unix::io::RawFd,
-    // #[cfg(windows)]
-    // raw_socket: std::os::windows::io::RawSocket,
+    watcher: Watcher<mio::net::TcpListener>,
 }
 
 impl TcpListener {
@@ -82,21 +77,12 @@ impl TcpListener {
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
 
-        for addr in addrs.to_socket_addrs()? {
+        for addr in addrs.to_socket_addrs().await? {
             match mio::net::TcpListener::bind(&addr) {
                 Ok(mio_listener) => {
-                    #[cfg(unix)]
-                    let listener = TcpListener {
-                        raw_fd: mio_listener.as_raw_fd(),
-                        io_handle: IoHandle::new(mio_listener),
-                    };
-
-                    #[cfg(windows)]
-                    let listener = TcpListener {
-                        // raw_socket: mio_listener.as_raw_socket(),
-                        io_handle: IoHandle::new(mio_listener),
-                    };
-                    return Ok(listener);
+                    return Ok(TcpListener {
+                        watcher: Watcher::new(mio_listener),
+                    });
                 }
                 Err(err) => last_err = Some(err),
             }
@@ -127,35 +113,15 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+        let (io, addr) =
+            future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.accept_std()))
+                .await?;
 
-            match self.io_handle.get_ref().accept_std() {
-                Ok((io, addr)) => {
-                    let mio_stream = mio::net::TcpStream::from_stream(io)?;
-
-                    #[cfg(unix)]
-                    let stream = TcpStream {
-                        raw_fd: mio_stream.as_raw_fd(),
-                        io_handle: IoHandle::new(mio_stream),
-                    };
-
-                    #[cfg(windows)]
-                    let stream = TcpStream {
-                        // raw_socket: mio_stream.as_raw_socket(),
-                        io_handle: IoHandle::new(mio_stream),
-                    };
-
-                    Poll::Ready(Ok((stream, addr)))
-                }
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_readable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
-            }
-        })
-        .await
+        let mio_stream = mio::net::TcpStream::from_stream(io)?;
+        let stream = TcpStream {
+            watcher: Watcher::new(mio_stream),
+        };
+        Ok((stream, addr))
     }
 
     /// Returns a stream of incoming connections.
@@ -206,7 +172,7 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().local_addr()
+        self.watcher.get_ref().local_addr()
     }
 }
 
@@ -224,36 +190,25 @@ impl TcpListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a TcpListener);
 
-impl<'a> futures::Stream for Incoming<'a> {
+impl<'a> futures_core::stream::Stream for Incoming<'a> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let future = self.0.accept();
         pin_utils::pin_mut!(future);
 
-        let (socket, _) = futures::ready!(future.poll(cx))?;
+        let (socket, _) = futures_core::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
 }
 
-impl From<net::TcpListener> for TcpListener {
+impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
-    fn from(listener: net::TcpListener) -> TcpListener {
+    fn from(listener: std::net::TcpListener) -> TcpListener {
         let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
-
-        #[cfg(unix)]
-        let listener = TcpListener {
-            raw_fd: mio_listener.as_raw_fd(),
-            io_handle: IoHandle::new(mio_listener),
-        };
-
-        #[cfg(windows)]
-        let listener = TcpListener {
-            // raw_socket: mio_listener.as_raw_socket(),
-            io_handle: IoHandle::new(mio_listener),
-        };
-
-        listener
+        TcpListener {
+            watcher: Watcher::new(mio_listener),
+        }
     }
 }
 
@@ -273,19 +228,19 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpListener {
             fn as_raw_fd(&self) -> RawFd {
-                self.raw_fd
+                self.watcher.get_ref().as_raw_fd()
             }
         }
 
         impl FromRawFd for TcpListener {
             unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
-                net::TcpListener::from_raw_fd(fd).into()
+                std::net::TcpListener::from_raw_fd(fd).into()
             }
         }
 
         impl IntoRawFd for TcpListener {
             fn into_raw_fd(self) -> RawFd {
-                self.raw_fd
+                self.watcher.into_inner().into_raw_fd()
             }
         }
     }

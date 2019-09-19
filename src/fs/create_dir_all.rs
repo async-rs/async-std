@@ -1,10 +1,9 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use crate::task::blocking;
 use crate::io;
+use crate::task::blocking;
 
-/// Creates a new, empty directory and all of its parents if they are missing.
+/// Creates a new directory and all of its parents if they are missing.
 ///
 /// This function is an async version of [`std::fs::create_dir_all`].
 ///
@@ -12,10 +11,11 @@ use crate::io;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * The parent directories do not exists and couldn't be created.
-/// * The current process lacks permissions to create directory at `path`.
+/// * `path` already points to an existing file or directory.
+/// * The current process lacks permissions to create the directory or its missing parents.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
@@ -24,11 +24,11 @@ use crate::io;
 /// #
 /// use async_std::fs;
 ///
-/// fs::create_dir_all("./some/dir").await?;
+/// fs::create_dir_all("./some/directory").await?;
 /// #
 /// # Ok(()) }) }
 /// ```
 pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::create_dir_all(path) }).await
+    blocking::spawn(async move { std::fs::create_dir_all(path) }).await
 }

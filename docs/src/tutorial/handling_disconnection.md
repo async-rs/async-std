@@ -1,11 +1,11 @@
 ## Handling Disconnections
 
-Currently, we only ever *add* new peers to the map.
+Currently, we only ever _add_ new peers to the map.
 This is clearly wrong: if a peer closes connection to the chat, we should not try to send any more messages to it.
 
 One subtlety with handling disconnection is that we can detect it either in the reader's task, or in the writer's task.
 The most obvious solution here is to just remove the peer from the `peers` map in both cases, but this would be wrong.
-If *both* read and write fail, we'll remove the peer twice, but it can be the case that the peer reconnected between the two failures!
+If _both_ read and write fail, we'll remove the peer twice, but it can be the case that the peer reconnected between the two failures!
 To fix this, we will only remove the peer when the write side finishes.
 If the read side finishes we will notify the write side that it should stop as well.
 That is, we need to add an ability to signal shutdown for the writer task.
@@ -17,7 +17,19 @@ This way, we statically guarantee that we issue shutdown exactly once, even if w
 
 First, let's add a shutdown channel to the `connection_loop`:
 
-```rust
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
+# use async_std::net::TcpStream;
+# use futures_channel::mpsc;
+# use futures_util::SinkExt;
+# use std::sync::Arc;
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+#
 #[derive(Debug)]
 enum Void {} // 1
 
@@ -35,17 +47,17 @@ enum Event {
     },
 }
 
-async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()> {
     // ...
-
+#   let name: String = unimplemented!();
     let (_shutdown_sender, shutdown_receiver) = mpsc::unbounded::<Void>(); // 3
     broker.send(Event::NewPeer {
         name: name.clone(),
         stream: Arc::clone(&stream),
         shutdown: shutdown_receiver,
     }).await.unwrap();
-
     // ...
+#   unimplemented!()
 }
 ```
 
@@ -56,23 +68,37 @@ async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result
 In the `connection_writer_loop`, we now need to choose between shutdown and message channels.
 We use the `select` macro for this purpose:
 
-```rust
-use futures::select;
-use futures::FutureExt;
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
+# use async_std::{io::Write, net::TcpStream};
+use futures_channel::mpsc;
+use futures_util::{select, FutureExt, StreamExt};
+# use std::sync::Arc;
+
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+
+# #[derive(Debug)]
+# enum Void {} // 1
 
 async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>, // 1
+    shutdown: Receiver<Void>, // 1
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
-            msg = messages.next().fuse() => match msg {
+            msg = messages.next() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next().fuse() => match void {
+            void = shutdown.next() => match void {
                 Some(void) => match void {}, // 3
                 None => break,
             }
@@ -94,25 +120,21 @@ This also allows us to establish a useful invariant that the message channel str
 
 The final code looks like this:
 
-```rust
-use std::{
-    net::ToSocketAddrs,
-    sync::Arc,
-    collections::hash_map::{HashMap, Entry},
-};
-
-use futures::{
-    channel::mpsc,
-    SinkExt,
-    FutureExt,
-    select,
-};
-
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
 use async_std::{
-    io::BufReader,
-    prelude::*,
+    io::{BufReader, BufRead, Write},
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     task,
-    net::{TcpListener, TcpStream},
+};
+use futures_channel::mpsc;
+use futures_util::{select, FutureExt, SinkExt, StreamExt};
+use std::{
+    collections::hash_map::{Entry, HashMap},
+    future::Future,
+    sync::Arc,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -122,15 +144,15 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #[derive(Debug)]
 enum Void {}
 
-fn main() -> Result<()> {
+// main
+fn run() -> Result<()> {
     task::block_on(accept_loop("127.0.0.1:8080"))
 }
 
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
-
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker = task::spawn(broker_loop(broker_receiver));
+    let broker_handle = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
@@ -138,7 +160,7 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
         spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender);
-    broker.await;
+    broker_handle.await;
     Ok(())
 }
 
@@ -180,16 +202,18 @@ async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result
 async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>,
+    shutdown: Receiver<Void>,
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop {
         select! {
-            msg = messages.next().fuse() => match msg {
+            msg = messages.next() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next().fuse() => match void {
+            void = shutdown.next() => match void {
                 Some(void) => match void {},
                 None => break,
             }
@@ -212,11 +236,11 @@ enum Event {
     },
 }
 
-async fn broker_loop(mut events: Receiver<Event>) {
+async fn broker_loop(events: Receiver<Event>) {
     let (disconnect_sender, mut disconnect_receiver) = // 1
         mpsc::unbounded::<(String, Receiver<String>)>();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
-
+    let mut events = events.fuse();
     loop {
         let event = select! {
             event = events.next() => match event {
@@ -233,7 +257,8 @@ async fn broker_loop(mut events: Receiver<Event>) {
             Event::Message { from, to, msg } => {
                 for addr in to {
                     if let Some(peer) = peers.get_mut(&addr) {
-                        peer.send(format!("from {}: {}\n", from, msg)).await
+                        let msg = format!("from {}: {}\n", from, msg);
+                        peer.send(msg).await
                             .unwrap() // 6
                     }
                 }

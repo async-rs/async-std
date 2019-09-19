@@ -21,12 +21,26 @@
 //! # }) }
 //! ```
 
+use cfg_if::cfg_if;
+
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Stream, Take};
+pub use stream::{Fuse, Scan, Stream, Take, Zip};
 
 mod empty;
 mod once;
 mod repeat;
 mod stream;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod double_ended_stream;
+        mod from_stream;
+        mod into_stream;
+
+        pub use double_ended_stream::DoubleEndedStream;
+        pub use from_stream::FromStream;
+        pub use into_stream::IntoStream;
+    }
+}

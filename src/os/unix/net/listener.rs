@@ -4,14 +4,13 @@ use std::fmt;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures::future;
 use mio_uds;
 
 use super::SocketAddr;
 use super::UnixStream;
-use crate::future::Future;
+use crate::future::{self, Future};
 use crate::io;
-use crate::net::driver::IoHandle;
+use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::task::{blocking, Context, Poll};
 
@@ -49,10 +48,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixListener {
-    #[cfg(not(feature = "docs"))]
-    io_handle: IoHandle<mio_uds::UnixListener>,
-
-    raw_fd: RawFd,
+    watcher: Watcher<mio_uds::UnixListener>,
 }
 
 impl UnixListener {
@@ -74,8 +70,7 @@ impl UnixListener {
         let listener = blocking::spawn(async move { mio_uds::UnixListener::bind(path) }).await?;
 
         Ok(UnixListener {
-            raw_fd: listener.as_raw_fd(),
-            io_handle: IoHandle::new(listener),
+            watcher: Watcher::new(listener),
         })
     }
 
@@ -97,26 +92,18 @@ impl UnixListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
+            let res =
+                futures_core::ready!(self.watcher.poll_read_with(cx, |inner| inner.accept_std()));
 
-            match self.io_handle.get_ref().accept_std() {
-                Ok(Some((io, addr))) => {
+            match res? {
+                None => Poll::Pending,
+                Some((io, addr)) => {
                     let mio_stream = mio_uds::UnixStream::from_stream(io)?;
                     let stream = UnixStream {
-                        raw_fd: mio_stream.as_raw_fd(),
-                        io_handle: IoHandle::new(mio_stream),
+                        watcher: Watcher::new(mio_stream),
                     };
                     Poll::Ready(Ok((stream, addr)))
                 }
-                Ok(None) => {
-                    self.io_handle.clear_readable(cx)?;
-                    Poll::Pending
-                }
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_readable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
             }
         })
         .await
@@ -167,7 +154,7 @@ impl UnixListener {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().local_addr()
+        self.watcher.get_ref().local_addr()
     }
 }
 
@@ -198,14 +185,14 @@ impl fmt::Debug for UnixListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a UnixListener);
 
-impl futures::Stream for Incoming<'_> {
+impl futures_core::stream::Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let future = self.0.accept();
-        futures::pin_mut!(future);
+        pin_utils::pin_mut!(future);
 
-        let (socket, _) = futures::ready!(future.poll(cx))?;
+        let (socket, _) = futures_core::ready!(future.poll(cx))?;
         Poll::Ready(Some(Ok(socket)))
     }
 }
@@ -215,15 +202,14 @@ impl From<std::os::unix::net::UnixListener> for UnixListener {
     fn from(listener: std::os::unix::net::UnixListener) -> UnixListener {
         let mio_listener = mio_uds::UnixListener::from_listener(listener).unwrap();
         UnixListener {
-            raw_fd: mio_listener.as_raw_fd(),
-            io_handle: IoHandle::new(mio_listener),
+            watcher: Watcher::new(mio_listener),
         }
     }
 }
 
 impl AsRawFd for UnixListener {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.watcher.get_ref().as_raw_fd()
     }
 }
 
@@ -236,6 +222,6 @@ impl FromRawFd for UnixListener {
 
 impl IntoRawFd for UnixListener {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.watcher.into_inner().into_raw_fd()
     }
 }

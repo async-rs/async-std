@@ -7,11 +7,17 @@ We need to:
 2. interpret the first line as a login
 3. parse the rest of the lines as a  `login: message`
 
-```rust
-use async_std::io::BufReader;
-use async_std::net::TcpStream;
-use async_std::io::BufReader;
-
+```rust,edition2018
+# extern crate async_std;
+# use async_std::{
+#     io::{BufRead, BufReader},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
+#     prelude::Stream,
+#     task,
+# };
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener.incoming();
@@ -65,9 +71,44 @@ One serious problem in the above solution is that, while we correctly propagate 
 That is, `task::spawn` does not return an error immediately (it can't, it needs to run the future to completion first), only after it is joined.
 We can "fix" it by waiting for the task to be joined, like this:
 
-```rust
+```rust,edition2018
+# #![feature(async_closure)]
+# extern crate async_std;
+# use async_std::{
+#     io::{BufRead, BufReader},
+#     net::{TcpListener, TcpStream, ToSocketAddrs},
+#     prelude::Stream,
+#     task,
+# };
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+#
+# async fn connection_loop(stream: TcpStream) -> Result<()> {
+#     let reader = BufReader::new(&stream); // 2
+#     let mut lines = reader.lines();
+#
+#     let name = match lines.next().await { // 3
+#         None => Err("peer disconnected immediately")?,
+#         Some(line) => line?,
+#     };
+#     println!("name = {}", name);
+#
+#     while let Some(line) = lines.next().await { // 4
+#         let line = line?;
+#         let (dest, msg) = match line.find(':') { // 5
+#             None => continue,
+#             Some(idx) => (&line[..idx], line[idx + 1 ..].trim()),
+#         };
+#         let dest: Vec<String> = dest.split(',').map(|name| name.trim().to_string()).collect();
+#         let msg: String = msg.trim().to_string();
+#     }
+#     Ok(())
+# }
+#
+# async move |stream| {
 let handle = task::spawn(connection_loop(stream));
-handle.await?
+handle.await
+# };
 ```
 
 The `.await` waits until the client finishes, and `?` propagates the result.
@@ -80,10 +121,16 @@ That is, a flaky internet connection of one peer brings down the whole chat room
 A correct way to handle client errors in this case is log them, and continue serving other clients.
 So let's use a helper function for this:
 
-```rust
+```rust,edition2018
+# extern crate async_std;
+# use async_std::{
+#     io,
+#     prelude::Future,
+#     task,
+# };
 fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
 where
-    F: Future<Output = Result<()>> + Send + 'static,
+    F: Future<Output = io::Result<()>> + Send + 'static,
 {
     task::spawn(async move {
         if let Err(e) = fut.await {
