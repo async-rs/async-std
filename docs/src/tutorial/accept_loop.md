@@ -25,7 +25,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 Now we can write the server's accept loop:
 
-```rust
+```rust,edition2018
 # extern crate async_std;
 # use async_std::{
 #     net::{TcpListener, ToSocketAddrs},
