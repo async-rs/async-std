@@ -25,6 +25,7 @@ docs = []
 unstable = []
 
 [dependencies]
+async-macros = "1.0.0"
 async-task = "1.0.0"
 cfg-if = "0.1.9"
 crossbeam-channel = "0.3.9"
