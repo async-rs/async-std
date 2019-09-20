@@ -25,7 +25,7 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 
 // main
 fn run() -> Result<()> {
-    task::block_on(server("127.0.0.1:8080"))
+    task::block_on(accept_loop("127.0.0.1:8080"))
 }
 
 fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
@@ -39,21 +39,21 @@ where
     })
 }
 
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
 
     let (broker_sender, broker_receiver) = mpsc::unbounded(); // 1
-    let _broker_handle = task::spawn(broker(broker_receiver));
+    let _broker_handle = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        spawn_and_log_error(client(broker_sender.clone(), stream));
+        spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     Ok(())
 }
 
-async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     let stream = Arc::new(stream); // 2
     let reader = BufReader::new(&*stream);
     let mut lines = reader.lines();
@@ -83,7 +83,7 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     Ok(())
 }
 
-async fn client_writer(
+async fn connection_writer_loop(
     mut messages: Receiver<String>,
     stream: Arc<TcpStream>,
 ) -> Result<()> {
@@ -107,7 +107,7 @@ enum Event {
     },
 }
 
-async fn broker(mut events: Receiver<Event>) -> Result<()> {
+async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
 
     while let Some(event) = events.next().await {
@@ -126,7 +126,7 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
                     Entry::Vacant(entry) => {
                         let (client_sender, client_receiver) = mpsc::unbounded();
                         entry.insert(client_sender); // 4
-                        spawn_and_log_error(client_writer(client_receiver, stream)); // 5
+                        spawn_and_log_error(connection_writer_loop(client_receiver, stream)); // 5
                     }
                 }
             }
@@ -136,8 +136,8 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
 }
 ```
 
-1. Inside the `server`, we create the broker's channel and `task`.
-2. Inside `client`, we need to wrap `TcpStream` into an `Arc`, to be able to share it with the `client_writer`.
+1. Inside the `accept_loop`, we create the broker's channel and `task`.
+2. Inside `connection_loop`, we need to wrap `TcpStream` into an `Arc`, to be able to share it with the `connection_writer_loop`.
 3. On login, we notify the broker.
    Note that we `.unwrap` on send: broker should outlive all the clients and if that's not the case the broker probably panicked, so we can escalate the panic as well.
 4. Similarly, we forward parsed messages to the broker, assuming that it is alive.

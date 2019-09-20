@@ -53,7 +53,7 @@ Let's add waiting to the server:
 # }
 #
 #
-# async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+# async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
 #     let stream = Arc::new(stream); // 2
 #     let reader = BufReader::new(&*stream);
 #     let mut lines = reader.lines();
@@ -83,7 +83,7 @@ Let's add waiting to the server:
 #     Ok(())
 # }
 #
-# async fn client_writer(
+# async fn connection_writer_loop(
 #     mut messages: Receiver<String>,
 #     stream: Arc<TcpStream>,
 # ) -> Result<()> {
@@ -107,7 +107,7 @@ Let's add waiting to the server:
 #     },
 # }
 #
-# async fn broker(mut events: Receiver<Event>) -> Result<()> {
+# async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
 #     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
 #
 #     while let Some(event) = events.next().await {
@@ -126,7 +126,7 @@ Let's add waiting to the server:
 #                     Entry::Vacant(entry) => {
 #                         let (client_sender, client_receiver) = mpsc::unbounded();
 #                         entry.insert(client_sender); // 4
-#                         spawn_and_log_error(client_writer(client_receiver, stream)); // 5
+#                         spawn_and_log_error(connection_writer_loop(client_receiver, stream)); // 5
 #                     }
 #                 }
 #             }
@@ -135,16 +135,16 @@ Let's add waiting to the server:
 #     Ok(())
 # }
 #
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
 
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker_handle = task::spawn(broker(broker_receiver));
+    let broker_handle = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        spawn_and_log_error(client(broker_sender.clone(), stream));
+        spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender); // 1
     broker_handle.await?; // 5
@@ -175,7 +175,7 @@ And to the broker:
 # type Sender<T> = mpsc::UnboundedSender<T>;
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #
-# async fn client_writer(
+# async fn connection_writer_loop(
 #     mut messages: Receiver<String>,
 #     stream: Arc<TcpStream>,
 # ) -> Result<()> {
@@ -210,7 +210,7 @@ And to the broker:
 #     },
 # }
 #
-async fn broker(mut events: Receiver<Event>) -> Result<()> {
+async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
     let mut writers = Vec::new();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
     while let Some(event) = events.next().await { // 2
@@ -229,7 +229,7 @@ async fn broker(mut events: Receiver<Event>) -> Result<()> {
                     Entry::Vacant(entry) => {
                         let (client_sender, client_receiver) = mpsc::unbounded();
                         entry.insert(client_sender);
-                        let handle = spawn_and_log_error(client_writer(client_receiver, stream));
+                        let handle = spawn_and_log_error(connection_writer_loop(client_receiver, stream));
                         writers.push(handle); // 4
                     }
                 }

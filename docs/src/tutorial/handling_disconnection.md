@@ -15,7 +15,7 @@ There's a more minimal solution however, which makes clever use of RAII.
 Closing a channel is a synchronization event, so we don't need to send a shutdown message, we can just drop the sender.
 This way, we statically guarantee that we issue shutdown exactly once, even if we early return via `?` or panic.
 
-First, let's add a shutdown channel to the `client`:
+First, let's add a shutdown channel to the `connection_loop`:
 
 ```rust,edition2018
 # extern crate async_std;
@@ -47,7 +47,7 @@ enum Event {
     },
 }
 
-async fn client(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()> {
     // ...
 #   let name: String = unimplemented!();
     let (_shutdown_sender, shutdown_receiver) = mpsc::unbounded::<Void>(); // 3
@@ -65,7 +65,7 @@ async fn client(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()>
 2. We pass the shutdown channel to the writer task
 3. In the reader, we create a `_shutdown_sender` whose only purpose is to get dropped.
 
-In the `client_writer`, we now need to choose between shutdown and message channels.
+In the `connection_writer_loop`, we now need to choose between shutdown and message channels.
 We use the `select` macro for this purpose:
 
 ```rust,edition2018
@@ -84,7 +84,7 @@ use futures_util::{select, FutureExt, StreamExt};
 # #[derive(Debug)]
 # enum Void {} // 1
 
-async fn client_writer(
+async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
     shutdown: Receiver<Void>, // 1
@@ -112,7 +112,7 @@ async fn client_writer(
 2. Because of `select`, we can't use a `while let` loop, so we desugar it further into a `loop`.
 3. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
 
-Another problem is that between the moment we detect disconnection in `client_writer` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
+Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
 To not lose these messages completely, we'll return the messages channel back to the broker.
 This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infailable.
 
@@ -146,25 +146,25 @@ enum Void {}
 
 // main
 fn run() -> Result<()> {
-    task::block_on(server("127.0.0.1:8080"))
+    task::block_on(accept_loop("127.0.0.1:8080"))
 }
 
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker_handle = task::spawn(broker(broker_receiver));
+    let broker_handle = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        spawn_and_log_error(client(broker_sender.clone(), stream));
+        spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender);
     broker_handle.await;
     Ok(())
 }
 
-async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     let stream = Arc::new(stream);
     let reader = BufReader::new(&*stream);
     let mut lines = reader.lines();
@@ -199,7 +199,7 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     Ok(())
 }
 
-async fn client_writer(
+async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
     shutdown: Receiver<Void>,
@@ -236,7 +236,7 @@ enum Event {
     },
 }
 
-async fn broker(events: Receiver<Event>) {
+async fn broker_loop(events: Receiver<Event>) {
     let (disconnect_sender, mut disconnect_receiver) = // 1
         mpsc::unbounded::<(String, Receiver<String>)>();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
@@ -271,7 +271,7 @@ async fn broker(events: Receiver<Event>) {
                         entry.insert(client_sender);
                         let mut disconnect_sender = disconnect_sender.clone();
                         spawn_and_log_error(async move {
-                            let res = client_writer(&mut client_receiver, stream, shutdown).await;
+                            let res = connection_writer_loop(&mut client_receiver, stream, shutdown).await;
                             disconnect_sender.send((name, client_receiver)).await // 4
                                 .unwrap();
                             res
