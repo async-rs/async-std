@@ -83,7 +83,7 @@ Let's add waiting to the server:
 #     Ok(())
 # }
 #
-# async fn client_writer_loop(
+# async fn connection_writer_loop(
 #     mut messages: Receiver<String>,
 #     stream: Arc<TcpStream>,
 # ) -> Result<()> {
@@ -126,7 +126,7 @@ Let's add waiting to the server:
 #                     Entry::Vacant(entry) => {
 #                         let (client_sender, client_receiver) = mpsc::unbounded();
 #                         entry.insert(client_sender); // 4
-#                         spawn_and_log_error(client_writer_loop(client_receiver, stream)); // 5
+#                         spawn_and_log_error(connection_writer_loop(client_receiver, stream)); // 5
 #                     }
 #                 }
 #             }
@@ -175,7 +175,7 @@ And to the broker:
 # type Sender<T> = mpsc::UnboundedSender<T>;
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #
-# async fn client_writer_loop(
+# async fn connection_writer_loop(
 #     mut messages: Receiver<String>,
 #     stream: Arc<TcpStream>,
 # ) -> Result<()> {
