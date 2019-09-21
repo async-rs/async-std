@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod enumerate;
+mod filter;
 mod filter_map;
 mod find;
 mod find_map;
@@ -33,12 +34,15 @@ mod min_by;
 mod next;
 mod nth;
 mod scan;
+mod skip;
 mod skip_while;
 mod take;
 mod zip;
 
+pub use filter::Filter;
 pub use fuse::Fuse;
 pub use scan::Scan;
+pub use skip::Skip;
 pub use skip_while::SkipWhile;
 pub use take::Take;
 pub use zip::Zip;
@@ -283,6 +287,34 @@ pub trait Stream {
             stream: self,
             done: false,
         }
+    }
+    /// Creates a stream that uses a predicate to determine if an element
+    /// should be yeilded.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    ///```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
+    /// let mut s = s.filter(|i| i % 2 == 0);
+    ///
+    /// assert_eq!(s.next().await, Some(2));
+    /// assert_eq!(s.next().await, Some(4));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    fn filter<P>(self, predicate: P) -> Filter<Self, P, Self::Item>
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool,
+    {
+        Filter::new(self, predicate)
     }
 
     /// Both filters and maps a stream.
@@ -672,6 +704,7 @@ pub trait Stream {
     /// elements in the strem are yeilded.
     ///
     /// ## Examples
+    ///
     /// ```
     /// # fn main() { async_std::task::block_on(async {
     /// #
@@ -693,6 +726,25 @@ pub trait Stream {
         P: FnMut(&Self::Item) -> bool,
     {
         SkipWhile::new(self, predicate)
+    }
+
+    /// Creates a combinator that skips the first `n` elements.
+    ///
+    /// ## Examples
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let mut skipped = s.skip(2);
+    ///
+    /// assert_eq!(skipped.next().await, Some(3));
+    /// assert_eq!(skipped.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn skip(self, n: usize) -> Skip<Self>
+    where
+        Self: Sized,
+    {
+        Skip::new(self, n)
     }
 
     /// 'Zips up' two streams into a single stream of pairs.
