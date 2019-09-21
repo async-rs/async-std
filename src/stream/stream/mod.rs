@@ -35,6 +35,7 @@ mod next;
 mod nth;
 mod scan;
 mod skip;
+mod skip_while;
 mod take;
 mod zip;
 
@@ -42,6 +43,7 @@ pub use filter::Filter;
 pub use fuse::Fuse;
 pub use scan::Scan;
 pub use skip::Skip;
+pub use skip_while::SkipWhile;
 pub use take::Take;
 pub use zip::Zip;
 
@@ -693,7 +695,13 @@ pub trait Stream {
         Scan::new(self, initial_state, f)
     }
 
-    /// Creates a combinator that skips the first `n` elements.
+    /// Combinator that `skip`s elements based on a predicate.
+    ///
+    /// Takes a closure argument. It will call this closure on every element in
+    /// the stream and ignore elements until it returns `false`.
+    ///
+    /// After `false` is returned, `SkipWhile`'s job is over and all further
+    /// elements in the strem are yeilded.
     ///
     /// ## Examples
     ///
@@ -702,6 +710,27 @@ pub trait Stream {
     /// #
     /// use std::collections::VecDeque;
     /// use async_std::stream::Stream;
+    ///
+    /// let a: VecDeque<_> = vec![-1i32, 0, 1].into_iter().collect();
+    /// let mut s = a.skip_while(|x| x.is_negative());
+    ///
+    /// assert_eq!(s.next().await, Some(0));
+    /// assert_eq!(s.next().await, Some(1));
+    /// assert_eq!(s.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn skip_while<P>(self, predicate: P) -> SkipWhile<Self, P, Self::Item>
+    where
+        Self: Sized,
+        P: FnMut(&Self::Item) -> bool,
+    {
+        SkipWhile::new(self, predicate)
+    }
+
+    /// Creates a combinator that skips the first `n` elements.
+    ///
+    /// ## Examples
     ///
     /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
     /// let mut skipped = s.skip(2);
