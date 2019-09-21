@@ -33,11 +33,13 @@ mod min_by;
 mod next;
 mod nth;
 mod scan;
+mod skip;
 mod take;
 mod zip;
 
 pub use fuse::Fuse;
 pub use scan::Scan;
+pub use skip::Skip;
 pub use take::Take;
 pub use zip::Zip;
 
@@ -659,6 +661,31 @@ pub trait Stream {
         F: FnMut(&mut St, Self::Item) -> Option<B>,
     {
         Scan::new(self, initial_state, f)
+    }
+
+    /// Creates a combinator that skips the first `n` elements.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+    /// let mut skipped = s.skip(2);
+    ///
+    /// assert_eq!(skipped.next().await, Some(3));
+    /// assert_eq!(skipped.next().await, None);
+    /// #
+    /// # }) }
+    /// ```
+    fn skip(self, n: usize) -> Skip<Self>
+    where
+        Self: Sized,
+    {
+        Skip::new(self, n)
     }
 
     /// 'Zips up' two streams into a single stream of pairs.
