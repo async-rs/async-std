@@ -37,6 +37,7 @@ mod nth;
 mod scan;
 mod skip;
 mod skip_while;
+mod step_by;
 mod take;
 mod zip;
 
@@ -46,6 +47,7 @@ pub use inspect::Inspect;
 pub use scan::Scan;
 pub use skip::Skip;
 pub use skip_while::SkipWhile;
+pub use step_by::StepBy;
 pub use take::Take;
 pub use zip::Zip;
 
@@ -230,6 +232,40 @@ pub trait Stream {
             stream: self,
             remaining: n,
         }
+    }
+
+    /// Creates a stream that yields each `step`th element.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the given step is `0`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let s: VecDeque<_> = vec![0u8, 1, 2, 3, 4].into_iter().collect();
+    /// let mut stepped = s.step_by(2);
+    ///
+    /// assert_eq!(stepped.next().await, Some(0));
+    /// assert_eq!(stepped.next().await, Some(2));
+    /// assert_eq!(stepped.next().await, Some(4));
+    /// assert_eq!(stepped.next().await, None);
+    ///
+    /// #
+    /// # }) }
+    /// ```
+    fn step_by(self, step: usize) -> StepBy<Self>
+    where
+        Self: Sized,
+    {
+        StepBy::new(self, step)
     }
 
     /// Creates a stream that gives the current element's count as well as the next value.
