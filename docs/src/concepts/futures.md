@@ -112,8 +112,7 @@ While the `Future` trait has existed in Rust for a while, it was inconvenient to
 
 ```rust,edition2018
 # extern crate async_std;
-# use async_std::{fs::File, io::Read};
-# use std::io;
+# use async_std::{fs::File, io, prelude::*};
 #
 async fn read_file(path: &str) -> Result<String, io::Error> {
     let mut file = File::open(path).await?;
