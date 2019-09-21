@@ -39,7 +39,7 @@ mod zip;
 
 pub use fuse::Fuse;
 pub use scan::Scan;
-use skip::Skip;
+pub use skip::Skip;
 pub use take::Take;
 pub use zip::Zip;
 
