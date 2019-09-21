@@ -37,6 +37,7 @@ mod scan;
 mod take;
 mod zip;
 
+pub use filter::Filter;
 pub use fuse::Fuse;
 pub use scan::Scan;
 pub use take::Take;
@@ -45,7 +46,6 @@ pub use zip::Zip;
 use all::AllFuture;
 use any::AnyFuture;
 use enumerate::Enumerate;
-use filter::Filter;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;

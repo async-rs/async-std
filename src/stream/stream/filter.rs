@@ -4,8 +4,8 @@ use std::pin::Pin;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
+/// A stream to filter elements of another stream with a predicate.
+#[derive(Debug)]
 pub struct Filter<S, P, T> {
     stream: S,
     predicate: P,
