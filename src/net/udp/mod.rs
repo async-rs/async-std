@@ -4,9 +4,14 @@ use std::net::SocketAddr;
 use cfg_if::cfg_if;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use crate::future;
-use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        use crate::future;
+        use crate::net::driver::Watcher;
+    }
+}
 
 /// A UDP socket.
 ///
@@ -46,7 +51,19 @@ use crate::net::ToSocketAddrs;
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
-    watcher: Watcher<mio::net::UdpSocket>,
+    inner: Inner,
+}
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        #[derive(Debug)]
+        struct Inner {
+            watcher: Watcher<mio::net::UdpSocket>
+        }
+    } else {
+        #[derive(Debug)]
+        struct Inner;
+    }
 }
 
 impl UdpSocket {
@@ -69,25 +86,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
-        let mut last_err = None;
-
-        for addr in addr.to_socket_addrs().await? {
-            match mio::net::UdpSocket::bind(&addr) {
-                Ok(mio_socket) => {
-                    return Ok(UdpSocket {
-                        watcher: Watcher::new(mio_socket),
-                    });
-                }
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not resolve to any addresses",
-            )
-        }))
+        bind(addr).await
     }
 
     /// Returns the local address that this listener is bound to.
@@ -108,7 +107,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.watcher.get_ref().local_addr()
+        local_addr(self)
     }
 
     /// Sends data on the socket to the given address.
@@ -138,21 +137,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn send_to<A: ToSocketAddrs>(&self, buf: &[u8], addrs: A) -> io::Result<usize> {
-        let addr = match addrs.to_socket_addrs().await?.next() {
-            Some(addr) => addr,
-            None => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "no addresses to send data to",
-                ));
-            }
-        };
-
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
-        })
-        .await
+        send_to(self, buf, addrs).await
     }
 
     /// Receives data from the socket.
@@ -175,11 +160,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_read_with(cx, |inner| inner.recv_from(buf))
-        })
-        .await
+        recv_from(self, buf).await
     }
 
     /// Connects the UDP socket to a remote address.
@@ -205,22 +186,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn connect<A: ToSocketAddrs>(&self, addrs: A) -> io::Result<()> {
-        let mut last_err = None;
-
-        for addr in addrs.to_socket_addrs().await? {
-            // TODO(stjepang): connect on the blocking pool
-            match self.watcher.get_ref().connect(addr) {
-                Ok(()) => return Ok(()),
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not resolve to any addresses",
-            )
-        }))
+        connect(self, addrs).await
     }
 
     /// Sends data on the socket to the given address.
@@ -250,7 +216,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_write_with(cx, |inner| inner.send(buf))).await
+        send(self, buf).await
     }
 
     /// Receives data from the socket.
@@ -273,7 +239,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.recv(buf))).await
+        recv(self, buf).await
     }
 
     /// Gets the value of the `SO_BROADCAST` option for this socket.
@@ -282,14 +248,14 @@ impl UdpSocket {
     ///
     /// [`set_broadcast`]: #method.set_broadcast
     pub fn broadcast(&self) -> io::Result<bool> {
-        self.watcher.get_ref().broadcast()
+        broadcast(self)
     }
 
     /// Sets the value of the `SO_BROADCAST` option for this socket.
     ///
     /// When enabled, this socket is allowed to send packets to a broadcast address.
     pub fn set_broadcast(&self, on: bool) -> io::Result<()> {
-        self.watcher.get_ref().set_broadcast(on)
+        set_broadcast(self, on)
     }
 
     /// Gets the value of the `IP_MULTICAST_LOOP` option for this socket.
@@ -298,7 +264,7 @@ impl UdpSocket {
     ///
     /// [`set_multicast_loop_v4`]: #method.set_multicast_loop_v4
     pub fn multicast_loop_v4(&self) -> io::Result<bool> {
-        self.watcher.get_ref().multicast_loop_v4()
+        multicast_loop_v4(self)
     }
 
     /// Sets the value of the `IP_MULTICAST_LOOP` option for this socket.
@@ -309,7 +275,7 @@ impl UdpSocket {
     ///
     /// This may not have any affect on IPv6 sockets.
     pub fn set_multicast_loop_v4(&self, on: bool) -> io::Result<()> {
-        self.watcher.get_ref().set_multicast_loop_v4(on)
+        set_multicast_loop_v4(self, on)
     }
 
     /// Gets the value of the `IP_MULTICAST_TTL` option for this socket.
@@ -318,7 +284,7 @@ impl UdpSocket {
     ///
     /// [`set_multicast_ttl_v4`]: #method.set_multicast_ttl_v4
     pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
-        self.watcher.get_ref().multicast_ttl_v4()
+        multicast_ttl_v4(self)
     }
 
     /// Sets the value of the `IP_MULTICAST_TTL` option for this socket.
@@ -331,7 +297,7 @@ impl UdpSocket {
     ///
     /// This may not have any affect on IPv6 sockets.
     pub fn set_multicast_ttl_v4(&self, ttl: u32) -> io::Result<()> {
-        self.watcher.get_ref().set_multicast_ttl_v4(ttl)
+        set_multicast_ttl_v4(self, ttl)
     }
 
     /// Gets the value of the `IPV6_MULTICAST_LOOP` option for this socket.
@@ -340,7 +306,7 @@ impl UdpSocket {
     ///
     /// [`set_multicast_loop_v6`]: #method.set_multicast_loop_v6
     pub fn multicast_loop_v6(&self) -> io::Result<bool> {
-        self.watcher.get_ref().multicast_loop_v6()
+        multicast_loop_v6(self)
     }
 
     /// Sets the value of the `IPV6_MULTICAST_LOOP` option for this socket.
@@ -351,7 +317,7 @@ impl UdpSocket {
     ///
     /// This may not have any affect on IPv4 sockets.
     pub fn set_multicast_loop_v6(&self, on: bool) -> io::Result<()> {
-        self.watcher.get_ref().set_multicast_loop_v6(on)
+        set_multicast_loop_v6(self, on)
     }
 
     /// Gets the value of the `IP_TTL` option for this socket.
@@ -360,7 +326,7 @@ impl UdpSocket {
     ///
     /// [`set_ttl`]: #method.set_ttl
     pub fn ttl(&self) -> io::Result<u32> {
-        self.watcher.get_ref().ttl()
+        ttl(self)
     }
 
     /// Sets the value for the `IP_TTL` option on this socket.
@@ -368,7 +334,7 @@ impl UdpSocket {
     /// This value sets the time-to-live field that is used in every packet sent
     /// from this socket.
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.watcher.get_ref().set_ttl(ttl)
+        set_ttl(self, ttl)
     }
 
     /// Executes an operation of the `IP_ADD_MEMBERSHIP` type.
@@ -396,9 +362,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        self.watcher
-            .get_ref()
-            .join_multicast_v4(multiaddr, interface)
+        join_multicast_v4(self, multiaddr, interface)
     }
 
     /// Executes an operation of the `IPV6_ADD_MEMBERSHIP` type.
@@ -425,9 +389,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub fn join_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        self.watcher
-            .get_ref()
-            .join_multicast_v6(multiaddr, interface)
+        join_multicast_v6(self, multiaddr, interface)
     }
 
     /// Executes an operation of the `IP_DROP_MEMBERSHIP` type.
@@ -436,9 +398,7 @@ impl UdpSocket {
     ///
     /// [`join_multicast_v4`]: #method.join_multicast_v4
     pub fn leave_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        self.watcher
-            .get_ref()
-            .leave_multicast_v4(multiaddr, interface)
+        leave_multicast_v4(self, multiaddr, interface)
     }
 
     /// Executes an operation of the `IPV6_DROP_MEMBERSHIP` type.
@@ -447,18 +407,264 @@ impl UdpSocket {
     ///
     /// [`join_multicast_v6`]: #method.join_multicast_v6
     pub fn leave_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        self.watcher
-            .get_ref()
-            .leave_multicast_v6(multiaddr, interface)
+        leave_multicast_v6(self, multiaddr, interface)
     }
 }
 
 impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
     fn from(socket: std::net::UdpSocket) -> UdpSocket {
-        let mio_socket = mio::net::UdpSocket::from_socket(socket).unwrap();
-        UdpSocket {
-            watcher: Watcher::new(mio_socket),
+        from(socket)
+    }
+}
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
+            let mut last_err = None;
+
+            for addr in addr.to_socket_addrs().await? {
+                match mio::net::UdpSocket::bind(&addr) {
+                    Ok(mio_socket) => {
+                        return Ok(UdpSocket {
+                            inner: Inner {
+                                watcher: Watcher::new(mio_socket),
+                            },
+                        });
+                    }
+                    Err(err) => last_err = Some(err),
+                }
+            }
+
+            Err(last_err.unwrap_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "could not resolve to any addresses",
+                )
+            }))
+        }
+
+        fn local_addr(socket: &UdpSocket) -> io::Result<SocketAddr> {
+            socket.inner.watcher.get_ref().local_addr()
+        }
+
+        async fn send_to<A: ToSocketAddrs>(socket: &UdpSocket, buf: &[u8], addrs: A) -> io::Result<usize> {
+            let addr = match addrs.to_socket_addrs().await?.next() {
+                Some(addr) => addr,
+                None => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "no addresses to send data to",
+                    ));
+                }
+            };
+
+            future::poll_fn(|cx| {
+                socket.inner.watcher
+                    .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
+            })
+            .await
+        }
+
+        async fn recv_from(socket: &UdpSocket, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+            future::poll_fn(|cx| {
+                socket.inner.watcher
+                    .poll_read_with(cx, |inner| inner.recv_from(buf))
+            })
+            .await
+        }
+
+        async fn connect<A: ToSocketAddrs>(socket: &UdpSocket, addrs: A) -> io::Result<()> {
+            let mut last_err = None;
+
+            for addr in addrs.to_socket_addrs().await? {
+                // TODO(stjepang): connect on the blocking pool
+                match socket.inner.watcher.get_ref().connect(addr) {
+                    Ok(()) => return Ok(()),
+                    Err(err) => last_err = Some(err),
+                }
+            }
+
+            Err(last_err.unwrap_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "could not resolve to any addresses",
+                )
+            }))
+        }
+
+        async fn send(socket: &UdpSocket, buf: &[u8]) -> io::Result<usize> {
+            future::poll_fn(|cx| socket.inner.watcher.poll_write_with(cx, |inner| inner.send(buf))).await
+        }
+
+        async fn recv(socket: &UdpSocket, buf: &mut [u8]) -> io::Result<usize> {
+            future::poll_fn(|cx| socket.inner.watcher.poll_read_with(cx, |inner| inner.recv(buf))).await
+        }
+
+        fn broadcast(socket: &UdpSocket) -> io::Result<bool> {
+            socket.inner.watcher.get_ref().broadcast()
+        }
+
+        fn set_broadcast(socket: &UdpSocket, on: bool) -> io::Result<()> {
+            socket.inner.watcher.get_ref().set_broadcast(on)
+        }
+
+        fn multicast_loop_v4(socket: &UdpSocket) -> io::Result<bool> {
+            socket.inner.watcher.get_ref().multicast_loop_v4()
+        }
+
+        fn set_multicast_loop_v4(socket: &UdpSocket, on: bool) -> io::Result<()> {
+            socket.inner.watcher.get_ref().set_multicast_loop_v4(on)
+        }
+
+        fn multicast_ttl_v4(socket: &UdpSocket) -> io::Result<u32> {
+            socket.inner.watcher.get_ref().multicast_ttl_v4()
+        }
+
+        fn set_multicast_ttl_v4(socket: &UdpSocket, ttl: u32) -> io::Result<()> {
+            socket.inner.watcher.get_ref().set_multicast_ttl_v4(ttl)
+        }
+
+        fn multicast_loop_v6(socket: &UdpSocket) -> io::Result<bool> {
+            socket.inner.watcher.get_ref().multicast_loop_v6()
+        }
+
+        fn set_multicast_loop_v6(socket: &UdpSocket, on: bool) -> io::Result<()> {
+            socket.inner.watcher.get_ref().set_multicast_loop_v6(on)
+        }
+
+        fn ttl(socket: &UdpSocket) -> io::Result<u32> {
+            socket.inner.watcher.get_ref().ttl()
+        }
+
+        fn set_ttl(socket: &UdpSocket, ttl: u32) -> io::Result<()> {
+            socket.inner.watcher.get_ref().set_ttl(ttl)
+        }
+
+        fn join_multicast_v4(socket: &UdpSocket, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+            socket.inner.watcher
+                .get_ref()
+                .join_multicast_v4(multiaddr, interface)
+        }
+
+        fn join_multicast_v6(socket: &UdpSocket, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
+            socket.inner.watcher
+                .get_ref()
+                .join_multicast_v6(multiaddr, interface)
+        }
+
+        fn leave_multicast_v4(socket: &UdpSocket, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+            socket.inner.watcher
+                .get_ref()
+                .leave_multicast_v4(multiaddr, interface)
+        }
+
+        fn leave_multicast_v6(socket: &UdpSocket, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
+            socket.inner.watcher
+                .get_ref()
+                .leave_multicast_v6(multiaddr, interface)
+        }
+
+        fn from(socket: std::net::UdpSocket) -> UdpSocket {
+            let mio_socket = mio::net::UdpSocket::from_socket(socket).unwrap();
+            UdpSocket {
+                inner: Inner {
+                    watcher: Watcher::new(mio_socket),
+                },
+            }
+        }
+
+    } else {
+        async fn bind<A: ToSocketAddrs>(_: A) -> io::Result<UdpSocket> {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "UDP sockets unsupported on this platform",
+            ))
+        }
+
+        fn local_addr(_: &UdpSocket) -> io::Result<SocketAddr> {
+            unreachable!()
+        }
+
+        async fn send_to<A: ToSocketAddrs>(_: &UdpSocket, _: &[u8], _: A) -> io::Result<usize> {
+            unreachable!()
+        }
+
+        async fn recv_from(_: &UdpSocket, _: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+            unreachable!()
+        }
+
+        async fn connect<A: ToSocketAddrs>(_: &UdpSocket, _: A) -> io::Result<()> {
+            unreachable!()
+        }
+
+        async fn send(_: &UdpSocket, _: &[u8]) -> io::Result<usize> {
+            unreachable!()
+        }
+
+        async fn recv(_: &UdpSocket, _: &mut [u8]) -> io::Result<usize> {
+            unreachable!()
+        }
+
+        fn broadcast(_: &UdpSocket) -> io::Result<bool> {
+            unreachable!()
+        }
+
+        fn set_broadcast(_: &UdpSocket, _: bool) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn multicast_loop_v4(_: &UdpSocket) -> io::Result<bool> {
+            unreachable!()
+        }
+
+        fn set_multicast_loop_v4(_: &UdpSocket, _: bool) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn multicast_ttl_v4(_: &UdpSocket) -> io::Result<u32> {
+            unreachable!()
+        }
+
+        fn set_multicast_ttl_v4(_: &UdpSocket, _: u32) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn multicast_loop_v6(_: &UdpSocket) -> io::Result<bool> {
+            unreachable!()
+        }
+
+        fn set_multicast_loop_v6(_: &UdpSocket, _: bool) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn ttl(_: &UdpSocket) -> io::Result<u32> {
+            unreachable!()
+        }
+
+        fn set_ttl(_: &UdpSocket, _: u32) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn join_multicast_v4(_: &UdpSocket, _: &Ipv4Addr, _: &Ipv4Addr) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn join_multicast_v6(_: &UdpSocket, _: &Ipv6Addr, _: u32) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn leave_multicast_v4(_: &UdpSocket, _: &Ipv4Addr, _: &Ipv4Addr) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn leave_multicast_v6(_: &UdpSocket, _: &Ipv6Addr, _: u32) -> io::Result<()> {
+            unreachable!()
+        }
+
+        fn from(_: std::net::UdpSocket) -> UdpSocket {
+            // We can never successfully build a `std::net::UdpSocket` on an unknown OS.
+            unreachable!()
         }
     }
 }
@@ -479,7 +685,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for UdpSocket {
             fn as_raw_fd(&self) -> RawFd {
-                self.watcher.get_ref().as_raw_fd()
+                self.inner.watcher.get_ref().as_raw_fd()
             }
         }
 
@@ -491,7 +697,7 @@ cfg_if! {
 
         impl IntoRawFd for UdpSocket {
             fn into_raw_fd(self) -> RawFd {
-                self.watcher.into_inner().into_raw_fd()
+                self.inner.watcher.into_inner().into_raw_fd()
             }
         }
     }

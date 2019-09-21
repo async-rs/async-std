@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "unknown"))]
+
 use std::fmt;
 use std::sync::{Arc, Mutex};
 

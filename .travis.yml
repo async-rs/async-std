@@ -32,6 +32,14 @@ matrix:
     - rust: nightly-x86_64-pc-windows-msvc
       os: windows
 
+    - name: docs
+      rust: nightly
+      os: linux
+      before_script: |
+        rustup target add wasm32-unknown-unknown
+      script:
+        - cargo check --target wasm32-unknown-unknown --features unstable --all --benches --bins --examples --tests
+
     - name: fmt
       rust: nightly
       os: linux

@@ -7,10 +7,15 @@ use futures_io::{AsyncRead, AsyncWrite};
 
 use crate::future;
 use crate::io;
-use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
 use crate::task::blocking;
 use crate::task::{Context, Poll};
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        use crate::net::driver::Watcher;
+    }
+}
 
 /// A TCP stream between a local and a remote socket.
 ///

@@ -6,9 +6,14 @@ use cfg_if::cfg_if;
 use super::TcpStream;
 use crate::future::{self, Future};
 use crate::io;
-use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        use crate::net::driver::Watcher;
+    }
+}
 
 /// A TCP socket server, listening for connections.
 ///
