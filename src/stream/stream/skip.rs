@@ -3,8 +3,8 @@ use std::task::{Context, Poll};
 
 use crate::stream::Stream;
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
+/// A stream to skip first n elements of another stream.
+#[derive(Debug)]
 pub struct Skip<S> {
     stream: S,
     n: usize,

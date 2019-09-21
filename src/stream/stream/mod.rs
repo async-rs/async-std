@@ -39,6 +39,7 @@ mod zip;
 
 pub use fuse::Fuse;
 pub use scan::Scan;
+use skip::Skip;
 pub use take::Take;
 pub use zip::Zip;
 
@@ -52,7 +53,6 @@ use fold::FoldFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
-use skip::Skip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
