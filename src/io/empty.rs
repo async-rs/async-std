@@ -1,9 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures_io::{AsyncBufRead, AsyncRead, Initializer};
-
-use crate::io;
+use crate::io::{self, BufRead, Read};
 use crate::task::{Context, Poll};
 
 /// Creates a reader that contains no data.
@@ -43,7 +41,7 @@ impl fmt::Debug for Empty {
     }
 }
 
-impl AsyncRead for Empty {
+impl Read for Empty {
     #[inline]
     fn poll_read(
         self: Pin<&mut Self>,
@@ -52,14 +50,9 @@ impl AsyncRead for Empty {
     ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
-    }
 }
 
-impl AsyncBufRead for Empty {
+impl BufRead for Empty {
     #[inline]
     fn poll_fill_buf<'a>(
         self: Pin<&'a mut Self>,

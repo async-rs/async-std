@@ -5,7 +5,7 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// An iterator that iterates two other iterators simultaneously.
-pub struct Zip<A: Stream, B> {
+pub struct Zip<A: crate::stream::stream::Stream, B> {
     item_slot: Option<A::Item>,
     first: A,
     second: B,
@@ -22,7 +22,7 @@ impl<A: fmt::Debug + Stream, B: fmt::Debug> fmt::Debug for Zip<A, B> {
 
 impl<A: Unpin + Stream, B: Unpin> Unpin for Zip<A, B> {}
 
-impl<A: Stream, B> Zip<A, B> {
+impl<A: crate::stream::stream::Stream, B> Zip<A, B> {
     pub(crate) fn new(first: A, second: B) -> Self {
         Zip {
             item_slot: None,

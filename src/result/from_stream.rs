@@ -1,8 +1,9 @@
-use crate::stream::{FromStream, IntoStream, Stream};
-
 use std::pin::Pin;
 
-impl<T: Send, E: Send, V> FromStream<Result<T, E>> for Result<V, E>
+use crate::prelude::*;
+use crate::stream::{FromStream, IntoStream};
+
+impl<T, E, V> FromStream<Result<T, E>> for Result<V, E>
 where
     V: FromStream<T>,
 {
@@ -12,9 +13,9 @@ where
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = Result<T, E>>>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + Send + 'a>>
+    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
-        <S as IntoStream>::IntoStream: Send + 'a,
+        <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
 

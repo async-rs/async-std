@@ -28,7 +28,12 @@
 //!
 //! # Features
 //!
-//! Unstable APIs in this crate are available when the `unstable` Cargo feature is enabled:
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>unstable</code></span>
+//! are available only when the `unstable` Cargo feature is enabled:
 //!
 //! ```toml
 //! [dependencies.async-std]
@@ -58,6 +63,7 @@ cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
+
         mod vec;
         mod result;
     }

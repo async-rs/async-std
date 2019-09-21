@@ -2,11 +2,9 @@ use std::mem;
 use std::pin::Pin;
 use std::str;
 
-use futures_io::AsyncBufRead;
-
 use super::read_until_internal;
 use crate::future::Future;
-use crate::io;
+use crate::io::{self, BufRead};
 use crate::task::{Context, Poll};
 
 #[doc(hidden)]
@@ -18,7 +16,7 @@ pub struct ReadLineFuture<'a, T: Unpin + ?Sized> {
     pub(crate) read: usize,
 }
 
-impl<T: AsyncBufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
+impl<T: BufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
     type Output = io::Result<usize>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {

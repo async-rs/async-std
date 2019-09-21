@@ -25,3 +25,14 @@ pub use crate::io::Write as _;
 pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::task_local;
+
+#[doc(hidden)]
+pub use crate::io::BufReadExt as _;
+#[doc(hidden)]
+pub use crate::io::ReadExt as _;
+#[doc(hidden)]
+pub use crate::io::SeekExt as _;
+#[doc(hidden)]
+pub use crate::io::WriteExt as _;
+#[doc(hidden)]
+pub use crate::stream::stream::Stream as _;

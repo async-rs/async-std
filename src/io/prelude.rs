@@ -9,10 +9,19 @@
 //! ```
 
 #[doc(no_inline)]
-pub use super::BufRead;
+pub use crate::io::BufRead;
 #[doc(no_inline)]
-pub use super::Read;
+pub use crate::io::Read;
 #[doc(no_inline)]
-pub use super::Seek;
+pub use crate::io::Seek;
 #[doc(no_inline)]
-pub use super::Write;
+pub use crate::io::Write;
+
+#[doc(hidden)]
+pub use crate::io::BufReadExt as _;
+#[doc(hidden)]
+pub use crate::io::ReadExt as _;
+#[doc(hidden)]
+pub use crate::io::SeekExt as _;
+#[doc(hidden)]
+pub use crate::io::WriteExt as _;

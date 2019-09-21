@@ -1,9 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures_io::AsyncWrite;
-
-use crate::io;
+use crate::io::{self, Write};
 use crate::task::{Context, Poll};
 
 /// Creates a writer that consumes and drops all data.
@@ -40,7 +38,7 @@ impl fmt::Debug for Sink {
     }
 }
 
-impl AsyncWrite for Sink {
+impl Write for Sink {
     #[inline]
     fn poll_write(
         self: Pin<&mut Self>,

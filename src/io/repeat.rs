@@ -1,9 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures_io::{AsyncRead, Initializer};
-
-use crate::io;
+use crate::io::{self, Read};
 use crate::task::{Context, Poll};
 
 /// Creates an instance of a reader that infinitely repeats one byte.
@@ -44,7 +42,7 @@ impl fmt::Debug for Repeat {
     }
 }
 
-impl AsyncRead for Repeat {
+impl Read for Repeat {
     #[inline]
     fn poll_read(
         self: Pin<&mut Self>,
@@ -55,10 +53,5 @@ impl AsyncRead for Repeat {
             *b = self.byte;
         }
         Poll::Ready(Ok(buf.len()))
-    }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
     }
 }
