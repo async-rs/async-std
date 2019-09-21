@@ -30,6 +30,7 @@ mod find;
 mod find_map;
 mod fold;
 mod fuse;
+mod inspect;
 mod min_by;
 mod next;
 mod nth;
@@ -41,6 +42,7 @@ mod zip;
 
 pub use filter::Filter;
 pub use fuse::Fuse;
+pub use inspect::Inspect;
 pub use scan::Scan;
 pub use skip::Skip;
 pub use skip_while::SkipWhile;
@@ -258,6 +260,37 @@ pub trait Stream {
         Self: Sized,
     {
         Enumerate::new(self)
+    }
+
+    /// A combinator that does something with each element in the stream, passing the value on.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let a: VecDeque<_> = vec![1u8, 2, 3, 4, 5].into_iter().collect();
+    /// let sum = a
+    ///         .inspect(|x| println!("about to filter {}", x))
+    ///         .filter(|x| x % 2 == 0)
+    ///         .inspect(|x| println!("made it through filter: {}", x))
+    ///         .fold(0, |sum, i| sum + i).await;
+    ///
+    /// assert_eq!(sum, 6);
+    /// #
+    /// # }) }
+    /// ```
+    fn inspect<F>(self, f: F) -> Inspect<Self, F, Self::Item>
+    where
+        Self: Sized,
+        F: FnMut(&Self::Item),
+    {
+        Inspect::new(self, f)
     }
 
     /// Transforms this `Stream` into a "fused" `Stream` such that after the first time `poll`
