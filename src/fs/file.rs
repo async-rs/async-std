@@ -12,7 +12,7 @@ use cfg_if::cfg_if;
 
 use crate::fs::{Metadata, Permissions};
 use crate::future;
-use crate::io::{self, Seek, SeekFrom, Read, Write};
+use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::prelude::*;
 use crate::task::{self, blocking, Context, Poll, Waker};
 

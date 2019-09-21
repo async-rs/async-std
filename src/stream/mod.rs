@@ -26,20 +26,12 @@ use cfg_if::cfg_if;
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Fuse, Scan, Take, Zip};
+pub use stream::{Fuse, Scan, Stream, Take, Zip};
 
 mod empty;
 mod once;
 mod repeat;
-pub(crate) mod stream;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        pub use stream::Stream;
-    } else {
-        pub use futures_core::stream::Stream;
-    }
-}
+mod stream;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {

@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
-use crate::io::{self, Read, IoSliceMut};
 use crate::future::Future;
+use crate::io::{self, IoSliceMut, Read};
 use crate::task::{Context, Poll};
 
 #[doc(hidden)]

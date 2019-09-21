@@ -1,8 +1,8 @@
 use std::pin::Pin;
 
 use crate::future::Future;
+use crate::io::{self, IoSlice, Write};
 use crate::task::{Context, Poll};
-use crate::io::{self, Write, IoSlice};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]

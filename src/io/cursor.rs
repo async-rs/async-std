@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use crate::io::{self, IoSlice, IoSliceMut, Seek, SeekFrom, BufRead, Read, Write};
+use crate::io::{self, BufRead, IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
 use crate::task::{Context, Poll};
 
 /// A `Cursor` wraps an in-memory buffer and provides it with a

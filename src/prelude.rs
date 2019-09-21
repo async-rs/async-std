@@ -21,7 +21,7 @@ pub use crate::io::Read as _;
 pub use crate::io::Seek as _;
 #[doc(no_inline)]
 pub use crate::io::Write as _;
-#[doc(no_inline)]
+#[doc(hidden)]
 pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::task_local;
@@ -34,5 +34,3 @@ pub use crate::io::ReadExt as _;
 pub use crate::io::SeekExt as _;
 #[doc(hidden)]
 pub use crate::io::WriteExt as _;
-#[doc(hidden)]
-pub use crate::stream::stream::Stream as _;

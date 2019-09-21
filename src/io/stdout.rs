@@ -4,8 +4,8 @@ use std::sync::Mutex;
 use cfg_if::cfg_if;
 
 use crate::future::Future;
-use crate::task::{blocking, Context, Poll};
 use crate::io::{self, Write};
+use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard output of the current process.
 ///

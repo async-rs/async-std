@@ -3,8 +3,8 @@ use std::sync::Mutex;
 
 use cfg_if::cfg_if;
 
-use crate::io::{self, Read};
 use crate::future::{self, Future};
+use crate::io::{self, Read};
 use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard input of the current process.

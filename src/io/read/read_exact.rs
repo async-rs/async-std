@@ -2,8 +2,8 @@ use std::mem;
 use std::pin::Pin;
 
 use crate::future::Future;
-use crate::task::{Context, Poll};
 use crate::io::{self, Read};
+use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
