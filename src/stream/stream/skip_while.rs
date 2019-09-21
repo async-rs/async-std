@@ -4,8 +4,8 @@ use std::pin::Pin;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
+/// A stream to skip elements of another stream based on a predicate.
+#[derive(Debug)]
 pub struct SkipWhile<S, P, T> {
     stream: S,
     predicate: Option<P>,
