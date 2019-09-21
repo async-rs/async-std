@@ -32,7 +32,7 @@ matrix:
     - rust: nightly-x86_64-pc-windows-msvc
       os: windows
 
-    - name: docs
+    - name: wasm
       rust: nightly
       os: linux
       before_script: |
