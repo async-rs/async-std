@@ -204,7 +204,7 @@ impl<T: Evented> Watcher<T> {
     {
         // If the operation isn't blocked, return its result.
         match f(self.source.as_ref().unwrap()) {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
             res => return Poll::Ready(res),
         }
 
@@ -213,7 +213,7 @@ impl<T: Evented> Watcher<T> {
 
         // Try running the operation again.
         match f(self.source.as_ref().unwrap()) {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
             res => return Poll::Ready(res),
         }
 
@@ -239,7 +239,7 @@ impl<T: Evented> Watcher<T> {
     {
         // If the operation isn't blocked, return its result.
         match f(self.source.as_ref().unwrap()) {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
             res => return Poll::Ready(res),
         }
 
@@ -248,7 +248,7 @@ impl<T: Evented> Watcher<T> {
 
         // Try running the operation again.
         match f(self.source.as_ref().unwrap()) {
-            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
             res => return Poll::Ready(res),
         }
 
