@@ -51,9 +51,9 @@ Remember the talk about "deferred computation" in the intro? That's all it is. I
 Let's have a look at a simple function, specifically the return value:
 
 ```rust,edition2018
-# use std::{fs::File, io::{self, Read}};
+# use std::{fs::File, io, io::prelude::*};
 #
-fn read_file(path: &str) -> Result<String, io::Error> {
+fn read_file(path: &str) -> io::Result<String> {
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -69,7 +69,7 @@ But we wanted to abstract over *computation* and let someone else choose how to 
 ```rust,edition2018
 # use std::{fs::File, io::{self, Read}};
 #
-fn read_file(path: &str) -> Result<String, io::Error> {
+fn read_file(path: &str) -> io::Result<String> {
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -112,9 +112,9 @@ While the `Future` trait has existed in Rust for a while, it was inconvenient to
 
 ```rust,edition2018
 # extern crate async_std;
-# use async_std::{fs::File, io, prelude::*};
+# use async_std::{fs::File, io, io::prelude::*};
 #
-async fn read_file(path: &str) -> Result<String, io::Error> {
+async fn read_file(path: &str) -> io::Result<String> {
     let mut file = File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?;
@@ -124,7 +124,7 @@ async fn read_file(path: &str) -> Result<String, io::Error> {
 
 Amazingly little difference, right? All we did is label the function `async` and insert 2 special commands: `.await`.
 
-This `async` function sets up a deferred computation. When this function is called, it will produce a `Future<Output=Result<String, io::Error>>` instead of immediately returning a `Result<String, io::Error>`. (Or, more precisely, generate a type for you that implements `Future<Output=Result<String, io::Error>>`.)
+This `async` function sets up a deferred computation. When this function is called, it will produce a `Future<Output = io::Result<String>>` instead of immediately returning a `io::Result<String>`. (Or, more precisely, generate a type for you that implements `Future<Output = io::Result<String>>`.)
 
 ## What does `.await` do?
 

@@ -8,7 +8,7 @@ In `async-std`, the [`tasks`][tasks] module is responsible for this. The simples
 # extern crate async_std;
 use async_std::{fs::File, io, prelude::*, task};
 
-async fn read_file(path: &str) -> Result<String, io::Error> {
+async fn read_file(path: &str) -> io::Result<String> {
     let mut file = File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?;
@@ -33,9 +33,9 @@ This asks the runtime baked into `async_std` to execute the code that reads a fi
 
 ```rust,edition2018
 # extern crate async_std;
-# use async_std::{fs::File, prelude::*, task};
+# use async_std::{fs::File, io, prelude::*, task};
 #
-# async fn read_file(path: &str) -> Result<String, io::Error> {
+# async fn read_file(path: &str) -> io::Result<String> {
 #     let mut file = File::open(path).await?;
 #     let mut contents = String::new();
 #     file.read_to_string(&mut contents).await?;
