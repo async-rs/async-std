@@ -72,7 +72,7 @@ We use the `select` macro for this purpose:
 # extern crate async_std;
 # extern crate futures_channel;
 # extern crate futures_util;
-# use async_std::{io::Write, net::TcpStream};
+# use async_std::{net::TcpStream, prelude::*};
 use futures_channel::mpsc;
 use futures_util::{select, FutureExt, StreamExt};
 # use std::sync::Arc;
@@ -125,8 +125,9 @@ The final code looks like this:
 # extern crate futures_channel;
 # extern crate futures_util;
 use async_std::{
-    io::{BufReader, BufRead, Write},
+    io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
+    prelude::*,
     task,
 };
 use futures_channel::mpsc;

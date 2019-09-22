@@ -67,7 +67,7 @@ Note that this return value talks about the past. The past has a drawback: all d
 But we wanted to abstract over *computation* and let someone else choose how to run it. That's fundamentally incompatible with looking at the results of previous computation all the time. So, let's find a type that *describes* a computation without running it. Let's look at the function again:
 
 ```rust,edition2018
-# use std::{fs::File, io::{self, Read}};
+# use std::{fs::File, io, io::prelude::*};
 #
 fn read_file(path: &str) -> io::Result<String> {
     let mut file = File::open(path)?;

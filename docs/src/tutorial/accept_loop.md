@@ -29,7 +29,7 @@ Now we can write the server's accept loop:
 # extern crate async_std;
 # use async_std::{
 #     net::{TcpListener, ToSocketAddrs},
-#     prelude::Stream,
+#     prelude::*,
 # };
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -66,7 +66,7 @@ Finally, let's add main:
 # extern crate async_std;
 # use async_std::{
 #     net::{TcpListener, ToSocketAddrs},
-#     prelude::Stream,
+#     prelude::*,
 #     task,
 # };
 #

@@ -10,9 +10,9 @@ We need to:
 ```rust,edition2018
 # extern crate async_std;
 # use async_std::{
-#     io::{BufRead, BufReader},
+#     io::BufReader,
 #     net::{TcpListener, TcpStream, ToSocketAddrs},
-#     prelude::Stream,
+#     prelude::*,
 #     task,
 # };
 #
@@ -75,9 +75,9 @@ We can "fix" it by waiting for the task to be joined, like this:
 # #![feature(async_closure)]
 # extern crate async_std;
 # use async_std::{
-#     io::{BufRead, BufReader},
+#     io::BufReader,
 #     net::{TcpListener, TcpStream, ToSocketAddrs},
-#     prelude::Stream,
+#     prelude::*,
 #     task,
 # };
 #
@@ -125,7 +125,7 @@ So let's use a helper function for this:
 # extern crate async_std;
 # use async_std::{
 #     io,
-#     prelude::Future,
+#     prelude::*,
 #     task,
 # };
 fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>

@@ -18,8 +18,9 @@ With async, we can just use the `select!` macro.
 # extern crate async_std;
 # extern crate futures_util;
 use async_std::{
-    io::{stdin, BufRead, BufReader, Write},
+    io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
+    prelude::*,
     task,
 };
 use futures_util::{select, FutureExt, StreamExt};
