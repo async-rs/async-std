@@ -24,7 +24,7 @@ impl<S, St, F> Scan<S, St, F> {
 
 impl<S: Unpin, St, F> Unpin for Scan<S, St, F> {}
 
-impl<S, St, F, B> futures_core::stream::Stream for Scan<S, St, F>
+impl<S, St, F, B> Stream for Scan<S, St, F>
 where
     S: Stream,
     F: FnMut(&mut St, S::Item) -> Option<B>,

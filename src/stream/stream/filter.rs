@@ -25,7 +25,7 @@ impl<S, P, T> Filter<S, P, T> {
     }
 }
 
-impl<S, P> futures_core::stream::Stream for Filter<S, P, S::Item>
+impl<S, P> Stream for Filter<S, P, S::Item>
 where
     S: Stream,
     P: FnMut(&S::Item) -> bool,

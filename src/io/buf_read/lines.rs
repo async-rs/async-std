@@ -4,6 +4,7 @@ use std::str;
 
 use super::read_until_internal;
 use crate::io::{self, BufRead};
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// A stream of lines in a byte stream.
@@ -23,7 +24,7 @@ pub struct Lines<R> {
     pub(crate) read: usize,
 }
 
-impl<R: BufRead> futures_core::stream::Stream for Lines<R> {
+impl<R: BufRead> Stream for Lines<R> {
     type Item = io::Result<String>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

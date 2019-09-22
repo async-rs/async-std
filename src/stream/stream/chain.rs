@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use super::fuse::Fuse;
-use crate::stream::Stream;
+use crate::prelude::*;
 use crate::task::{Context, Poll};
 
 /// Chains two streams one after another.

@@ -1,5 +1,6 @@
 use std::pin::Pin;
 
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// Creates a stream that yields a single item.
@@ -33,7 +34,7 @@ pub struct Once<T> {
     value: Option<T>,
 }
 
-impl<T: Unpin> futures_core::stream::Stream for Once<T> {
+impl<T: Unpin> Stream for Once<T> {
     type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<T>> {

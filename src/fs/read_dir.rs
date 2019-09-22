@@ -4,6 +4,7 @@ use std::pin::Pin;
 use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
+use crate::stream::Stream;
 use crate::task::{blocking, Context, Poll};
 
 /// Returns a stream of entries in a directory.
@@ -80,7 +81,7 @@ impl ReadDir {
     }
 }
 
-impl futures_core::stream::Stream for ReadDir {
+impl Stream for ReadDir {
     type Item = io::Result<DirEntry>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
