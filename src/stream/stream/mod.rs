@@ -66,14 +66,14 @@ pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
-use std::pin::Pin;
 
 use cfg_if::cfg_if;
 
-use crate::future::Future;
-
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        use std::pin::Pin;
+
+        use crate::future::Future;
         use crate::stream::FromStream;
     }
 }
