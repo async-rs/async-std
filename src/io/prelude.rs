@@ -18,10 +18,10 @@ pub use crate::io::Seek;
 pub use crate::io::Write;
 
 #[doc(hidden)]
-pub use crate::io::BufReadExt as _;
+pub use crate::io::buf_read::BufReadExt as _;
 #[doc(hidden)]
-pub use crate::io::ReadExt as _;
+pub use crate::io::read::ReadExt as _;
 #[doc(hidden)]
-pub use crate::io::SeekExt as _;
+pub use crate::io::seek::SeekExt as _;
 #[doc(hidden)]
-pub use crate::io::WriteExt as _;
+pub use crate::io::write::WriteExt as _;
