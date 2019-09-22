@@ -23,6 +23,7 @@
 
 mod all;
 mod any;
+mod chain;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -41,6 +42,7 @@ mod step_by;
 mod take;
 mod zip;
 
+pub use chain::Chain;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -266,6 +268,39 @@ pub trait Stream {
         Self: Sized,
     {
         StepBy::new(self, step)
+    }
+
+    /// Takes two streams and creates a new stream over both in sequence.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use std::collections::VecDeque;
+    ///
+    /// let first: VecDeque<_> = vec![0u8, 1].into_iter().collect();
+    /// let second: VecDeque<_> = vec![2, 3].into_iter().collect();
+    /// let mut c = first.chain(second);
+    ///
+    /// assert_eq!(c.next().await, Some(0));
+    /// assert_eq!(c.next().await, Some(1));
+    /// assert_eq!(c.next().await, Some(2));
+    /// assert_eq!(c.next().await, Some(3));
+    /// assert_eq!(c.next().await, None);
+    ///
+    /// #
+    /// # }) }
+    /// ```
+    fn chain<U>(self, other: U) -> Chain<Self, U>
+    where
+        Self: Sized,
+        U: Stream<Item = Self::Item> + Sized,
+    {
+        Chain::new(self, other)
     }
 
     /// Creates a stream that gives the current element's count as well as the next value.
