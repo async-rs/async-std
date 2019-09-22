@@ -17,7 +17,7 @@ impl<S: Stream> Take<S> {
     pin_utils::unsafe_unpinned!(remaining: usize);
 }
 
-impl<S: Stream> futures_core::stream::Stream for Take<S> {
+impl<S: Stream> Stream for Take<S> {
     type Item = S::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {

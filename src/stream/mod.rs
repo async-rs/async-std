@@ -26,12 +26,13 @@ use cfg_if::cfg_if;
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Fuse, Scan, Stream, Take, Zip};
+pub use stream::{Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, Zip};
+
+pub(crate) mod stream;
 
 mod empty;
 mod once;
 mod repeat;
-mod stream;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {

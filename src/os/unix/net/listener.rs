@@ -12,6 +12,7 @@ use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::stream::Stream;
 use crate::task::{blocking, Context, Poll};
 
 /// A Unix domain socket server, listening for connections.
@@ -185,7 +186,7 @@ impl fmt::Debug for UnixListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a UnixListener);
 
-impl futures_core::stream::Stream for Incoming<'_> {
+impl Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

@@ -27,7 +27,7 @@ impl<S, F, T, B> FilterMap<S, F, T, B> {
     }
 }
 
-impl<S, F, B> futures_core::stream::Stream for FilterMap<S, F, S::Item, B>
+impl<S, F, B> Stream for FilterMap<S, F, S::Item, B>
 where
     S: Stream,
     F: FnMut(S::Item) -> Option<B>,
