@@ -1,11 +1,10 @@
-use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures_io::AsyncWrite;
 
 use crate::future::Future;
+use crate::io::{self, Write};
 use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard error of the current process.
@@ -29,7 +28,7 @@ use crate::task::{blocking, Context, Poll};
 /// ```
 pub fn stderr() -> Stderr {
     Stderr(Mutex::new(State::Idle(Some(Inner {
-        stderr: io::stderr(),
+        stderr: std::io::stderr(),
         buf: Vec::new(),
         last_op: None,
     }))))
@@ -64,7 +63,7 @@ enum State {
 #[derive(Debug)]
 struct Inner {
     /// The blocking stderr handle.
-    stderr: io::Stderr,
+    stderr: std::io::Stderr,
 
     /// The write buffer.
     buf: Vec<u8>,
@@ -80,7 +79,7 @@ enum Operation {
     Flush(io::Result<()>),
 }
 
-impl AsyncWrite for Stderr {
+impl Write for Stderr {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -118,7 +117,7 @@ impl AsyncWrite for Stderr {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::write(&mut inner.stderr, &mut inner.buf);
+                            let res = std::io::Write::write(&mut inner.stderr, &mut inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));
@@ -146,7 +145,7 @@ impl AsyncWrite for Stderr {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::flush(&mut inner.stderr);
+                            let res = std::io::Write::flush(&mut inner.stderr);
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))
                         }));
@@ -179,7 +178,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stderr {
             fn as_raw_fd(&self) -> RawFd {
-                io::stderr().as_raw_fd()
+                std::io::stderr().as_raw_fd()
             }
         }
     }
@@ -190,7 +189,7 @@ cfg_if! {
     if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stderr {
             fn as_raw_handle(&self) -> RawHandle {
-                io::stderr().as_raw_handle()
+                std::io::stderr().as_raw_handle()
             }
         }
     }

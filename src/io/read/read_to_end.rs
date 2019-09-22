@@ -1,10 +1,8 @@
-use crate::future::Future;
-use crate::task::{Context, Poll};
-
-use std::io;
 use std::pin::Pin;
 
-use futures_io::AsyncRead;
+use crate::future::Future;
+use crate::io::{self, Read};
+use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
@@ -14,7 +12,7 @@ pub struct ReadToEndFuture<'a, T: Unpin + ?Sized> {
     pub(crate) start_len: usize,
 }
 
-impl<T: AsyncRead + Unpin + ?Sized> Future for ReadToEndFuture<'_, T> {
+impl<T: Read + Unpin + ?Sized> Future for ReadToEndFuture<'_, T> {
     type Output = io::Result<usize>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -36,7 +34,7 @@ impl<T: AsyncRead + Unpin + ?Sized> Future for ReadToEndFuture<'_, T> {
 //
 // Because we're extending the buffer with uninitialized data for trusted
 // readers, we need to make sure to truncate that if any of this panics.
-pub fn read_to_end_internal<R: AsyncRead + ?Sized>(
+pub fn read_to_end_internal<R: Read + ?Sized>(
     mut rd: Pin<&mut R>,
     cx: &mut Context<'_>,
     buf: &mut Vec<u8>,

@@ -1,11 +1,8 @@
-use crate::future::Future;
-use crate::task::{Context, Poll};
-
-use std::io;
-use std::io::IoSlice;
 use std::pin::Pin;
 
-use futures_io::AsyncWrite;
+use crate::future::Future;
+use crate::io::{self, IoSlice, Write};
+use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
@@ -14,7 +11,7 @@ pub struct WriteVectoredFuture<'a, T: Unpin + ?Sized> {
     pub(crate) bufs: &'a [IoSlice<'a>],
 }
 
-impl<T: AsyncWrite + Unpin + ?Sized> Future for WriteVectoredFuture<'_, T> {
+impl<T: Write + Unpin + ?Sized> Future for WriteVectoredFuture<'_, T> {
     type Output = io::Result<usize>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {

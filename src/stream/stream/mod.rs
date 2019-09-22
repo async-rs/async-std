@@ -72,8 +72,8 @@ use std::task::{Context, Poll};
 use cfg_if::cfg_if;
 
 cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        use crate::stream::FromStream;
+    if #[cfg(feature = "unstable")] {
+        use crate::future::Future;
     }
 }
 
@@ -87,7 +87,7 @@ cfg_if! {
             ($a:lifetime, $f:tt, $o:ty, $t1:ty) => (ImplFuture<$a, $o>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => (ImplFuture<$a, $o>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty, $t3:ty) => (ImplFuture<$a, $o>);
-
+            ($f:ty, $o:ty) => (ImplFuture<'static, $o>);
         }
     } else {
         macro_rules! ret {
@@ -95,36 +95,34 @@ cfg_if! {
             ($a:lifetime, $f:tt, $o:ty, $t1:ty) => ($f<$a, Self, $t1>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty) => ($f<$a, Self, $t1, $t2>);
             ($a:lifetime, $f:tt, $o:ty, $t1:ty, $t2:ty, $t3:ty) => ($f<$a, Self, $t1, $t2, $t3>);
+            ($f:ty, $o:ty) => ($f);
         }
     }
 }
 
 cfg_if! {
-    if #[cfg(feature = "docs")] {
-        #[doc(hidden)]
-        pub struct DynFuture<'a, T>(std::marker::PhantomData<&'a T>);
-
-        macro_rules! dyn_ret {
-            ($a:lifetime, $o:ty) => (DynFuture<$a, $o>);
-        }
-    } else {
-        #[allow(unused_macros)]
-        macro_rules! dyn_ret {
-            ($a:lifetime, $o:ty) => (Pin<Box<dyn core::future::Future<Output = $o> + Send + 'a>>)
-        }
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        use crate::stream::FromStream;
     }
 }
 
 /// An asynchronous stream of values.
 ///
-/// This trait is an async version of [`std::iter::Iterator`].
+/// This trait is a re-export of [`futures::stream::Stream`] and is an async version of
+/// [`std::iter::Iterator`].
 ///
-/// While it is currently not possible to implement this trait directly, it gets implemented
-/// automatically for all types that implement [`futures::stream::Stream`].
+/// The [provided methods] do not really exist in the trait itself, but they become available when
+/// the prelude is imported:
+///
+/// ```
+/// # #[allow(unused_imports)]
+/// use async_std::prelude::*;
+/// ```
 ///
 /// [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
 /// [`futures::stream::Stream`]:
 /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+/// [provided methods]: #provided-methods
 pub trait Stream {
     /// The type of items yielded by this stream.
     type Item;
@@ -488,7 +486,7 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn min_by<F>(self, compare: F) -> MinByFuture<Self, F, Self::Item>
+    fn min_by<F>(self, compare: F) -> ret!(MinByFuture<Self, F, Self::Item>, Self::Item)
     where
         Self: Sized,
         F: FnMut(&Self::Item, &Self::Item) -> Ordering,
@@ -698,7 +696,7 @@ pub trait Stream {
     /// #
     /// # }) }
     /// ```
-    fn fold<B, F>(self, init: B, f: F) -> FoldFuture<Self, F, Self::Item, B>
+    fn fold<B, F>(self, init: B, f: F) -> ret!(FoldFuture<Self, F, Self::Item, B>, Self::Item)
     where
         Self: Sized,
         F: FnMut(B, Self::Item) -> B,
@@ -953,13 +951,12 @@ pub trait Stream {
     /// ```
     ///
     /// [`stream`]: trait.Stream.html#tymethod.next
-    #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
-    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[cfg(any(feature = "unstable", feature = "docs"))]
-    fn collect<'a, B>(self) -> dyn_ret!('a, B)
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
+    fn collect<'a, B>(self) -> ret!(Pin<Box<dyn Future<Output = B> + 'a>>, B)
     where
-        Self: futures_core::stream::Stream + Sized + Send + 'a,
-        <Self as futures_core::stream::Stream>::Item: Send,
+        Self: futures_core::stream::Stream + Sized + 'a,
         B: FromStream<<Self as futures_core::stream::Stream>::Item>,
     {
         FromStream::from_stream(self)

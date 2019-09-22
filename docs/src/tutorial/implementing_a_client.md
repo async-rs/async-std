@@ -18,11 +18,12 @@ With async, we can just use the `select!` macro.
 # extern crate async_std;
 # extern crate futures_util;
 use async_std::{
-    io::{stdin, BufRead, BufReader, Write},
+    io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
+    prelude::*,
     task,
 };
-use futures_util::{select, FutureExt, StreamExt};
+use futures_util::{select, FutureExt};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -38,14 +39,14 @@ async fn try_run(addr: impl ToSocketAddrs) -> Result<()> {
     let mut lines_from_stdin = BufReader::new(stdin()).lines().fuse(); // 2
     loop {
         select! { // 3
-            line = lines_from_server.next() => match line {
+            line = lines_from_server.next().fuse() => match line {
                 Some(line) => {
                     let line = line?;
                     println!("{}", line);
                 },
                 None => break,
             },
-            line = lines_from_stdin.next() => match line {
+            line = lines_from_stdin.next().fuse() => match line {
                 Some(line) => {
                     let line = line?;
                     writer.write_all(line.as_bytes()).await?;

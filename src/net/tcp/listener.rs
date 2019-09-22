@@ -8,6 +8,7 @@ use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// A TCP socket server, listening for connections.
@@ -190,7 +191,7 @@ impl TcpListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a TcpListener);
 
-impl<'a> futures_core::stream::Stream for Incoming<'a> {
+impl<'a> Stream for Incoming<'a> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

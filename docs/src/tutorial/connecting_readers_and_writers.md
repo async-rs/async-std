@@ -15,9 +15,8 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 # extern crate futures_channel;
 # extern crate futures_util;
 # use async_std::{
-#     io::{Write},
 #     net::TcpStream,
-#     prelude::{Future, Stream},
+#     prelude::*,
 #     task,
 # };
 # use futures_channel::mpsc;
