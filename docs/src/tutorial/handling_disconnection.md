@@ -74,7 +74,7 @@ We use the `select` macro for this purpose:
 # extern crate futures_util;
 # use async_std::{net::TcpStream, prelude::*};
 use futures_channel::mpsc;
-use futures_util::{select, FutureExt, StreamExt};
+use futures_util::{select, FutureExt};
 # use std::sync::Arc;
 
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
@@ -131,7 +131,7 @@ use async_std::{
     task,
 };
 use futures_channel::mpsc;
-use futures_util::{select, FutureExt, SinkExt, StreamExt};
+use futures_util::{select, FutureExt, SinkExt};
 use std::{
     collections::hash_map::{Entry, HashMap},
     future::Future,

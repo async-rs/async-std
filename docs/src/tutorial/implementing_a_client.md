@@ -23,7 +23,7 @@ use async_std::{
     prelude::*,
     task,
 };
-use futures_util::{select, FutureExt, StreamExt};
+use futures_util::{select, FutureExt};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
