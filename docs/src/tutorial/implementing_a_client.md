@@ -39,14 +39,14 @@ async fn try_run(addr: impl ToSocketAddrs) -> Result<()> {
     let mut lines_from_stdin = BufReader::new(stdin()).lines().fuse(); // 2
     loop {
         select! { // 3
-            line = lines_from_server.next() => match line {
+            line = lines_from_server.next().fuse() => match line {
                 Some(line) => {
                     let line = line?;
                     println!("{}", line);
                 },
                 None => break,
             },
-            line = lines_from_stdin.next() => match line {
+            line = lines_from_stdin.next().fuse() => match line {
                 Some(line) => {
                     let line = line?;
                     writer.write_all(line.as_bytes()).await?;
