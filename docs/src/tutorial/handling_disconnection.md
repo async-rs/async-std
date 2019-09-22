@@ -94,11 +94,11 @@ async fn client_writer(
     let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {}, // 3
                 None => break,
             }
@@ -210,11 +210,11 @@ async fn client_writer(
     let mut shutdown = shutdown.fuse();
     loop {
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {},
                 None => break,
             }
@@ -244,11 +244,11 @@ async fn broker(events: Receiver<Event>) {
     let mut events = events.fuse();
     loop {
         let event = select! {
-            event = events.next() => match event {
+            event = events.next().fuse() => match event {
                 None => break, // 2
                 Some(event) => event,
             },
-            disconnect = disconnect_receiver.next() => {
+            disconnect = disconnect_receiver.next().fuse() => {
                 let (name, _pending_messages) = disconnect.unwrap(); // 3
                 assert!(peers.remove(&name).is_some());
                 continue;

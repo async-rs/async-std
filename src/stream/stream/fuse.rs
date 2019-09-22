@@ -31,9 +31,3 @@ impl<S: futures_core::Stream> futures_core::Stream for Fuse<S> {
         }
     }
 }
-
-impl<S: futures_core::Stream> futures_core::stream::FusedStream for Fuse<S> {
-    fn is_terminated(&self) -> bool {
-        self.done
-    }
-}
