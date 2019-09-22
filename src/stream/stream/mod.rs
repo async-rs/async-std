@@ -275,6 +275,7 @@ pub trait Stream {
     /// This combinator does no guarding against overflows.
     ///
     /// # Examples
+    ///
     /// ```
     /// # fn main() { async_std::task::block_on(async {
     /// #
@@ -291,6 +292,7 @@ pub trait Stream {
     ///
     /// #
     /// # }) }
+    /// ```
     fn enumerate(self) -> Enumerate<Self>
     where
         Self: Sized,
@@ -357,6 +359,7 @@ pub trait Stream {
             done: false,
         }
     }
+
     /// Creates a stream that uses a predicate to determine if an element
     /// should be yeilded.
     ///
@@ -364,7 +367,7 @@ pub trait Stream {
     ///
     /// Basic usage:
     ///
-    ///```
+    /// ```
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use std::collections::VecDeque;
@@ -378,6 +381,7 @@ pub trait Stream {
     /// assert_eq!(s.next().await, None);
     /// #
     /// # }) }
+    /// ```
     fn filter<P>(self, predicate: P) -> Filter<Self, P, Self::Item>
     where
         Self: Sized,
@@ -415,6 +419,7 @@ pub trait Stream {
     /// assert_eq!(end, None);
     /// #
     /// # }) }
+    /// ```
     fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
     where
         Self: Sized,
@@ -801,6 +806,11 @@ pub trait Stream {
     ///
     /// ## Examples
     ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
     /// let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
     /// let mut skipped = s.skip(2);
     ///
