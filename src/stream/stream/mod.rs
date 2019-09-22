@@ -71,6 +71,9 @@ use cfg_if::cfg_if;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod unzip;
+        use unzip::UnzipSendFuture;
+
         use crate::stream::FromStream;
     }
 }
@@ -928,6 +931,47 @@ pub trait Stream {
         B: FromStream<<Self as futures_core::stream::Stream>::Item>,
     {
         FromStream::from_stream(self)
+    }
+
+    /// Converts a stream of pairs into a pair of containers.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use std::collections::VecDeque;
+    /// use async_std::stream::Stream;
+    ///
+    /// let s: VecDeque<(usize, usize)> = vec![(1, 4), (2, 5), (3, 6)].into_iter().collect();
+    /// let (a, b): (Vec<_>, Vec<_>) = s.unzip().await;
+    ///
+    /// assert_eq!(a, vec![1, 2, 3]);
+    /// assert_eq!(b, vec![4, 5, 6]);
+    /// #
+    /// # }) }
+    /// ```
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
+    fn unzip<'a, A, B, FromA, FromB>(self) -> dyn_ret!('a, (FromA, FromB))
+    where
+        Self: 'a + Stream<Item = (A, B)> + Send + Sized,
+        FromA: 'a + FromStream<A> + Send,
+        FromB: 'a + FromStream<B> + Send,
+        A: 'a + Send,
+        B: 'a + Send,
+    {
+        let (tx_a, rx_a) = futures_channel::mpsc::channel(0);
+        let (tx_b, rx_b) = futures_channel::mpsc::channel(0);
+
+        let a_fut = FromA::from_stream(rx_a);
+        let b_fut = FromB::from_stream(rx_b);
+        let send_fut = UnzipSendFuture::new(self, tx_a, tx_b);
+
+        Box::pin(async move {
+            let (a, b, _): (_, _, ()) = async_macros::join!(a_fut, b_fut, send_fut).await;
+            (a, b)
+        })
     }
 }
 
