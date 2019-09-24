@@ -25,7 +25,7 @@ pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
 pub use buf_read::{BufRead, Lines};
 pub use buf_reader::BufReader;
-pub use buf_writer::{BufWriter, LineWriter};
+pub use buf_writer::BufWriter;
 pub use copy::copy;
 pub use cursor::Cursor;
 pub use empty::{empty, Empty};

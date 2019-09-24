@@ -1,5 +1,6 @@
 use crate::task::{Context, Poll};
-use futures::{ready, AsyncWrite};
+use futures_core::ready;
+use futures_io::{AsyncWrite, AsyncSeek, SeekFrom};
 use std::fmt;
 use std::io;
 use std::pin::Pin;
@@ -34,10 +35,9 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// Let's write the numbers one through ten to a [`TcpStream`]:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// use async_std::net::TcpStream;
-/// use async_std::io::Write;
+/// use async_std::prelude::*;
 ///
 /// let mut stream = TcpStream::connect("127.0.0.1:34254").await?;
 ///
@@ -54,11 +54,10 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// `BufWriter`:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// use async_std::io::BufWriter;
 /// use async_std::net::TcpStream;
-/// use async_std::io::Write;
+/// use async_std::prelude::*;
 ///
 /// let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").await?);
 /// for i in 0..10 {
@@ -83,7 +82,7 @@ pub struct BufWriter<W> {
     written: usize,
 }
 
-impl<W: AsyncWrite + Unpin> BufWriter<W> {
+impl<W: AsyncWrite> BufWriter<W> {
     pin_utils::unsafe_pinned!(inner: W);
     pin_utils::unsafe_unpinned!(buf: Vec<u8>);
 
@@ -93,7 +92,6 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # #![allow(unused_mut)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// use async_std::io::BufWriter;
@@ -114,7 +112,6 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// Creating a buffer with a buffer of a hundred bytes.
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # #![allow(unused_mut)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// use async_std::io::BufWriter;
@@ -138,7 +135,6 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # #![allow(unused_mut)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// use async_std::io::BufWriter;
@@ -162,7 +158,6 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
@@ -201,7 +196,6 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
@@ -222,13 +216,13 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     /// This is used in types that wrap around BufWrite, one such example: [`LineWriter`]
     ///
     /// [`LineWriter`]: struct.LineWriter.html
-    pub fn poll_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let Self {
             inner,
             buf,
             written,
-        } = Pin::get_mut(self);
-        let mut inner = Pin::new(inner);
+        } = unsafe { Pin::get_unchecked_mut(self) };
+        let mut inner = unsafe { Pin::new_unchecked(inner) };
         let len = buf.len();
         let mut ret = Ok(());
         while *written < len {
@@ -257,7 +251,7 @@ impl<W: AsyncWrite + Unpin> BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite + Unpin> AsyncWrite for BufWriter<W> {
+impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -284,7 +278,7 @@ impl<W: AsyncWrite + Unpin> AsyncWrite for BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite + fmt::Debug + Unpin> fmt::Debug for BufWriter<W> {
+impl<W: AsyncWrite + fmt::Debug> fmt::Debug for BufWriter<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BufReader")
             .field("writer", &self.inner)
@@ -293,255 +287,90 @@ impl<W: AsyncWrite + fmt::Debug + Unpin> fmt::Debug for BufWriter<W> {
     }
 }
 
-/// Wraps a writer and buffers output to it, flushing whenever a newline
-/// (`0x0a`, `'\n'`) is detected.
-///
-/// The [`BufWriter`][bufwriter] struct wraps a writer and buffers its output.
-/// But it only does this batched write when it goes out of scope, or when the
-/// internal buffer is full. Sometimes, you'd prefer to write each line as it's
-/// completed, rather than the entire buffer at once. Enter `LineWriter`. It
-/// does exactly that.
-///
-/// Like [`BufWriter`][bufwriter], a `LineWriter`’s buffer will also be flushed when the
-/// `LineWriter` goes out of scope or when its internal buffer is full.
-///
-/// [bufwriter]: struct.BufWriter.html
-///
-/// If there's still a partial line in the buffer when the `LineWriter` is
-/// dropped, it will flush those contents.
-///
-/// This type is an async version of [`std::io::LineWriter`]
-///
-/// [`std::io::LineWriter`]: https://doc.rust-lang.org/std/io/struct.LineWriter.html
-///
-/// # Examples
-///
-/// We can use `LineWriter` to write one line at a time, significantly
-/// reducing the number of actual writes to the file.
-///
-/// ```no_run
-/// # #![feature(async_await)]
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-///     use async_std::io::{LineWriter, Write};
-///     use async_std::fs::{File, self};
-///     let road_not_taken = b"I shall be telling this with a sigh
-/// Somewhere ages and ages hence:
-/// Two roads diverged in a wood, and I -
-/// I took the one less traveled by,
-/// And that has made all the difference.";
-///
-///     let file = File::create("poem.txt").await?;
-///     let mut file = LineWriter::new(file);
-///
-///     file.write_all(b"I shall be telling this with a sigh").await?;
-///
-///     // No bytes are written until a newline is encountered (or
-///     // the internal buffer is filled).
-///     assert_eq!(fs::read_to_string("poem.txt").await?, "");
-///     file.write_all(b"\n").await?;
-///     assert_eq!(
-///         fs::read_to_string("poem.txt").await?,
-///         "I shall be telling this with a sigh\n",
-///     );
-///
-///     // Write the rest of the poem.
-///     file.write_all(b"Somewhere ages and ages hence:
-/// Two roads diverged in a wood, and I -
-/// I took the one less traveled by,
-/// And that has made all the difference.").await?;
-///
-///     // The last line of the poem doesn't end in a newline, so
-///     // we have to flush or drop the `LineWriter` to finish
-///     // writing.
-///     file.flush().await?;
-///
-///     // Confirm the whole poem was written.
-///     assert_eq!(fs::read("poem.txt").await?, &road_not_taken[..]);
-/// #
-/// # Ok(()) }) }
-/// ```
-pub struct LineWriter<W: AsyncWrite + Unpin> {
-    inner: BufWriter<W>,
-    need_flush: bool,
-}
+impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
+    /// Seek to the offset, in bytes, in the underlying writer.
+    ///
+    /// Seeking always writes out the internal buffer before seeking.
 
-impl<W: AsyncWrite + Unpin> LineWriter<W> {
-    pin_utils::unsafe_pinned!(inner: BufWriter<W>);
-    pin_utils::unsafe_unpinned!(need_flush: bool);
-    /// Creates a new `LineWriter`.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # #![feature(async_await)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    /// use async_std::fs::File;
-    /// use async_std::io::LineWriter;
-    ///
-    /// let file = File::create("poem.txt").await?;
-    /// let file = LineWriter::new(file);
-    /// #
-    /// # Ok(()) }) }
-    /// ```
-    pub fn new(inner: W) -> LineWriter<W> {
-        // Lines typically aren't that long, don't use a giant buffer
-        LineWriter::with_capacity(1024, inner)
-    }
-
-    /// Creates a new `LineWriter` with a specified capacity for the internal
-    /// buffer.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # #![feature(async_await)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    /// use async_std::fs::File;
-    /// use async_std::io::LineWriter;
-    ///
-    /// let file = File::create("poem.txt").await?;
-    /// let file = LineWriter::with_capacity(100, file);
-    /// #
-    /// # Ok(()) }) }
-    /// ```
-    pub fn with_capacity(capacity: usize, inner: W) -> LineWriter<W> {
-        LineWriter {
-            inner: BufWriter::with_capacity(capacity, inner),
-            need_flush: false,
-        }
-    }
-
-    /// Gets a reference to the underlying writer.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # #![feature(async_await)]
-    /// # #![allow(unused_mut)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    /// use async_std::io::LineWriter;
-    /// use async_std::fs::File;
-    ///
-    /// let file = File::create("poem.txt").await?;
-    /// let file = LineWriter::new(file);
-    ///
-    /// // We can use reference just like buffer
-    /// let reference = file.get_ref();
-    /// #
-    /// # Ok(()) }) }
-    /// ```
-    pub fn get_ref(&self) -> &W {
-        self.inner.get_ref()
-    }
-
-    /// Gets a mutable reference to the underlying writer.
-    ///
-    /// Caution must be taken when calling methods on the mutable reference
-    /// returned as extra writes could corrupt the output stream.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # #![feature(async_await)]
-    /// # #![allow(unused_mut)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    /// use async_std::io::LineWriter;
-    /// use async_std::fs::File;
-    ///
-    /// let file = File::create("poem.txt").await?;
-    /// let mut file = LineWriter::new(file);
-    ///
-    /// // We can use reference just like buffer
-    /// let reference = file.get_mut();
-    /// #
-    /// # Ok(()) }) }
-    /// ```
-    pub fn get_mut(&mut self) -> &mut W {
-        self.inner.get_mut()
-    }
-
-    //TODO: Implement flushing before returning inner
-    #[allow(missing_docs)]
-    pub fn into_inner(self) -> W {
-        self.inner.into_inner()
-    }
-}
-
-impl<W: AsyncWrite + Unpin> AsyncWrite for LineWriter<W> {
-    fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
-        if self.need_flush {
-            let _ = self.as_mut().poll_flush(cx)?;
-        }
-
-        let i = match memchr::memrchr(b'\n', buf) {
-            Some(i) => i,
-            None => return self.as_mut().inner().as_mut().poll_write(cx, buf),
-        };
-
-        let n = ready!(self.as_mut().inner().as_mut().poll_write(cx, &buf[..=i])?);
-        *self.as_mut().need_flush() = true;
-        if ready!(self.as_mut().poll_flush(cx)).is_err() || n != i + 1 {
-            return Poll::Ready(Ok(n));
-        }
-        match ready!(self.inner().poll_write(cx, &buf[i + 1..])) {
-            Ok(_) => Poll::Ready(Ok(n + 1)),
-            Err(_) => Poll::Ready(Ok(n)),
-        }
-    }
-
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let _ = self.as_mut().inner().poll_flush(cx)?;
-        *self.need_flush() = false;
-        Poll::Ready(Ok(()))
-    }
-
-    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let _ = self.as_mut().inner().poll_flush(cx)?;
-        self.inner().poll_close(cx)
-    }
-}
-
-impl<W: AsyncWrite + Unpin> fmt::Debug for LineWriter<W>
-where
-    W: fmt::Debug,
-{
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_struct("LineWriter")
-            .field("writer", &self.inner.inner)
-            .field(
-                "buffer",
-                &format_args!("{}/{}", self.inner.buf.len(), self.inner.buf.capacity()),
-            )
-            .finish()
+    fn poll_seek(mut self: Pin<&mut Self>, cx: &mut Context<'_>, pos: SeekFrom) -> Poll<io::Result<u64>> {
+        ready!(self.as_mut().poll_flush_buf(cx))?;
+        self.inner().poll_seek(cx, pos)
     }
 }
 
 mod tests {
     #![allow(unused_imports)]
-    use super::LineWriter;
+
+    use super::BufWriter;
     use crate::prelude::*;
     use crate::task;
+    use crate::io::{self, SeekFrom};
 
     #[test]
-    fn test_line_buffer() {
+    fn test_buffered_writer() {
         task::block_on(async {
-            let mut writer = LineWriter::new(Vec::new());
-            writer.write(&[0]).await.unwrap();
-            assert_eq!(*writer.get_ref(), []);
-            writer.write(&[1]).await.unwrap();
-            assert_eq!(*writer.get_ref(), []);
-            writer.flush().await.unwrap();
+            let inner = Vec::new();
+            let mut writer = BufWriter::with_capacity(2, inner);
+
+            writer.write(&[0, 1]).await.unwrap();
+            assert_eq!(writer.buffer(), []);
             assert_eq!(*writer.get_ref(), [0, 1]);
-            writer.write(&[0, b'\n', 1, b'\n', 2]).await.unwrap();
-            assert_eq!(*writer.get_ref(), [0, 1, 0, b'\n', 1, b'\n']);
+
+            writer.write(&[2]).await.unwrap();
+            assert_eq!(writer.buffer(), [2]);
+            assert_eq!(*writer.get_ref(), [0, 1]);
+
+            writer.write(&[3]).await.unwrap();
+            assert_eq!(writer.buffer(), [2, 3]);
+            assert_eq!(*writer.get_ref(), [0, 1]);
+
             writer.flush().await.unwrap();
-            assert_eq!(*writer.get_ref(), [0, 1, 0, b'\n', 1, b'\n', 2]);
-            writer.write(&[3, b'\n']).await.unwrap();
-            assert_eq!(*writer.get_ref(), [0, 1, 0, b'\n', 1, b'\n', 2, 3, b'\n']);
+            assert_eq!(writer.buffer(), []);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3]);
+
+            writer.write(&[4]).await.unwrap();
+            writer.write(&[5]).await.unwrap();
+            assert_eq!(writer.buffer(), [4, 5]);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3]);
+
+            writer.write(&[6]).await.unwrap();
+            assert_eq!(writer.buffer(), [6]);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5]);
+
+            writer.write(&[7, 8]).await.unwrap();
+            assert_eq!(writer.buffer(), []);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+
+            writer.write(&[9, 10, 11]).await.unwrap();
+            assert_eq!(writer.buffer(), []);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+            writer.flush().await.unwrap();
+            assert_eq!(writer.buffer(), []);
+            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+        })
+    }
+
+    #[test]
+    fn test_buffered_writer_inner_into_inner_does_not_flush() {
+        task::block_on(async {
+            let mut w = BufWriter::with_capacity(3, Vec::new());
+            w.write(&[0, 1]).await.unwrap();
+            assert_eq!(*w.get_ref(), []);
+            let w = w.into_inner();
+            assert_eq!(w, []);
+        })
+    }
+
+    #[test]
+    fn test_buffered_writer_seek() {
+        task::block_on(async {
+            let mut w = BufWriter::with_capacity(3, io::Cursor::new(Vec::new()));
+            w.write_all(&[0, 1, 2, 3, 4, 5]).await.unwrap();
+            w.write_all(&[6, 7]).await.unwrap();
+            assert_eq!(w.seek(SeekFrom::Current(0)).await.ok(), Some(8));
+            assert_eq!(&w.get_ref().get_ref()[..], &[0, 1, 2, 3, 4, 5, 6, 7][..]);
+            assert_eq!(w.seek(SeekFrom::Start(2)).await.ok(), Some(2));
         })
     }
 }
