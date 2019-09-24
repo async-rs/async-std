@@ -32,17 +32,17 @@
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
-//! ><code>unstable</code></span> or
+//! ><code>bin</code></span> or
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
-//! ><code>bin</code></span>
+//! ><code>unstable</code></span>
 //! are available only when the corresponding Cargo features are enabled:
 //!
 //! ```toml
 //! [dependencies.async-std]
 //! version = "0.99"
-//! features = ["unstable", "bin"]
+//! features = ["bin", "unstable"]
 //! ```
 
 #![cfg(feature = "default")]
