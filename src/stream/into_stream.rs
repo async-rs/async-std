@@ -1,4 +1,4 @@
-use futures_core::stream::Stream;
+use crate::stream::Stream;
 
 /// Conversion into a `Stream`.
 ///
@@ -20,13 +20,13 @@ pub trait IntoStream {
     type Item;
 
     /// Which kind of stream are we turning this into?
-    type IntoStream: Stream<Item = Self::Item> + Send;
+    type IntoStream: Stream<Item = Self::Item>;
 
     /// Creates a stream from a value.
     fn into_stream(self) -> Self::IntoStream;
 }
 
-impl<I: Stream + Send> IntoStream for I {
+impl<I: Stream> IntoStream for I {
     type Item = I::Item;
     type IntoStream = I;
 

@@ -70,7 +70,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.file_type());
@@ -90,7 +90,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata(".").await?;
             /// println!("{:?}", metadata.is_dir());
@@ -110,7 +110,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.is_file());
@@ -128,7 +128,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{}", metadata.len());
@@ -146,7 +146,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.permissions());
@@ -169,7 +169,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.modified());
@@ -192,7 +192,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.accessed());
@@ -215,7 +215,7 @@ cfg_if! {
             /// ```no_run
             /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             /// #
-            /// use std::fs;
+            /// use async_std::fs;
             ///
             /// let metadata = fs::metadata("a.txt").await?;
             /// println!("{:?}", metadata.created());

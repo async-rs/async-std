@@ -2,10 +2,9 @@ use std::mem;
 use std::pin::Pin;
 use std::str;
 
-use futures_io::AsyncBufRead;
-
 use super::read_until_internal;
-use crate::io;
+use crate::io::{self, BufRead};
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// A stream of lines in a byte stream.
@@ -25,7 +24,7 @@ pub struct Lines<R> {
     pub(crate) read: usize,
 }
 
-impl<R: AsyncBufRead> futures_core::stream::Stream for Lines<R> {
+impl<R: BufRead> Stream for Lines<R> {
     type Item = io::Result<String>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -50,7 +49,7 @@ impl<R: AsyncBufRead> futures_core::stream::Stream for Lines<R> {
     }
 }
 
-pub fn read_line_internal<R: AsyncBufRead + ?Sized>(
+pub fn read_line_internal<R: BufRead + ?Sized>(
     reader: Pin<&mut R>,
     cx: &mut Context<'_>,
     buf: &mut String,

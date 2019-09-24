@@ -1,9 +1,7 @@
 use std::pin::Pin;
 
-use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite};
-
 use crate::future::Future;
-use crate::io::{self, BufReader};
+use crate::io::{self, BufRead, BufReader, Read, Write};
 use crate::task::{Context, Poll};
 
 /// Copies the entire contents of a reader into a writer.
@@ -45,8 +43,8 @@ use crate::task::{Context, Poll};
 /// ```
 pub async fn copy<R, W>(reader: &mut R, writer: &mut W) -> io::Result<u64>
 where
-    R: AsyncRead + Unpin + ?Sized,
-    W: AsyncWrite + Unpin + ?Sized,
+    R: Read + Unpin + ?Sized,
+    W: Write + Unpin + ?Sized,
 {
     pub struct CopyFuture<'a, R, W: ?Sized> {
         reader: R,
@@ -69,8 +67,8 @@ where
 
     impl<R, W> Future for CopyFuture<'_, R, W>
     where
-        R: AsyncBufRead,
-        W: AsyncWrite + Unpin + ?Sized,
+        R: BufRead,
+        W: Write + Unpin + ?Sized,
     {
         type Output = io::Result<u64>;
 

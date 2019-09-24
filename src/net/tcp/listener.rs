@@ -7,6 +7,7 @@ use super::TcpStream;
 use crate::future::Future;
 use crate::io;
 use crate::net::ToSocketAddrs;
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 cfg_if! {
@@ -183,7 +184,7 @@ impl TcpListener {
 #[derive(Debug)]
 pub struct Incoming<'a>(&'a TcpListener);
 
-impl<'a> futures_core::stream::Stream for Incoming<'a> {
+impl<'a> Stream for Incoming<'a> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

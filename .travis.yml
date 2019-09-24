@@ -71,5 +71,6 @@ matrix:
         - mdbook test -L ./target/debug/deps docs
 
 script:
+  - cargo check --all --benches --bins --examples --tests
   - cargo check --features unstable --all --benches --bins --examples --tests
   - cargo test --all --doc --features unstable

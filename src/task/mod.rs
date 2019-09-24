@@ -17,6 +17,7 @@
 //! let handle = task::spawn(async {
 //!     1 + 2
 //! });
+//! assert_eq!(handle.await, 3);
 //! #
 //! # }) }
 //! ```

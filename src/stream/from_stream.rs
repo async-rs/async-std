@@ -12,7 +12,7 @@ use std::pin::Pin;
 /// [`IntoStream`]: trait.IntoStream.html
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[cfg(any(feature = "unstable", feature = "docs"))]
-pub trait FromStream<T: Send> {
+pub trait FromStream<T> {
     /// Creates a value from a stream.
     ///
     /// # Examples
@@ -24,7 +24,7 @@ pub trait FromStream<T: Send> {
     ///
     /// // let _five_fives = async_std::stream::repeat(5).take(5);
     /// ```
-    fn from_stream<'a, S: IntoStream<Item = T> + Send + 'a>(
+    fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + Send + 'a>>;
+    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>;
 }

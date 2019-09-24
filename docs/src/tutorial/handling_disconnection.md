@@ -72,9 +72,9 @@ We use the `select` macro for this purpose:
 # extern crate async_std;
 # extern crate futures_channel;
 # extern crate futures_util;
-# use async_std::{io::Write, net::TcpStream};
+# use async_std::{net::TcpStream, prelude::*};
 use futures_channel::mpsc;
-use futures_util::{select, FutureExt, StreamExt};
+use futures_util::{select, FutureExt};
 # use std::sync::Arc;
 
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
@@ -94,11 +94,11 @@ async fn connection_writer_loop(
     let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {}, // 3
                 None => break,
             }
@@ -125,12 +125,13 @@ The final code looks like this:
 # extern crate futures_channel;
 # extern crate futures_util;
 use async_std::{
-    io::{BufReader, BufRead, Write},
+    io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
+    prelude::*,
     task,
 };
 use futures_channel::mpsc;
-use futures_util::{select, FutureExt, SinkExt, StreamExt};
+use futures_util::{select, FutureExt, SinkExt};
 use std::{
     collections::hash_map::{Entry, HashMap},
     future::Future,
@@ -209,11 +210,11 @@ async fn connection_writer_loop(
     let mut shutdown = shutdown.fuse();
     loop {
         select! {
-            msg = messages.next() => match msg {
+            msg = messages.next().fuse() => match msg {
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
-            void = shutdown.next() => match void {
+            void = shutdown.next().fuse() => match void {
                 Some(void) => match void {},
                 None => break,
             }
@@ -243,11 +244,11 @@ async fn broker_loop(events: Receiver<Event>) {
     let mut events = events.fuse();
     loop {
         let event = select! {
-            event = events.next() => match event {
+            event = events.next().fuse() => match event {
                 None => break, // 2
                 Some(event) => event,
             },
-            disconnect = disconnect_receiver.next() => {
+            disconnect = disconnect_receiver.next().fuse() => {
                 let (name, _pending_messages) = disconnect.unwrap(); // 3
                 assert!(peers.remove(&name).is_some());
                 continue;

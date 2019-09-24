@@ -2,9 +2,7 @@ use std::io::{IoSliceMut, Read as _};
 use std::pin::Pin;
 use std::{cmp, fmt};
 
-use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, Initializer};
-
-use crate::io::{self, SeekFrom};
+use crate::io::{self, BufRead, Read, Seek, SeekFrom};
 use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
@@ -193,7 +191,7 @@ impl<R> BufReader<R> {
     }
 }
 
-impl<R: AsyncRead> AsyncRead for BufReader<R> {
+impl<R: Read> Read for BufReader<R> {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -229,14 +227,9 @@ impl<R: AsyncRead> AsyncRead for BufReader<R> {
         self.consume(nread);
         Poll::Ready(Ok(nread))
     }
-
-    // we can't skip unconditionally because of the large buffer case in read.
-    unsafe fn initializer(&self) -> Initializer {
-        self.inner.initializer()
-    }
 }
 
-impl<R: AsyncRead> AsyncBufRead for BufReader<R> {
+impl<R: Read> BufRead for BufReader<R> {
     fn poll_fill_buf<'a>(
         self: Pin<&'a mut Self>,
         cx: &mut Context<'_>,
@@ -278,7 +271,7 @@ impl<R: io::Read + fmt::Debug> fmt::Debug for BufReader<R> {
     }
 }
 
-impl<R: AsyncSeek> AsyncSeek for BufReader<R> {
+impl<R: Seek> Seek for BufReader<R> {
     /// Seeks to an offset, in bytes, in the underlying reader.
     ///
     /// The position used for seeking with `SeekFrom::Current(_)` is the position the underlying

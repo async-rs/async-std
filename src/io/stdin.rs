@@ -1,11 +1,10 @@
-use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures_io::{AsyncRead, Initializer};
 
 use crate::future::{self, Future};
+use crate::io::{self, Read};
 use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard input of the current process.
@@ -29,7 +28,7 @@ use crate::task::{blocking, Context, Poll};
 /// ```
 pub fn stdin() -> Stdin {
     Stdin(Mutex::new(State::Idle(Some(Inner {
-        stdin: io::stdin(),
+        stdin: std::io::stdin(),
         line: String::new(),
         buf: Vec::new(),
         last_op: None,
@@ -65,7 +64,7 @@ enum State {
 #[derive(Debug)]
 struct Inner {
     /// The blocking stdin handle.
-    stdin: io::Stdin,
+    stdin: std::io::Stdin,
 
     /// The line buffer.
     line: String,
@@ -137,7 +136,7 @@ impl Stdin {
     }
 }
 
-impl AsyncRead for Stdin {
+impl Read for Stdin {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -174,7 +173,7 @@ impl AsyncRead for Stdin {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Read::read(&mut inner.stdin, &mut inner.buf);
+                            let res = std::io::Read::read(&mut inner.stdin, &mut inner.buf);
                             inner.last_op = Some(Operation::Read(res));
                             State::Idle(Some(inner))
                         }));
@@ -184,11 +183,6 @@ impl AsyncRead for Stdin {
                 State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
-    }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
     }
 }
 
@@ -208,7 +202,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stdin {
             fn as_raw_fd(&self) -> RawFd {
-                io::stdin().as_raw_fd()
+                std::io::stdin().as_raw_fd()
             }
         }
     }
@@ -219,7 +213,7 @@ cfg_if! {
     if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stdin {
             fn as_raw_handle(&self) -> RawHandle {
-                io::stdin().as_raw_handle()
+                std::io::stdin().as_raw_handle()
             }
         }
     }

@@ -6,11 +6,10 @@ use std::net::Shutdown;
 use std::path::Path;
 use std::pin::Pin;
 
-use futures_io::{AsyncRead, AsyncWrite};
 use mio_uds;
 
 use super::SocketAddr;
-use crate::io;
+use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::task::{blocking, Context, Poll};
@@ -154,7 +153,7 @@ impl UnixStream {
     }
 }
 
-impl AsyncRead for UnixStream {
+impl Read for UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -164,7 +163,7 @@ impl AsyncRead for UnixStream {
     }
 }
 
-impl AsyncRead for &UnixStream {
+impl Read for &UnixStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -174,7 +173,7 @@ impl AsyncRead for &UnixStream {
     }
 }
 
-impl AsyncWrite for UnixStream {
+impl Write for UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -192,7 +191,7 @@ impl AsyncWrite for UnixStream {
     }
 }
 
-impl AsyncWrite for &UnixStream {
+impl Write for &UnixStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

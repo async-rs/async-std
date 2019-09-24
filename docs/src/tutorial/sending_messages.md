@@ -16,9 +16,8 @@ if Alice and Charley send two messages to Bob at the same time, Bob will see the
 # extern crate futures_channel;
 # extern crate futures_util;
 # use async_std::{
-#     io::Write,
 #     net::TcpStream,
-#     prelude::Stream,
+#     prelude::*,
 # };
 use futures_channel::mpsc; // 1
 use futures_util::sink::SinkExt;

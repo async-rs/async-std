@@ -1,5 +1,7 @@
 use std::pin::Pin;
-use std::task::{Context, Poll};
+
+use crate::stream::Stream;
+use crate::task::{Context, Poll};
 
 /// A `Stream` that is permanently closed once a single call to `poll` results in
 /// `Poll::Ready(None)`, returning `Poll::Ready(None)` for all future calls to `poll`.
@@ -11,12 +13,12 @@ pub struct Fuse<S> {
 
 impl<S: Unpin> Unpin for Fuse<S> {}
 
-impl<S: futures_core::Stream> Fuse<S> {
+impl<S: Stream> Fuse<S> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_unpinned!(done: bool);
 }
 
-impl<S: futures_core::Stream> futures_core::Stream for Fuse<S> {
+impl<S: Stream> Stream for Fuse<S> {
     type Item = S::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {

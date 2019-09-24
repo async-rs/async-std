@@ -19,7 +19,7 @@ impl<S> Enumerate<S> {
     }
 }
 
-impl<S> futures_core::stream::Stream for Enumerate<S>
+impl<S> Stream for Enumerate<S>
 where
     S: Stream,
 {

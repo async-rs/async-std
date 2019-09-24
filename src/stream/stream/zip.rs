@@ -11,7 +11,7 @@ pub struct Zip<A: Stream, B> {
     second: B,
 }
 
-impl<A: fmt::Debug + Stream, B: fmt::Debug> fmt::Debug for Zip<A, B> {
+impl<A: Stream + fmt::Debug, B: fmt::Debug> fmt::Debug for Zip<A, B> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("Zip")
             .field("first", &self.first)
@@ -20,7 +20,7 @@ impl<A: fmt::Debug + Stream, B: fmt::Debug> fmt::Debug for Zip<A, B> {
     }
 }
 
-impl<A: Unpin + Stream, B: Unpin> Unpin for Zip<A, B> {}
+impl<A: Stream + Unpin, B: Unpin> Unpin for Zip<A, B> {}
 
 impl<A: Stream, B> Zip<A, B> {
     pub(crate) fn new(first: A, second: B) -> Self {
@@ -36,7 +36,7 @@ impl<A: Stream, B> Zip<A, B> {
     pin_utils::unsafe_pinned!(second: B);
 }
 
-impl<A: Stream, B: Stream> futures_core::stream::Stream for Zip<A, B> {
+impl<A: Stream, B: Stream> Stream for Zip<A, B> {
     type Item = (A::Item, B::Item);
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

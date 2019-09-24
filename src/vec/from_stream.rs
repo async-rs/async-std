@@ -1,14 +1,15 @@
-use crate::stream::{FromStream, IntoStream, Stream};
-
 use std::pin::Pin;
 
-impl<T: Send> FromStream<T> for Vec<T> {
+use crate::prelude::*;
+use crate::stream::{FromStream, IntoStream};
+
+impl<T> FromStream<T> for Vec<T> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T>>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + Send + 'a>>
+    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
-        <S as IntoStream>::IntoStream: Send + 'a,
+        <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
 

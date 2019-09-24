@@ -3,9 +3,8 @@ use std::net::SocketAddr;
 use std::pin::Pin;
 
 use cfg_if::cfg_if;
-use futures_io::{AsyncRead, AsyncWrite};
 
-use crate::io;
+use crate::io::{self, Read, Write};
 use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
@@ -281,7 +280,7 @@ impl TcpStream {
     }
 }
 
-impl AsyncRead for TcpStream {
+impl Read for TcpStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -299,7 +298,7 @@ impl AsyncRead for TcpStream {
     }
 }
 
-impl AsyncWrite for TcpStream {
+impl Write for TcpStream {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -327,7 +326,7 @@ impl AsyncWrite for TcpStream {
 
 cfg_if! {
     if #[cfg(not(target_os = "unknown"))] {
-        impl AsyncRead for &TcpStream {
+        impl Read for &TcpStream {
             fn poll_read(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
@@ -337,7 +336,7 @@ cfg_if! {
             }
         }
 
-        impl AsyncWrite for &TcpStream {
+        impl Write for &TcpStream {
             fn poll_write(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
@@ -357,7 +356,7 @@ cfg_if! {
         }
 
     } else {
-        impl AsyncRead for &TcpStream {
+        impl Read for &TcpStream {
             fn poll_read(
                 self: Pin<&mut Self>,
                 _: &mut Context<'_>,
@@ -367,7 +366,7 @@ cfg_if! {
             }
         }
 
-        impl AsyncWrite for &TcpStream {
+        impl Write for &TcpStream {
             fn poll_write(
                 self: Pin<&mut Self>,
                 _: &mut Context<'_>,

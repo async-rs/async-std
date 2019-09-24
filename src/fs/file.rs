@@ -9,11 +9,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use cfg_if::cfg_if;
-use futures_io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
 use crate::fs::{Metadata, Permissions};
 use crate::future;
-use crate::io::{self, SeekFrom, Write};
+use crate::io::{self, Read, Seek, SeekFrom, Write};
+use crate::prelude::*;
 use crate::task::{self, blocking, Context, Poll, Waker};
 
 /// An open file on the filesystem.
@@ -302,7 +302,7 @@ impl fmt::Debug for File {
     }
 }
 
-impl AsyncRead for File {
+impl Read for File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -310,14 +310,9 @@ impl AsyncRead for File {
     ) -> Poll<io::Result<usize>> {
         Pin::new(&mut &*self).poll_read(cx, buf)
     }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
-    }
 }
 
-impl AsyncRead for &File {
+impl Read for &File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -326,14 +321,9 @@ impl AsyncRead for &File {
         let state = futures_core::ready!(self.lock.poll_lock(cx));
         state.poll_read(cx, buf)
     }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
-    }
 }
 
-impl AsyncWrite for File {
+impl Write for File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -351,7 +341,7 @@ impl AsyncWrite for File {
     }
 }
 
-impl AsyncWrite for &File {
+impl Write for &File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -372,7 +362,7 @@ impl AsyncWrite for &File {
     }
 }
 
-impl AsyncSeek for File {
+impl Seek for File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -382,7 +372,7 @@ impl AsyncSeek for File {
     }
 }
 
-impl AsyncSeek for &File {
+impl Seek for &File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

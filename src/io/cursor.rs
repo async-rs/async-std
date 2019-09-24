@@ -1,8 +1,7 @@
-use futures_io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite};
-
-use std::io::{self, IoSlice, IoSliceMut, SeekFrom};
 use std::pin::Pin;
-use std::task::{Context, Poll};
+
+use crate::io::{self, BufRead, IoSlice, IoSliceMut, Read, Seek, SeekFrom, Write};
+use crate::task::{Context, Poll};
 
 /// A `Cursor` wraps an in-memory buffer and provides it with a
 /// [`Seek`] implementation.
@@ -153,7 +152,7 @@ impl<T> Cursor<T> {
     }
 }
 
-impl<T> AsyncSeek for Cursor<T>
+impl<T> Seek for Cursor<T>
 where
     T: AsRef<[u8]> + Unpin,
 {
@@ -162,11 +161,11 @@ where
         _: &mut Context<'_>,
         pos: SeekFrom,
     ) -> Poll<io::Result<u64>> {
-        Poll::Ready(io::Seek::seek(&mut self.inner, pos))
+        Poll::Ready(std::io::Seek::seek(&mut self.inner, pos))
     }
 }
 
-impl<T> AsyncRead for Cursor<T>
+impl<T> Read for Cursor<T>
 where
     T: AsRef<[u8]> + Unpin,
 {
@@ -175,7 +174,7 @@ where
         _cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Read::read(&mut self.inner, buf))
+        Poll::Ready(std::io::Read::read(&mut self.inner, buf))
     }
 
     fn poll_read_vectored(
@@ -183,30 +182,30 @@ where
         _: &mut Context<'_>,
         bufs: &mut [IoSliceMut<'_>],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Read::read_vectored(&mut self.inner, bufs))
+        Poll::Ready(std::io::Read::read_vectored(&mut self.inner, bufs))
     }
 }
 
-impl<T> AsyncBufRead for Cursor<T>
+impl<T> BufRead for Cursor<T>
 where
     T: AsRef<[u8]> + Unpin,
 {
     fn poll_fill_buf(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        Poll::Ready(io::BufRead::fill_buf(&mut self.get_mut().inner))
+        Poll::Ready(std::io::BufRead::fill_buf(&mut self.get_mut().inner))
     }
 
     fn consume(mut self: Pin<&mut Self>, amt: usize) {
-        io::BufRead::consume(&mut self.inner, amt)
+        std::io::BufRead::consume(&mut self.inner, amt)
     }
 }
 
-impl AsyncWrite for Cursor<&mut [u8]> {
+impl Write for Cursor<&mut [u8]> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         _: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Write::write(&mut self.inner, buf))
+        Poll::Ready(std::io::Write::write(&mut self.inner, buf))
     }
 
     fn poll_write_vectored(
@@ -214,11 +213,11 @@ impl AsyncWrite for Cursor<&mut [u8]> {
         _: &mut Context<'_>,
         bufs: &[IoSlice<'_>],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Write::write_vectored(&mut self.inner, bufs))
+        Poll::Ready(std::io::Write::write_vectored(&mut self.inner, bufs))
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(io::Write::flush(&mut self.inner))
+        Poll::Ready(std::io::Write::flush(&mut self.inner))
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -226,13 +225,13 @@ impl AsyncWrite for Cursor<&mut [u8]> {
     }
 }
 
-impl AsyncWrite for Cursor<&mut Vec<u8>> {
+impl Write for Cursor<&mut Vec<u8>> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         _: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Write::write(&mut self.inner, buf))
+        Poll::Ready(std::io::Write::write(&mut self.inner, buf))
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -240,17 +239,17 @@ impl AsyncWrite for Cursor<&mut Vec<u8>> {
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(io::Write::flush(&mut self.inner))
+        Poll::Ready(std::io::Write::flush(&mut self.inner))
     }
 }
 
-impl AsyncWrite for Cursor<Vec<u8>> {
+impl Write for Cursor<Vec<u8>> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         _: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Write::write(&mut self.inner, buf))
+        Poll::Ready(std::io::Write::write(&mut self.inner, buf))
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -258,6 +257,6 @@ impl AsyncWrite for Cursor<Vec<u8>> {
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(io::Write::flush(&mut self.inner))
+        Poll::Ready(std::io::Write::flush(&mut self.inner))
     }
 }
