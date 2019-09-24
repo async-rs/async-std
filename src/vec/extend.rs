@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
-use crate::future::Future;
-use crate::stream::{Extend, IntoStream, Stream};
+use crate::prelude::*;
+use crate::stream::{Extend, IntoStream};
 
 impl<T> Extend<T> for Vec<T> {
     fn stream_extend<'a, S: IntoStream<Item = T> + 'a>(
