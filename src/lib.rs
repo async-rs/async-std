@@ -32,13 +32,17 @@
 //! <span
 //!   class="module-item stab portability"
 //!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
-//! ><code>unstable</code></span>
-//! are available only when the `unstable` Cargo feature is enabled:
+//! ><code>unstable</code></span> or
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>bin</code></span>
+//! are available only when the corresponding Cargo features are enabled:
 //!
 //! ```toml
 //! [dependencies.async-std]
 //! version = "0.99"
-//! features = ["unstable"]
+//! features = ["unstable", "bin"]
 //! ```
 
 #![cfg(feature = "default")]
@@ -52,6 +56,11 @@
 
 #[macro_use]
 mod utils;
+
+#[cfg_attr(feature = "docs", doc(cfg(bin)))]
+#[cfg(feature = "bin")]
+#[doc(inline)]
+pub use async_attributes::*;
 
 pub mod fs;
 pub mod future;
