@@ -45,3 +45,11 @@ $ rustup override add nightly
 $ rustc --version
 rustc 1.38.0-nightly (c4715198b 2019-08-05)
 ```
+
+Add the following lines to `Cargo.toml`:
+
+```toml
+[dependencies]
+futures-preview = { version = "0.3.0-alpha.18", features = [ "async-await", "nightly" ] }
+async-std = "0.99"
+```

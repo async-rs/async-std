@@ -1,10 +1,9 @@
-use std::fs;
 use std::path::Path;
 
 use crate::io;
 use crate::task::blocking;
 
-/// Removes an existing, empty directory.
+/// Removes an empty directory.
 ///
 /// This function is an async version of [`std::fs::remove_dir`].
 ///
@@ -12,24 +11,24 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` is not an empty directory.
-/// * The current process lacks permissions to remove directory at `path`.
+/// * `path` is not an existing and empty directory.
+/// * The current process lacks permissions to remove the directory.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
 ///
-/// fs::remove_dir("./some/dir").await?;
+/// fs::remove_dir("./some/directory").await?;
 /// #
 /// # Ok(()) }) }
 /// ```
 pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::remove_dir(path) }).await
+    blocking::spawn(async move { std::fs::remove_dir(path) }).await
 }

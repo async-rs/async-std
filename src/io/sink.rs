@@ -1,9 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures::io::AsyncWrite;
-
-use crate::io;
+use crate::io::{self, Write};
 use crate::task::{Context, Poll};
 
 /// Creates a writer that consumes and drops all data.
@@ -11,7 +9,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```rust
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
@@ -23,7 +20,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn sink() -> Sink {
-    Sink { _priv: () }
+    Sink { _private: () }
 }
 
 /// A writer that consumes and drops all data.
@@ -32,7 +29,7 @@ pub fn sink() -> Sink {
 ///
 /// [`sink`]: fn.sink.html
 pub struct Sink {
-    _priv: (),
+    _private: (),
 }
 
 impl fmt::Debug for Sink {
@@ -41,7 +38,7 @@ impl fmt::Debug for Sink {
     }
 }
 
-impl AsyncWrite for Sink {
+impl Write for Sink {
     #[inline]
     fn poll_write(
         self: Pin<&mut Self>,

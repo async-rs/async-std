@@ -7,7 +7,6 @@
 //! # Examples
 //!
 //! ```
-//! # #![feature(async_await)]
 //! # fn main() { async_std::task::block_on(async {
 //! #
 //! use async_std::prelude::*;
@@ -22,12 +21,33 @@
 //! # }) }
 //! ```
 
+use cfg_if::cfg_if;
+
 pub use empty::{empty, Empty};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
-pub use stream::{Stream, Take};
+pub use stream::{Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, Zip};
+
+pub(crate) mod stream;
 
 mod empty;
 mod once;
 mod repeat;
-mod stream;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod double_ended_stream;
+        mod extend;
+        mod from_stream;
+        mod into_stream;
+
+        pub use double_ended_stream::DoubleEndedStream;
+        pub use extend::Extend;
+        pub use from_stream::FromStream;
+        pub use into_stream::IntoStream;
+
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[doc(inline)]
+        pub use async_macros::{join_stream as join, JoinStream as Join};
+    }
+}

@@ -43,7 +43,6 @@ cfg_if! {
             fn into_raw_handle(self) -> RawHandle;
         }
     } else {
-        #[doc(inline)]
         pub use std::os::windows::io::{
             AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket,
         };

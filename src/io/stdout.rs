@@ -1,11 +1,10 @@
-use std::io;
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use cfg_if::cfg_if;
-use futures::io::AsyncWrite;
 
 use crate::future::Future;
+use crate::io::{self, Write};
 use crate::task::{blocking, Context, Poll};
 
 /// Constructs a new handle to the standard output of the current process.
@@ -17,7 +16,6 @@ use crate::task::{blocking, Context, Poll};
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
@@ -30,7 +28,7 @@ use crate::task::{blocking, Context, Poll};
 /// ```
 pub fn stdout() -> Stdout {
     Stdout(Mutex::new(State::Idle(Some(Inner {
-        stdout: io::stdout(),
+        stdout: std::io::stdout(),
         buf: Vec::new(),
         last_op: None,
     }))))
@@ -65,7 +63,7 @@ enum State {
 #[derive(Debug)]
 struct Inner {
     /// The blocking stdout handle.
-    stdout: io::Stdout,
+    stdout: std::io::Stdout,
 
     /// The write buffer.
     buf: Vec<u8>,
@@ -81,7 +79,7 @@ enum Operation {
     Flush(io::Result<()>),
 }
 
-impl AsyncWrite for Stdout {
+impl Write for Stdout {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -119,14 +117,14 @@ impl AsyncWrite for Stdout {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::write(&mut inner.stdout, &mut inner.buf);
+                            let res = std::io::Write::write(&mut inner.stdout, &mut inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));
                     }
                 }
                 // Poll the asynchronous operation the stdout is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -147,14 +145,14 @@ impl AsyncWrite for Stdout {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = io::Write::flush(&mut inner.stdout);
+                            let res = std::io::Write::flush(&mut inner.stdout);
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))
                         }));
                     }
                 }
                 // Poll the asynchronous operation the stdout is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
+                State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),
             }
         }
     }
@@ -180,7 +178,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for Stdout {
             fn as_raw_fd(&self) -> RawFd {
-                io::stdout().as_raw_fd()
+                std::io::stdout().as_raw_fd()
             }
         }
     }
@@ -191,7 +189,7 @@ cfg_if! {
     if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for Stdout {
             fn as_raw_handle(&self) -> RawHandle {
-                io::stdout().as_raw_handle()
+                std::io::stdout().as_raw_handle()
             }
         }
     }

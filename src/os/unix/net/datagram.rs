@@ -4,14 +4,14 @@ use std::fmt;
 use std::net::Shutdown;
 use std::path::Path;
 
-use futures::future;
 use mio_uds;
 
 use super::SocketAddr;
+use crate::future;
 use crate::io;
-use crate::net::driver::IoHandle;
+use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-use crate::task::{blocking, Poll};
+use crate::task::blocking;
 
 /// A Unix datagram socket.
 ///
@@ -29,7 +29,6 @@ use crate::task::{blocking, Poll};
 /// ## Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::os::unix::net::UnixDatagram;
@@ -43,18 +42,13 @@ use crate::task::{blocking, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixDatagram {
-    #[cfg(not(feature = "docs"))]
-    io_handle: IoHandle<mio_uds::UnixDatagram>,
-
-    raw_fd: RawFd,
+    watcher: Watcher<mio_uds::UnixDatagram>,
 }
 
 impl UnixDatagram {
-    #[cfg(not(feature = "docs"))]
     fn new(socket: mio_uds::UnixDatagram) -> UnixDatagram {
         UnixDatagram {
-            raw_fd: socket.as_raw_fd(),
-            io_handle: IoHandle::new(socket),
+            watcher: Watcher::new(socket),
         }
     }
 
@@ -63,7 +57,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -83,7 +76,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -104,7 +96,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -132,7 +123,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -145,7 +135,7 @@ impl UnixDatagram {
     pub async fn connect<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         // TODO(stjepang): Connect the socket on a blocking pool.
         let p = path.as_ref();
-        self.io_handle.get_ref().connect(p)
+        self.watcher.get_ref().connect(p)
     }
 
     /// Returns the address of this socket.
@@ -153,7 +143,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -164,7 +153,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().local_addr()
+        self.watcher.get_ref().local_addr()
     }
 
     /// Returns the address of this socket's peer.
@@ -176,7 +165,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -188,7 +176,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
-        self.io_handle.get_ref().peer_addr()
+        self.watcher.get_ref().peer_addr()
     }
 
     /// Receives data from the socket.
@@ -198,7 +186,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -211,16 +198,8 @@ impl UnixDatagram {
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_readable(cx)?);
-
-            match self.io_handle.get_ref().recv_from(buf) {
-                Ok(n) => Poll::Ready(Ok(n)),
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_readable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
-            }
+            self.watcher
+                .poll_read_with(cx, |inner| inner.recv_from(buf))
         })
         .await
     }
@@ -232,7 +211,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -244,19 +222,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
-
-            match self.io_handle.get_ref().recv(buf) {
-                Ok(n) => Poll::Ready(Ok(n)),
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_writable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
-            }
-        })
-        .await
+        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.recv(buf))).await
     }
 
     /// Sends data on the socket to the specified address.
@@ -266,7 +232,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -278,16 +243,8 @@ impl UnixDatagram {
     /// ```
     pub async fn send_to<P: AsRef<Path>>(&self, buf: &[u8], path: P) -> io::Result<usize> {
         future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
-
-            match self.io_handle.get_ref().send_to(buf, path.as_ref()) {
-                Ok(n) => Poll::Ready(Ok(n)),
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_writable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
-            }
+            self.watcher
+                .poll_write_with(cx, |inner| inner.send_to(buf, path.as_ref()))
         })
         .await
     }
@@ -299,7 +256,6 @@ impl UnixDatagram {
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -311,19 +267,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| {
-            futures::ready!(self.io_handle.poll_writable(cx)?);
-
-            match self.io_handle.get_ref().send(buf) {
-                Ok(n) => Poll::Ready(Ok(n)),
-                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
-                    self.io_handle.clear_writable(cx)?;
-                    Poll::Pending
-                }
-                Err(err) => Poll::Ready(Err(err)),
-            }
-        })
-        .await
+        future::poll_fn(|cx| self.watcher.poll_write_with(cx, |inner| inner.send(buf))).await
     }
 
     /// Shut down the read, write, or both halves of this connection.
@@ -336,7 +280,6 @@ impl UnixDatagram {
     /// ## Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::os::unix::net::UnixDatagram;
@@ -348,7 +291,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
-        self.io_handle.get_ref().shutdown(how)
+        self.watcher.get_ref().shutdown(how)
     }
 }
 
@@ -374,15 +317,14 @@ impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
     fn from(datagram: std::os::unix::net::UnixDatagram) -> UnixDatagram {
         let mio_datagram = mio_uds::UnixDatagram::from_datagram(datagram).unwrap();
         UnixDatagram {
-            raw_fd: mio_datagram.as_raw_fd(),
-            io_handle: IoHandle::new(mio_datagram),
+            watcher: Watcher::new(mio_datagram),
         }
     }
 }
 
 impl AsRawFd for UnixDatagram {
     fn as_raw_fd(&self) -> RawFd {
-        self.raw_fd
+        self.watcher.get_ref().as_raw_fd()
     }
 }
 
@@ -395,6 +337,6 @@ impl FromRawFd for UnixDatagram {
 
 impl IntoRawFd for UnixDatagram {
     fn into_raw_fd(self) -> RawFd {
-        self.raw_fd
+        self.watcher.into_inner().into_raw_fd()
     }
 }

@@ -1,5 +1,6 @@
 use std::pin::Pin;
 
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// Creates a stream that yields the same item repeatedly.
@@ -7,7 +8,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
@@ -37,7 +37,7 @@ pub struct Repeat<T> {
     item: T,
 }
 
-impl<T: Clone> futures::Stream for Repeat<T> {
+impl<T: Clone> Stream for Repeat<T> {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {

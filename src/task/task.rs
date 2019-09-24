@@ -6,7 +6,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use super::local;
+use super::task_local;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 
@@ -46,6 +46,9 @@ impl fmt::Debug for Task {
 
 /// A handle that awaits the result of a task.
 ///
+/// Dropping a [`JoinHandle`] will detach the task, meaning that there is no longer
+/// a handle to the task and no way to `join` on it.
+///
 /// Created when a task is [spawned].
 ///
 /// [spawned]: fn.spawn.html
@@ -65,7 +68,6 @@ impl<T> JoinHandle<T> {
     /// # Examples
     ///
     /// ```
-    /// # #![feature(async_await)]
     /// # fn main() { async_std::task::block_on(async {
     /// #
     /// use async_std::task;
@@ -98,7 +100,6 @@ impl<T> Future for JoinHandle<T> {
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// #
 /// use async_std::task;
 ///
@@ -132,10 +133,12 @@ impl fmt::Display for TaskId {
     }
 }
 
+pub(crate) type Runnable = async_task::Task<Tag>;
+
 pub(crate) struct Metadata {
     pub task_id: TaskId,
     pub name: Option<String>,
-    pub local_map: local::Map,
+    pub local_map: task_local::Map,
 }
 
 pub(crate) struct Tag {
@@ -151,7 +154,7 @@ impl Tag {
             Task(Arc::new(Metadata {
                 task_id,
                 name: Some(name),
-                local_map: local::Map::new(),
+                local_map: task_local::Map::new(),
             }))
         });
 
@@ -171,7 +174,7 @@ impl Tag {
                 let new = Some(Task(Arc::new(Metadata {
                     task_id: TaskId::new(),
                     name: None,
-                    local_map: local::Map::new(),
+                    local_map: task_local::Map::new(),
                 })));
 
                 let new_raw = mem::transmute::<Option<Task>, usize>(new);

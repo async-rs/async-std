@@ -50,12 +50,14 @@ Remember the talk about "deferred computation" in the intro? That's all it is. I
 
 Let's have a look at a simple function, specifically the return value:
 
-```rust
-fn read_file(path: &str) -> Result<String, io::Error> {
-    let mut file = File.open(path)?;
+```rust,edition2018
+# use std::{fs::File, io, io::prelude::*};
+#
+fn read_file(path: &str) -> io::Result<String> {
+    let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    contents
+    Ok(contents)
 }
 ```
 
@@ -64,12 +66,14 @@ Note that this return value talks about the past. The past has a drawback: all d
 
 But we wanted to abstract over *computation* and let someone else choose how to run it. That's fundamentally incompatible with looking at the results of previous computation all the time. So, let's find a type that *describes* a computation without running it. Let's look at the function again:
 
-```rust
-fn read_file(path: &str) -> Result<String, io::Error> {
-    let mut file = File.open(path)?;
+```rust,edition2018
+# use std::{fs::File, io, io::prelude::*};
+#
+fn read_file(path: &str) -> io::Result<String> {
+    let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    contents
+    Ok(contents)
 }
 ```
 
@@ -79,10 +83,11 @@ This is the moment where we could reach for [threads](https://en.wikipedia.org/w
 
 What we are searching for is something that represents ongoing work towards a result in the future. Whenever we say "something" in Rust, we almost always mean a trait. Let's start with an incomplete definition of the `Future` trait:
 
-```rust
+```rust,edition2018
+# use std::{pin::Pin, task::{Context, Poll}};
+#
 trait Future {
     type Output;
-
     fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
 }
 ```
@@ -105,20 +110,21 @@ Note that calling `poll` again after case 1 happened may result in confusing beh
 
 While the `Future` trait has existed in Rust for a while, it was inconvenient to build and describe them. For this, Rust now has a special syntax: `async`. The example from above, implemented with `async-std`, would look like this:
 
-```rust
-use async_std::fs::File;
-
-async fn read_file(path: &str) -> Result<String, io::Error> {
-    let mut file = File.open(path).await?;
+```rust,edition2018
+# extern crate async_std;
+# use async_std::{fs::File, io, io::prelude::*};
+#
+async fn read_file(path: &str) -> io::Result<String> {
+    let mut file = File::open(path).await?;
     let mut contents = String::new();
     file.read_to_string(&mut contents).await?;
-    contents
+    Ok(contents)
 }
 ```
 
 Amazingly little difference, right? All we did is label the function `async` and insert 2 special commands: `.await`.
 
-This `async` function sets up a deferred computation. When this function is called, it will produce a `Future<Output=Result<String, io::Error>>` instead of immediately returning a `Result<String, io::Error>`. (Or, more precisely, generate a type for you that implements `Future<Output=Result<String, io::Error>>`.)
+This `async` function sets up a deferred computation. When this function is called, it will produce a `Future<Output = io::Result<String>>` instead of immediately returning a `io::Result<String>`. (Or, more precisely, generate a type for you that implements `Future<Output = io::Result<String>>`.)
 
 ## What does `.await` do?
 

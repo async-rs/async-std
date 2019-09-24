@@ -1,10 +1,12 @@
-use std::fs;
 use std::path::Path;
 
 use crate::io;
 use crate::task::blocking;
 
-/// Renames a file or directory to a new name, replacing the original if it already exists.
+/// Renames a file or directory to a new location.
+///
+/// If a file or directory already exists at the target location, it will be overwritten by this
+/// operation.
 ///
 /// This function is an async version of [`std::fs::rename`].
 ///
@@ -12,16 +14,16 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `from` does not exist.
+/// * `from` does not point to an existing file or directory.
 /// * `from` and `to` are on different filesystems.
-/// * The current process lacks permissions to rename `from` to `to`.
+/// * The current process lacks permissions to do the rename operation.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
@@ -33,5 +35,5 @@ use crate::task::blocking;
 pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
     let from = from.as_ref().to_owned();
     let to = to.as_ref().to_owned();
-    blocking::spawn(async move { fs::rename(&from, &to) }).await
+    blocking::spawn(async move { std::fs::rename(&from, &to) }).await
 }

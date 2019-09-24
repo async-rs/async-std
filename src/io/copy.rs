@@ -1,6 +1,8 @@
-use futures::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+use std::pin::Pin;
 
-use crate::io;
+use crate::future::Future;
+use crate::io::{self, BufRead, BufReader, Read, Write};
+use crate::task::{Context, Poll};
 
 /// Copies the entire contents of a reader into a writer.
 ///
@@ -14,7 +16,7 @@ use crate::io;
 /// If you’re wanting to copy the contents of one file to another and you’re
 /// working with filesystem paths, see the [`fs::copy`] function.
 ///
-/// This function is an async version of [`std::fs::write`].
+/// This function is an async version of [`std::io::copy`].
 ///
 /// [`std::io::copy`]: https://doc.rust-lang.org/std/io/fn.copy.html
 /// [`fs::copy`]: ../fs/fn.copy.html
@@ -28,7 +30,6 @@ use crate::io;
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
@@ -42,9 +43,58 @@ use crate::io;
 /// ```
 pub async fn copy<R, W>(reader: &mut R, writer: &mut W) -> io::Result<u64>
 where
-    R: AsyncRead + Unpin + ?Sized,
-    W: AsyncWrite + Unpin + ?Sized,
+    R: Read + Unpin + ?Sized,
+    W: Write + Unpin + ?Sized,
 {
-    let bytes_read = reader.copy_into(writer).await?;
-    Ok(bytes_read)
+    pub struct CopyFuture<'a, R, W: ?Sized> {
+        reader: R,
+        writer: &'a mut W,
+        amt: u64,
+    }
+
+    impl<R, W: Unpin + ?Sized> CopyFuture<'_, R, W> {
+        fn project(self: Pin<&mut Self>) -> (Pin<&mut R>, Pin<&mut W>, &mut u64) {
+            unsafe {
+                let this = self.get_unchecked_mut();
+                (
+                    Pin::new_unchecked(&mut this.reader),
+                    Pin::new(&mut *this.writer),
+                    &mut this.amt,
+                )
+            }
+        }
+    }
+
+    impl<R, W> Future for CopyFuture<'_, R, W>
+    where
+        R: BufRead,
+        W: Write + Unpin + ?Sized,
+    {
+        type Output = io::Result<u64>;
+
+        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            let (mut reader, mut writer, amt) = self.project();
+            loop {
+                let buffer = futures_core::ready!(reader.as_mut().poll_fill_buf(cx))?;
+                if buffer.is_empty() {
+                    futures_core::ready!(writer.as_mut().poll_flush(cx))?;
+                    return Poll::Ready(Ok(*amt));
+                }
+
+                let i = futures_core::ready!(writer.as_mut().poll_write(cx, buffer))?;
+                if i == 0 {
+                    return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
+                }
+                *amt += i as u64;
+                reader.as_mut().consume(i);
+            }
+        }
+    }
+
+    let future = CopyFuture {
+        reader: BufReader::new(reader),
+        writer,
+        amt: 0,
+    };
+    future.await
 }

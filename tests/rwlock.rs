@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 use std::cell::Cell;
 use std::num::Wrapping;
 use std::pin::Pin;

@@ -1,7 +1,5 @@
 //! Lists files in a directory given as an argument.
 
-#![feature(async_await)]
-
 use std::env::args;
 
 use async_std::fs;
@@ -15,8 +13,9 @@ fn main() -> io::Result<()> {
     task::block_on(async {
         let mut dir = fs::read_dir(&path).await?;
 
-        while let Some(entry) = dir.next().await {
-            println!("{}", entry?.file_name().to_string_lossy());
+        while let Some(res) = dir.next().await {
+            let entry = res?;
+            println!("{}", entry.file_name().to_string_lossy());
         }
 
         Ok(())

@@ -1,11 +1,11 @@
 ## Handling Disconnections
 
-Currently, we only ever *add* new peers to the map.
+Currently, we only ever _add_ new peers to the map.
 This is clearly wrong: if a peer closes connection to the chat, we should not try to send any more messages to it.
 
 One subtlety with handling disconnection is that we can detect it either in the reader's task, or in the writer's task.
 The most obvious solution here is to just remove the peer from the `peers` map in both cases, but this would be wrong.
-If *both* read and write fail, we'll remove the peer twice, but it can be the case that the peer reconnected between the two failures!
+If _both_ read and write fail, we'll remove the peer twice, but it can be the case that the peer reconnected between the two failures!
 To fix this, we will only remove the peer when the write side finishes.
 If the read side finishes we will notify the write side that it should stop as well.
 That is, we need to add an ability to signal shutdown for the writer task.
@@ -15,9 +15,21 @@ There's a more minimal solution however, which makes clever use of RAII.
 Closing a channel is a synchronization event, so we don't need to send a shutdown message, we can just drop the sender.
 This way, we statically guarantee that we issue shutdown exactly once, even if we early return via `?` or panic.
 
-First, let's add a shutdown channel to the `client`:
+First, let's add a shutdown channel to the `connection_loop`:
 
-```rust
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
+# use async_std::net::TcpStream;
+# use futures_channel::mpsc;
+# use futures_util::SinkExt;
+# use std::sync::Arc;
+#
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+#
 #[derive(Debug)]
 enum Void {} // 1
 
@@ -35,17 +47,17 @@ enum Event {
     },
 }
 
-async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> Result<()> {
     // ...
-
+#   let name: String = unimplemented!();
     let (_shutdown_sender, shutdown_receiver) = mpsc::unbounded::<Void>(); // 3
     broker.send(Event::NewPeer {
         name: name.clone(),
         stream: Arc::clone(&stream),
         shutdown: shutdown_receiver,
     }).await.unwrap();
-
     // ...
+#   unimplemented!()
 }
 ```
 
@@ -53,19 +65,33 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
 2. We pass the shutdown channel to the writer task
 3. In the reader, we create a `_shutdown_sender` whose only purpose is to get dropped.
 
-In the `client_writer`, we now need to choose between shutdown and message channels.
+In the `connection_writer_loop`, we now need to choose between shutdown and message channels.
 We use the `select` macro for this purpose:
 
-```rust
-use futures::select;
-use futures::FutureExt;
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
+# use async_std::{net::TcpStream, prelude::*};
+use futures_channel::mpsc;
+use futures_util::{select, FutureExt};
+# use std::sync::Arc;
 
-async fn client_writer(
+# type Receiver<T> = mpsc::UnboundedReceiver<T>;
+# type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+# type Sender<T> = mpsc::UnboundedSender<T>;
+
+# #[derive(Debug)]
+# enum Void {} // 1
+
+async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>, // 1
+    shutdown: Receiver<Void>, // 1
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
             msg = messages.next().fuse() => match msg {
@@ -86,7 +112,7 @@ async fn client_writer(
 2. Because of `select`, we can't use a `while let` loop, so we desugar it further into a `loop`.
 3. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
 
-Another problem is that between the moment we detect disconnection in `client_writer` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
+Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
 To not lose these messages completely, we'll return the messages channel back to the broker.
 This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infailable.
 
@@ -94,27 +120,22 @@ This also allows us to establish a useful invariant that the message channel str
 
 The final code looks like this:
 
-```rust
-#![feature(async_await)]
-
-use std::{
-    net::ToSocketAddrs,
-    sync::Arc,
-    collections::hash_map::{HashMap, Entry},
-};
-
-use futures::{
-    channel::mpsc,
-    SinkExt,
-    FutureExt,
-    select,
-};
-
+```rust,edition2018
+# extern crate async_std;
+# extern crate futures_channel;
+# extern crate futures_util;
 use async_std::{
     io::BufReader,
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
-    net::{TcpListener, TcpStream},
+};
+use futures_channel::mpsc;
+use futures_util::{select, FutureExt, SinkExt};
+use std::{
+    collections::hash_map::{Entry, HashMap},
+    future::Future,
+    sync::Arc,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -124,27 +145,27 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 #[derive(Debug)]
 enum Void {}
 
-fn main() -> Result<()> {
-    task::block_on(server("127.0.0.1:8080"))
+// main
+fn run() -> Result<()> {
+    task::block_on(accept_loop("127.0.0.1:8080"))
 }
 
-async fn server(addr: impl ToSocketAddrs) -> Result<()> {
+async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
-
     let (broker_sender, broker_receiver) = mpsc::unbounded();
-    let broker = task::spawn(broker(broker_receiver));
+    let broker_handle = task::spawn(broker_loop(broker_receiver));
     let mut incoming = listener.incoming();
     while let Some(stream) = incoming.next().await {
         let stream = stream?;
         println!("Accepting from: {}", stream.peer_addr()?);
-        spawn_and_log_error(client(broker_sender.clone(), stream));
+        spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender);
-    broker.await;
+    broker_handle.await;
     Ok(())
 }
 
-async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
+async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     let stream = Arc::new(stream);
     let reader = BufReader::new(&*stream);
     let mut lines = reader.lines();
@@ -179,12 +200,14 @@ async fn client(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
     Ok(())
 }
 
-async fn client_writer(
+async fn connection_writer_loop(
     messages: &mut Receiver<String>,
     stream: Arc<TcpStream>,
-    mut shutdown: Receiver<Void>,
+    shutdown: Receiver<Void>,
 ) -> Result<()> {
     let mut stream = &*stream;
+    let mut messages = messages.fuse();
+    let mut shutdown = shutdown.fuse();
     loop {
         select! {
             msg = messages.next().fuse() => match msg {
@@ -214,18 +237,18 @@ enum Event {
     },
 }
 
-async fn broker(mut events: Receiver<Event>) {
+async fn broker_loop(events: Receiver<Event>) {
     let (disconnect_sender, mut disconnect_receiver) = // 1
         mpsc::unbounded::<(String, Receiver<String>)>();
     let mut peers: HashMap<String, Sender<String>> = HashMap::new();
-
+    let mut events = events.fuse();
     loop {
         let event = select! {
-            event = events.next() => match event {
+            event = events.next().fuse() => match event {
                 None => break, // 2
                 Some(event) => event,
             },
-            disconnect = disconnect_receiver.next() => {
+            disconnect = disconnect_receiver.next().fuse() => {
                 let (name, _pending_messages) = disconnect.unwrap(); // 3
                 assert!(peers.remove(&name).is_some());
                 continue;
@@ -235,7 +258,8 @@ async fn broker(mut events: Receiver<Event>) {
             Event::Message { from, to, msg } => {
                 for addr in to {
                     if let Some(peer) = peers.get_mut(&addr) {
-                        peer.send(format!("from {}: {}\n", from, msg)).await
+                        let msg = format!("from {}: {}\n", from, msg);
+                        peer.send(msg).await
                             .unwrap() // 6
                     }
                 }
@@ -248,7 +272,7 @@ async fn broker(mut events: Receiver<Event>) {
                         entry.insert(client_sender);
                         let mut disconnect_sender = disconnect_sender.clone();
                         spawn_and_log_error(async move {
-                            let res = client_writer(&mut client_receiver, stream, shutdown).await;
+                            let res = connection_writer_loop(&mut client_receiver, stream, shutdown).await;
                             disconnect_sender.send((name, client_receiver)).await // 4
                                 .unwrap();
                             res

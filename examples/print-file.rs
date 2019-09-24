@@ -1,7 +1,5 @@
 //! Prints a file given as an argument to stdout.
 
-#![feature(async_await)]
-
 use std::env::args;
 
 use async_std::fs::File;
@@ -9,7 +7,7 @@ use async_std::io;
 use async_std::prelude::*;
 use async_std::task;
 
-const LEN: usize = 4 * 1024 * 1024; // 4 Mb
+const LEN: usize = 16 * 1024; // 16 Kb
 
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");

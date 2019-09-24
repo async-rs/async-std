@@ -1,4 +1,4 @@
-# Async version of Rust's standard library
+# Async version of the Rust standard library
 
 [![Build Status](https://travis-ci.com/async-rs/async-std.svg?branch=master)](https://travis-ci.com/async-rs/async-std)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/async-rs/async-std)
@@ -20,7 +20,7 @@ are used to, but in an async version and ready for Rust's `async`/`await` syntax
 
 ## Quickstart
 
-Add the following lines to you `Cargo.toml`:
+Add the following lines to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -38,8 +38,6 @@ $ cargo add async-std
 ## Hello world
 
 ```rust
-#![feature(async_await)]
-
 use async_std::task;
 
 fn main() {
@@ -52,8 +50,6 @@ fn main() {
 ## Low-Friction Sockets with Built-In Timeouts
 
 ```rust
-#![feature(async_await)]
-
 use std::time::Duration;
 
 use async_std::{
@@ -70,9 +66,9 @@ async fn get() -> io::Result<Vec<u8>> {
     let mut buf = vec![];
 
     io::timeout(Duration::from_secs(5), async {
-        stream.read_to_end(&mut buf).await?
+        stream.read_to_end(&mut buf).await?;
         Ok(buf)
-    })
+    }).await
 }
 
 fn main() {
@@ -84,6 +80,25 @@ fn main() {
     });
 }
 ```
+
+## Features
+
+`async-std` is strongly commited to following semver. This means your code won't
+break unless _you_ decide to upgrade.
+
+However every now and then we come up with something that we think will work
+_great_ for `async-std`, and we want to provide a sneak-peek so you can try it
+out. This is what we call _"unstable"_ features. You can try out the unstable
+features by enabling the `unstable` feature in your `Cargo.toml` file:
+
+```toml
+[dependencies.async-std]
+version = "0.99"
+features = ["unstable"]
+```
+
+Just be careful when using these features, as they may change between
+versions.
 
 ## Take a look around
 

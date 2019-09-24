@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::io;
@@ -15,15 +14,15 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` does not exist.
-/// * A non-final component in path is not a directory.
+/// * `path` does not point to an existing file or directory.
+/// * A non-final component in `path` is not a directory.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
@@ -34,5 +33,5 @@ use crate::task::blocking;
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::canonicalize(path) }).await
+    blocking::spawn(async move { std::fs::canonicalize(path) }).await
 }

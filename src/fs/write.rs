@@ -1,10 +1,9 @@
-use std::fs;
 use std::path::Path;
 
 use crate::io;
 use crate::task::blocking;
 
-/// Writes a slice of bytes as the entire contents of a file.
+/// Writes a slice of bytes as the new contents of a file.
 ///
 /// This function will create a file if it does not exist, and will entirely replace its contents
 /// if it does.
@@ -15,24 +14,25 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * The current process lacks permissions to write into `path`.
+/// * The file's parent directory does not exist.
+/// * The current process lacks permissions to write to the file.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
 ///
-/// fs::write("a.txt", b"Lorem ipsum").await?;
+/// fs::write("a.txt", b"Hello world!").await?;
 /// #
 /// # Ok(()) }) }
 /// ```
 pub async fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref().to_owned();
     let contents = contents.as_ref().to_owned();
-    blocking::spawn(async move { fs::write(path, contents) }).await
+    blocking::spawn(async move { std::fs::write(path, contents) }).await
 }

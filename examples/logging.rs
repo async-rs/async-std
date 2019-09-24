@@ -1,7 +1,5 @@
 //! Prints the runtime's execution log on the standard output.
 
-#![feature(async_await)]
-
 use async_std::task;
 
 fn main() {

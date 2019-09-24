@@ -1,9 +1,7 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures::io::{AsyncBufRead, AsyncRead, Initializer};
-
-use crate::io;
+use crate::io::{self, BufRead, Read};
 use crate::task::{Context, Poll};
 
 /// Creates a reader that contains no data.
@@ -11,7 +9,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```rust
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
@@ -26,7 +23,7 @@ use crate::task::{Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub fn empty() -> Empty {
-    Empty { _priv: () }
+    Empty { _private: () }
 }
 
 /// A reader that contains no data.
@@ -35,7 +32,7 @@ pub fn empty() -> Empty {
 ///
 /// [`sink`]: fn.sink.html
 pub struct Empty {
-    _priv: (),
+    _private: (),
 }
 
 impl fmt::Debug for Empty {
@@ -44,7 +41,7 @@ impl fmt::Debug for Empty {
     }
 }
 
-impl AsyncRead for Empty {
+impl Read for Empty {
     #[inline]
     fn poll_read(
         self: Pin<&mut Self>,
@@ -53,14 +50,9 @@ impl AsyncRead for Empty {
     ) -> Poll<io::Result<usize>> {
         Poll::Ready(Ok(0))
     }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
-    }
 }
 
-impl AsyncBufRead for Empty {
+impl BufRead for Empty {
     #[inline]
     fn poll_fill_buf<'a>(
         self: Pin<&'a mut Self>,

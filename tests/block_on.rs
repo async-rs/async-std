@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 use async_std::task;
 
 #[test]

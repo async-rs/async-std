@@ -1,7 +1,5 @@
 //! Spawns a task that says hello.
 
-#![feature(async_await)]
-
 use async_std::task;
 
 async fn say_hi() {

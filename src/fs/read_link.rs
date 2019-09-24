@@ -1,10 +1,9 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::io;
 use crate::task::blocking;
 
-/// Reads a symbolic link, returning the path it points to.
+/// Reads a symbolic link and returns the path it points to.
 ///
 /// This function is an async version of [`std::fs::read_link`].
 ///
@@ -12,15 +11,14 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` is not a symbolic link.
-/// * `path` does not exist.
+/// * `path` does not point to an existing link.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
@@ -31,5 +29,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::read_link(path) }).await
+    blocking::spawn(async move { std::fs::read_link(path) }).await
 }

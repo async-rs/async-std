@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
+use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 /// Creates a stream that doesn't yield any items.
@@ -8,7 +9,6 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
@@ -36,7 +36,7 @@ pub struct Empty<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T> futures::Stream for Empty<T> {
+impl<T> Stream for Empty<T> {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {

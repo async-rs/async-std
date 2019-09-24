@@ -12,8 +12,6 @@
 //! $ cargo run --example udp-client
 //! ```
 
-#![feature(async_await)]
-
 use async_std::io;
 use async_std::net::UdpSocket;
 use async_std::task;

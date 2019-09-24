@@ -10,7 +10,6 @@
 //! Spawn a task and await its result:
 //!
 //! ```
-//! # #![feature(async_await)]
 //! # fn main() { async_std::task::block_on(async {
 //! #
 //! use async_std::task;
@@ -18,6 +17,7 @@
 //! let handle = task::spawn(async {
 //!     1 + 2
 //! });
+//! assert_eq!(handle.await, 3);
 //! #
 //! # }) }
 //! ```
@@ -25,14 +25,21 @@
 #[doc(inline)]
 pub use std::task::{Context, Poll, Waker};
 
-pub use local::{AccessError, LocalKey};
-pub use pool::{block_on, current, spawn, Builder};
+pub use block_on::block_on;
+pub use builder::Builder;
+pub use pool::spawn;
 pub use sleep::sleep;
 pub use task::{JoinHandle, Task, TaskId};
+pub use task_local::{AccessError, LocalKey};
+pub use worker::current;
 
-mod local;
+mod block_on;
+mod builder;
 mod pool;
 mod sleep;
+mod sleepers;
 mod task;
+mod task_local;
+mod worker;
 
 pub(crate) mod blocking;

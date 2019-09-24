@@ -1,10 +1,10 @@
-use std::fs;
 use std::path::Path;
 
+use crate::fs::Permissions;
 use crate::io;
 use crate::task::blocking;
 
-/// Changes the permissions on a file or directory.
+/// Changes the permissions of a file or directory.
 ///
 /// This function is an async version of [`std::fs::set_permissions`].
 ///
@@ -12,15 +12,15 @@ use crate::task::blocking;
 ///
 /// # Errors
 ///
-/// An error will be returned in the following situations (not an exhaustive list):
+/// An error will be returned in the following situations:
 ///
-/// * `path` does not exist.
-/// * The current process lacks permissions to change attributes of `path`.
+/// * `path` does not point to an existing file or directory.
+/// * The current process lacks permissions to change attributes on the file or directory.
+/// * Some other I/O error occurred.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs;
@@ -31,7 +31,7 @@ use crate::task::blocking;
 /// #
 /// # Ok(()) }) }
 /// ```
-pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: fs::Permissions) -> io::Result<()> {
+pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: Permissions) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { fs::set_permissions(path, perm) }).await
+    blocking::spawn(async move { std::fs::set_permissions(path, perm) }).await
 }

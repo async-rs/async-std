@@ -1,31 +1,32 @@
-//! Types for working with files.
-
-use std::fs;
-use std::io::{Read as _, Seek, SeekFrom, Write as _};
+use std::cell::UnsafeCell;
+use std::cmp;
+use std::fmt;
+use std::io::{Read as _, Seek as _, Write as _};
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::pin::Pin;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use cfg_if::cfg_if;
-use futures::future::{self, FutureExt, TryFutureExt};
-use futures::io::{AsyncRead, AsyncSeek, AsyncWrite, Initializer};
 
-use crate::future::Future;
-use crate::io;
-use crate::task::{blocking, Context, Poll};
+use crate::fs::{Metadata, Permissions};
+use crate::future;
+use crate::io::{self, Read, Seek, SeekFrom, Write};
+use crate::prelude::*;
+use crate::task::{self, blocking, Context, Poll, Waker};
 
-/// A reference to a file on the filesystem.
+/// An open file on the filesystem.
 ///
-/// An instance of a `File` can be read and/or written depending on what options it was opened
-/// with.
+/// Depending on what options the file was opened with, this type can be used for reading and/or
+/// writing.
 ///
-/// Files are automatically closed when they go out of scope. Errors detected on closing are
-/// ignored by the implementation of `Drop`. Use the method [`sync_all`] if these errors must be
-/// manually handled.
+/// Files are automatically closed when they get dropped and any errors detected on closing are
+/// ignored. Use the [`sync_all`] method before dropping a file if such errors need to be handled.
 ///
 /// This type is an async version of [`std::fs::File`].
 ///
-/// [`sync_all`]: struct.File.html#method.sync_all
+/// [`sync_all`]: #method.sync_all
 /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
 ///
 /// # Examples
@@ -33,7 +34,6 @@ use crate::task::{blocking, Context, Poll};
 /// Create a new file and write some bytes to it:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::File;
@@ -45,10 +45,9 @@ use crate::task::{blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 ///
-/// Read the contents of a file into a `Vec<u8>`:
+/// Read the contents of a file into a vector of bytes:
 ///
 /// ```no_run
-/// # #![feature(async_await)]
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::fs::File;
@@ -60,71 +59,34 @@ use crate::task::{blocking, Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-#[derive(Debug)]
 pub struct File {
-    mutex: Mutex<State>,
+    /// A reference to the inner file.
+    file: Arc<std::fs::File>,
 
-    #[cfg(unix)]
-    raw_fd: std::os::unix::io::RawFd,
-
-    #[cfg(windows)]
-    raw_handle: UnsafeShared<std::os::windows::io::RawHandle>,
-}
-
-/// The state of an asynchronous file.
-///
-/// The file can be either idle or busy performing an asynchronous operation.
-#[derive(Debug)]
-enum State {
-    /// The file is idle.
-    ///
-    /// If the inner representation is `None`, that means the file is closed.
-    Idle(Option<Inner>),
-
-    /// The file is blocked on an asynchronous operation.
-    ///
-    /// Awaiting this operation will result in the new state of the file.
-    Busy(blocking::JoinHandle<State>),
-}
-
-/// Inner representation of an asynchronous file.
-#[derive(Debug)]
-struct Inner {
-    /// The blocking file handle.
-    file: fs::File,
-
-    /// The read/write buffer.
-    buf: Vec<u8>,
-
-    /// The result of the last asynchronous operation on the file.
-    last_op: Option<Operation>,
-}
-
-/// Possible results of an asynchronous operation on a file.
-#[derive(Debug)]
-enum Operation {
-    Read(io::Result<usize>),
-    Write(io::Result<usize>),
-    Seek(io::Result<u64>),
-    Flush(io::Result<()>),
+    /// The state of the file protected by an async lock.
+    lock: Lock<State>,
 }
 
 impl File {
     /// Opens a file in read-only mode.
     ///
-    /// See the [`OpenOptions::open`] method for more details.
+    /// See the [`OpenOptions::open`] function for more options.
     ///
     /// # Errors
     ///
-    /// This function will return an error if `path` does not already exist.
-    /// Other errors may also be returned according to [`OpenOptions::open`].
+    /// An error will be returned in the following situations:
     ///
-    /// [`OpenOptions::open`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
+    /// * `path` does not point to an existing file.
+    /// * The current process lacks permissions to read the file.
+    /// * Some other I/O error occurred.
+    ///
+    /// For more details, see the list of errors documented by [`OpenOptions::open`].
+    ///
+    /// [`OpenOptions::open`]: struct.OpenOptions.html#method.open
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -135,43 +97,31 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { fs::File::open(&path) }).await?;
-
-        #[cfg(unix)]
-        let file = File {
-            raw_fd: file.as_raw_fd(),
-            mutex: Mutex::new(State::Idle(Some(Inner {
-                file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
-
-        #[cfg(windows)]
-        let file = File {
-            raw_handle: UnsafeShared(file.as_raw_handle()),
-            mutex: Mutex::new(State::Idle(Some(Inner {
-                file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
-
-        Ok(file)
+        let file = blocking::spawn(async move { std::fs::File::open(&path) }).await?;
+        Ok(file.into())
     }
 
     /// Opens a file in write-only mode.
     ///
     /// This function will create a file if it does not exist, and will truncate it if it does.
     ///
-    /// See the [`OpenOptions::open`] function for more details.
+    /// See the [`OpenOptions::open`] function for more options.
     ///
-    /// [`OpenOptions::open`]: https://doc.rust-lang.org/std/fs/struct.OpenOptions.html
+    /// # Errors
+    ///
+    /// An error will be returned in the following situations:
+    ///
+    /// * The file's parent directory does not exist.
+    /// * The current process lacks permissions to write to the file.
+    /// * Some other I/O error occurred.
+    ///
+    /// For more details, see the list of errors documented by [`OpenOptions::open`].
+    ///
+    /// [`OpenOptions::open`]: struct.OpenOptions.html#method.open
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -182,43 +132,20 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { fs::File::create(&path) }).await?;
-
-        #[cfg(unix)]
-        let file = File {
-            raw_fd: file.as_raw_fd(),
-            mutex: Mutex::new(State::Idle(Some(Inner {
-                file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
-
-        #[cfg(windows)]
-        let file = File {
-            raw_handle: UnsafeShared(file.as_raw_handle()),
-            mutex: Mutex::new(State::Idle(Some(Inner {
-                file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
-
-        Ok(file)
+        let file = blocking::spawn(async move { std::fs::File::create(&path) }).await?;
+        Ok(file.into())
     }
 
-    /// Attempts to synchronize all OS-internal metadata to disk.
+    /// Synchronizes OS-internal buffered contents and metadata to disk.
     ///
-    /// This function will attempt to ensure that all in-memory data reaches the filesystem before
-    /// returning.
+    /// This function will ensure that all in-memory data reaches the filesystem.
     ///
-    /// This can be used to handle errors that would otherwise only be caught when the `File` is
-    /// closed. Dropping a file will ignore errors in synchronizing this in-memory data.
+    /// This can be used to handle errors that would otherwise only be caught when the file is
+    /// closed. When a file is dropped, errors in synchronizing this in-memory data are ignored.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -231,50 +158,30 @@ impl File {
     /// # Ok(()) }) }
     /// ```
     pub async fn sync_all(&self) -> io::Result<()> {
-        future::poll_fn(|cx| {
-            let state = &mut *self.mutex.lock().unwrap();
-
-            loop {
-                match state {
-                    State::Idle(opt) => match opt.take() {
-                        None => return Poll::Ready(None),
-                        Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                let res = inner.file.sync_all();
-                                let _ = s.send(res);
-                                State::Idle(Some(inner))
-                            }));
-
-                            return Poll::Ready(Some(r));
-                        }
-                    },
-                    // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
+        // Flush the write cache before calling `sync_all()`.
+        let state = future::poll_fn(|cx| {
+            let state = futures_core::ready!(self.lock.poll_lock(cx));
+            state.poll_flush(cx)
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await?;
+
+        blocking::spawn(async move { state.file.sync_all() }).await
     }
 
-    /// Similar to [`sync_all`], except that it may not synchronize file metadata.
+    /// Synchronizes OS-internal buffered contents to disk.
     ///
-    /// This is intended for use cases that must synchronize content, but don't need the metadata
-    /// on disk. The goal of this method is to reduce disk operations.
+    /// This is similar to [`sync_all`], except that file metadata may not be synchronized.
+    ///
+    /// This is intended for use cases that must synchronize the contents of the file, but don't
+    /// need the file metadata synchronized to disk.
     ///
     /// Note that some platforms may simply implement this in terms of [`sync_all`].
     ///
-    /// [`sync_all`]: struct.File.html#method.sync_all
+    /// [`sync_all`]: #method.sync_all
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -287,54 +194,28 @@ impl File {
     /// # Ok(()) }) }
     /// ```
     pub async fn sync_data(&self) -> io::Result<()> {
-        future::poll_fn(|cx| {
-            let state = &mut *self.mutex.lock().unwrap();
-
-            loop {
-                match state {
-                    State::Idle(opt) => match opt.take() {
-                        None => return Poll::Ready(None),
-                        Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                let res = inner.file.sync_data();
-                                let _ = s.send(res);
-                                State::Idle(Some(inner))
-                            }));
-
-                            return Poll::Ready(Some(r));
-                        }
-                    },
-                    // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
+        // Flush the write cache before calling `sync_data()`.
+        let state = future::poll_fn(|cx| {
+            let state = futures_core::ready!(self.lock.poll_lock(cx));
+            state.poll_flush(cx)
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await?;
+
+        blocking::spawn(async move { state.file.sync_data() }).await
     }
 
-    /// Truncates or extends the underlying file.
+    /// Truncates or extends the file.
     ///
-    /// If the `size` is less than the current file's size, then the file will be truncated. If it
-    /// is greater than the current file's size, then the file will be extended to `size` and have
-    /// all of the intermediate data filled in with zeros.
+    /// If `size` is less than the current file size, then the file will be truncated. If it is
+    /// greater than the current file size, then the file will be extended to `size` and have all
+    /// intermediate data filled with zeros.
     ///
-    /// The file's cursor isn't changed. In particular, if the cursor was at the end and the file
-    /// is truncated using this operation, the cursor will now be past the end.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if the file is not opened for writing.
+    /// The file's cursor stays at the same position, even if the cursor ends up being past the end
+    /// of the file after this operation.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -345,43 +226,22 @@ impl File {
     /// # Ok(()) }) }
     /// ```
     pub async fn set_len(&self, size: u64) -> io::Result<()> {
-        future::poll_fn(|cx| {
-            let state = &mut *self.mutex.lock().unwrap();
-
-            loop {
-                match state {
-                    State::Idle(opt) => match opt.take() {
-                        None => return Poll::Ready(None),
-                        Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                let res = inner.file.set_len(size);
-                                let _ = s.send(res);
-                                State::Idle(Some(inner))
-                            }));
-
-                            return Poll::Ready(Some(r));
-                        }
-                    },
-                    // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
+        // Invalidate the read cache and flush the write cache before calling `set_len()`.
+        let state = future::poll_fn(|cx| {
+            let state = futures_core::ready!(self.lock.poll_lock(cx));
+            let state = futures_core::ready!(state.poll_unread(cx))?;
+            state.poll_flush(cx)
         })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+        .await?;
+
+        blocking::spawn(async move { state.file.set_len(size) }).await
     }
 
-    /// Queries metadata about the file.
+    /// Reads the file's metadata.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -391,49 +251,23 @@ impl File {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn metadata(&self) -> io::Result<fs::Metadata> {
-        future::poll_fn(|cx| {
-            let state = &mut *self.mutex.lock().unwrap();
-
-            loop {
-                match state {
-                    State::Idle(opt) => match opt.take() {
-                        None => return Poll::Ready(None),
-                        Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                let res = inner.file.metadata();
-                                let _ = s.send(res);
-                                State::Idle(Some(inner))
-                            }));
-
-                            return Poll::Ready(Some(r));
-                        }
-                    },
-                    // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
-        })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+    pub async fn metadata(&self) -> io::Result<Metadata> {
+        let file = self.file.clone();
+        blocking::spawn(async move { file.metadata() }).await
     }
 
-    /// Changes the permissions on the underlying file.
+    /// Changes the permissions on the file.
     ///
     /// # Errors
     ///
-    /// This function will return an error if the user lacks permission to change attributes on the
-    /// underlying file, but may also return an error in other OS-specific cases.
+    /// An error will be returned in the following situations:
+    ///
+    /// * The current process lacks permissions to change attributes on the file.
+    /// * Some other I/O error occurred.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # #![feature(async_await)]
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::fs::File;
@@ -446,43 +280,29 @@ impl File {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn set_permissions(&self, perm: fs::Permissions) -> io::Result<()> {
-        let mut perm = Some(perm);
-
-        future::poll_fn(|cx| {
-            let state = &mut *self.mutex.lock().unwrap();
-
-            loop {
-                match state {
-                    State::Idle(opt) => match opt.take() {
-                        None => return Poll::Ready(None),
-                        Some(inner) => {
-                            let (s, r) = futures::channel::oneshot::channel();
-                            let perm = perm.take().unwrap();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
-                                let res = inner.file.set_permissions(perm);
-                                let _ = s.send(res);
-                                State::Idle(Some(inner))
-                            }));
-
-                            return Poll::Ready(Some(r));
-                        }
-                    },
-                    // Poll the asynchronous operation the file is currently blocked on.
-                    State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-                }
-            }
-        })
-        .map(|opt| opt.ok_or_else(|| io_error("file closed")))
-        .await?
-        .map_err(|_| io_error("blocking task failed"))
-        .await?
+    pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
+        let file = self.file.clone();
+        blocking::spawn(async move { file.set_permissions(perm) }).await
     }
 }
 
-impl AsyncRead for File {
+impl Drop for File {
+    fn drop(&mut self) {
+        // We need to flush the file on drop. Unfortunately, that is not possible to do in a
+        // non-blocking fashion, but our only other option here is losing data remaining in the
+        // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
+        // file destructors so we don't expect this to be a common problem in practice.
+        let _ = task::block_on(self.flush());
+    }
+}
+
+impl fmt::Debug for File {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.file.fmt(f)
+    }
+}
+
+impl Read for File {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -490,80 +310,20 @@ impl AsyncRead for File {
     ) -> Poll<io::Result<usize>> {
         Pin::new(&mut &*self).poll_read(cx, buf)
     }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
-    }
 }
 
-impl AsyncRead for &File {
+impl Read for &File {
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let state = &mut *self.mutex.lock().unwrap();
-
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    // Grab a reference to the inner representation of the file or return an error
-                    // if the file is closed.
-                    let inner = opt.as_mut().ok_or_else(|| io_error("file closed"))?;
-                    let mut offset = 0;
-
-                    // Check if the operation has completed.
-                    if let Some(Operation::Read(res)) = inner.last_op.take() {
-                        let n = res?;
-
-                        if n <= buf.len() {
-                            // Copy the read data into the buffer and return.
-                            buf[..n].copy_from_slice(&inner.buf[..n]);
-                            return Poll::Ready(Ok(n));
-                        }
-
-                        // If more data was read than fits into the buffer, let's retry the read
-                        // operation, but first move the cursor where it was before the previous
-                        // read.
-                        offset = n;
-                    }
-
-                    let mut inner = opt.take().unwrap();
-
-                    // Set the length of the inner buffer to the length of the provided buffer.
-                    if inner.buf.len() < buf.len() {
-                        inner.buf.reserve(buf.len() - inner.buf.len());
-                    }
-                    unsafe {
-                        inner.buf.set_len(buf.len());
-                    }
-
-                    // Start the operation asynchronously.
-                    *state = State::Busy(blocking::spawn(async move {
-                        if offset > 0 {
-                            let pos = SeekFrom::Current(-(offset as i64));
-                            let _ = Seek::seek(&mut inner.file, pos);
-                        }
-
-                        let res = inner.file.read(&mut inner.buf);
-                        inner.last_op = Some(Operation::Read(res));
-                        State::Idle(Some(inner))
-                    }));
-                }
-                // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-            }
-        }
-    }
-
-    #[inline]
-    unsafe fn initializer(&self) -> Initializer {
-        Initializer::nop()
+        let state = futures_core::ready!(self.lock.poll_lock(cx));
+        state.poll_read(cx, buf)
     }
 }
 
-impl AsyncWrite for File {
+impl Write for File {
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -581,118 +341,28 @@ impl AsyncWrite for File {
     }
 }
 
-impl AsyncWrite for &File {
+impl Write for &File {
     fn poll_write(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        let state = &mut *self.mutex.lock().unwrap();
-
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    // Grab a reference to the inner representation of the file or return an error
-                    // if the file is closed.
-                    let inner = opt.as_mut().ok_or_else(|| io_error("file closed"))?;
-
-                    // Check if the operation has completed.
-                    if let Some(Operation::Write(res)) = inner.last_op.take() {
-                        let n = res?;
-
-                        // If more data was written than is available in the buffer, let's retry
-                        // the write operation.
-                        if n <= buf.len() {
-                            return Poll::Ready(Ok(n));
-                        }
-                    } else {
-                        let mut inner = opt.take().unwrap();
-
-                        // Set the length of the inner buffer to the length of the provided buffer.
-                        if inner.buf.len() < buf.len() {
-                            inner.buf.reserve(buf.len() - inner.buf.len());
-                        }
-                        unsafe {
-                            inner.buf.set_len(buf.len());
-                        }
-
-                        // Copy the data to write into the inner buffer.
-                        inner.buf[..buf.len()].copy_from_slice(buf);
-
-                        // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
-                            let res = inner.file.write(&mut inner.buf);
-                            inner.last_op = Some(Operation::Write(res));
-                            State::Idle(Some(inner))
-                        }));
-                    }
-                }
-                // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-            }
-        }
+        let state = futures_core::ready!(self.lock.poll_lock(cx));
+        state.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let state = &mut *self.mutex.lock().unwrap();
-
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    // Grab a reference to the inner representation of the file or return if the
-                    // file is closed.
-                    let inner = match opt.as_mut() {
-                        None => return Poll::Ready(Ok(())),
-                        Some(s) => s,
-                    };
-
-                    // Check if the operation has completed.
-                    if let Some(Operation::Flush(res)) = inner.last_op.take() {
-                        return Poll::Ready(res);
-                    } else {
-                        let mut inner = opt.take().unwrap();
-
-                        // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
-                            let res = inner.file.flush();
-                            inner.last_op = Some(Operation::Flush(res));
-                            State::Idle(Some(inner))
-                        }));
-                    }
-                }
-                // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-            }
-        }
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let state = futures_core::ready!(self.lock.poll_lock(cx));
+        state.poll_flush(cx).map(|res| res.map(drop))
     }
 
-    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let state = &mut *self.mutex.lock().unwrap();
-
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    // Grab a reference to the inner representation of the file or return if the
-                    // file is closed.
-                    let inner = match opt.take() {
-                        None => return Poll::Ready(Ok(())),
-                        Some(s) => s,
-                    };
-
-                    // Start the operation asynchronously.
-                    *state = State::Busy(blocking::spawn(async move {
-                        drop(inner);
-                        State::Idle(None)
-                    }));
-                }
-                // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-            }
-        }
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let state = futures_core::ready!(self.lock.poll_lock(cx));
+        state.poll_close(cx)
     }
 }
 
-impl AsyncSeek for File {
+impl Seek for File {
     fn poll_seek(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -702,71 +372,32 @@ impl AsyncSeek for File {
     }
 }
 
-impl AsyncSeek for &File {
+impl Seek for &File {
     fn poll_seek(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         pos: SeekFrom,
     ) -> Poll<io::Result<u64>> {
-        let state = &mut *self.mutex.lock().unwrap();
-
-        loop {
-            match state {
-                State::Idle(opt) => {
-                    // Grab a reference to the inner representation of the file or return an error
-                    // if the file is closed.
-                    let inner = opt.as_mut().ok_or_else(|| io_error("file closed"))?;
-
-                    // Check if the operation has completed.
-                    if let Some(Operation::Seek(res)) = inner.last_op.take() {
-                        return Poll::Ready(res);
-                    } else {
-                        let mut inner = opt.take().unwrap();
-
-                        // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
-                            let res = inner.file.seek(pos);
-                            inner.last_op = Some(Operation::Seek(res));
-                            State::Idle(Some(inner))
-                        }));
-                    }
-                }
-                // Poll the asynchronous operation the file is currently blocked on.
-                State::Busy(task) => *state = futures::ready!(Pin::new(task).poll(cx)),
-            }
-        }
+        let state = futures_core::ready!(self.lock.poll_lock(cx));
+        state.poll_seek(cx, pos)
     }
 }
 
-/// Creates a custom `io::Error` with an arbitrary error type.
-fn io_error(err: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, err)
-}
-
 impl From<std::fs::File> for File {
-    /// Converts a `std::fs::File` into its asynchronous equivalent.
-    fn from(file: fs::File) -> File {
-        #[cfg(unix)]
-        let file = File {
-            raw_fd: file.as_raw_fd(),
-            mutex: Mutex::new(State::Idle(Some(Inner {
-                file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
+    fn from(file: std::fs::File) -> File {
+        let file = Arc::new(file);
 
-        #[cfg(windows)]
-        let file = File {
-            raw_handle: UnsafeShared(file.as_raw_handle()),
-            mutex: Mutex::new(State::Idle(Some(Inner {
+        File {
+            file: file.clone(),
+            lock: Lock::new(State {
                 file,
-                buf: Vec::new(),
-                last_op: None,
-            }))),
-        };
-
-        file
+                mode: Mode::Idle,
+                cache: Vec::new(),
+                is_flushed: false,
+                last_read_err: None,
+                last_write_err: None,
+            }),
+        }
     }
 }
 
@@ -786,19 +417,23 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for File {
             fn as_raw_fd(&self) -> RawFd {
-                self.raw_fd
+                self.file.as_raw_fd()
             }
         }
 
         impl FromRawFd for File {
             unsafe fn from_raw_fd(fd: RawFd) -> File {
-                fs::File::from_raw_fd(fd).into()
+                std::fs::File::from_raw_fd(fd).into()
             }
         }
 
         impl IntoRawFd for File {
             fn into_raw_fd(self) -> RawFd {
-                self.raw_fd
+                let file = self.file.clone();
+                drop(self);
+                Arc::try_unwrap(file)
+                    .expect("cannot acquire ownership of the file handle after drop")
+                    .into_raw_fd()
             }
         }
     }
@@ -809,26 +444,425 @@ cfg_if! {
     if #[cfg(any(windows, feature = "docs"))] {
         impl AsRawHandle for File {
             fn as_raw_handle(&self) -> RawHandle {
-                self.raw_handle.0
+                self.file.as_raw_handle()
             }
         }
 
         impl FromRawHandle for File {
             unsafe fn from_raw_handle(handle: RawHandle) -> File {
-                fs::File::from_raw_handle(handle).into()
+                std::fs::File::from_raw_handle(handle).into()
             }
         }
 
         impl IntoRawHandle for File {
             fn into_raw_handle(self) -> RawHandle {
-                self.raw_handle.0
+                let file = self.file.clone();
+                drop(self);
+                Arc::try_unwrap(file)
+                    .expect("cannot acquire ownership of the file handle after drop")
+                    .into_raw_handle()
+            }
+        }
+    }
+}
+
+/// An async mutex with non-borrowing lock guards.
+struct Lock<T>(Arc<LockState<T>>);
+
+unsafe impl<T: Send> Send for Lock<T> {}
+unsafe impl<T: Send> Sync for Lock<T> {}
+
+/// The state of a lock.
+struct LockState<T> {
+    /// Set to `true` when locked.
+    locked: AtomicBool,
+
+    /// The inner value.
+    value: UnsafeCell<T>,
+
+    /// A list of tasks interested in acquiring the lock.
+    wakers: Mutex<Vec<Waker>>,
+}
+
+impl<T> Lock<T> {
+    /// Creates a new lock initialized with `value`.
+    fn new(value: T) -> Lock<T> {
+        Lock(Arc::new(LockState {
+            locked: AtomicBool::new(false),
+            value: UnsafeCell::new(value),
+            wakers: Mutex::new(Vec::new()),
+        }))
+    }
+
+    /// Attempts to acquire the lock.
+    fn poll_lock(&self, cx: &mut Context<'_>) -> Poll<LockGuard<T>> {
+        // Try acquiring the lock.
+        if self.0.locked.swap(true, Ordering::Acquire) {
+            // Lock the list of wakers.
+            let mut list = self.0.wakers.lock().unwrap();
+
+            // Try acquiring the lock again.
+            if self.0.locked.swap(true, Ordering::Acquire) {
+                // If failed again, add the current task to the list and return.
+                if list.iter().all(|w| !w.will_wake(cx.waker())) {
+                    list.push(cx.waker().clone());
+                }
+                return Poll::Pending;
             }
         }
 
-        #[derive(Debug)]
-        struct UnsafeShared<T>(T);
+        // The lock was successfully acquired.
+        Poll::Ready(LockGuard(self.0.clone()))
+    }
+}
 
-        unsafe impl<T> Send for UnsafeShared<T> {}
-        unsafe impl<T> Sync for UnsafeShared<T> {}
+/// A lock guard.
+///
+/// When dropped, ownership of the inner value is returned back to the lock.
+struct LockGuard<T>(Arc<LockState<T>>);
+
+unsafe impl<T: Send> Send for LockGuard<T> {}
+unsafe impl<T: Sync> Sync for LockGuard<T> {}
+
+impl<T> LockGuard<T> {
+    /// Registers a task interested in acquiring the lock.
+    ///
+    /// When this lock guard gets dropped, all registered tasks will be woken up.
+    fn register(&self, cx: &Context<'_>) {
+        let mut list = self.0.wakers.lock().unwrap();
+
+        if list.iter().all(|w| !w.will_wake(cx.waker())) {
+            list.push(cx.waker().clone());
+        }
+    }
+}
+
+impl<T> Drop for LockGuard<T> {
+    fn drop(&mut self) {
+        // Release the lock.
+        self.0.locked.store(false, Ordering::Release);
+
+        // Wake up all registered tasks interested in acquiring the lock.
+        for w in self.0.wakers.lock().unwrap().drain(..) {
+            w.wake();
+        }
+    }
+}
+
+impl<T> Deref for LockGuard<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        unsafe { &*self.0.value.get() }
+    }
+}
+
+impl<T> DerefMut for LockGuard<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.0.value.get() }
+    }
+}
+
+/// Modes a file can be in.
+///
+/// The file can either be in idle mode, reading mode, or writing mode.
+enum Mode {
+    /// The cache is empty.
+    Idle,
+
+    /// The cache contains data read from the inner file.
+    ///
+    /// The `usize` represents how many bytes from the beginning of cache have been consumed.
+    Reading(usize),
+
+    /// The cache contains data that needs to be written to the inner file.
+    Writing,
+}
+
+/// The current state of a file.
+///
+/// The `File` struct protects this state behind a lock.
+///
+/// Filesystem operations that get spawned as blocking tasks will acquire the lock, take ownership
+/// of the state and return it back once the operation completes.
+struct State {
+    /// The inner file.
+    file: Arc<std::fs::File>,
+
+    /// The current mode (idle, reading, or writing).
+    mode: Mode,
+
+    /// The read/write cache.
+    ///
+    /// If in reading mode, the cache contains a chunk of data that has been read from the file.
+    /// If in writing mode, the cache contains data that will eventually be written to the file.
+    cache: Vec<u8>,
+
+    /// Set to `true` if the file is flushed.
+    ///
+    /// When a file is flushed, the write cache and the inner file's buffer are empty.
+    is_flushed: bool,
+
+    /// The last read error that came from an async operation.
+    last_read_err: Option<io::Error>,
+
+    /// The last write error that came from an async operation.
+    last_write_err: Option<io::Error>,
+}
+
+impl LockGuard<State> {
+    /// Seeks to a new position in the file.
+    fn poll_seek(mut self, cx: &mut Context<'_>, pos: SeekFrom) -> Poll<io::Result<u64>> {
+        // If this operation doesn't move the cursor, then poll the current position inside the
+        // file. This call should not block because it doesn't touch the actual file on disk.
+        if pos == SeekFrom::Current(0) {
+            // Poll the internal file cursor.
+            let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+
+            // Factor in the difference caused by caching.
+            let actual = match self.mode {
+                Mode::Idle => internal,
+                Mode::Reading(start) => internal - self.cache.len() as u64 + start as u64,
+                Mode::Writing => internal + self.cache.len() as u64,
+            };
+            return Poll::Ready(Ok(actual));
+        }
+
+        // If the file is in reading mode and the cache will stay valid after seeking, then adjust
+        // the current position in the read cache without invaliding it.
+        if let Mode::Reading(start) = self.mode {
+            if let SeekFrom::Current(diff) = pos {
+                if let Some(new) = (start as i64).checked_add(diff) {
+                    if 0 <= new && new <= self.cache.len() as i64 {
+                        // Poll the internal file cursor.
+                        let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+
+                        // Adjust the current position in the read cache.
+                        self.mode = Mode::Reading(new as usize);
+
+                        // Factor in the difference caused by caching.
+                        return Poll::Ready(Ok(internal - self.cache.len() as u64 + new as u64));
+                    }
+                }
+            }
+        }
+
+        // Invalidate the read cache and flush the write cache before calling `seek()`.
+        self = futures_core::ready!(self.poll_unread(cx))?;
+        self = futures_core::ready!(self.poll_flush(cx))?;
+
+        // Seek to the new position. This call should not block because it only changes the
+        // internal offset into the file and doesn't touch the actual file on disk.
+        Poll::Ready((&*self.file).seek(pos))
+    }
+
+    /// Reads some bytes from the file into a buffer.
+    fn poll_read(mut self, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<io::Result<usize>> {
+        // If an async operation has left a read error, return it now.
+        if let Some(err) = self.last_read_err.take() {
+            return Poll::Ready(Err(err));
+        }
+
+        match self.mode {
+            Mode::Idle => {}
+            Mode::Reading(start) => {
+                // How many bytes in the cache are available for reading.
+                let available = self.cache.len() - start;
+
+                // If there is cached unconsumed data or if the cache is empty, we can read from
+                // it. Empty cache in reading mode indicates that the last operation didn't read
+                // any bytes, i.e. it reached the end of the file.
+                if available > 0 || self.cache.is_empty() {
+                    // Copy data from the cache into the buffer.
+                    let n = cmp::min(available, buf.len());
+                    buf[..n].copy_from_slice(&self.cache[start..n]);
+
+                    // Move the read cursor forward.
+                    self.mode = Mode::Reading(start + n);
+
+                    return Poll::Ready(Ok(n));
+                }
+            }
+            Mode::Writing => {
+                // If we're in writing mode, flush the write cache.
+                self = futures_core::ready!(self.poll_flush(cx))?;
+            }
+        }
+
+        // Make the cache as long as `buf`.
+        if self.cache.len() < buf.len() {
+            let diff = buf.len() - self.cache.len();
+            self.cache.reserve(diff);
+        }
+        unsafe {
+            self.cache.set_len(buf.len());
+        }
+
+        // Register current task's interest in the file lock.
+        self.register(cx);
+
+        // Start a read operation asynchronously.
+        blocking::spawn(async move {
+            // Read some data from the file into the cache.
+            let res = {
+                let State { file, cache, .. } = &mut *self;
+                (&**file).read(cache)
+            };
+
+            match res {
+                Ok(n) => {
+                    // Update cache length and switch to reading mode, starting from index 0.
+                    unsafe {
+                        self.cache.set_len(n);
+                    }
+                    self.mode = Mode::Reading(0);
+                }
+                Err(err) => {
+                    // Save the error and switch to idle mode.
+                    self.cache.clear();
+                    self.mode = Mode::Idle;
+                    self.last_read_err = Some(err);
+                }
+            }
+        });
+
+        Poll::Pending
+    }
+
+    /// Invalidates the read cache.
+    ///
+    /// This method will also move the internal file's cursor backwards by the number of unconsumed
+    /// bytes in the read cache.
+    fn poll_unread(mut self, _: &mut Context<'_>) -> Poll<io::Result<Self>> {
+        match self.mode {
+            Mode::Idle | Mode::Writing => Poll::Ready(Ok(self)),
+            Mode::Reading(start) => {
+                // The number of unconsumed bytes in the read cache.
+                let n = self.cache.len() - start;
+
+                if n > 0 {
+                    // Seek `n` bytes backwards. This call should not block because it only changes
+                    // the internal offset into the file and doesn't touch the actual file on disk.
+                    (&*self.file).seek(SeekFrom::Current(-(n as i64)))?;
+                }
+
+                // Switch to idle mode.
+                self.cache.clear();
+                self.mode = Mode::Idle;
+
+                Poll::Ready(Ok(self))
+            }
+        }
+    }
+
+    /// Writes some data from a buffer into the file.
+    fn poll_write(mut self, cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
+        // If an async operation has left a write error, return it now.
+        if let Some(err) = self.last_write_err.take() {
+            return Poll::Ready(Err(err));
+        }
+
+        // If we're in reading mode, invalidate the read buffer.
+        self = futures_core::ready!(self.poll_unread(cx))?;
+
+        // If necessary, grow the cache to have as much capacity as `buf`.
+        if self.cache.capacity() < buf.len() {
+            let diff = buf.len() - self.cache.capacity();
+            self.cache.reserve(diff);
+        }
+
+        // How many bytes can be written into the cache before filling up.
+        let available = self.cache.capacity() - self.cache.len();
+
+        // If there is space available in the cache or if the buffer is empty, we can write data
+        // into the cache.
+        if available > 0 || buf.is_empty() {
+            let n = cmp::min(available, buf.len());
+            let start = self.cache.len();
+
+            // Copy data from the buffer into the cache.
+            unsafe {
+                self.cache.set_len(start + n);
+            }
+            self.cache[start..start + n].copy_from_slice(&buf[..n]);
+
+            // Mark the file as not flushed and switch to writing mode.
+            self.is_flushed = false;
+            self.mode = Mode::Writing;
+            Poll::Ready(Ok(n))
+        } else {
+            // Drain the write cache because it's full.
+            futures_core::ready!(self.poll_drain(cx))?;
+            Poll::Pending
+        }
+    }
+
+    /// Drains the write cache.
+    fn poll_drain(mut self, cx: &mut Context<'_>) -> Poll<io::Result<Self>> {
+        // If an async operation has left a write error, return it now.
+        if let Some(err) = self.last_write_err.take() {
+            return Poll::Ready(Err(err));
+        }
+
+        match self.mode {
+            Mode::Idle | Mode::Reading(..) => Poll::Ready(Ok(self)),
+            Mode::Writing => {
+                // Register current task's interest in the file lock.
+                self.register(cx);
+
+                // Start a write operation asynchronously.
+                blocking::spawn(async move {
+                    match (&*self.file).write_all(&self.cache) {
+                        Ok(_) => {
+                            // Switch to idle mode.
+                            self.cache.clear();
+                            self.mode = Mode::Idle;
+                        }
+                        Err(err) => {
+                            // Save the error.
+                            self.last_write_err = Some(err);
+                        }
+                    };
+                });
+
+                Poll::Pending
+            }
+        }
+    }
+
+    /// Flushes the write cache into the file.
+    fn poll_flush(mut self, cx: &mut Context<'_>) -> Poll<io::Result<Self>> {
+        // If the file is already in flushed state, return.
+        if self.is_flushed {
+            return Poll::Ready(Ok(self));
+        }
+
+        // If there is data in the write cache, drain it.
+        self = futures_core::ready!(self.poll_drain(cx))?;
+
+        // Register current task's interest in the file lock.
+        self.register(cx);
+
+        // Start a flush operation asynchronously.
+        blocking::spawn(async move {
+            match (&*self.file).flush() {
+                Ok(()) => {
+                    // Mark the file as flushed.
+                    self.is_flushed = true;
+                }
+                Err(err) => {
+                    // Save the error.
+                    self.last_write_err = Some(err);
+                }
+            }
+        });
+
+        Poll::Pending
+    }
+
+    // This function does nothing because we're not sure about `AsyncWrite::poll_close()`'s exact
+    // semantics nor whether it will stay in the `AsyncWrite` trait.
+    fn poll_close(self, _: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(Ok(()))
     }
 }
