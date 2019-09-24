@@ -1,6 +1,6 @@
 use crate::task::{Context, Poll};
 use futures_core::ready;
-use futures_io::{AsyncWrite, AsyncSeek, SeekFrom};
+use futures_io::{AsyncSeek, AsyncWrite, SeekFrom};
 use std::fmt;
 use std::io;
 use std::pin::Pin;
@@ -292,7 +292,11 @@ impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
     ///
     /// Seeking always writes out the internal buffer before seeking.
 
-    fn poll_seek(mut self: Pin<&mut Self>, cx: &mut Context<'_>, pos: SeekFrom) -> Poll<io::Result<u64>> {
+    fn poll_seek(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        pos: SeekFrom,
+    ) -> Poll<io::Result<u64>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
         self.inner().poll_seek(cx, pos)
     }
@@ -302,9 +306,9 @@ mod tests {
     #![allow(unused_imports)]
 
     use super::BufWriter;
+    use crate::io::{self, SeekFrom};
     use crate::prelude::*;
     use crate::task;
-    use crate::io::{self, SeekFrom};
 
     #[test]
     fn test_buffered_writer() {
