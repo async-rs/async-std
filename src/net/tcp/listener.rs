@@ -4,14 +4,16 @@ use std::pin::Pin;
 use cfg_if::cfg_if;
 
 use super::TcpStream;
-use crate::future::{self, Future};
+use crate::future::Future;
 use crate::io;
 use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
 cfg_if! {
     if #[cfg(not(target_os = "unknown"))] {
+        use crate::future;
         use crate::net::driver::Watcher;
+        use super::stream::Inner as TcpStreamInner;
     }
 }
 
@@ -54,7 +56,19 @@ cfg_if! {
 /// ```
 #[derive(Debug)]
 pub struct TcpListener {
-    watcher: Watcher<mio::net::TcpListener>,
+    inner: Inner,
+}
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        #[derive(Debug)]
+        struct Inner {
+            watcher: Watcher<mio::net::TcpListener>,
+        }
+    } else {
+        #[derive(Debug)]
+        struct Inner;
+    }
 }
 
 impl TcpListener {
@@ -80,25 +94,7 @@ impl TcpListener {
     ///
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
-        let mut last_err = None;
-
-        for addr in addrs.to_socket_addrs().await? {
-            match mio::net::TcpListener::bind(&addr) {
-                Ok(mio_listener) => {
-                    return Ok(TcpListener {
-                        watcher: Watcher::new(mio_listener),
-                    });
-                }
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not resolve to any addresses",
-            )
-        }))
+        bind(addrs).await
     }
 
     /// Accepts a new incoming connection to this listener.
@@ -118,15 +114,7 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        let (io, addr) =
-            future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.accept_std()))
-                .await?;
-
-        let mio_stream = mio::net::TcpStream::from_stream(io)?;
-        let stream = TcpStream {
-            watcher: Watcher::new(mio_stream),
-        };
-        Ok((stream, addr))
+        accept(self).await
     }
 
     /// Returns a stream of incoming connections.
@@ -177,7 +165,7 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.watcher.get_ref().local_addr()
+        local_addr(self)
     }
 }
 
@@ -210,10 +198,7 @@ impl<'a> futures_core::stream::Stream for Incoming<'a> {
 impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
     fn from(listener: std::net::TcpListener) -> TcpListener {
-        let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
-        TcpListener {
-            watcher: Watcher::new(mio_listener),
-        }
+        from(listener)
     }
 }
 
@@ -233,7 +218,7 @@ cfg_if! {
     if #[cfg(any(unix, feature = "docs"))] {
         impl AsRawFd for TcpListener {
             fn as_raw_fd(&self) -> RawFd {
-                self.watcher.get_ref().as_raw_fd()
+                self.inner.watcher.get_ref().as_raw_fd()
             }
         }
 
@@ -245,7 +230,7 @@ cfg_if! {
 
         impl IntoRawFd for TcpListener {
             fn into_raw_fd(self) -> RawFd {
-                self.watcher.into_inner().into_raw_fd()
+                self.inner.watcher.into_inner().into_raw_fd()
             }
         }
     }
@@ -271,5 +256,81 @@ cfg_if! {
         //         self.raw_socket
         //     }
         // }
+    }
+}
+
+cfg_if! {
+    if #[cfg(not(target_os = "unknown"))] {
+        async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
+            let mut last_err = None;
+
+            for addr in addrs.to_socket_addrs().await? {
+                match mio::net::TcpListener::bind(&addr) {
+                    Ok(mio_listener) => {
+                        return Ok(TcpListener {
+                            inner: Inner {
+                                watcher: Watcher::new(mio_listener),
+                            },
+                        });
+                    }
+                    Err(err) => last_err = Some(err),
+                }
+            }
+
+            Err(last_err.unwrap_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "could not resolve to any addresses",
+                )
+            }))
+        }
+
+        async fn accept(listener: &TcpListener) -> io::Result<(TcpStream, SocketAddr)> {
+            let (io, addr) =
+                future::poll_fn(|cx| listener.inner.watcher.poll_read_with(cx, |inner| inner.accept_std()))
+                    .await?;
+
+            let mio_stream = mio::net::TcpStream::from_stream(io)?;
+            let stream = TcpStream {
+                inner: TcpStreamInner {
+                    watcher: Watcher::new(mio_stream),
+                },
+            };
+            Ok((stream, addr))
+        }
+
+        fn local_addr(listener: &TcpListener) -> io::Result<SocketAddr> {
+            listener.inner.watcher.get_ref().local_addr()
+        }
+
+        fn from(listener: std::net::TcpListener) -> TcpListener {
+            let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
+            TcpListener {
+                inner: Inner {
+                    watcher: Watcher::new(mio_listener),
+                },
+            }
+        }
+
+    } else {
+        async fn bind<A: ToSocketAddrs>(_: A) -> io::Result<TcpListener> {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "TCP sockets unsupported on this platform",
+            ))
+        }
+
+        async fn accept(_: &TcpListener) -> io::Result<(TcpStream, SocketAddr)> {
+            unreachable!()
+        }
+
+        fn local_addr(_: &TcpListener) -> io::Result<SocketAddr> {
+            unreachable!()
+        }
+
+        fn from(_: std::net::TcpListener) -> TcpListener {
+            // We can never successfully build a `std::net::TcpListener` on an unknown OS.
+            unreachable!()
+        }
     }
 }
