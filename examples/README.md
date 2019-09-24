@@ -18,6 +18,14 @@ Spawns a task that says hello.
 
 Counts the number of lines in a file given as an argument.
 
+```shell
+cargo run --example line-count -- ./Cargo.toml
+```
+
+- [List Dir][list-dir]
+
+Lists files in a directory given as an argument.
+
 [hello-world]: https://github.com/async-rs/async-std/blob/master/examples/hello-world.rs
 [line-count]: https://github.com/async-rs/async-std/blob/master/examples/line-count.rs
-<!-- [list-dir]: https://github.com/async-rs/async-std/blob/master/examples/list-dir.rs -->
+[list-dir]: https://github.com/async-rs/async-std/blob/master/examples/list-dir.rs
