@@ -14,53 +14,59 @@ cfg_if! {
 }
 
 extension_trait! {
-    /// Allows seeking through a byte stream.
-    ///
-    /// This trait is a re-export of [`futures::io::AsyncSeek`] and is an async version of
-    /// [`std::io::Seek`].
-    ///
-    /// The [provided methods] do not really exist in the trait itself, but they become
-    /// available when the prelude is imported:
-    ///
-    /// ```
-    /// # #[allow(unused_imports)]
-    /// use async_std::prelude::*;
-    /// ```
-    ///
-    /// [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
-    /// [`futures::io::AsyncSeek`]:
-    /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
-    /// [provided methods]: #provided-methods
+    #[doc = r#"
+        Allows seeking through a byte stream.
+
+        This trait is a re-export of [`futures::io::AsyncSeek`] and is an async version of
+        [`std::io::Seek`].
+
+        The [provided methods] do not really exist in the trait itself, but they become
+        available when the prelude is imported:
+
+        ```
+        # #[allow(unused_imports)]
+        use async_std::prelude::*;
+        ```
+
+        [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
+        [`futures::io::AsyncSeek`]:
+        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
+        [provided methods]: #provided-methods
+    "#]
     pub trait Seek [SeekExt: futures_io::AsyncSeek] {
-        /// Attempt to seek to an offset, in bytes, in a stream.
+        #[doc = r#"
+            Attempt to seek to an offset, in bytes, in a stream.
+        "#]
         fn poll_seek(
             self: Pin<&mut Self>,
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>>;
 
-        /// Seeks to a new position in a byte stream.
-        ///
-        /// Returns the new position in the byte stream.
-        ///
-        /// A seek beyond the end of stream is allowed, but behavior is defined by the
-        /// implementation.
-        ///
-        /// # Examples
-        ///
-        /// ```no_run
-        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-        /// #
-        /// use async_std::fs::File;
-        /// use async_std::io::SeekFrom;
-        /// use async_std::prelude::*;
-        ///
-        /// let mut file = File::open("a.txt").await?;
-        ///
-        /// let file_len = file.seek(SeekFrom::End(0)).await?;
-        /// #
-        /// # Ok(()) }) }
-        /// ```
+        #[doc = r#"
+            Seeks to a new position in a byte stream.
+
+            Returns the new position in the byte stream.
+
+            A seek beyond the end of stream is allowed, but behavior is defined by the
+            implementation.
+
+            # Examples
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::fs::File;
+            use async_std::io::SeekFrom;
+            use async_std::prelude::*;
+
+            let mut file = File::open("a.txt").await?;
+
+            let file_len = file.seek(SeekFrom::End(0)).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
         fn seek(
             &mut self,
             pos: SeekFrom,
@@ -78,7 +84,7 @@ extension_trait! {
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -88,7 +94,7 @@ extension_trait! {
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -102,7 +108,7 @@ extension_trait! {
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

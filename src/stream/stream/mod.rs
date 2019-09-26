@@ -89,25 +89,29 @@ cfg_if! {
 }
 
 extension_trait! {
-    /// An asynchronous stream of values.
-    ///
-    /// This trait is a re-export of [`futures::stream::Stream`] and is an async version of
-    /// [`std::iter::Iterator`].
-    ///
-    /// The [provided methods] do not really exist in the trait itself, but they become
-    /// available when the prelude is imported:
-    ///
-    /// ```
-    /// # #[allow(unused_imports)]
-    /// use async_std::prelude::*;
-    /// ```
-    ///
-    /// [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
-    /// [`futures::stream::Stream`]:
-    /// https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
-    /// [provided methods]: #provided-methods
+    #[doc = r#"
+        An asynchronous stream of values.
+
+        This trait is a re-export of [`futures::stream::Stream`] and is an async version of
+        [`std::iter::Iterator`].
+
+        The [provided methods] do not really exist in the trait itself, but they become
+        available when the prelude is imported:
+
+        ```
+        # #[allow(unused_imports)]
+        use async_std::prelude::*;
+        ```
+
+        [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
+        [`futures::stream::Stream`]:
+        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+        [provided methods]: #provided-methods
+    "#]
     pub trait Stream [StreamExt: futures_core::stream::Stream] {
-        /// The type of items yielded by this stream.
+        #[doc = r#"
+            The type of items yielded by this stream.
+        "#]
         type Item;
 
         #[doc = r#"
@@ -493,7 +497,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn min_by<F>(self, compare: F) -> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
+        fn min_by<F>(
+            self,
+            compare: F,
+        )-> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
         where
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
@@ -554,7 +561,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn nth(&mut self, n: usize) -> impl Future<Output = Option<Self::Item>> + '_ [NthFuture<'_, Self>]
+        fn nth(
+            &mut self,
+            n: usize,
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [NthFuture<'_, Self>]
         where
             Self: Sized,
         {
@@ -607,7 +617,10 @@ extension_trait! {
             ```
         "#]
         #[inline]
-        fn all<F>(&mut self, f: F) -> impl Future<Output = bool> + '_ [AllFuture<'_, Self, F, Self::Item>]
+        fn all<F>(
+            &mut self,
+            f: F,
+        ) -> impl Future<Output = bool> + '_ [AllFuture<'_, Self, F, Self::Item>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -658,7 +671,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn find<P>(&mut self, p: P) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P, Self::Item>]
+        fn find<P>(
+            &mut self,
+            p: P,
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P, Self::Item>]
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -683,7 +699,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn find_map<F, B>(&mut self, f: F) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Self::Item, B>]
+        fn find_map<F, B>(
+            &mut self,
+            f: F,
+        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Self::Item, B>]
         where
             Self: Sized,
             F: FnMut(Self::Item) -> Option<B>,
@@ -713,7 +732,11 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn fold<B, F>(self, init: B, f: F) -> impl Future<Output = B> [FoldFuture<Self, F, Self::Item, B>]
+        fn fold<B, F>(
+            self,
+            init: B,
+            f: F,
+        ) -> impl Future<Output = B> [FoldFuture<Self, F, Self::Item, B>]
         where
             Self: Sized,
             F: FnMut(B, Self::Item) -> B,
@@ -766,7 +789,10 @@ extension_trait! {
             ```
         "#]
         #[inline]
-        fn any<F>(&mut self, f: F) -> impl Future<Output = bool> + '_ [AnyFuture<'_, Self, F, Self::Item>]
+        fn any<F>(
+            &mut self,
+            f: F,
+        ) -> impl Future<Output = bool> + '_ [AnyFuture<'_, Self, F, Self::Item>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -984,7 +1010,9 @@ extension_trait! {
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
-        fn collect<'a, B>(self) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a>>]
+        fn collect<'a, B>(
+            self,
+        ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a>>]
         where
             Self: Sized + 'a,
             B: FromStream<Self::Item>,
@@ -997,7 +1025,7 @@ extension_trait! {
         type Item = S::Item;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -1005,7 +1033,7 @@ extension_trait! {
         type Item = S::Item;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -1017,7 +1045,7 @@ extension_trait! {
         type Item = <<P as Deref>::Target as Stream>::Item;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -1025,7 +1053,7 @@ extension_trait! {
         type Item = T;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 
@@ -1033,7 +1061,7 @@ extension_trait! {
         type Item = S::Item;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }
