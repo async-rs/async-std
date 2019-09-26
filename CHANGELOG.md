@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [0.99.7] - 2019-09-26
+
+## Added
+
+- Added `future::join` macro as "unstable"
+- Added `future::select` macro as "unstable"
+- Added `future::try_join` macro as "unstable"
+- Added `future::try_select` macro as "unstable"
+- Added `io::BufWriter` struct
+- Added `stream::Extend` trait
+- Added `stream::Stream::chain` method
+- Added `stream::Stream::filter` method
+- Added `stream::Stream::inspect` method
+- Added `stream::Stream::skip_while` method
+- Added `stream::Stream::skip` method
+- Added `stream::Stream::step_by` method
+- Added `sync::Arc` struct from stdlib
+- Added `sync::Barrier` struct as "unstable"
+- Added `sync::Weak` struct from stdlib
+- Added `task::ready` macro as "unstable"
+
+## Changed
+
+- Correctly marked the `pin` submodule as "unstable" in the docs
+- Updated tutorial to have certain functions suffixed with `_loop`
+- `io` traits are now re-exports of futures-rs types, allowing them to be
+  implemented
+- `stream` traits are now re-exports of futures-rs types, allowing them to be
+  implemented
+- `prelude::*` now needs to be in scope for functions `io` and `stream` traits
+  to work
+
 # [0.99.6] - 2019-09-19
 
 ## Added
@@ -82,7 +114,8 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.6...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.7...HEAD
+[0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...0.99.7
 [0.99.6]: https://github.com/async-rs/async-std/compare/v0.99.5...0.99.6
 [0.99.5]: https://github.com/async-rs/async-std/compare/v0.99.4...v0.99.5
 [0.99.4]: https://github.com/async-rs/async-std/compare/v0.99.3...v0.99.4
