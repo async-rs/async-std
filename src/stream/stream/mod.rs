@@ -410,7 +410,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
             let mut s = s.filter(|i| i % 2 == 0);
@@ -441,7 +442,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
 
@@ -481,17 +483,18 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
-            let min = Stream::min_by(s.clone(), |x, y| x.cmp(y)).await;
+            let min = s.clone().min_by(|x, y| x.cmp(y)).await;
             assert_eq!(min, Some(1));
 
-            let min = Stream::min_by(s, |x, y| y.cmp(x)).await;
+            let min = s.min_by(|x, y| y.cmp(x)).await;
             assert_eq!(min, Some(3));
 
-            let min = Stream::min_by(VecDeque::<usize>::new(), |x, y| x.cmp(y)).await;
+            let min = VecDeque::<usize>::new().min_by(|x, y| x.cmp(y)).await;
             assert_eq!(min, None);
             #
             # }) }
@@ -519,7 +522,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
@@ -534,7 +538,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
@@ -551,7 +556,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
@@ -825,7 +831,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let s: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
             let mut s = s.scan(1, |state, x| {
@@ -865,7 +872,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let a: VecDeque<_> = vec![-1i32, 0, 1].into_iter().collect();
             let mut s = a.skip_while(|x| x.is_negative());
@@ -894,7 +902,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
+
             let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
             let mut skipped = s.skip(2);
 
@@ -933,7 +943,8 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-            use async_std::stream::Stream;
+
+            use async_std::prelude::*;
 
             let l: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
             let r: VecDeque<isize> = vec![4, 5, 6, 7].into_iter().collect();
