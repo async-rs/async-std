@@ -32,10 +32,14 @@
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
 
+#[cfg(any(feature = "unstable", feature = "docs"))]
 pub use barrier::{Barrier, BarrierWaitResult};
+
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 mod barrier;
 mod mutex;
 mod rwlock;
