@@ -1,4 +1,5 @@
 mod bytes;
+mod chain;
 mod read;
 mod read_exact;
 mod read_to_end;
@@ -344,7 +345,7 @@ extension_trait! {
         fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
 
 
-        #[doc=r#"
+        #[doc = r#"
             Transforms this `Read` instance to a `Stream` over its bytes.
            
             The returned type implements `Stream` where the `Item` is
@@ -377,6 +378,43 @@ extension_trait! {
         fn bytes(self) -> bytes::Bytes<Self> where Self: Sized {
             bytes::Bytes { inner: self }
         }
+
+        #[doc = r#"
+            Creates an adaptor which will chain this stream with another.
+           
+            The returned `Read` instance will first read all bytes from this object
+            until EOF is encountered. Afterwards the output is equivalent to the
+            output of `next`.
+           
+            # Examples
+           
+            [`File`][file]s implement `Read`:
+           
+            [file]: ../fs/struct.File.html
+           
+            ```no_run
+            use async_std::io;
+            use async_std::prelude::*;
+            use async_std::fs::File;
+           
+            fn main() -> io::Result<()> { async_std::task::block_on(async {
+                let f1 = File::open("foo.txt").await?;
+                let f2 = File::open("bar.txt").await?;
+           
+                let mut handle = f1.chain(f2);
+                let mut buffer = String::new();
+           
+                // read the value into a String. We could use any Read method here,
+                // this is just one example.
+                handle.read_to_string(&mut buffer).await?;
+                Ok(())
+            }) }
+            ```
+        "#]
+        fn chain<R: Read>(self, next: R) -> chain::Chain<Self, R> where Self: Sized {
+            chain::Chain { first: self, second: next, done_first: false }
+        }
+
     }
 
     impl<T: Read + Unpin + ?Sized> Read for Box<T> {
