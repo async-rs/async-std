@@ -10,8 +10,8 @@ use read_to_end::{read_to_end_internal, ReadToEndFuture};
 use read_to_string::ReadToStringFuture;
 use read_vectored::ReadVectoredFuture;
 
-use std::mem;
 use cfg_if::cfg_if;
+use std::mem;
 
 use crate::io::IoSliceMut;
 use crate::utils::extension_trait;

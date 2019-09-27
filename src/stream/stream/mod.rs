@@ -503,7 +503,7 @@ extension_trait! {
         fn min_by<F>(
             self,
             compare: F,
-        )-> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
         where
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
