@@ -1,7 +1,7 @@
 use std::cmp;
 use std::pin::Pin;
 
-use crate::io::{self, Read};
+use crate::io::{self, BufRead, Read};
 use crate::task::{Context, Poll};
 
 /// Reader adaptor which limits the bytes read from an underlying reader.
@@ -183,6 +183,41 @@ pub fn take_read_internal<R: Read + ?Sized>(
             Poll::Ready(Ok(n))
         }
         Err(e) => Poll::Ready(Err(e)),
+    }
+}
+
+impl<T: BufRead + Unpin> BufRead for Take<T> {
+    fn poll_fill_buf(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        // FIXME: how to get this to compile?
+        unimplemented!();
+
+        // let Self {
+        //     inner,
+        //     limit,
+        // } = &mut *self;
+
+        // if *limit == 0 {
+        //     return Poll::Ready(Ok(&[]));
+        // }
+
+        // let rd = Pin::new(inner);
+
+        // match futures_core::ready!(rd.poll_fill_buf(cx)) {
+        //     Ok(buf) => {
+        //         let cap = cmp::min(buf.len() as u64, *limit) as usize;
+        //         Poll::Ready(Ok(&buf[..cap]))
+        //     }
+        //     Err(e) => Poll::Ready(Err(e)),
+        // }
+    }
+
+    fn consume(mut self: Pin<&mut Self>, amt: usize) {
+        // Don't let callers reset the limit by passing an overlarge value
+        let amt = cmp::min(amt as u64, self.limit) as usize;
+        self.limit -= amt as u64;
+
+        let rd = Pin::new(&mut self.inner);
+        rd.consume(amt);
     }
 }
 
