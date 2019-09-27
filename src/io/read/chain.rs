@@ -139,28 +139,26 @@ impl<T: Read + Unpin, U: Read + Unpin> Read for Chain<T, U> {
 }
 
 impl<T: BufRead + Unpin, U: BufRead + Unpin> BufRead for Chain<T, U> {
-    fn poll_fill_buf(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        // FIXME: how to make this compile?
+    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        let Self {
+            first,
+            second,
+            done_first,
+        } = unsafe { self.get_unchecked_mut() };
 
-        // let Self {
-        //     first,
-        //     second,
-        //     done_first
-        // } = &mut *self;
+        if !*done_first {
+            let first = unsafe { Pin::new_unchecked(first) };
+            match futures_core::ready!(first.poll_fill_buf(cx)) {
+                Ok(buf) if buf.is_empty() => {
+                    *done_first = true;
+                }
+                Ok(buf) => return Poll::Ready(Ok(buf)),
+                Err(err) => return Poll::Ready(Err(err)),
+            }
+        }
 
-        // if !*done_first {
-        //     let rd = Pin::new(first);
-
-        //     match futures_core::ready!(rd.poll_fill_buf(cx)) {
-        //         Ok(buf) if buf.is_empty() => { *done_first = true; }
-        //         Ok(buf) => return Poll::Ready(Ok(buf)),
-        //         Err(err) => return Poll::Ready(Err(err)),
-        //     }
-        // }
-
-        // let rd = Pin::new(second);
-        // rd.poll_fill_buf(cx)
-        unimplemented!()
+        let second = unsafe { Pin::new_unchecked(second) };
+        second.poll_fill_buf(cx)
     }
 
     fn consume(mut self: Pin<&mut Self>, amt: usize) {

@@ -187,28 +187,21 @@ pub fn take_read_internal<R: Read + ?Sized>(
 }
 
 impl<T: BufRead + Unpin> BufRead for Take<T> {
-    fn poll_fill_buf(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        // FIXME: how to get this to compile?
-        unimplemented!();
+    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        let Self { inner, limit } = unsafe { self.get_unchecked_mut() };
+        let inner = unsafe { Pin::new_unchecked(inner) };
 
-        // let Self {
-        //     inner,
-        //     limit,
-        // } = &mut *self;
+        if *limit == 0 {
+            return Poll::Ready(Ok(&[]));
+        }
 
-        // if *limit == 0 {
-        //     return Poll::Ready(Ok(&[]));
-        // }
-
-        // let rd = Pin::new(inner);
-
-        // match futures_core::ready!(rd.poll_fill_buf(cx)) {
-        //     Ok(buf) => {
-        //         let cap = cmp::min(buf.len() as u64, *limit) as usize;
-        //         Poll::Ready(Ok(&buf[..cap]))
-        //     }
-        //     Err(e) => Poll::Ready(Err(e)),
-        // }
+        match futures_core::ready!(inner.poll_fill_buf(cx)) {
+            Ok(buf) => {
+                let cap = cmp::min(buf.len() as u64, *limit) as usize;
+                Poll::Ready(Ok(&buf[..cap]))
+            }
+            Err(e) => Poll::Ready(Err(e)),
+        }
     }
 
     fn consume(mut self: Pin<&mut Self>, amt: usize) {
