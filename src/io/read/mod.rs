@@ -3,6 +3,7 @@ mod read_exact;
 mod read_to_end;
 mod read_to_string;
 mod read_vectored;
+mod take;
 
 use read::ReadFuture;
 use read_exact::ReadExactFuture;
@@ -260,6 +261,47 @@ extension_trait! {
             Self: Unpin,
         {
             ReadExactFuture { reader: self, buf }
+        }
+
+        #[doc = r#"
+            Creates an adaptor which will read at most `limit` bytes from it.
+
+            This function returns a new instance of `Read` which will read at most
+            `limit` bytes, after which it will always return EOF ([`Ok(0)`]). Any
+            read errors will not count towards the number of bytes read and future
+            calls to [`read()`] may succeed.
+
+            # Examples
+
+            [`File`]s implement `Read`:
+
+            [`File`]: ../fs/struct.File.html
+            [`Ok(0)`]: ../../std/result/enum.Result.html#variant.Ok
+            [`read()`]: tymethod.read
+
+            ```no_run
+            use async_std::io::prelude::*;
+            use async_std::fs::File;
+
+            fn main() -> std::io::Result<()> {
+                async_std::task::block_on(async {
+                    let f = File::open("foo.txt").await?;
+                    let mut buffer = [0; 5];
+
+                    // read at most five bytes
+                    let mut handle = f.take(5);
+
+                    handle.read(&mut buffer).await?;
+                    Ok(())
+                })
+            }
+            ```
+        "#]
+        fn take(self, limit: u64) -> take::Take<Self>
+        where
+            Self: Sized,
+        {
+            take::Take { inner: self, limit }
         }
     }
 
