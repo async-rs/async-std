@@ -1,3 +1,4 @@
+mod bytes;
 mod read;
 mod read_exact;
 mod read_to_end;
@@ -341,6 +342,41 @@ extension_trait! {
             ```
         "#]
         fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
+
+
+        #[doc=r#"
+            Transforms this `Read` instance to a `Stream` over its bytes.
+           
+            The returned type implements `Stream` where the `Item` is
+            `Result<u8, io::Error>`.
+            The yielded item is `Ok` if a byte was successfully read and `Err`
+            otherwise. EOF is mapped to returning `None` from this iterator.
+           
+            # Examples
+           
+            [`File`][file]s implement `Read`:
+           
+            [file]: ../fs/struct.File.html
+           
+            ```no_run
+            use async_std::io;
+            use async_std::prelude::*;
+            use async_std::fs::File;
+           
+            fn main() -> io::Result<()> { async_std::task::block_on(async {
+                let f = File::open("foo.txt").await?;
+                let mut s = f.bytes();
+           
+                while let Some(byte) = s.next().await {
+                    println!("{}", byte.unwrap());
+                }
+                Ok(())
+            }) }
+            ```
+        "#]
+        fn bytes(self) -> bytes::Bytes<Self> where Self: Sized {
+            bytes::Bytes { inner: self }
+        }
     }
 
     impl<T: Read + Unpin + ?Sized> Read for Box<T> {
