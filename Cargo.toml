@@ -42,7 +42,7 @@ num_cpus = "1.10.1"
 pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 kv-log-macro = "1.0.4"
-broadcaster = { version = "0.2.4", optional = true }
+broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
 
 [dev-dependencies]
 femme = "1.2.0"
