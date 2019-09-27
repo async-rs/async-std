@@ -1,3 +1,5 @@
+//! Prints response of GET request made to TCP server with 5 second socket timeout
+
 use std::time::Duration;
 
 use async_std::{io, net::TcpStream, prelude::*, task};
