@@ -21,8 +21,8 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
-docs = ["broadcaster"]
-unstable = ["broadcaster"]
+docs = ["broadcaster", "pin-project"]
+unstable = ["broadcaster", "pin-project"]
 
 [dependencies]
 async-macros = "1.0.0"
@@ -43,6 +43,7 @@ pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 kv-log-macro = "1.0.4"
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
+pin-project = { version = "0.4.1", optional = true }
 
 [dev-dependencies]
 femme = "1.2.0"
