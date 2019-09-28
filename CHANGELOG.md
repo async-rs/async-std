@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+## Added
+
+- Added `pin::pin_project` attribute macro as unstable.
+- Added `pin::pinned_drop` attribute macro as unstable.
+- Added `pin::project` attribute macro as unstable.
+- Added `pin::project_ref` attribute macro as unstable.
+- Added `pin::UnsafeUnpin` trait as unstable.
+
 # [0.99.8] - 2019-09-28
 
 ## Changed
