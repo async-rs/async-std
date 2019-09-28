@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+## Changed
+
+- Added the `fmt` submodule as unstable, with re-exports from `std`.
+
 # [0.99.8] - 2019-09-28
 
 ## Changed
