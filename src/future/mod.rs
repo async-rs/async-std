@@ -53,7 +53,9 @@ use cfg_if::cfg_if;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
+pub use into_future::IntoFuture;
 
+mod into_future;
 mod pending;
 mod poll_fn;
 mod ready;

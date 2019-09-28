@@ -1,0 +1,13 @@
+use crate::future::Future;
+
+/// Convert a type into a `Future`.
+pub trait IntoFuture {
+    /// The type of value produced on completion.
+    type Output;
+
+    /// Which kind of future are we turning this into?
+    type Future: Future<Output = Self::Output>;
+
+    /// Create a future from a value
+    fn into_future(self) -> Self::Future;
+}
