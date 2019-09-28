@@ -11,3 +11,13 @@ pub trait IntoFuture {
     /// Create a future from a value
     fn into_future(self) -> Self::Future;
 }
+
+impl<T: Future> IntoFuture for T {
+    type Output = T::Output;
+
+    type Future = T;
+
+    fn into_future(self) -> Self::Future {
+        self
+    }
+}
