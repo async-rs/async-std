@@ -1,8 +1,11 @@
+mod bytes;
+mod chain;
 mod read;
 mod read_exact;
 mod read_to_end;
 mod read_to_string;
 mod read_vectored;
+mod take;
 
 use read::ReadFuture;
 use read_exact::ReadExactFuture;
@@ -261,6 +264,156 @@ extension_trait! {
         {
             ReadExactFuture { reader: self, buf }
         }
+
+        #[doc = r#"
+            Creates an adaptor which will read at most `limit` bytes from it.
+
+            This function returns a new instance of `Read` which will read at most
+            `limit` bytes, after which it will always return EOF ([`Ok(0)`]). Any
+            read errors will not count towards the number of bytes read and future
+            calls to [`read()`] may succeed.
+
+            # Examples
+
+            [`File`]s implement `Read`:
+
+            [`File`]: ../fs/struct.File.html
+            [`Ok(0)`]: ../../std/result/enum.Result.html#variant.Ok
+            [`read()`]: tymethod.read
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::io::prelude::*;
+            use async_std::fs::File;
+
+            let f = File::open("foo.txt").await?;
+            let mut buffer = [0; 5];
+
+            // read at most five bytes
+            let mut handle = f.take(5);
+
+            handle.read(&mut buffer).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn take(self, limit: u64) -> take::Take<Self>
+        where
+            Self: Sized,
+        {
+            take::Take { inner: self, limit }
+        }
+
+        #[doc = r#"
+            Creates a "by reference" adaptor for this instance of `Read`.
+           
+            The returned adaptor also implements `Read` and will simply borrow this
+            current reader.
+           
+            # Examples
+           
+            [`File`][file]s implement `Read`:
+           
+            [file]: ../fs/struct.File.html
+           
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::fs::File;
+           
+            let mut f = File::open("foo.txt").await?;
+            let mut buffer = Vec::new();
+            let mut other_buffer = Vec::new();
+           
+            {
+                let reference = f.by_ref();
+           
+                // read at most 5 bytes
+                reference.take(5).read_to_end(&mut buffer).await?;
+           
+            } // drop our &mut reference so we can use f again
+           
+            // original file still usable, read the rest
+            f.read_to_end(&mut other_buffer).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
+
+
+        #[doc = r#"
+            Transforms this `Read` instance to a `Stream` over its bytes.
+           
+            The returned type implements `Stream` where the `Item` is
+            `Result<u8, io::Error>`.
+            The yielded item is `Ok` if a byte was successfully read and `Err`
+            otherwise. EOF is mapped to returning `None` from this iterator.
+           
+            # Examples
+           
+            [`File`][file]s implement `Read`:
+           
+            [file]: ../fs/struct.File.html
+           
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::fs::File;
+           
+            let f = File::open("foo.txt").await?;
+            let mut s = f.bytes();
+           
+            while let Some(byte) = s.next().await {
+                println!("{}", byte.unwrap());
+            }
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn bytes(self) -> bytes::Bytes<Self> where Self: Sized {
+            bytes::Bytes { inner: self }
+        }
+
+        #[doc = r#"
+            Creates an adaptor which will chain this stream with another.
+           
+            The returned `Read` instance will first read all bytes from this object
+            until EOF is encountered. Afterwards the output is equivalent to the
+            output of `next`.
+           
+            # Examples
+           
+            [`File`][file]s implement `Read`:
+           
+            [file]: ../fs/struct.File.html
+           
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::fs::File;
+           
+            let f1 = File::open("foo.txt").await?;
+            let f2 = File::open("bar.txt").await?;
+           
+            let mut handle = f1.chain(f2);
+            let mut buffer = String::new();
+           
+            // read the value into a String. We could use any Read method here,
+            // this is just one example.
+            handle.read_to_string(&mut buffer).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn chain<R: Read>(self, next: R) -> chain::Chain<Self, R> where Self: Sized {
+            chain::Chain { first: self, second: next, done_first: false }
+        }
+
     }
 
     impl<T: Read + Unpin + ?Sized> Read for Box<T> {
@@ -305,5 +458,33 @@ extension_trait! {
         ) -> Poll<io::Result<usize>> {
             unreachable!("this impl only appears in the rendered docs")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io;
+    use crate::prelude::*;
+
+    #[test]
+    fn test_read_by_ref() -> io::Result<()> {
+        crate::task::block_on(async {
+            let mut f = io::Cursor::new(vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8]);
+            let mut buffer = Vec::new();
+            let mut other_buffer = Vec::new();
+
+            {
+                let reference = f.by_ref();
+
+                // read at most 5 bytes
+                assert_eq!(reference.take(5).read_to_end(&mut buffer).await?, 5);
+                assert_eq!(&buffer, &[0, 1, 2, 3, 4])
+            } // drop our &mut reference so we can use f again
+
+            // original file still usable, read the rest
+            assert_eq!(f.read_to_end(&mut other_buffer).await?, 4);
+            assert_eq!(&other_buffer, &[5, 6, 7, 8]);
+            Ok(())
+        })
     }
 }
