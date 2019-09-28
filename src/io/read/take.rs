@@ -30,19 +30,19 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let f = File::open("foo.txt").await?;
+    /// let f = File::open("foo.txt").await?;
     ///
-    ///     // read at most five bytes
-    ///     let handle = f.take(5);
+    /// // read at most five bytes
+    /// let handle = f.take(5);
     ///
-    ///     println!("limit: {}", handle.limit());
-    ///     Ok(())
-    /// }) }
+    /// println!("limit: {}", handle.limit());
+    /// #
+    /// #     Ok(()) }) }
     /// ```
     pub fn limit(&self) -> u64 {
         self.limit
@@ -56,20 +56,20 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let f = File::open("foo.txt").await?;
+    /// let f = File::open("foo.txt").await?;
     ///
-    ///     // read at most five bytes
-    ///     let mut handle = f.take(5);
-    ///     handle.set_limit(10);
+    /// // read at most five bytes
+    /// let mut handle = f.take(5);
+    /// handle.set_limit(10);
     ///
-    ///     assert_eq!(handle.limit(), 10);
-    ///     Ok(())
-    /// }) }
+    /// assert_eq!(handle.limit(), 10);
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn set_limit(&mut self, limit: u64) {
         self.limit = limit;
@@ -80,20 +80,20 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let file = File::open("foo.txt").await?;
+    /// let file = File::open("foo.txt").await?;
     ///
-    ///     let mut buffer = [0; 5];
-    ///     let mut handle = file.take(5);
-    ///     handle.read(&mut buffer).await?;
+    /// let mut buffer = [0; 5];
+    /// let mut handle = file.take(5);
+    /// handle.read(&mut buffer).await?;
     ///
-    ///     let file = handle.into_inner();
-    ///     Ok(())
-    /// }) }
+    /// let file = handle.into_inner();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn into_inner(self) -> T {
         self.inner
@@ -104,20 +104,20 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let file = File::open("foo.txt").await?;
+    /// let file = File::open("foo.txt").await?;
     ///
-    ///     let mut buffer = [0; 5];
-    ///     let mut handle = file.take(5);
-    ///     handle.read(&mut buffer).await?;
+    /// let mut buffer = [0; 5];
+    /// let mut handle = file.take(5);
+    /// handle.read(&mut buffer).await?;
     ///
-    ///     let file = handle.get_ref();
-    ///     Ok(())
-    /// }) }
+    /// let file = handle.get_ref();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn get_ref(&self) -> &T {
         &self.inner
@@ -132,20 +132,20 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let file = File::open("foo.txt").await?;
+    /// let file = File::open("foo.txt").await?;
     ///
-    ///     let mut buffer = [0; 5];
-    ///     let mut handle = file.take(5);
-    ///     handle.read(&mut buffer).await?;
+    /// let mut buffer = [0; 5];
+    /// let mut handle = file.take(5);
+    /// handle.read(&mut buffer).await?;
     ///
-    ///     let file = handle.get_mut();
-    ///     Ok(())
-    /// }) }
+    /// let file = handle.get_mut();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn get_mut(&mut self) -> &mut T {
         &mut self.inner

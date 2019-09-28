@@ -23,18 +23,18 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let foo_file = File::open("foo.txt").await?;
-    ///     let bar_file = File::open("bar.txt").await?;
+    /// let foo_file = File::open("foo.txt").await?;
+    /// let bar_file = File::open("bar.txt").await?;
     ///
-    ///     let chain = foo_file.chain(bar_file);
-    ///     let (foo_file, bar_file) = chain.into_inner();
-    ///     Ok(())
-    /// }) }
+    /// let chain = foo_file.chain(bar_file);
+    /// let (foo_file, bar_file) = chain.into_inner();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn into_inner(self) -> (T, U) {
         (self.first, self.second)
@@ -45,18 +45,18 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let foo_file = File::open("foo.txt").await?;
-    ///     let bar_file = File::open("bar.txt").await?;
+    /// let foo_file = File::open("foo.txt").await?;
+    /// let bar_file = File::open("bar.txt").await?;
     ///
-    ///     let chain = foo_file.chain(bar_file);
-    ///     let (foo_file, bar_file) = chain.get_ref();
-    ///     Ok(())
-    /// }) }
+    /// let chain = foo_file.chain(bar_file);
+    /// let (foo_file, bar_file) = chain.get_ref();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn get_ref(&self) -> (&T, &U) {
         (&self.first, &self.second)
@@ -71,18 +71,18 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_std::io;
+    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
     ///
-    /// fn main() -> io::Result<()> { async_std::task::block_on(async {
-    ///     let foo_file = File::open("foo.txt").await?;
-    ///     let bar_file = File::open("bar.txt").await?;
+    /// let foo_file = File::open("foo.txt").await?;
+    /// let bar_file = File::open("bar.txt").await?;
     ///
-    ///     let mut chain = foo_file.chain(bar_file);
-    ///     let (foo_file, bar_file) = chain.get_mut();
-    ///     Ok(())
-    /// }) }
+    /// let mut chain = foo_file.chain(bar_file);
+    /// let (foo_file, bar_file) = chain.get_mut();
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub fn get_mut(&mut self) -> (&mut T, &mut U) {
         (&mut self.first, &mut self.second)

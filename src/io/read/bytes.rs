@@ -4,7 +4,7 @@ use crate::io::{self, Read};
 use crate::stream::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// An iterator over `u8` values of a reader.
+/// A stream over `u8` values of a reader.
 ///
 /// This struct is generally created by calling [`bytes`] on a reader.
 /// Please see the documentation of [`bytes`] for more details.

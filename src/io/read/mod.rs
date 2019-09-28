@@ -282,21 +282,20 @@ extension_trait! {
             [`read()`]: tymethod.read
 
             ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
             use async_std::io::prelude::*;
             use async_std::fs::File;
 
-            fn main() -> std::io::Result<()> {
-                async_std::task::block_on(async {
-                    let f = File::open("foo.txt").await?;
-                    let mut buffer = [0; 5];
+            let f = File::open("foo.txt").await?;
+            let mut buffer = [0; 5];
 
-                    // read at most five bytes
-                    let mut handle = f.take(5);
+            // read at most five bytes
+            let mut handle = f.take(5);
 
-                    handle.read(&mut buffer).await?;
-                    Ok(())
-                })
-            }
+            handle.read(&mut buffer).await?;
+            #
+            # Ok(()) }) }
             ```
         "#]
         fn take(self, limit: u64) -> take::Take<Self>
@@ -319,27 +318,27 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            use async_std::io;
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
             use async_std::prelude::*;
             use async_std::fs::File;
            
-            fn main() -> io::Result<()> { async_std::task::block_on(async {
-                let mut f = File::open("foo.txt").await?;
-                let mut buffer = Vec::new();
-                let mut other_buffer = Vec::new();
+            let mut f = File::open("foo.txt").await?;
+            let mut buffer = Vec::new();
+            let mut other_buffer = Vec::new();
            
-                {
-                    let reference = f.by_ref();
+            {
+                let reference = f.by_ref();
            
-                    // read at most 5 bytes
-                    reference.take(5).read_to_end(&mut buffer).await?;
+                // read at most 5 bytes
+                reference.take(5).read_to_end(&mut buffer).await?;
            
-                } // drop our &mut reference so we can use f again
+            } // drop our &mut reference so we can use f again
            
-                // original file still usable, read the rest
-                f.read_to_end(&mut other_buffer).await?;
-                Ok(())
-            }) }
+            // original file still usable, read the rest
+            f.read_to_end(&mut other_buffer).await?;
+            #
+            # Ok(()) }) }
             ```
         "#]
         fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
@@ -360,19 +359,19 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            use async_std::io;
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
             use async_std::prelude::*;
             use async_std::fs::File;
            
-            fn main() -> io::Result<()> { async_std::task::block_on(async {
-                let f = File::open("foo.txt").await?;
-                let mut s = f.bytes();
+            let f = File::open("foo.txt").await?;
+            let mut s = f.bytes();
            
-                while let Some(byte) = s.next().await {
-                    println!("{}", byte.unwrap());
-                }
-                Ok(())
-            }) }
+            while let Some(byte) = s.next().await {
+                println!("{}", byte.unwrap());
+            }
+            #
+            # Ok(()) }) }
             ```
         "#]
         fn bytes(self) -> bytes::Bytes<Self> where Self: Sized {
@@ -393,22 +392,22 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            use async_std::io;
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
             use async_std::prelude::*;
             use async_std::fs::File;
            
-            fn main() -> io::Result<()> { async_std::task::block_on(async {
-                let f1 = File::open("foo.txt").await?;
-                let f2 = File::open("bar.txt").await?;
+            let f1 = File::open("foo.txt").await?;
+            let f2 = File::open("bar.txt").await?;
            
-                let mut handle = f1.chain(f2);
-                let mut buffer = String::new();
+            let mut handle = f1.chain(f2);
+            let mut buffer = String::new();
            
-                // read the value into a String. We could use any Read method here,
-                // this is just one example.
-                handle.read_to_string(&mut buffer).await?;
-                Ok(())
-            }) }
+            // read the value into a String. We could use any Read method here,
+            // this is just one example.
+            handle.read_to_string(&mut buffer).await?;
+            #
+            # Ok(()) }) }
             ```
         "#]
         fn chain<R: Read>(self, next: R) -> chain::Chain<Self, R> where Self: Sized {
