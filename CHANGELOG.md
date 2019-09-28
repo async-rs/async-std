@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [0.99.8] - 2019-09-28
+
+## Changed
+
+- Pin futures-preview to `0.3.0-alpha.18`, to avoid rustc upgrade problems.
+
 # [0.99.7] - 2019-09-26
 
 ## Added
