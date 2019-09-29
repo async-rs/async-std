@@ -5,11 +5,12 @@ use crate::sync::Mutex;
 /// A barrier enables multiple tasks to synchronize the beginning
 /// of some computation.
 ///
+/// # Examples
+///
 /// ```
 /// # fn main() { async_std::task::block_on(async {
 /// #
-/// use std::sync::Arc;
-/// use async_std::sync::Barrier;
+/// use async_std::sync::{Arc, Barrier};
 /// use async_std::task;
 ///
 /// let mut handles = Vec::with_capacity(10);
@@ -20,14 +21,13 @@ use crate::sync::Mutex;
 ///     // You will NOT see any interleaving.
 ///     handles.push(task::spawn(async move {
 ///         println!("before wait");
-///         let wr = c.wait().await;
+///         c.wait().await;
 ///         println!("after wait");
-///         wr
 ///     }));
 /// }
 /// // Wait for the other futures to finish.
 /// for handle in handles {
-///   handle.await;
+///     handle.await;
 /// }
 /// # });
 /// # }
@@ -114,6 +114,34 @@ impl Barrier {
     ///
     /// [`BarrierWaitResult`]: struct.BarrierWaitResult.html
     /// [`is_leader`]: struct.BarrierWaitResult.html#method.is_leader
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::sync::{Arc, Barrier};
+    /// use async_std::task;
+    ///
+    /// let mut handles = Vec::with_capacity(10);
+    /// let barrier = Arc::new(Barrier::new(10));
+    /// for _ in 0..10 {
+    ///     let c = barrier.clone();
+    ///     // The same messages will be printed together.
+    ///     // You will NOT see any interleaving.
+    ///     handles.push(task::spawn(async move {
+    ///         println!("before wait");
+    ///         c.wait().await;
+    ///         println!("after wait");
+    ///     }));
+    /// }
+    /// // Wait for the other futures to finish.
+    /// for handle in handles {
+    ///     handle.await;
+    /// }
+    /// # });
+    /// # }
+    /// ```
     pub async fn wait(&self) -> BarrierWaitResult {
         let mut lock = self.state.lock().await;
         let local_gen = lock.generation_id;
