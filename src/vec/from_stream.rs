@@ -12,12 +12,12 @@ impl<T> FromStream<T> for Vec<T> {
     {
         let stream = stream.into_stream();
 
-        Pin::from(Box::new(async move {
+        Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
             let mut out = vec![];
             out.stream_extend(stream).await;
             out
-        }))
+        })
     }
 }
