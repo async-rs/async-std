@@ -2,7 +2,7 @@ on: [push]
 
 jobs:
   build_and_test:
-    name: Build adn test on ${{ matrix.os }}
+    name: Build and test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
