@@ -9,9 +9,19 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 # [0.99.8] - 2019-09-28
 
+## Added
+
+- Added README to examples directory.
+- Added concurrency documentation to the futures submodule.
+- Added `io::Read::take` method.
+- Added `io::Read::by_ref` method.
+- Added `io::Read::chain` method.
+
 ## Changed
 
 - Pin futures-preview to `0.3.0-alpha.18`, to avoid rustc upgrade problems.
+- Simplified extension traits using a macro.
+- Use the `broadcast` module with `std::sync::Mutex`, reducing dependencies.
 
 # [0.99.7] - 2019-09-26
 
@@ -120,9 +130,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.7...HEAD
-[0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...0.99.7
-[0.99.6]: https://github.com/async-rs/async-std/compare/v0.99.5...0.99.6
+[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.8...HEAD
+[0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8
+[0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...v0.99.7
+[0.99.6]: https://github.com/async-rs/async-std/compare/v0.99.5...v0.99.6
 [0.99.5]: https://github.com/async-rs/async-std/compare/v0.99.4...v0.99.5
 [0.99.4]: https://github.com/async-rs/async-std/compare/v0.99.3...v0.99.4
 [0.99.3]: https://github.com/async-rs/async-std/tree/v0.99.3
