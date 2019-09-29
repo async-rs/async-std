@@ -50,10 +50,10 @@ pub use async_macros::{join, select, try_join, try_select};
 
 use cfg_if::cfg_if;
 
+pub use into_future::IntoFuture;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
-pub use into_future::IntoFuture;
 
 mod into_future;
 mod pending;
