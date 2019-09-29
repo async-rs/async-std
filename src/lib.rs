@@ -67,6 +67,7 @@ cfg_if! {
 
         mod vec;
         mod result;
+        mod option;
     }
 }
 
