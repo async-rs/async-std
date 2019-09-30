@@ -69,6 +69,7 @@ use std::marker::PhantomData;
 
 use cfg_if::cfg_if;
 
+use crate::future::Future;
 use crate::utils::extension_trait;
 
 cfg_if! {
@@ -353,7 +354,7 @@ extension_trait! {
                     .inspect(|x| println!("about to filter {}", x))
                     .filter(|x| x % 2 == 0)
                     .inspect(|x| println!("made it through filter: {}", x))
-                    .fold(0, |sum, i| sum + i).await;
+                    .fold(0, |sum, i|  async move { sum + i }).await;
 
             assert_eq!(sum, 6);
             #
@@ -447,7 +448,12 @@ extension_trait! {
 
             let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
 
-            let mut parsed = s.filter_map(|a| a.parse::<u32>().ok());
+            let mut parsed = s.filter_map(|a|
+                async move {
+                    a.parse::<u32>().ok()
+                });
+
+            let mut parsed = unsafe { std::pin::Pin::new_unchecked(&mut parsed) };
 
             let one = parsed.next().await;
             assert_eq!(one, Some(1));
@@ -464,10 +470,11 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
+        fn filter_map<Fut, B, F>(self, f: F) -> FilterMap<Self, F, Fut, Self::Item, B>
         where
             Self: Sized,
-            F: FnMut(Self::Item) -> Option<B>,
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = Option<B>>,
         {
             FilterMap::new(self, f)
         }
@@ -602,7 +609,7 @@ extension_trait! {
             use async_std::stream;
 
             let mut s = stream::repeat::<u32>(42).take(3);
-            assert!(s.all(|x| x ==  42).await);
+            assert!(s.all(|x| async move { x ==  42 }).await);
 
             #
             # }) }
@@ -617,23 +624,25 @@ extension_trait! {
             use async_std::stream;
 
             let mut s = stream::empty::<u32>();
-            assert!(s.all(|_| false).await);
+            assert!(s.all(|_| async { false }).await);
             #
             # }) }
             ```
         "#]
         #[inline]
-        fn all<F>(
+        fn all<Fut, F>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = bool> + '_ [AllFuture<'_, Self, F, Self::Item>]
+        ) -> impl Future<Output = bool> + '_ [AllFuture<'_, Self, F, Fut, Self::Item>]
         where
             Self: Unpin + Sized,
-            F: FnMut(Self::Item) -> bool,
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = bool>,
         {
             AllFuture {
                 stream: self,
                 result: true, // the default if the empty stream
+                future: None,
                 _marker: PhantomData,
                 f,
             }
@@ -697,21 +706,26 @@ extension_trait! {
             use async_std::prelude::*;
             use std::collections::VecDeque;
 
-            let mut s: VecDeque<&str> = vec!["lol", "NaN", "2", "5"].into_iter().collect();
-            let first_number = s.find_map(|s| s.parse().ok()).await;
+            let s: VecDeque<&str> = vec!["lol", "NaN", "2", "5"].into_iter().collect();
+            pin_utils::pin_mut!(s);
 
-            assert_eq!(first_number, Some(2));
+            let first_number = s.find_map(|s| async move {
+                s.parse().ok()
+            }).await;
+
+            assert_eq!(first_number, Some(2u8));
             #
             # }) }
             ```
         "#]
-        fn find_map<F, B>(
+        fn find_map<Fut, F, B>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Self::Item, B>]
+        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Fut, Self::Item, B>]
         where
             Self: Sized,
-            F: FnMut(Self::Item) -> Option<B>,
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = Option<B>>,
         {
             FindMapFuture::new(self, f)
         }
@@ -731,21 +745,25 @@ extension_trait! {
             use std::collections::VecDeque;
 
             let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
-            let sum = s.fold(0, |acc, x| acc + x).await;
+            pin_utils::pin_mut!(s);
+            let sum = s.fold(0, |acc, x| async move {
+                acc + x
+            }).await;
 
             assert_eq!(sum, 6);
             #
             # }) }
             ```
         "#]
-        fn fold<B, F>(
+        fn fold<Fut, B, F>(
             self,
             init: B,
             f: F,
-        ) -> impl Future<Output = B> [FoldFuture<Self, F, Self::Item, B>]
+        ) -> impl Future<Output = B> [FoldFuture<Self, F, Fut, Self::Item, B>]
         where
             Self: Sized,
-            F: FnMut(B, Self::Item) -> B,
+            F: FnMut(B, Self::Item) -> Fut,
+            Fut: Future<Output = B>,
         {
             FoldFuture::new(self, init, f)
         }
@@ -775,7 +793,7 @@ extension_trait! {
             use async_std::stream;
 
             let mut s = stream::repeat::<u32>(42).take(3);
-            assert!(s.any(|x| x ==  42).await);
+            assert!(s.any(|x| async move { x ==  42 }).await);
             #
             # }) }
             ```
@@ -789,23 +807,25 @@ extension_trait! {
             use async_std::stream;
 
             let mut s = stream::empty::<u32>();
-            assert!(!s.any(|_| false).await);
+            assert!(!s.any(|_| async { false }).await);
             #
             # }) }
             ```
         "#]
         #[inline]
-        fn any<F>(
+        fn any<Fut, F>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = bool> + '_ [AnyFuture<'_, Self, F, Self::Item>]
+        ) -> impl Future<Output = bool> + '_ [AnyFuture<'_, Self, F, Fut, Self::Item>]
         where
             Self: Unpin + Sized,
-            F: FnMut(Self::Item) -> bool,
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = bool>,
         {
             AnyFuture {
                 stream: self,
                 result: false, // the default if the empty stream
+                future: None,
                 _marker: PhantomData,
                 f,
             }
