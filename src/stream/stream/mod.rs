@@ -32,6 +32,7 @@ mod find_map;
 mod fold;
 mod fuse;
 mod inspect;
+mod map;
 mod min_by;
 mod next;
 mod nth;
@@ -57,6 +58,7 @@ pub use chain::Chain;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
+pub use map::Map;
 pub use scan::Scan;
 pub use skip::Skip;
 pub use skip_while::SkipWhile;
@@ -332,6 +334,37 @@ extension_trait! {
             Self: Sized,
         {
             Enumerate::new(self)
+        }
+
+        #[doc = r#"
+            Takes a closure and creates a stream that calls that closure on every element of this stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let s: VecDeque<_> = vec![1, 2, 3].into_iter().collect();
+            let mut s = s.map(|x| 2 * x);
+
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, Some(4));
+            assert_eq!(s.next().await, Some(6));
+            assert_eq!(s.next().await, None);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn map<B, F>(self, f: F) -> Map<Self, F, Self::Item, B>
+        where
+            Self: Sized,
+            F: FnMut(Self::Item) -> B,
+        {
+            Map::new(self, f)
         }
 
         #[doc = r#"
