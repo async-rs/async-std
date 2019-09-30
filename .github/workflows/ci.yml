@@ -45,7 +45,7 @@ jobs:
       run: |
         rustup default nightly
         rustup component add rustfmt
-        cargo install mdbook
+        test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
         rustc --version
     - name: mdbook
       run: |
