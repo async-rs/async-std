@@ -10,7 +10,7 @@ use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
 
 /// Set if the mutex is locked.
-const LOCK: usize = 1 << 0;
+const LOCK: usize = 1;
 
 /// Set if there are tasks blocked on the mutex.
 const BLOCKED: usize = 1 << 1;
