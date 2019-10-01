@@ -54,6 +54,7 @@ use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
+use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
