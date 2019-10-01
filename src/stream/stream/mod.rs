@@ -30,6 +30,7 @@ mod filter_map;
 mod find;
 mod find_map;
 mod fold;
+mod for_each;
 mod fuse;
 mod inspect;
 mod min_by;
@@ -49,6 +50,7 @@ use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
+use for_each::ForEachFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -748,6 +750,41 @@ extension_trait! {
             F: FnMut(B, Self::Item) -> B,
         {
             FoldFuture::new(self, init, f)
+        }
+
+        #[doc = r#"
+            Call a closure on each element of the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            use std::sync::mpsc::channel;
+
+            let (tx, rx) = channel();
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let sum = s.for_each(move |x| tx.clone().send(x).unwrap()).await;
+
+            let v: Vec<_> = rx.iter().collect();
+
+            assert_eq!(v, vec![1, 2, 3]);
+            #
+            # }) }
+            ```
+        "#]
+        fn for_each<F>(
+            self,
+            f: F,
+        ) -> impl Future<Output = ()> [ForEachFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(Self::Item),
+        {
+            ForEachFuture::new(self, f)
         }
 
         #[doc = r#"
