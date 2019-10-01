@@ -40,6 +40,7 @@ mod skip;
 mod skip_while;
 mod step_by;
 mod take;
+mod try_for_each;
 mod zip;
 
 use all::AllFuture;
@@ -52,6 +53,7 @@ use fold::FoldFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
+use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
@@ -66,6 +68,7 @@ pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::ops::Try;
 
 use cfg_if::cfg_if;
 
@@ -919,6 +922,52 @@ extension_trait! {
             Self: Sized,
         {
             Skip::new(self, n)
+        }
+
+        #[doc = r#"
+            Applies a falliable function to each element in a stream, stopping at first error and returning it.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+            use std::sync::mpsc::channel;
+            use async_std::prelude::*;
+
+            let (tx, rx) = channel();
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let s = s.try_for_each(|v| {
+                if v % 2 == 1 {
+                    tx.clone().send(v).unwrap();
+                    Ok(())
+                } else {
+                    Err("even")
+                }
+            });
+
+            let res = s.await;
+            drop(tx);
+            let values: Vec<_> = rx.iter().collect();
+
+            assert_eq!(values, vec![1]);
+            assert_eq!(res, Err("even"));
+            #
+            # }) }
+            ```
+        "#]
+        fn try_for_each<F, R>(
+            self,
+            f: F,
+        ) -> impl Future<Output = R> [TryForEeachFuture<Self, F, Self::Item, R>]
+        where
+            Self: Sized,
+            F: FnMut(Self::Item) -> R,
+            R: Try<Ok = ()>,
+        {
+            TryForEeachFuture::new(self, f)
         }
 
         #[doc = r#"
