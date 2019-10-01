@@ -960,7 +960,7 @@ extension_trait! {
         fn try_for_each<F, E>(
             self,
             f: F,
-        ) -> impl Future<Output = R> [TryForEeachFuture<Self, F, Self::Item, E>]
+        ) -> impl Future<Output = E> [TryForEeachFuture<Self, F, Self::Item, E>]
         where
             Self: Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
