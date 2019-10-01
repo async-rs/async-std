@@ -1186,6 +1186,7 @@ extension_trait! {
         }
 
         #[doc = r#"
+<<<<<<< HEAD
             Combines multiple streams into a single stream of all their outputs.
 
             Items are yielded as soon as they're received, and the stream continues yield until both
@@ -1231,6 +1232,7 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
+
             use std::cmp::Ordering;
             let s1 = VecDeque::from(vec![1]);
             let s2 = VecDeque::from(vec![1, 2]);
