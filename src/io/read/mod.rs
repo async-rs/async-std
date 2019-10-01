@@ -461,6 +461,15 @@ extension_trait! {
     }
 }
 
+/// Initializes a buffer if necessary.
+///
+/// Currently, a buffer is always initialized because `read_initializer`
+/// feature is not stable.
+#[inline]
+unsafe fn initialize<R: futures_io::AsyncRead>(_reader: &R, buf: &mut [u8]) {
+    std::ptr::write_bytes(buf.as_mut_ptr(), 0, buf.len())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::io;

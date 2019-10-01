@@ -1,3 +1,4 @@
+/* TODO: Once the next version of surf released, re-enable this example.
 //! Sends an HTTP request to the Rust website.
 
 use async_std::task;
@@ -17,3 +18,6 @@ fn main() -> Result<(), surf::Exception> {
         Ok(())
     })
 }
+*/
+
+fn main() {}
