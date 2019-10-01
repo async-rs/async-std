@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::borrow::Cow;
+use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Extend, IntoStream};
@@ -23,7 +23,10 @@ impl<'b> Extend<&'b char> for String {
     fn stream_extend<'a, S: IntoStream<Item = &'b char> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> where 'b: 'a {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
+    where
+        'b: 'a,
+    {
         //TODO: Box::pin(stream.into_stream().copied())
         unimplemented!()
     }
@@ -33,7 +36,10 @@ impl<'b> Extend<&'b str> for String {
     fn stream_extend<'a, S: IntoStream<Item = &'b str> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> where 'b: 'a {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
+    where
+        'b: 'a,
+    {
         //TODO: This can just be: stream.into_stream().for_each(move |s| self.push_str(s))
         Box::pin(stream.into_stream().fold((), move |(), s| self.push_str(s)))
     }
@@ -45,7 +51,11 @@ impl Extend<String> for String {
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         //TODO: This can just be: stream.into_stream().for_each(move |s| self.push_str(&s))
-        Box::pin(stream.into_stream().fold((), move |(), s| self.push_str(&s)))
+        Box::pin(
+            stream
+                .into_stream()
+                .fold((), move |(), s| self.push_str(&s)),
+        )
     }
 }
 
@@ -53,8 +63,15 @@ impl<'b> Extend<Cow<'b, str>> for String {
     fn stream_extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> where 'b: 'a {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
+    where
+        'b: 'a,
+    {
         //TODO: This can just be: stream.into_stream().for_each(move |s| self.push_str(&s))
-        Box::pin(stream.into_stream().fold((), move |(), s| self.push_str(&s)))
+        Box::pin(
+            stream
+                .into_stream()
+                .fold((), move |(), s| self.push_str(&s)),
+        )
     }
 }

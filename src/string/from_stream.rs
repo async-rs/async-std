@@ -1,7 +1,7 @@
-use std::pin::Pin;
 use std::borrow::Cow;
+use std::pin::Pin;
 
-use crate::stream::{FromStream, IntoStream, Extend};
+use crate::stream::{Extend, FromStream, IntoStream};
 
 impl FromStream<char> for String {
     #[inline]
