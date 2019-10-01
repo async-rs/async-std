@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::ops::Try;
 use std::pin::Pin;
 
 use crate::future::Future;
@@ -29,25 +28,24 @@ impl<S, F, T, R> TryForEeachFuture<S, F, T, R> {
     }
 }
 
-impl<S, F, R> Future for TryForEeachFuture<S, F, S::Item, R>
+impl<S, F, E> Future for TryForEeachFuture<S, F, S::Item, E>
 where
     S: Stream,
     S::Item: std::fmt::Debug,
-    F: FnMut(S::Item) -> R,
-    R: Try<Ok = ()>,
+    F: FnMut(S::Item) -> Result<(), E>,
 {
-    type Output = R;
+    type Output = Result<(), E>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
             let item = futures_core::ready!(self.as_mut().stream().poll_next(cx));
 
             match item {
-                None => return Poll::Ready(R::from_ok(())),
+                None => return Poll::Ready(Ok(())),
                 Some(v) => {
                     let res = (self.as_mut().f())(v);
-                    if let Err(e) = res.into_result() {
-                        return Poll::Ready(R::from_error(e));
+                    if let Err(e) = res {
+                        return Poll::Ready(Err(e));
                     }
                 }
             }

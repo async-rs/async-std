@@ -68,7 +68,6 @@ pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
-use std::ops::Try;
 
 use cfg_if::cfg_if;
 
@@ -958,14 +957,13 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn try_for_each<F, R>(
+        fn try_for_each<F, E>(
             self,
             f: F,
-        ) -> impl Future<Output = R> [TryForEeachFuture<Self, F, Self::Item, R>]
+        ) -> impl Future<Output = R> [TryForEeachFuture<Self, F, Self::Item, E>]
         where
             Self: Sized,
-            F: FnMut(Self::Item) -> R,
-            R: Try<Ok = ()>,
+            F: FnMut(Self::Item) -> Result<(), E>,
         {
             TryForEeachFuture::new(self, f)
         }
