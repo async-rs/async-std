@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use crate::stream::{FromStream, IntoStream, Extend};
+use crate::stream::{Extend, FromStream, IntoStream};
 
 impl<T> FromStream<T> for Vec<T> {
     #[inline]

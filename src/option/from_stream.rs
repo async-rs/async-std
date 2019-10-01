@@ -39,11 +39,7 @@ where
                 .collect()
                 .await;
 
-            if found_error {
-                None
-            } else {
-                Some(out)
-            }
+            if found_error { None } else { Some(out) }
         })
     }
 }
