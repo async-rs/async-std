@@ -30,7 +30,7 @@ impl Sleepers {
     pub fn wait(&self) {
         let mut sleep = self.sleep.lock().unwrap();
 
-        if !self.notified.swap(false, Ordering::SeqCst){
+        if !self.notified.swap(false, Ordering::SeqCst) {
             *sleep += 1;
             let _ = self.wake.wait(sleep).unwrap();
         }

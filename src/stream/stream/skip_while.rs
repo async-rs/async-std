@@ -38,10 +38,12 @@ where
 
             match next {
                 Some(v) => match self.as_mut().predicate() {
-                    Some(p) => if !p(&v) {
-                        *self.as_mut().predicate() = None;
-                        return Poll::Ready(Some(v));
-                    },
+                    Some(p) => {
+                        if !p(&v) {
+                            *self.as_mut().predicate() = None;
+                            return Poll::Ready(Some(v));
+                        }
+                    }
                     None => return Poll::Ready(Some(v)),
                 },
                 None => return Poll::Ready(None),
