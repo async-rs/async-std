@@ -391,14 +391,14 @@ impl UdpSocket {
     /// let mdns_addr = Ipv4Addr::new(224, 0, 0, 123);
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
-    /// socket.join_multicast_v4(&mdns_addr, &interface)?;
+    /// socket.join_multicast_v4(mdns_addr, interface)?;
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+    pub fn join_multicast_v4(&self, multiaddr: Ipv4Addr, interface: Ipv4Addr) -> io::Result<()> {
         self.watcher
             .get_ref()
-            .join_multicast_v4(multiaddr, interface)
+            .join_multicast_v4(&multiaddr, &interface)
     }
 
     /// Executes an operation of the `IPV6_ADD_MEMBERSHIP` type.
@@ -435,10 +435,10 @@ impl UdpSocket {
     /// For more information about this option, see [`join_multicast_v4`].
     ///
     /// [`join_multicast_v4`]: #method.join_multicast_v4
-    pub fn leave_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+    pub fn leave_multicast_v4(&self, multiaddr: Ipv4Addr, interface: Ipv4Addr) -> io::Result<()> {
         self.watcher
             .get_ref()
-            .leave_multicast_v4(multiaddr, interface)
+            .leave_multicast_v4(&multiaddr, &interface)
     }
 
     /// Executes an operation of the `IPV6_DROP_MEMBERSHIP` type.
