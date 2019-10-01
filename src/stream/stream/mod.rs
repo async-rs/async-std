@@ -37,6 +37,7 @@ mod map;
 mod min_by;
 mod next;
 mod nth;
+mod partial_cmp;
 mod scan;
 mod skip;
 mod skip_while;
@@ -56,6 +57,7 @@ use for_each::ForEachFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
+use partial_cmp::PartialCmpFuture;
 use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
@@ -1187,6 +1189,49 @@ extension_trait! {
         {
             Merge::new(self, other)
         }
+
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            
+            use std::cmp::Ordering;
+
+            let result_equal = vec![1.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
+            let result_less = vec![1.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1., 2.].into_iter().collect::<VecDeque<f64>>()).await;
+            let result_greater = vec![1., 2.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
+            let result_none = vec![std::f64::NAN].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
+
+            assert_eq!(result_equal, Some(Ordering::Equal));
+            assert_eq!(result_less, Some(Ordering::Less));
+            assert_eq!(result_greater, Some(Ordering::Greater));            
+            assert_eq!(result_none, None);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn partial_cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Option<Ordering>> + '_ [PartialCmpFuture<Self, S>] 
+        where
+            Self: Sized + Stream,
+            S: Stream,             
+            Self::Item: PartialOrd<S::Item>,
+        {
+            PartialCmpFuture::new(self, other)
+        }        
     }
 
     impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
