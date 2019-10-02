@@ -4,7 +4,9 @@
 //! data structures.
 
 pub mod vec_deque;
+pub mod hash_map;
 pub mod btree_map;
 
 pub use vec_deque::VecDeque;
+pub use hash_map::HashMap;
 pub use btree_map::BTreeMap;
