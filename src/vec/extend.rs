@@ -9,11 +9,9 @@ impl<T> Extend<T> for Vec<T> {
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-            while let Some(item) = stream.next().await {
-                self.push(item);
-            }
-        })
+        //TODO: Add this back in when size_hint is added to Stream/StreamExt
+        //let (lower_bound, _) = stream.size_hint();
+        //self.reserve(lower_bound);
+        Box::pin(stream.for_each(move |item| self.push(item)))
     }
 }
