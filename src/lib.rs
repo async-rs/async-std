@@ -70,6 +70,7 @@ cfg_if! {
         mod result;
         mod option;
         mod string;
+        mod collections;
     }
 }
 
