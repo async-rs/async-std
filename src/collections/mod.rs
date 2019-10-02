@@ -3,6 +3,8 @@
 //! This library provides efficient implementations of the most common general purpose programming
 //! data structures.
 
-mod vec_deque;
+pub mod vec_deque;
+pub mod btree_map;
 
-pub use vec_deque::*;
+pub use vec_deque::VecDeque;
+pub use btree_map::BTreeMap;
