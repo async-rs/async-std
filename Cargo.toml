@@ -30,8 +30,8 @@ async-task = "1.0.0"
 cfg-if = "0.1.9"
 crossbeam-channel = "0.3.9"
 crossbeam-deque = "0.7.1"
-futures-core-preview = "=0.3.0-alpha.18"
-futures-io-preview = "=0.3.0-alpha.18"
+futures-core-preview = "=0.3.0-alpha.19"
+futures-io-preview = "=0.3.0-alpha.19"
 futures-timer = "0.4.0"
 lazy_static = "1.4.0"
 log = { version = "0.4.8", features = ["kv_unstable"] }
@@ -46,13 +46,10 @@ broadcaster = { version = "0.2.6", optional = true, default-features = false, fe
 
 [dev-dependencies]
 femme = "1.2.0"
-surf = "1.0.2"
+# surf = "1.0.2"
 tempdir = "0.3.7"
+futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
 
 # These are used by the book for examples
-futures-channel-preview = "=0.3.0-alpha.18"
-futures-util-preview = "=0.3.0-alpha.18"
-
-[dev-dependencies.futures-preview]
-version = "=0.3.0-alpha.18"
-features = ["std", "nightly", "async-await"]
+futures-channel-preview = "=0.3.0-alpha.19"
+futures-util-preview = "=0.3.0-alpha.19"

@@ -1,7 +1,6 @@
 use std::pin::Pin;
 
-use crate::prelude::*;
-use crate::stream::{FromStream, IntoStream};
+use crate::stream::{Extend, FromStream, IntoStream};
 
 impl<T> FromStream<T> for Vec<T> {
     #[inline]
@@ -13,14 +12,12 @@ impl<T> FromStream<T> for Vec<T> {
     {
         let stream = stream.into_stream();
 
-        Pin::from(Box::new(async move {
+        Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
             let mut out = vec![];
-            while let Some(item) = stream.next().await {
-                out.push(item);
-            }
+            out.stream_extend(stream).await;
             out
-        }))
+        })
     }
 }

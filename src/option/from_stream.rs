@@ -3,15 +3,15 @@ use std::pin::Pin;
 use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
 
-impl<T, E, V> FromStream<Result<T, E>> for Result<V, E>
+impl<T, V> FromStream<Option<T>> for Option<V>
 where
     V: FromStream<T>,
 {
-    /// Takes each element in the stream: if it is an `Err`, no further
-    /// elements are taken, and the `Err` is returned. Should no `Err`
-    /// occur, a container with the values of each `Result` is returned.
+    /// Takes each element in the stream: if it is `None`, no further
+    /// elements are taken, and `None` is returned. Should no `None`
+    /// occur, a container with the values of each `Option` is returned.
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = Result<T, E>>>(
+    fn from_stream<'a, S: IntoStream<Item = Option<T>>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -24,13 +24,13 @@ where
 
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
-            let mut found_error = None;
+            let mut found_error = false;
             let out: V = stream
                 .scan((), |_, elem| {
                     match elem {
-                        Ok(elem) => Some(elem),
-                        Err(err) => {
-                            found_error = Some(err);
+                        Some(elem) => Some(elem),
+                        None => {
+                            found_error = true;
                             // Stop processing the stream on error
                             None
                         }
@@ -39,10 +39,7 @@ where
                 .collect()
                 .await;
 
-            match found_error {
-                Some(err) => Err(err),
-                None => Ok(out),
-            }
+            if found_error { None } else { Some(out) }
         })
     }
 }
