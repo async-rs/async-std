@@ -1205,16 +1205,22 @@ extension_trait! {
 
             let result_equal = vec![1.].into_iter().collect::<VecDeque<f64>>()
                 .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_less = vec![1.].into_iter().collect::<VecDeque<f64>>()
+            let result_less_count = vec![1.].into_iter().collect::<VecDeque<f64>>()
                 .partial_cmp(vec![1., 2.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_greater = vec![1., 2.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
+            let result_greater_count = vec![1., 2.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;           
+            let result_less_vals = vec![1., 2., 3.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1., 2., 4.].into_iter().collect::<VecDeque<f64>>()).await;
+            let result_greater_vals = vec![1., 2., 4.].into_iter().collect::<VecDeque<f64>>()
+                .partial_cmp(vec![1., 2., 3.].into_iter().collect::<VecDeque<f64>>()).await;
             let result_none = vec![std::f64::NAN].into_iter().collect::<VecDeque<f64>>()
                 .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
 
             assert_eq!(result_equal, Some(Ordering::Equal));
-            assert_eq!(result_less, Some(Ordering::Less));
-            assert_eq!(result_greater, Some(Ordering::Greater));            
+            assert_eq!(result_less_count, Some(Ordering::Less));
+            assert_eq!(result_greater_count, Some(Ordering::Greater));       
+            assert_eq!(result_less_vals, Some(Ordering::Less));
+            assert_eq!(result_greater_vals, Some(Ordering::Greater));                             
             assert_eq!(result_none, None);
 
             #
