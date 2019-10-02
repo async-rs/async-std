@@ -88,7 +88,6 @@ cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         use std::pin::Pin;
 
-        use crate::future::Future;
         use crate::stream::FromStream;
     }
 }
@@ -782,27 +781,28 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
-            use std::sync::mpsc::channel;
 
-            let (tx, rx) = channel();
+            let mut x = 0;
 
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
-            let sum = s.for_each(move |x| tx.clone().send(x).unwrap()).await;
+            let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
+            s.for_each(|item| {
+                x += item;
+                futures::future::ready(())
+            }).await;
 
-            let v: Vec<_> = rx.iter().collect();
-
-            assert_eq!(v, vec![1, 2, 3]);
+            assert_eq!(x, 6);
             #
             # }) }
             ```
         "#]
-        fn for_each<F>(
+        fn for_each<Fut, F>(
             self,
             f: F,
-        ) -> impl Future<Output = ()> [ForEachFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = ()> [ForEachFuture<Self, F, Fut, Self::Item>]
         where
             Self: Sized,
-            F: FnMut(Self::Item),
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = ()>,
         {
             ForEachFuture::new(self, f)
         }
