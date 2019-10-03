@@ -1,13 +1,15 @@
-use std::pin::Pin;
-use std::hash::{Hash, BuildHasher};
 use std::collections::HashMap;
+use std::hash::{BuildHasher, Hash};
+use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Extend, IntoStream};
 
 impl<K, V, H> Extend<(K, V)> for HashMap<K, V, H>
-where K: Eq + Hash,
-      H: BuildHasher + Default {
+where
+    K: Eq + Hash,
+    H: BuildHasher + Default,
+{
     fn stream_extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,

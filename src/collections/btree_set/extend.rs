@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::collections::BTreeSet;
+use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Extend, IntoStream};

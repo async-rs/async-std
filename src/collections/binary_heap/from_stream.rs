@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::collections::BinaryHeap;
+use std::pin::Pin;
 
 use crate::stream::{Extend, FromStream, IntoStream};
 

@@ -1,7 +1,7 @@
-use std::pin::Pin;
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::pin::Pin;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::stream::{Extend, FromStream, IntoStream};
 

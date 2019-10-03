@@ -1,13 +1,15 @@
-use std::pin::Pin;
-use std::hash::{Hash, BuildHasher};
 use std::collections::HashSet;
+use std::hash::{BuildHasher, Hash};
+use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Extend, IntoStream};
 
 impl<T, H> Extend<T> for HashSet<T, H>
-where T: Eq + Hash,
-      H: BuildHasher + Default {
+where
+    T: Eq + Hash,
+    H: BuildHasher + Default,
+{
     fn stream_extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,

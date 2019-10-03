@@ -1,12 +1,14 @@
-use std::pin::Pin;
-use std::hash::{Hash, BuildHasher};
 use std::collections::HashMap;
+use std::hash::{BuildHasher, Hash};
+use std::pin::Pin;
 
 use crate::stream::{Extend, FromStream, IntoStream};
 
 impl<K, V, H> FromStream<(K, V)> for HashMap<K, V, H>
-where K: Eq + Hash,
-      H: BuildHasher + Default {
+where
+    K: Eq + Hash,
+    H: BuildHasher + Default,
+{
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = (K, V)>>(
         stream: S,
