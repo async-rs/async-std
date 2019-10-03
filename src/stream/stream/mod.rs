@@ -351,8 +351,9 @@ extension_trait! {
             use async_std::prelude::*;
             use std::collections::VecDeque;
 
-            let s: VecDeque<_> = vec![1, 2, 3].into_iter().collect();
-            let mut s = s.map(|x| 2 * x);
+            let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
+            let s = s.map(|x| async move { 2 * x });
+            pin_utils::pin_mut!(s);
 
             assert_eq!(s.next().await, Some(2));
             assert_eq!(s.next().await, Some(4));
@@ -363,10 +364,11 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn map<B, F>(self, f: F) -> Map<Self, F, Self::Item, B>
+        fn map<B, Fut, F>(self, f: F) -> Map<Self, F, Self::Item, Fut, B>
         where
             Self: Sized,
-            F: FnMut(Self::Item) -> B,
+            F: FnMut(Self::Item) -> Fut,
+            Fut: Future<Output = B>,
         {
             Map::new(self, f)
         }
