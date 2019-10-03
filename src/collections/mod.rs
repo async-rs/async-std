@@ -5,8 +5,10 @@
 
 pub mod vec_deque;
 pub mod hash_map;
+pub mod hash_set;
 pub mod btree_map;
 
 pub use vec_deque::VecDeque;
 pub use hash_map::HashMap;
+pub use hash_set::HashSet;
 pub use btree_map::BTreeMap;
