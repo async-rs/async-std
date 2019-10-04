@@ -2,8 +2,8 @@ use std::cmp::Ordering;
 use std::pin::Pin;
 
 use super::fuse::Fuse;
-use crate::prelude::*;
 use crate::future::Future;
+use crate::prelude::*;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
@@ -15,7 +15,7 @@ pub struct CmpFuture<L: Stream, R: Stream> {
     l: Fuse<L>,
     r: Fuse<R>,
     l_cache: Option<L::Item>,
-    r_cache: Option<R::Item>, 
+    r_cache: Option<R::Item>,
 }
 
 impl<L: Stream, R: Stream> CmpFuture<L, R> {
@@ -28,35 +28,35 @@ impl<L: Stream, R: Stream> CmpFuture<L, R> {
         CmpFuture {
             l: l.fuse(),
             r: r.fuse(),
-            l_cache: None, 
-            r_cache: None, 
+            l_cache: None,
+            r_cache: None,
         }
     }
 }
 
-impl<L: Stream, R: Stream> Future for CmpFuture<L, R> 
-where 
+impl<L: Stream, R: Stream> Future for CmpFuture<L, R>
+where
     L: Stream + Sized,
     R: Stream<Item = L::Item> + Sized,
-    L::Item: Ord, 
+    L::Item: Ord,
 {
     type Output = Ordering;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {        
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
             // Stream that completes earliest can be considered Less, etc
             let l_complete = self.l.done && self.as_mut().l_cache.is_none();
             let r_complete = self.r.done && self.as_mut().r_cache.is_none();
 
             if l_complete && r_complete {
-                return Poll::Ready(Ordering::Equal)
+                return Poll::Ready(Ordering::Equal);
             } else if l_complete {
-                return Poll::Ready(Ordering::Less)
+                return Poll::Ready(Ordering::Less);
             } else if r_complete {
-                return Poll::Ready(Ordering::Greater)
+                return Poll::Ready(Ordering::Greater);
             }
 
-            // Get next value if possible and necesary 
+            // Get next value if possible and necesary
             if !self.l.done && self.as_mut().l_cache.is_none() {
                 let l_next = futures_core::ready!(self.as_mut().l().poll_next(cx));
                 if let Some(item) = l_next {
@@ -74,17 +74,17 @@ where
             // Compare if both values are available.
             if self.as_mut().l_cache.is_some() && self.as_mut().r_cache.is_some() {
                 let l_value = self.as_mut().l_cache().take().unwrap();
-                let r_value = self.as_mut().r_cache().take().unwrap(); 
+                let r_value = self.as_mut().r_cache().take().unwrap();
                 let result = l_value.cmp(&r_value);
 
                 if let Ordering::Equal = result {
-                    // Reset cache to prepare for next comparison 
-                    *self.as_mut().l_cache() = None;  
+                    // Reset cache to prepare for next comparison
+                    *self.as_mut().l_cache() = None;
                     *self.as_mut().r_cache() = None;
                 } else {
-                    // Return non equal value 
+                    // Return non equal value
                     return Poll::Ready(result);
-                }            
+                }
             }
         }
     }

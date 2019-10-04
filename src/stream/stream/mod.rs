@@ -1188,7 +1188,6 @@ extension_trait! {
         }
 
         #[doc = r#"
-<<<<<<< HEAD
             Combines multiple streams into a single stream of all their outputs.
 
             Items are yielded as soon as they're received, and the stream continues yield until both
@@ -1295,10 +1294,10 @@ extension_trait! {
         fn cmp<S>(
            self,
            other: S
-        ) -> impl Future<Output = Ordering> + '_ [CmpFuture<Self, S>] 
+        ) -> impl Future<Output = Ordering> + '_ [CmpFuture<Self, S>]
         where
             Self: Sized + Stream,
-            S: Stream<Item = Self::Item>,             
+            S: Stream<Item = Self::Item>,
             Self::Item: Ord,
         {
             CmpFuture::new(self, other)
