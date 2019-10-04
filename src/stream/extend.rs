@@ -33,7 +33,9 @@ pub trait Extend<A> {
     fn stream_extend<'a, T: IntoStream<Item = A> + 'a>(
         &'a mut self,
         stream: T,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
+    where
+        A: 'a;
 }
 
 impl Extend<()> for () {
