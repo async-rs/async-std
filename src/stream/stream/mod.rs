@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod cmp;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -49,6 +50,7 @@ mod zip;
 
 use all::AllFuture;
 use any::AnyFuture;
+use cmp::CmpFuture;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
@@ -1186,6 +1188,7 @@ extension_trait! {
         }
 
         #[doc = r#"
+<<<<<<< HEAD
             Combines multiple streams into a single stream of all their outputs.
 
             Items are yielded as soon as they're received, and the stream continues yield until both
@@ -1231,6 +1234,7 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
+
             use std::cmp::Ordering;
             let s1 = VecDeque::from(vec![1]);
             let s2 = VecDeque::from(vec![1, 2]);
@@ -1255,6 +1259,49 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another using 'Ord'. 
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            
+            use std::cmp::Ordering;
+            let result_equal = vec![1].into_iter().collect::<VecDeque<i64>>()
+                .cmp(vec![1].into_iter().collect::<VecDeque<i64>>()).await;
+            let result_less_count = vec![1].into_iter().collect::<VecDeque<i64>>()
+                .cmp(vec![1, 2].into_iter().collect::<VecDeque<i64>>()).await;
+            let result_greater_count = vec![1, 2].into_iter().collect::<VecDeque<i64>>()
+                .cmp(vec![1].into_iter().collect::<VecDeque<i64>>()).await;           
+            let result_less_vals = vec![1, 2, 3].into_iter().collect::<VecDeque<i64>>()
+                .cmp(vec![1, 2, 4].into_iter().collect::<VecDeque<i64>>()).await;
+            let result_greater_vals = vec![1, 2, 4].into_iter().collect::<VecDeque<i64>>()
+                .cmp(vec![1, 2, 3].into_iter().collect::<VecDeque<i64>>()).await;
+            assert_eq!(result_equal, Ordering::Equal);
+            assert_eq!(result_less_count, Ordering::Less);
+            assert_eq!(result_greater_count, Ordering::Greater);       
+            assert_eq!(result_less_vals, Ordering::Less);
+            assert_eq!(result_greater_vals, Ordering::Greater);                             
+            #
+            # }) }
+            ```
+        "#]
+        fn cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Ordering> + '_ [CmpFuture<Self, S>] 
+        where
+            Self: Sized + Stream,
+            S: Stream<Item = Self::Item>,             
+            Self::Item: Ord,
+        {
+            CmpFuture::new(self, other)
         }
     }
 
