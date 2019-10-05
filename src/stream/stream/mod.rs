@@ -815,21 +815,16 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use async_std::sync::Mutex;
             use std::collections::VecDeque;
-            use std::sync::Arc;
 
-            let x = Arc::new(Mutex::new(0u8));
-
+            let mut x = 0;
             let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
             s.for_each(|item| {
-                let x = x.clone();
-                async move {
-                    *x.lock().await += item;
-                }
+                x += item;
+                futures::future::ready(())
             }).await;
 
-            assert_eq!(*x.lock().await, 6);
+            assert_eq!(x, 6);
             #
             # }) }
             ```
