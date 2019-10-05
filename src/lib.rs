@@ -65,10 +65,12 @@ cfg_if! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
 
+        mod unit;
         mod vec;
         mod result;
         mod option;
         mod string;
+        mod collections;
     }
 }
 

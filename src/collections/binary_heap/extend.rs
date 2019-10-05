@@ -1,9 +1,10 @@
+use std::collections::BinaryHeap;
 use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Extend, IntoStream};
 
-impl<T> Extend<T> for Vec<T> {
+impl<T: Ord> Extend<T> for BinaryHeap<T> {
     fn stream_extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
