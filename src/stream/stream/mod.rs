@@ -486,12 +486,12 @@ extension_trait! {
 
             let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
 
-            let mut parsed = s.filter_map(|a|
+            let parsed = s.filter_map(|a|
                 async move {
                     a.parse::<u32>().ok()
                 });
 
-            let mut parsed = unsafe { std::pin::Pin::new_unchecked(&mut parsed) };
+            pin_utils::pin_mut!(parsed);
 
             let one = parsed.next().await;
             assert_eq!(one, Some(1));
@@ -816,16 +816,19 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
+            use std::sync::{Arc, Mutex};
 
-            let mut x = 0;
+            let x = Arc::new(Mutex::new(0u8));
 
             let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
             s.for_each(|item| {
-                x += item;
-                futures::future::ready(())
+                let x = x.clone();
+                async move {
+                    *x.lock().unwrap() += item;
+                }
             }).await;
 
-            assert_eq!(x, 6);
+            assert_eq!(*x.lock().unwrap(), 6);
             #
             # }) }
             ```
