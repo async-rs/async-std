@@ -815,8 +815,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
+            use async_std::sync::Mutex;
             use std::collections::VecDeque;
-            use std::sync::{Arc, Mutex};
+            use std::sync::Arc;
 
             let x = Arc::new(Mutex::new(0u8));
 
@@ -824,11 +825,11 @@ extension_trait! {
             s.for_each(|item| {
                 let x = x.clone();
                 async move {
-                    *x.lock().unwrap() += item;
+                    *x.lock().await += item;
                 }
             }).await;
 
-            assert_eq!(*x.lock().unwrap(), 6);
+            assert_eq!(*x.lock().await, 6);
             #
             # }) }
             ```
