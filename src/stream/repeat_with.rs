@@ -5,7 +5,7 @@ use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that repeats elements of type `T` endlessly by applying a provided clousre.
+/// A stream that repeats elements of type `T` endlessly by applying a provided closure.
 ///
 /// This stream is constructed by the [`repeat_with`] function.
 ///
@@ -31,14 +31,12 @@ pub struct RepeatWith<F, Fut, A> {
 ///
 /// let s = stream::repeat_with(|| async { 1 });
 ///
-///
 /// pin_utils::pin_mut!(s);
 ///
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
-///
 /// # }) }
 /// ```
 ///
@@ -52,13 +50,11 @@ pub struct RepeatWith<F, Fut, A> {
 ///
 /// let s = stream::repeat_with(|| async { 1u8 }).take(2);
 ///
-///
 /// pin_utils::pin_mut!(s);
 ///
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, None);
-///
 /// # }) }
 /// ```
 pub fn repeat_with<F, Fut, A>(repeater: F) -> RepeatWith<F, Fut, A> {
