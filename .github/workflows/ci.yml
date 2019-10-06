@@ -9,19 +9,20 @@ on:
 
 jobs:
   build_and_test:
-    name: Build and test on ${{ matrix.os }}
+    name: Build and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [nightly]
 
     steps:
     - uses: actions/checkout@master
 
-    - name: Install nightly
+    - name: Install ${{ matrix.rust }}
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ matrix.rust }}
         override: true
 
     - name: check

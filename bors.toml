@@ -2,9 +2,9 @@ status = [
     # Travis CI
     "continuous-integration/travis-ci/push",
     # GitHub Actions
-    "Build and test on ubuntu-latest",
-    "Build and test on windows-latest",
-    "Build and test on macOS-latest",
+    "Build and test (ubuntu-latest, nightly)",
+    "Build and test (windows-latest, nightly)",
+    "Build and test (macOS-latest, nightly)",
     "Checking fmt and docs",
     "Clippy check",
 ]
