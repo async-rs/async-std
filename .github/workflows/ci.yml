@@ -1,8 +1,9 @@
 on: pull_request
 
+name: test
 jobs:
   check_src:
-    name: Nightly on ${{ matrix.os }}
+    name: nightly on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -36,7 +37,7 @@ jobs:
         args: --all --doc --features unstable
 
   check_docs:
-    name: Docs
+    name: rustdoc
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master

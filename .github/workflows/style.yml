@@ -1,9 +1,9 @@
 on: pull_request
 
-name: Style
+name: style
 jobs:
   clippy:
-    name: Clippy
+    name: clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -21,7 +21,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   fmt:
-    name: Rustfmt
+    name: rustfmt
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
