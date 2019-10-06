@@ -81,15 +81,15 @@ where
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         loop {
-            match self.future.is_some() {
-                true => {
+            match &self.future {
+                Some(_) => {
                     let next =
                         futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
                     self.as_mut().future().set(None);
 
                     return Poll::Ready(next);
                 }
-                false => {
+                None => {
                     let fut = (self.as_mut().f())();
                     self.as_mut().future().set(Some(fut));
                 }
