@@ -5,7 +5,7 @@ use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that yeilds elements by calling a closure.
+/// A stream that yields elements by calling a closure.
 ///
 /// This stream is constructed by [`from_fn`] function.
 ///
