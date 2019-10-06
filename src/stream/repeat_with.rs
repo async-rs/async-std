@@ -57,7 +57,11 @@ pub struct RepeatWith<F, Fut, A> {
 /// assert_eq!(s.next().await, None);
 /// # }) }
 /// ```
-pub fn repeat_with<F, Fut, A>(repeater: F) -> RepeatWith<F, Fut, A> {
+pub fn repeat_with<F, Fut, A>(repeater: F) -> RepeatWith<F, Fut, A>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = A>,
+{
     RepeatWith {
         f: repeater,
         future: None,
@@ -79,8 +83,8 @@ where
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         loop {
-            match self.future.is_some() {
-                true => {
+            match &self.future {
+                Some(_) => {
                     let res =
                         futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
 
@@ -88,7 +92,7 @@ where
 
                     return Poll::Ready(Some(res));
                 }
-                false => {
+                None => {
                     let fut = (self.as_mut().f())();
 
                     self.as_mut().future().set(Some(fut));
