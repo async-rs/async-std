@@ -41,12 +41,22 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
+    - id: component
+      uses: actions-rs/components-nightly@v1
+      with:
+        component: rustfmt
+
+    - uses: actions-rs/toolchain@v1
+      with:
+          toolchain: ${{ steps.component.outputs.toolchain }}
+          override: true
+
     - name: setup
       run: |
-        rustup default nightly
         rustup component add rustfmt
         test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
         rustc --version
+
     - name: mdbook
       run: |
         mdbook build docs

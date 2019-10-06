@@ -1,13 +1,11 @@
 use std::borrow::Cow;
 use std::pin::Pin;
-use std::rc::Rc;
-use std::sync::Arc;
 
 use crate::stream::{Extend, FromStream, IntoStream};
 
-impl<T> FromStream<T> for Vec<T> {
+impl FromStream<char> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = char>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -18,16 +16,16 @@ impl<T> FromStream<T> for Vec<T> {
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
-            let mut out = vec![];
+            let mut out = String::new();
             out.stream_extend(stream).await;
             out
         })
     }
 }
 
-impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
+impl<'b> FromStream<&'b char> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = &'b char>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -38,14 +36,16 @@ impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
-            Cow::Owned(FromStream::from_stream(stream).await)
+            let mut out = String::new();
+            out.stream_extend(stream).await;
+            out
         })
     }
 }
 
-impl<T> FromStream<T> for Box<[T]> {
+impl<'b> FromStream<&'b str> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = &'b str>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -56,14 +56,16 @@ impl<T> FromStream<T> for Box<[T]> {
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
-            Vec::from_stream(stream).await.into_boxed_slice()
+            let mut out = String::new();
+            out.stream_extend(stream).await;
+            out
         })
     }
 }
 
-impl<T> FromStream<T> for Rc<[T]> {
+impl FromStream<String> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = String>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -74,14 +76,16 @@ impl<T> FromStream<T> for Rc<[T]> {
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
-            Vec::from_stream(stream).await.into()
+            let mut out = String::new();
+            out.stream_extend(stream).await;
+            out
         })
     }
 }
 
-impl<T> FromStream<T> for Arc<[T]> {
+impl<'b> FromStream<Cow<'b, str>> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = Cow<'b, str>>>(
         stream: S,
     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
     where
@@ -92,7 +96,9 @@ impl<T> FromStream<T> for Arc<[T]> {
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
-            Vec::from_stream(stream).await.into()
+            let mut out = String::new();
+            out.stream_extend(stream).await;
+            out
         })
     }
 }
