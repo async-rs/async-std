@@ -28,7 +28,8 @@ pub struct FromFn<F, Fut, T> {
 /// # fn main() { async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
-/// use std::sync::{Mutex, Arc};
+/// use async_std::sync::Mutex;
+/// use std::sync::Arc;
 /// use async_std::stream;
 ///
 /// let count = Arc::new(Mutex::new(0u8));
@@ -36,12 +37,12 @@ pub struct FromFn<F, Fut, T> {
 ///     let count = Arc::clone(&count);
 ///
 ///     async move {
-///         *count.lock().unwrap() += 1;
+///         *count.lock().await += 1;
 ///
-///         if *count.lock().unwrap() > 3 {
+///         if *count.lock().await > 3 {
 ///             None
 ///         } else {
-///             Some(*count.lock().unwrap())
+///             Some(*count.lock().await)
 ///         }
 ///     }
 /// });
