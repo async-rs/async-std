@@ -1,8 +1,9 @@
 on: pull_request
 
-name: Clippy check
+name: Style
 jobs:
-  clippy_check:
+  clippy:
+    name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -18,3 +19,21 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - id: component
+      uses: actions-rs/components-nightly@v1
+      with:
+        component: rustfmt
+    - uses: actions-rs/toolchain@v1
+      with:
+          toolchain: ${{ steps.component.outputs.toolchain }}
+          override: true
+    - name: setup
+      run: rustup component add rustfmt
+    - name: fmt
+      run: cargo fmt --all -- --check

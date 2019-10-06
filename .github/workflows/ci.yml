@@ -1,8 +1,8 @@
 on: pull_request
 
 jobs:
-  build_and_test:
-    name: Build and test on ${{ matrix.os }}
+  check_src:
+    name: Nightly on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -35,8 +35,8 @@ jobs:
         command: test
         args: --all --doc --features unstable
 
-  check_fmt_and_docs:
-    name: Checking fmt and docs
+  check_docs:
+    name: Docs
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -53,15 +53,12 @@ jobs:
 
     - name: setup
       run: |
-        rustup component add rustfmt
         test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
         rustc --version
 
     - name: mdbook
       run: |
         mdbook build docs
-    - name: fmt
-      run: cargo fmt --all -- --check
 
     - name: Docs
       run: cargo doc --features docs,unstable

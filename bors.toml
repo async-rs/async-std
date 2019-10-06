@@ -1,1 +1,10 @@
-status = ["continuous-integration/travis-ci/push"]
+status = [
+    "test (stable)",
+    "test (beta)",
+    "test (nightly)",
+    "test (macos)",
+    "style (clippy)",
+    "style (rustfmt)",
+    "style (rustdoc)",
+]
+delete_merged_branches = true
