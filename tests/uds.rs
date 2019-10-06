@@ -47,7 +47,7 @@ fn into_raw_fd() -> io::Result<()> {
 
 const PING: &[u8] = b"ping";
 const PONG: &[u8] = b"pong";
-const TEST_TIMEOUT: std::time::Duration = Duration::from_secs(3);
+const TEST_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[test]
 fn socket_ping_pong() {

@@ -95,9 +95,9 @@ impl UnixListener {
         future::poll_fn(|cx| {
             let res = futures_core::ready!(self.watcher.poll_read_with(cx, |inner| {
                 match inner.accept_std() {
-                    // Converting to `would block` so that the watcher will
+                    // Converting to `WouldBlock` so that the watcher will
                     // add the waker of this task to a list of readers.
-                    Ok(None) => Err(std::io::ErrorKind::WouldBlock.into()),
+                    Ok(None) => Err(io::ErrorKind::WouldBlock.into()),
                     res => res,
                 }
             }));
@@ -110,7 +110,7 @@ impl UnixListener {
                     };
                     Poll::Ready(Ok((stream, addr)))
                 }
-                // This should never happen since None is converted to WouldBlock
+                // This should never happen since `None` is converted to `WouldBlock`
                 None => unreachable!(),
             }
         })
