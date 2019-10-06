@@ -50,7 +50,7 @@ matrix:
       rust: nightly
       os: linux
       script:
-        - cargo doc --features docs,unstable
+        - cargo doc --features docs
 
     - name: book
       rust: nightly
