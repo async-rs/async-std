@@ -14,7 +14,7 @@ use crate::task::blocking;
 ///
 /// [`os::unix::fs::DirBuilderExt`]: ../os/unix/fs/trait.DirBuilderExt.html
 /// [`std::fs::DirBuilder`]: https://doc.rust-lang.org/std/fs/struct.DirBuilder.html
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DirBuilder {
     /// Set to `true` if non-existent parent directories should be created.
     recursive: bool,

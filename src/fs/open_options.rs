@@ -290,6 +290,12 @@ impl OpenOptions {
     }
 }
 
+impl Default for OpenOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 cfg_if! {
     if #[cfg(feature = "docs")] {
         use crate::os::unix::fs::OpenOptionsExt;

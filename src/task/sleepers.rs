@@ -30,7 +30,7 @@ impl Sleepers {
     pub fn wait(&self) {
         let mut sleep = self.sleep.lock().unwrap();
 
-        if self.notified.swap(false, Ordering::SeqCst) == false {
+        if !self.notified.swap(false, Ordering::SeqCst) {
             *sleep += 1;
             let _ = self.wake.wait(sleep).unwrap();
         }
@@ -38,7 +38,7 @@ impl Sleepers {
 
     /// Notifies one thread.
     pub fn notify_one(&self) {
-        if self.notified.load(Ordering::SeqCst) == false {
+        if !self.notified.load(Ordering::SeqCst) {
             let mut sleep = self.sleep.lock().unwrap();
 
             if *sleep > 0 {
