@@ -32,6 +32,7 @@ mod find_map;
 mod fold;
 mod for_each;
 mod fuse;
+mod ge;
 mod inspect;
 mod map;
 mod min_by;
@@ -55,6 +56,7 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use ge::GeFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -1257,6 +1259,45 @@ extension_trait! {
         {
             PartialCmpFuture::new(self, other)
         }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than or equal to those of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+                        
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_gt:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_gt:   VecDeque<isize> = vec![1,5].into_iter().collect();
+
+            assert_eq!(single.clone().ge(single.clone()).await, true);
+            assert_eq!(single_gt.clone().ge(single.clone()).await, true);
+
+            assert_eq!(multi.clone().ge(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().ge(multi.clone()).await, true);
+            
+
+            #
+            # }) }
+            ```
+        "#]
+        fn ge<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> + '_ [GeFuture<Self, S>] 
+        where
+            Self: Sized + Stream,
+            S: Stream,             
+            Self::Item: PartialOrd<S::Item>,
+        {
+            GeFuture::new(self, other)
+        }        
     }
 
     impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
