@@ -93,11 +93,16 @@ impl UnixListener {
     /// ```
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         future::poll_fn(|cx| {
-            let res =
-                futures_core::ready!(self.watcher.poll_read_with(cx, |inner| inner.accept_std()));
+            let res = futures_core::ready!(self.watcher.poll_read_with(cx, |inner| {
+                match inner.accept_std() {
+                    // Converting to `WouldBlock` so that the watcher will
+                    // add the waker of this task to a list of readers.
+                    Ok(None) => Err(io::ErrorKind::WouldBlock.into()),
+                    res => res,
+                }
+            }));
 
             match res? {
-                None => Poll::Pending,
                 Some((io, addr)) => {
                     let mio_stream = mio_uds::UnixStream::from_stream(io)?;
                     let stream = UnixStream {
@@ -105,6 +110,8 @@ impl UnixListener {
                     };
                     Poll::Ready(Ok((stream, addr)))
                 }
+                // This should never happen since `None` is converted to `WouldBlock`
+                None => unreachable!(),
             }
         })
         .await
