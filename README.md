@@ -111,13 +111,13 @@ git clone git@github.com:async-rs/async-std.git && cd async-std
 Generate docs:
 
 ```
-cargo doc --features docs.rs --open
+cargo +nightly doc --features docs --open
 ```
 
 Check out the [examples](examples). To run an example:
 
 ```
-cargo run --example hello-world
+cargo +nightly run --example hello-world
 ```
 
 ## Contributing

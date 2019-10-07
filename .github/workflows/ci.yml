@@ -64,4 +64,4 @@ jobs:
       run: cargo fmt --all -- --check
 
     - name: Docs
-      run: cargo doc --features docs,unstable
+      run: cargo doc --features docs
