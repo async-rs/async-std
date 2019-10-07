@@ -10,9 +10,9 @@ impl<T: Ord> Extend<T> for BinaryHeap<T> {
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
-        //TODO: Add this back in when size_hint is added to Stream/StreamExt
-        //let (lower_bound, _) = stream.size_hint();
-        //self.reserve(lower_bound);
+
+        self.reserve(stream.size_hint().0);
+
         Box::pin(stream.for_each(move |item| self.push(item)))
     }
 }
