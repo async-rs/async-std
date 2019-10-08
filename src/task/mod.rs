@@ -55,7 +55,7 @@ pub(crate) mod blocking;
 #[cfg(any(feature = "unstable", feature = "docs"))]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
-pub fn spawn_blocking<F, R>(future: F) -> blocking::JoinHandle<R>
+pub fn blocking<F, R>(future: F) -> blocking::JoinHandle<R>
 where
     F: crate::future::Future<Output = R> + Send + 'static,
     R: Send + 'static,
