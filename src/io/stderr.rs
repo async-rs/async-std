@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io::{self, Write};
-use crate::task::{blocking, Context, Poll, JoinHandle};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard error of the current process.
 ///

@@ -5,7 +5,7 @@ use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
 use crate::stream::Stream;
-use crate::task::{blocking, Context, Poll, JoinHandle};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Returns a stream of entries in a directory.
 ///
