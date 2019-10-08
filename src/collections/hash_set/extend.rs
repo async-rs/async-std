@@ -27,9 +27,9 @@ where
         // the map will only resize twice in the worst case.
 
         let additional = if self.is_empty() {
-           stream.size_hint().0
+            stream.size_hint().0
         } else {
-           (stream.size_hint().0 + 1) / 2
+            (stream.size_hint().0 + 1) / 2
         };
         self.reserve(additional);
 
