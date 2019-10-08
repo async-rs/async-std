@@ -52,10 +52,12 @@ pub(crate) mod blocking;
 /// Spawns a blocking task.
 ///
 /// The task will be spawned onto a thread pool specifically dedicated to blocking tasks.
+// Once this function stabilizes we should merge `blocking::spawn` into this so
+// all code in our crate uses `task::blocking` too.
 #[cfg(any(feature = "unstable", feature = "docs"))]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
-pub fn blocking<F, R>(future: F) -> blocking::JoinHandle<R>
+pub fn blocking<F, R>(future: F) -> task::JoinHandle<R>
 where
     F: crate::future::Future<Output = R> + Send + 'static,
     R: Send + 'static,

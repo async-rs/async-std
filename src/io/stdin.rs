@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::{self, Future};
 use crate::io::{self, Read};
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -57,7 +57,7 @@ enum State {
     /// The stdin is blocked on an asynchronous operation.
     ///
     /// Awaiting this operation will result in the new state of the stdin.
-    Busy(blocking::JoinHandle<State>),
+    Busy(JoinHandle<State>),
 }
 
 /// Inner representation of the asynchronous stdin.

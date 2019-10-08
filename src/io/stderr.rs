@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io::{self, Write};
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, Poll, JoinHandle};
 
 /// Constructs a new handle to the standard error of the current process.
 ///
@@ -56,7 +56,7 @@ enum State {
     /// The stderr is blocked on an asynchronous operation.
     ///
     /// Awaiting this operation will result in the new state of the stderr.
-    Busy(blocking::JoinHandle<State>),
+    Busy(JoinHandle<State>),
 }
 
 /// Inner representation of the asynchronous stderr.

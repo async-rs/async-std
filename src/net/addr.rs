@@ -7,8 +7,7 @@ use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io;
-use crate::task::blocking;
-use crate::task::{Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 cfg_if! {
     if #[cfg(feature = "docs")] {
@@ -48,7 +47,7 @@ pub trait ToSocketAddrs {
 #[allow(missing_debug_implementations)]
 pub enum ToSocketAddrsFuture<'a, I> {
     Phantom(PhantomData<&'a ()>),
-    Join(blocking::JoinHandle<io::Result<I>>),
+    Join(JoinHandle<io::Result<I>>),
     Ready(Option<io::Result<I>>),
 }
 
