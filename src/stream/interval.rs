@@ -14,9 +14,16 @@ use futures_timer::Delay;
 /// `dur` after that. The stream accounts for time elapsed between calls, and
 /// will adjust accordingly to prevent time skews.
 ///
+/// Each interval may be slightly longer than the specified duration, but never
+/// less.
+///
 /// Note that intervals are not intended for high resolution timers, but rather
 /// they will likely fire some granularity after the exact instant that they're
 /// otherwise indicated to fire at.
+///
+/// See also: [`task::sleep`].
+///
+/// [`task::sleep`]: ../task/fn.sleep.html
 ///
 /// # Examples
 ///
