@@ -117,7 +117,7 @@ impl Write for Stdout {
 
                         // Start the operation asynchronously.
                         *state = State::Busy(blocking::spawn(async move {
-                            let res = std::io::Write::write(&mut inner.stdout, &mut inner.buf);
+                            let res = std::io::Write::write(&mut inner.stdout, &inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));

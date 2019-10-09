@@ -69,12 +69,11 @@ where
         let future = task_local::add_finalizer(future);
 
         let future = async move {
-            let res = future.await;
+            future.await;
             trace!("block_on completed", {
                 parent_id: parent_id,
                 child_id: child_id,
             });
-            res
         };
 
         // Pin the future onto the stack.

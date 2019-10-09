@@ -23,13 +23,12 @@ where
         // hint lower bound if the map is empty. Otherwise reserve half the hint (rounded up), so
         // the map will only resize twice in the worst case.
 
-        //TODO: Add this back in when size_hint is added to Stream/StreamExt
-        //let reserve = if self.is_empty() {
-        //    stream.size_hint().0
-        //} else {
-        //    (stream.size_hint().0 + 1) / 2
-        //};
-        //self.reserve(reserve);
+        let additional = if self.is_empty() {
+            stream.size_hint().0
+        } else {
+            (stream.size_hint().0 + 1) / 2
+        };
+        self.reserve(additional);
 
         Box::pin(stream.for_each(move |(k, v)| {
             self.insert(k, v);

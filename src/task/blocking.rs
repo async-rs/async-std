@@ -135,7 +135,7 @@ fn random(n: u32) -> u32 {
     use std::num::Wrapping;
 
     thread_local! {
-        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1406868647));
+        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
     }
 
     RNG.with(|rng| {
@@ -152,6 +152,6 @@ fn random(n: u32) -> u32 {
         //
         // Author: Daniel Lemire
         // Source: https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-        ((x.0 as u64).wrapping_mul(n as u64) >> 32) as u32
+        ((u64::from(x.0)).wrapping_mul(u64::from(n)) >> 32) as u32
     })
 }

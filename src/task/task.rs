@@ -122,7 +122,7 @@ impl TaskId {
         unsafe { TaskId(NonZeroU64::new_unchecked(id)) }
     }
 
-    pub(crate) fn as_u64(&self) -> u64 {
+    pub(crate) fn as_u64(self) -> u64 {
         self.0.get()
     }
 }
