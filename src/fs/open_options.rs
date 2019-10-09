@@ -285,7 +285,7 @@ impl OpenOptions {
     pub fn open<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<File>> {
         let path = path.as_ref().to_owned();
         let options = self.0.clone();
-        async move { blocking::spawn(async move { options.open(path).map(|f| f.into()) }).await }
+        async move { blocking::spawn(move || options.open(path).map(|f| f.into())).await }
     }
 }
 

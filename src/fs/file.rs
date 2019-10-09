@@ -97,7 +97,7 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { std::fs::File::open(&path) }).await?;
+        let file = blocking::spawn(move || std::fs::File::open(&path)).await?;
         Ok(file.into())
     }
 
@@ -132,7 +132,7 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { std::fs::File::create(&path) }).await?;
+        let file = blocking::spawn(move || std::fs::File::create(&path)).await?;
         Ok(file.into())
     }
 
@@ -165,7 +165,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.sync_all() }).await
+        blocking::spawn(move || state.file.sync_all()).await
     }
 
     /// Synchronizes OS-internal buffered contents to disk.
@@ -201,7 +201,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.sync_data() }).await
+        blocking::spawn(move || state.file.sync_data()).await
     }
 
     /// Truncates or extends the file.
@@ -234,7 +234,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.set_len(size) }).await
+        blocking::spawn(move || state.file.set_len(size)).await
     }
 
     /// Reads the file's metadata.
@@ -253,7 +253,7 @@ impl File {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let file = self.file.clone();
-        blocking::spawn(async move { file.metadata() }).await
+        blocking::spawn(move || file.metadata()).await
     }
 
     /// Changes the permissions on the file.
@@ -282,7 +282,7 @@ impl File {
     /// ```
     pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         let file = self.file.clone();
-        blocking::spawn(async move { file.set_permissions(perm) }).await
+        blocking::spawn(move || file.set_permissions(perm)).await
     }
 }
 
@@ -702,7 +702,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a read operation asynchronously.
-        blocking::spawn(async move {
+        blocking::spawn(move || {
             // Read some data from the file into the cache.
             let res = {
                 let State { file, cache, .. } = &mut *self;
@@ -811,7 +811,7 @@ impl LockGuard<State> {
                 self.register(cx);
 
                 // Start a write operation asynchronously.
-                blocking::spawn(async move {
+                blocking::spawn(move || {
                     match (&*self.file).write_all(&self.cache) {
                         Ok(_) => {
                             // Switch to idle mode.
@@ -844,7 +844,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a flush operation asynchronously.
-        blocking::spawn(async move {
+        blocking::spawn(move || {
             match (&*self.file).flush() {
                 Ok(()) => {
                     // Mark the file as flushed.

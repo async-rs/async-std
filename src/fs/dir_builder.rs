@@ -108,7 +108,7 @@ impl DirBuilder {
         }
 
         let path = path.as_ref().to_owned();
-        async move { blocking::spawn(async move { builder.create(path) }).await }
+        async move { blocking::spawn(move || builder.create(path)).await }
     }
 }
 
