@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io::{self, Write};
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard output of the current process.
 ///
@@ -56,7 +56,7 @@ enum State {
     /// The stdout is blocked on an asynchronous operation.
     ///
     /// Awaiting this operation will result in the new state of the stdout.
-    Busy(blocking::JoinHandle<State>),
+    Busy(JoinHandle<State>),
 }
 
 /// Inner representation of the asynchronous stdout.

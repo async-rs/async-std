@@ -5,7 +5,7 @@ use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
 use crate::stream::Stream;
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Returns a stream of entries in a directory.
 ///
@@ -71,7 +71,7 @@ pub struct ReadDir(State);
 #[derive(Debug)]
 enum State {
     Idle(Option<std::fs::ReadDir>),
-    Busy(blocking::JoinHandle<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
+    Busy(JoinHandle<(std::fs::ReadDir, Option<io::Result<std::fs::DirEntry>>)>),
 }
 
 impl ReadDir {
