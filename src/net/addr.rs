@@ -38,9 +38,8 @@ cfg_if! {
 /// #
 /// use async_std::net::ToSocketAddrs;
 ///
-/// let addr1 = "localhost:8080".to_socket_addrs().await?.next().unwrap();
-/// let addr2 = ("127.0.0.1", 8080).to_socket_addrs().await?.next().unwrap();
-/// assert_eq!(addr1, addr2);
+/// let addr = "localhost:8080".to_socket_addrs().await?.next().unwrap();
+/// println!("resolved: {:?}", addr);
 /// #
 /// # Ok(()) }) }
 /// ```
