@@ -32,6 +32,7 @@ where
 
         Box::pin(stream.for_each(move |(k, v)| {
             self.insert(k, v);
+            async {}
         }))
     }
 }

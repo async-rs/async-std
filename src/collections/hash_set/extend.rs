@@ -35,6 +35,7 @@ where
 
         Box::pin(stream.for_each(move |item| {
             self.insert(item);
+            async {}
         }))
     }
 }

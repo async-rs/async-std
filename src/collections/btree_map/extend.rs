@@ -11,6 +11,7 @@ impl<K: Ord, V> Extend<(K, V)> for BTreeMap<K, V> {
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         Box::pin(stream.into_stream().for_each(move |(k, v)| {
             self.insert(k, v);
+            async {}
         }))
     }
 }

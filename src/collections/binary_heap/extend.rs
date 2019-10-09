@@ -13,6 +13,9 @@ impl<T: Ord> Extend<T> for BinaryHeap<T> {
 
         self.reserve(stream.size_hint().0);
 
-        Box::pin(stream.for_each(move |item| self.push(item)))
+        Box::pin(stream.for_each(move |item| {
+            self.push(item);
+            async {}
+        }))
     }
 }

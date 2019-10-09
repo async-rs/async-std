@@ -13,6 +13,9 @@ impl<T> Extend<T> for VecDeque<T> {
 
         self.reserve(stream.size_hint().0);
 
-        Box::pin(stream.for_each(move |item| self.push_back(item)))
+        Box::pin(stream.for_each(move |item| {
+            self.push_back(item);
+            async {}
+        }))
     }
 }

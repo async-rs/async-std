@@ -11,6 +11,6 @@ impl FromStream<()> for () {
     where
         <S as IntoStream>::IntoStream: 'a,
     {
-        Box::pin(stream.into_stream().for_each(|_| ()))
+        Box::pin(stream.into_stream().for_each(|_| async {}))
     }
 }

@@ -10,6 +10,9 @@ impl<T> Extend<T> for LinkedList<T> {
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
-        Box::pin(stream.for_each(move |item| self.push_back(item)))
+        Box::pin(stream.for_each(move |item| {
+            self.push_back(item);
+            async {}
+        }))
     }
 }

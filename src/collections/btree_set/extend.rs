@@ -11,6 +11,7 @@ impl<T: Ord> Extend<T> for BTreeSet<T> {
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         Box::pin(stream.into_stream().for_each(move |item| {
             self.insert(item);
+            async {}
         }))
     }
 }

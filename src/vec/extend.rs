@@ -12,6 +12,9 @@ impl<T> Extend<T> for Vec<T> {
 
         self.reserve(stream.size_hint().0);
 
-        Box::pin(stream.for_each(move |item| self.push(item)))
+        Box::pin(stream.for_each(move |item| {
+            self.push(item);
+            async {}
+        }))
     }
 }

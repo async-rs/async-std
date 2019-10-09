@@ -13,7 +13,10 @@ impl Extend<char> for String {
 
         self.reserve(stream.size_hint().0);
 
-        Box::pin(stream.for_each(move |c| self.push(c)))
+        Box::pin(stream.for_each(move |c| {
+            self.push(c);
+            async {}
+        }))
     }
 }
 
@@ -40,7 +43,10 @@ impl<'b> Extend<&'b str> for String {
     where
         'b: 'a,
     {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(s)))
+        Box::pin(stream.into_stream().for_each(move |s| {
+            self.push_str(s);
+            async {}
+        }))
     }
 }
 
@@ -49,7 +55,10 @@ impl Extend<String> for String {
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(&s)))
+        Box::pin(stream.into_stream().for_each(move |s| {
+            self.push_str(&s);
+            async {}
+        }))
     }
 }
 
@@ -61,6 +70,9 @@ impl<'b> Extend<Cow<'b, str>> for String {
     where
         'b: 'a,
     {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(&s)))
+        Box::pin(stream.into_stream().for_each(move |s| {
+            self.push_str(&s);
+            async {}
+        }))
     }
 }
