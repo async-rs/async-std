@@ -1200,28 +1200,19 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
-            
+
             use std::cmp::Ordering;
 
-            let result_equal = vec![1.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_less_count = vec![1.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1., 2.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_greater_count = vec![1., 2.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;           
-            let result_less_vals = vec![1., 2., 3.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1., 2., 4.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_greater_vals = vec![1., 2., 4.].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1., 2., 3.].into_iter().collect::<VecDeque<f64>>()).await;
-            let result_none = vec![std::f64::NAN].into_iter().collect::<VecDeque<f64>>()
-                .partial_cmp(vec![1.].into_iter().collect::<VecDeque<f64>>()).await;
+            let s1 = VecDeque::from(vec![1]);
+            let s2 = VecDeque::from(vec![1, 2]);
+            let s3 = VecDeque::from(vec![1, 2, 3]);
+            let s4 = VecDeque::from(vec![1, 2, 4]);
 
-            assert_eq!(result_equal, Some(Ordering::Equal));
-            assert_eq!(result_less_count, Some(Ordering::Less));
-            assert_eq!(result_greater_count, Some(Ordering::Greater));       
-            assert_eq!(result_less_vals, Some(Ordering::Less));
-            assert_eq!(result_greater_vals, Some(Ordering::Greater));                             
-            assert_eq!(result_none, None);
+            assert_eq!(s1.clone().partial_cmp(s1.clone()).await, Some(Ordering::Equal));
+            assert_eq!(s1.clone().partial_cmp(s2.clone()).await, Some(Ordering::Less));
+            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));       
+            assert_eq!(s3.clone().partial_cmp(s4.clone()).await, Some(Ordering::Less));
+            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));                             
 
             #
             # }) }
