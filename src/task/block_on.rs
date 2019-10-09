@@ -21,7 +21,7 @@ use kv_log_macro::trace;
 ///
 /// See also: [`task::blocking`].
 ///
-/// [`task::blocking`]: fn.blocking.html
+/// [`task::spawn_blocking`]: fn.spawn_blocking.html
 ///
 /// [spawning]: https://doc.rust-lang.org/std/thread/fn.spawn.html
 /// [joining]: https://doc.rust-lang.org/std/thread/struct.JoinHandle.html#method.join
