@@ -49,6 +49,13 @@ mod worker;
 
 pub(crate) mod blocking;
 
+cfg_if::cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod yield_now;
+        pub use yield_now::yield_now;
+    }
+}
+
 /// Spawns a blocking task.
 ///
 /// The task will be spawned onto a thread pool specifically dedicated to blocking tasks. This
