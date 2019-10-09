@@ -21,7 +21,7 @@ pub use crate::io::Read as _;
 pub use crate::io::Seek as _;
 #[doc(no_inline)]
 pub use crate::io::Write as _;
-#[doc(hidden)]
+#[doc(no_inline)]
 pub use crate::stream::Stream;
 #[doc(no_inline)]
 pub use crate::task_local;

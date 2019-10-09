@@ -157,7 +157,7 @@ impl Barrier {
             drop(lock);
 
             while local_gen == generation_id && count < self.n {
-                let (g, c) = wait.recv().await.expect("sender hasn not been closed");
+                let (g, c) = wait.recv().await.expect("sender has not been closed");
                 generation_id = g;
                 count = c;
             }
