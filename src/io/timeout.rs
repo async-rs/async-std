@@ -1,9 +1,11 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
+use std::task::{Context, Poll};
+use std::pin::Pin;
 
-use futures_core::future::TryFuture;
 use futures_timer::Delay;
+use pin_utils::unsafe_pinned;
 
 use crate::future::Future;
 use crate::io;
@@ -36,16 +38,15 @@ pub async fn timeout<F, T>(dur: Duration, f: F) -> io::Result<T>
 where
     F: Future<Output = io::Result<T>>,
 {
-    let f = TimeoutFuture {
+    Timeout {
         timeout: Delay::new(dur),
         future: f,
-    };
-    f.await
+    }.await
 }
 
-// Future returned by the [`io::timeout`](./fn.timeout.html) function.
+/// Future returned by the `FutureExt::timeout` method.
 #[derive(Debug)]
-pub struct TimeoutFuture<F, T>
+pub struct Timeout<F, T>
 where
     F: Future<Output = io::Result<T>>,
 {
@@ -53,22 +54,23 @@ where
     timeout: Delay,
 }
 
-impl<F, T> TimeoutFuture<F, T>
+impl<F, T> Timeout<F, T>
 where
     F: Future<Output = io::Result<T>>,
 {
-    pin_utils::unsafe_pinned!(future: F);
-    pin_utils::unsafe_pinned!(timeout: Delay);
+    unsafe_pinned!(future: F);
+    unsafe_pinned!(timeout: Delay);
 }
 
-impl<F, T> Future for TimeoutFuture<F, T>
+impl<F, T> Future for Timeout<F, T>
+>>>>>>> 01f8584... add stream::interval
 where
     F: Future<Output = io::Result<T>>,
 {
     type Output = io::Result<T>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.as_mut().future().try_poll(cx) {
+        match self.as_mut().future().poll(cx) {
             Poll::Pending => {}
             other => return other,
         }

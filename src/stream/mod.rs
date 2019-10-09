@@ -44,13 +44,15 @@ cfg_if! {
         mod extend;
         mod from_stream;
         mod into_stream;
+        mod interval;
 
         pub use double_ended_stream::DoubleEndedStream;
         pub use exact_size_stream::ExactSizeStream;
         pub use extend::Extend;
         pub use from_stream::FromStream;
-        pub use into_stream::IntoStream;
         pub use fused_stream::FusedStream;
+        pub use into_stream::IntoStream;
+        pub use interval::{interval, Interval};
 
         pub use stream::Merge;
     }
