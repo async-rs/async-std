@@ -23,13 +23,18 @@ use futures_timer::Delay;
 /// Basic example:
 ///
 /// ```no_run
+/// use async_std::prelude::*;
+/// use async_std::stream;
 /// use std::time::Duration;
-/// use futures::prelude::*;
 ///
-/// let interval = Interval::new(Duration::from_secs(4));
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// let mut interval = stream::interval(Duration::from_secs(4));
 /// while let Some(_) = interval.next().await {
-///     println!("prints every four seconds"));
+///     println!("prints every four seconds");
 /// }
+/// #
+/// # Ok(()) }) }
 /// ```
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
@@ -63,7 +68,7 @@ impl Stream for Interval {
         }
         let when = Instant::now();
         let next = next_interval(when, Instant::now(), self.interval);
-        self.delay.reset_at(next);
+        self.delay.reset(next);
         Poll::Ready(Some(()))
     }
 }
