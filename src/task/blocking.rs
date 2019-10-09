@@ -96,12 +96,13 @@ fn schedule(t: async_task::Task<Tag>) {
 /// Spawns a blocking task.
 ///
 /// The task will be spawned onto a thread pool specifically dedicated to blocking tasks.
-pub(crate) fn spawn<F, R>(future: F) -> JoinHandle<R>
+pub(crate) fn spawn<F, R>(f: F) -> JoinHandle<R>
 where
-    F: Future<Output = R> + Send + 'static,
+    F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
     let tag = Tag::new(None);
+    let future = async move { f() };
     let (task, handle) = async_task::spawn(future, schedule, tag);
     task.schedule();
     JoinHandle::new(handle)

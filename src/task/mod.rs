@@ -73,7 +73,7 @@ cfg_if::cfg_if! {
 /// #
 /// use async_std::task;
 ///
-/// task::blocking(async {
+/// task::blocking(|| {
 ///     println!("long-running task here");
 /// }).await;
 /// #
@@ -84,10 +84,10 @@ cfg_if::cfg_if! {
 #[cfg(any(feature = "unstable", feature = "docs"))]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
-pub fn blocking<F, R>(future: F) -> task::JoinHandle<R>
+pub fn blocking<F, R>(f: F) -> task::JoinHandle<R>
 where
-    F: crate::future::Future<Output = R> + Send + 'static,
+    F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
-    blocking::spawn(future)
+    blocking::spawn_blocking(future)
 }
