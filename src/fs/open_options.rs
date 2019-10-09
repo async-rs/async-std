@@ -32,7 +32,7 @@ use crate::task::blocking;
 /// Open a file for reading:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::fs::OpenOptions;
 ///
@@ -47,7 +47,7 @@ use crate::task::blocking;
 /// Open a file for both reading and writing, and create it if it doesn't exist yet:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::fs::OpenOptions;
 ///
@@ -71,7 +71,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -93,7 +93,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -119,7 +119,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -143,7 +143,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -171,7 +171,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -200,7 +200,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -230,7 +230,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///
@@ -272,7 +272,7 @@ impl OpenOptions {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::OpenOptions;
     ///

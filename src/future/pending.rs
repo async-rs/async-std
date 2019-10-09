@@ -9,7 +9,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
 /// use std::time::Duration;
 ///

@@ -36,7 +36,7 @@ pub fn random(n: u32) -> u32 {
 
 #[test]
 fn smoke() {
-    task::block_on(async {
+    thread::spawn_task(async {
         let lock = RwLock::new(());
         drop(lock.read().await);
         drop(lock.write().await);
@@ -47,7 +47,7 @@ fn smoke() {
 
 #[test]
 fn try_write() {
-    task::block_on(async {
+    thread::spawn_task(async {
         let lock = RwLock::new(0isize);
         let read_guard = lock.read().await;
         assert!(lock.try_write().is_none());
@@ -116,7 +116,7 @@ fn contention() {
         });
     }
 
-    task::block_on(async {
+    thread::spawn_task(async {
         for _ in 0..N {
             rx.next().await.unwrap();
         }
@@ -170,7 +170,7 @@ fn writer_and_readers() {
         }));
     }
 
-    task::block_on(async {
+    thread::spawn_task(async {
         // Wait for readers to pass their asserts.
         for r in readers {
             r.await;

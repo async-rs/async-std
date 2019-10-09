@@ -16,7 +16,7 @@ const JULIUS_CAESAR: &[u8] = b"
 
 #[test]
 fn send_recv() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let (socket1, socket2) = UnixDatagram::pair().unwrap();
         socket1.send(JULIUS_CAESAR).await?;
 
@@ -31,7 +31,7 @@ fn send_recv() -> io::Result<()> {
 #[test]
 fn into_raw_fd() -> io::Result<()> {
     use async_std::os::unix::io::{FromRawFd, IntoRawFd};
-    task::block_on(async {
+    thread::spawn_task(async {
         let (socket1, socket2) = UnixDatagram::pair().unwrap();
         socket1.send(JULIUS_CAESAR).await?;
 
@@ -56,14 +56,14 @@ fn socket_ping_pong() {
     let iter_cnt = 16;
 
     let listener =
-        task::block_on(async { UnixListener::bind(&sock_path).await.expect("Socket bind") });
+        thread::spawn_task(async { UnixListener::bind(&sock_path).await.expect("Socket bind") });
 
     let server_handle = std::thread::spawn(move || {
-        task::block_on(async { ping_pong_server(listener, iter_cnt).await }).unwrap()
+        thread::spawn_task(async { ping_pong_server(listener, iter_cnt).await }).unwrap()
     });
 
     let client_handle = std::thread::spawn(move || {
-        task::block_on(async { ping_pong_client(&sock_path, iter_cnt).await }).unwrap()
+        thread::spawn_task(async { ping_pong_client(&sock_path, iter_cnt).await }).unwrap()
     });
 
     client_handle.join().unwrap();

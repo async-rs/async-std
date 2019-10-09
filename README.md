@@ -41,7 +41,7 @@ $ cargo add async-std
 use async_std::task;
 
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         println!("Hello, world!");
     })
 }
@@ -72,7 +72,7 @@ async fn get() -> io::Result<Vec<u8>> {
 }
 
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         let raw_response = get().await.expect("request");
         let response = String::from_utf8(raw_response)
             .expect("utf8 conversion");

@@ -8,10 +8,10 @@ use crate::sync::Mutex;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::sync::{Arc, Barrier};
-/// use async_std::task;
+/// use async_std::thread;
 ///
 /// let mut handles = Vec::with_capacity(10);
 /// let barrier = Arc::new(Barrier::new(10));
@@ -118,10 +118,10 @@ impl Barrier {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::sync::{Arc, Barrier};
-    /// use async_std::task;
+    /// use async_std::thread;
     ///
     /// let mut handles = Vec::with_capacity(10);
     /// let barrier = Arc::new(Barrier::new(10));
@@ -188,7 +188,7 @@ impl BarrierWaitResult {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::sync::Barrier;
     ///
@@ -219,7 +219,7 @@ mod test {
         // solid.
 
         for _ in 0..1_000 {
-            task::block_on(async move {
+            thread::spawn_task(async move {
                 const N: usize = 10;
 
                 let barrier = Arc::new(Barrier::new(N));

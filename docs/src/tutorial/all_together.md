@@ -25,7 +25,7 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 
 // main
 fn run() -> Result<()> {
-    task::block_on(accept_loop("127.0.0.1:8080"))
+    thread::spawn_task(accept_loop("127.0.0.1:8080"))
 }
 
 fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>

@@ -6,7 +6,7 @@ use async_std::task;
 #[test]
 #[should_panic(expected = "timed out")]
 fn io_timeout_timedout() {
-    task::block_on(async {
+    thread::spawn_task(async {
         io::timeout(Duration::from_secs(1), async {
             let stdin = io::stdin();
             let mut line = String::new();
@@ -21,7 +21,7 @@ fn io_timeout_timedout() {
 #[test]
 #[should_panic(expected = "My custom error")]
 fn io_timeout_future_err() {
-    task::block_on(async {
+    thread::spawn_task(async {
         io::timeout(Duration::from_secs(1), async {
             Err::<(), io::Error>(io::Error::new(io::ErrorKind::Other, "My custom error"))
         })
@@ -32,7 +32,7 @@ fn io_timeout_future_err() {
 
 #[test]
 fn io_timeout_future_ok() {
-    task::block_on(async {
+    thread::spawn_task(async {
         io::timeout(Duration::from_secs(1), async { Ok(()) })
             .await
             .unwrap(); // We shouldn't panic at all

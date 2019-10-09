@@ -13,7 +13,7 @@ use crate::io;
 /// # Examples
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use std::time::Duration;
 ///

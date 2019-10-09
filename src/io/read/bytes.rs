@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn test_bytes_basics() -> std::io::Result<()> {
-        task::block_on(async move {
+        thread::spawn_task(async move {
             let raw: Vec<u8> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8];
             let source: io::Cursor<Vec<u8>> = io::Cursor::new(raw.clone());
 

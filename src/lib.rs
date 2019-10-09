@@ -17,12 +17,12 @@
 //! Spawn a task and block the current thread on its result:
 //!
 //! ```
-//! use async_std::task;
+//! use async_std::thread;
 //!
 //! fn main() {
-//!     task::block_on(async {
+//!     thread::spawn_task(async {
 //!         println!("Hello, world!");
-//!     })
+//!     }).join()
 //! }
 //! ```
 //!
@@ -58,6 +58,7 @@ pub mod os;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
+pub mod thread;
 pub mod task;
 
 cfg_if! {

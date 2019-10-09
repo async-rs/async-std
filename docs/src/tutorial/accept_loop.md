@@ -85,7 +85,7 @@ Finally, let's add main:
 // main
 fn run() -> Result<()> {
     let fut = accept_loop("127.0.0.1:8080");
-    task::block_on(fut)
+    thread::spawn_task(fut)
 }
 ```
 
@@ -93,4 +93,4 @@ The crucial thing to realise that is in Rust, unlike other languages, calling an
 Async functions only construct futures, which are inert state machines.
 To start stepping through the future state-machine in an async function, you should use `.await`.
 In a non-async function, a way to execute a future is to hand it to the executor.
-In this case, we use `task::block_on` to execute a future on the current thread and block until it's done.
+In this case, we use `thread::spawn_task` to execute a future on the current thread and block until it's done.

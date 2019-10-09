@@ -12,7 +12,7 @@ const LEN: usize = 16 * 1024; // 16 Kb
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");
 
-    task::block_on(async {
+    thread::spawn_task(async {
         let mut file = File::open(&path).await?;
         let mut stdout = io::stdout();
         let mut buf = vec![0u8; LEN];

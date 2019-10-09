@@ -30,7 +30,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::io;
 ///

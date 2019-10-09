@@ -7,7 +7,7 @@ async fn print_name() {
 }
 
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         task::Builder::new()
             .name("my-task".to_string())
             .spawn(print_name())

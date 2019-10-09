@@ -25,14 +25,14 @@ use crate::utils::abort_on_panic;
 /// #
 /// use std::cell::Cell;
 ///
-/// use async_std::task;
+/// use async_std::thread;
 /// use async_std::prelude::*;
 ///
 /// task_local! {
 ///     static VAL: Cell<u32> = Cell::new(5);
 /// }
 ///
-/// task::block_on(async {
+/// thread::spawn_task(async {
 ///     let v = VAL.with(|c| c.get());
 ///     assert_eq!(v, 5);
 /// });
@@ -96,14 +96,14 @@ impl<T: Send + 'static> LocalKey<T> {
     /// #
     /// use std::cell::Cell;
     ///
-    /// use async_std::task;
+    /// use async_std::thread;
     /// use async_std::prelude::*;
     ///
     /// task_local! {
     ///     static NUMBER: Cell<u32> = Cell::new(5);
     /// }
     ///
-    /// task::block_on(async {
+    /// thread::spawn_task(async {
     ///     let v = NUMBER.with(|c| c.get());
     ///     assert_eq!(v, 5);
     /// });
@@ -135,14 +135,14 @@ impl<T: Send + 'static> LocalKey<T> {
     /// #
     /// use std::cell::Cell;
     ///
-    /// use async_std::task;
+    /// use async_std::thread;
     /// use async_std::prelude::*;
     ///
     /// task_local! {
     ///     static VAL: Cell<u32> = Cell::new(5);
     /// }
     ///
-    /// task::block_on(async {
+    /// thread::spawn_task(async {
     ///     let v = VAL.try_with(|c| c.get());
     ///     assert_eq!(v, Ok(5));
     /// });

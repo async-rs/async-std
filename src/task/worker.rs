@@ -22,9 +22,9 @@ use crate::utils::abort_on_panic;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
-/// use async_std::task;
+/// use async_std::thread;
 ///
 /// println!("The name of this task is {:?}", task::current().name());
 /// #

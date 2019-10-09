@@ -77,7 +77,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::io::BufReader;
@@ -94,7 +94,7 @@ extension_trait! {
             Multiple successful calls to `read_until` append all bytes up to and including to
             `buf`:
             ```
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::io::BufReader;
             use async_std::prelude::*;
@@ -155,7 +155,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::io::BufReader;
@@ -197,7 +197,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::io::BufReader;

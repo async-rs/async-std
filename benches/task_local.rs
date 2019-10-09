@@ -13,7 +13,7 @@ fn get(b: &mut Bencher) {
     }
 
     let mut sum = 0;
-    task::block_on(async {
+    thread::spawn_task(async {
         b.iter(|| VAL.with(|v| sum += v));
     });
     black_box(sum);

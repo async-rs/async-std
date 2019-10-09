@@ -33,7 +33,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Examples
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::os::unix::net::UnixListener;
 /// use async_std::prelude::*;
@@ -58,7 +58,7 @@ impl UnixListener {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixListener;
     ///
@@ -82,7 +82,7 @@ impl UnixListener {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixListener;
     ///
@@ -128,7 +128,7 @@ impl UnixListener {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixListener;
     /// use async_std::prelude::*;
@@ -152,7 +152,7 @@ impl UnixListener {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixListener;
     ///

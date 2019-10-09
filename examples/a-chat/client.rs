@@ -11,7 +11,7 @@ use async_std::{
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 pub(crate) fn main() -> Result<()> {
-    task::block_on(try_main("127.0.0.1:8080"))
+    thread::spawn_task(try_main("127.0.0.1:8080"))
 }
 
 async fn try_main(addr: impl ToSocketAddrs) -> Result<()> {

@@ -26,7 +26,7 @@ fn drop_local() {
     let task = handle.task().clone();
 
     // Wait for the task to finish and make sure its task-local has been dropped.
-    task::block_on(async {
+    thread::spawn_task(async {
         handle.await;
         assert!(DROP_LOCAL.load(Ordering::SeqCst));
         drop(task);

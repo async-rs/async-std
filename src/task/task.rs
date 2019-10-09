@@ -68,9 +68,9 @@ impl<T> JoinHandle<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
-    /// use async_std::task;
+    /// use async_std::thread;
     ///
     /// let handle = task::spawn(async {
     ///     1 + 2
@@ -101,9 +101,9 @@ impl<T> Future for JoinHandle<T> {
 ///
 /// ```
 /// #
-/// use async_std::task;
+/// use async_std::thread;
 ///
-/// task::block_on(async {
+/// thread::spawn_task(async {
 ///     println!("id = {:?}", task::current().id());
 /// })
 /// ```

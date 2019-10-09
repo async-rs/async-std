@@ -24,7 +24,7 @@ use crate::task::{blocking, Context, Poll};
 /// # Examples
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::os::unix::net::UnixStream;
 /// use async_std::prelude::*;
@@ -47,7 +47,7 @@ impl UnixStream {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
@@ -75,7 +75,7 @@ impl UnixStream {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
@@ -99,7 +99,7 @@ impl UnixStream {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
@@ -117,7 +117,7 @@ impl UnixStream {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixStream;
     ///
@@ -138,7 +138,7 @@ impl UnixStream {
     /// [`Shutdown`]: https://doc.rust-lang.org/std/net/enum.Shutdown.html
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::os::unix::net::UnixStream;
     /// use std::net::Shutdown;

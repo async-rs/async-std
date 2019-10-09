@@ -89,7 +89,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::prelude::*;
@@ -148,7 +148,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::prelude::*;
@@ -187,7 +187,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::prelude::*;
@@ -242,7 +242,7 @@ extension_trait! {
             # Examples
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::fs::File;
             use async_std::prelude::*;
@@ -282,7 +282,7 @@ extension_trait! {
             [`read()`]: tymethod.read
 
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::io::prelude::*;
             use async_std::fs::File;
@@ -318,7 +318,7 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
@@ -359,7 +359,7 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
@@ -392,7 +392,7 @@ extension_trait! {
             [file]: ../fs/struct.File.html
            
             ```no_run
-            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn test_read_by_ref() -> io::Result<()> {
-        crate::task::block_on(async {
+        crate::thread::spawn_task(async {
             let mut f = io::Cursor::new(vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8]);
             let mut buffer = Vec::new();
             let mut other_buffer = Vec::new();

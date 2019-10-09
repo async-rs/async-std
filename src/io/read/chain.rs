@@ -23,7 +23,7 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -45,7 +45,7 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -71,7 +71,7 @@ impl<T, U> Chain<T, U> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -183,7 +183,7 @@ mod tests {
         let source1: io::Cursor<Vec<u8>> = io::Cursor::new(vec![0, 1, 2]);
         let source2: io::Cursor<Vec<u8>> = io::Cursor::new(vec![3, 4, 5]);
 
-        task::block_on(async move {
+        thread::spawn_task(async move {
             let mut buffer = Vec::new();
 
             let mut source = source1.chain(source2);

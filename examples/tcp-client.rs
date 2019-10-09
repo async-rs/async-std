@@ -18,7 +18,7 @@ use async_std::prelude::*;
 use async_std::task;
 
 fn main() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let mut stream = TcpStream::connect("127.0.0.1:8080").await?;
         println!("Connected to {}", &stream.peer_addr()?);
 

@@ -135,7 +135,7 @@ task::blocking(async {
 
 - Refactored the scheduling algorithm of our executor to use work stealing
 - Refactored the network driver, removing 400 lines of code
-- Removed the `Send` bound from `task::block_on`
+- Removed the `Send` bound from `thread::spawn_task`
 - Removed `Unpin` bound from `impl<T: futures::stream::Stream> Stream for T`
 
 # [0.99.5] - 2019-09-12

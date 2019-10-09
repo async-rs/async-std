@@ -5,7 +5,7 @@ use async_std::task;
 fn main() {
     femme::start(log::LevelFilter::Trace).unwrap();
 
-    task::block_on(async {
+    thread::spawn_task(async {
         let handle = task::spawn(async {
             log::info!("Hello world!");
         });

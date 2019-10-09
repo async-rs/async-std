@@ -8,7 +8,7 @@ where
     A: ToSocketAddrs,
     A::Iter: Send,
 {
-    let socket_addrs = task::block_on(a.to_socket_addrs());
+    let socket_addrs = thread::spawn_task(a.to_socket_addrs());
     match socket_addrs {
         Ok(a) => Ok(a.collect()),
         Err(e) => Err(e.to_string()),

@@ -29,7 +29,7 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// # Examples
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::fs::File;
 /// use async_std::io::BufReader;
@@ -57,7 +57,7 @@ impl<R: io::Read> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
@@ -75,7 +75,7 @@ impl<R: io::Read> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
@@ -106,7 +106,7 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
@@ -127,7 +127,7 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
@@ -148,7 +148,7 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;
@@ -169,7 +169,7 @@ impl<R> BufReader<R> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::io::BufReader;

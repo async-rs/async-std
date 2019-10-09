@@ -30,7 +30,7 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -56,7 +56,7 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -80,7 +80,7 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -104,7 +104,7 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -132,7 +132,7 @@ impl<T> Take<T> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> async_std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> async_std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::prelude::*;
     /// use async_std::fs::File;
@@ -224,7 +224,7 @@ mod tests {
     fn test_take_basics() -> std::io::Result<()> {
         let source: io::Cursor<Vec<u8>> = io::Cursor::new(vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
-        task::block_on(async move {
+        thread::spawn_task(async move {
             let mut buffer = [0u8; 5];
 
             // read at most five bytes

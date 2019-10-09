@@ -24,12 +24,12 @@ const BLOCKED: usize = 1 << 1;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
 /// use std::sync::Arc;
 ///
 /// use async_std::sync::Mutex;
-/// use async_std::task;
+/// use async_std::thread;
 ///
 /// let m = Arc::new(Mutex::new(0));
 /// let mut tasks = vec![];
@@ -82,12 +82,12 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
     /// use std::sync::Arc;
     ///
     /// use async_std::sync::Mutex;
-    /// use async_std::task;
+    /// use async_std::thread;
     ///
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
@@ -196,12 +196,12 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
     /// use std::sync::Arc;
     ///
     /// use async_std::sync::Mutex;
-    /// use async_std::task;
+    /// use async_std::thread;
     ///
     /// let m1 = Arc::new(Mutex::new(10));
     /// let m2 = m1.clone();
@@ -249,7 +249,7 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # fn main() { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::sync::Mutex;
     ///

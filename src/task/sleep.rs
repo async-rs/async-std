@@ -14,11 +14,11 @@ use crate::io;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
 /// use std::time::Duration;
 ///
-/// use async_std::task;
+/// use async_std::thread;
 ///
 /// task::sleep(Duration::from_secs(1)).await;
 /// #

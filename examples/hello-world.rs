@@ -7,5 +7,5 @@ async fn say_hi() {
 }
 
 fn main() {
-    task::block_on(say_hi())
+    thread::spawn_task(say_hi())
 }

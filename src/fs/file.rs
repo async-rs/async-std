@@ -15,6 +15,7 @@ use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::prelude::*;
 use crate::task::{self, blocking, Context, Poll, Waker};
+use crate::thread;
 
 /// An open file on the filesystem.
 ///
@@ -34,7 +35,7 @@ use crate::task::{self, blocking, Context, Poll, Waker};
 /// Create a new file and write some bytes to it:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
@@ -48,7 +49,7 @@ use crate::task::{self, blocking, Context, Poll, Waker};
 /// Read the contents of a file into a vector of bytes:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::fs::File;
 /// use async_std::prelude::*;
@@ -87,7 +88,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     ///
@@ -122,7 +123,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     ///
@@ -146,7 +147,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
@@ -182,7 +183,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     /// use async_std::prelude::*;
@@ -216,7 +217,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     ///
@@ -242,7 +243,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     ///
@@ -268,7 +269,7 @@ impl File {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::fs::File;
     ///
@@ -292,7 +293,7 @@ impl Drop for File {
         // non-blocking fashion, but our only other option here is losing data remaining in the
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
-        let _ = task::block_on(self.flush());
+        let _ = thread::spawn_task(self.flush());
     }
 }
 

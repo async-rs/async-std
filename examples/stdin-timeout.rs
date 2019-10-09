@@ -7,7 +7,7 @@ use async_std::task;
 
 fn main() -> io::Result<()> {
     // This async scope times out after 5 seconds.
-    task::block_on(io::timeout(Duration::from_secs(5), async {
+    thread::spawn_task(io::timeout(Duration::from_secs(5), async {
         let stdin = io::stdin();
 
         // Read a line from the standard input and display it.

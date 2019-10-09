@@ -35,7 +35,7 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// Let's write the numbers one through ten to a [`TcpStream`]:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// use async_std::net::TcpStream;
 /// use async_std::prelude::*;
 ///
@@ -54,7 +54,7 @@ const DEFAULT_CAPACITY: usize = 8 * 1024;
 /// `BufWriter`:
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// use async_std::io::BufWriter;
 /// use async_std::net::TcpStream;
 /// use async_std::prelude::*;
@@ -93,7 +93,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     ///
     /// ```no_run
     /// # #![allow(unused_mut)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
     ///
@@ -113,7 +113,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     ///
     /// ```no_run
     /// # #![allow(unused_mut)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
     ///
@@ -136,7 +136,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     ///
     /// ```no_run
     /// # #![allow(unused_mut)]
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
     ///
@@ -158,7 +158,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
     ///
@@ -196,7 +196,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// use async_std::io::BufWriter;
     /// use async_std::net::TcpStream;
     ///
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn test_buffered_writer() {
-        task::block_on(async {
+        thread::spawn_task(async {
             let inner = Vec::new();
             let mut writer = BufWriter::with_capacity(2, inner);
 
@@ -357,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_buffered_writer_inner_into_inner_does_not_flush() {
-        task::block_on(async {
+        thread::spawn_task(async {
             let mut w = BufWriter::with_capacity(3, Vec::new());
             w.write(&[0, 1]).await.unwrap();
             assert_eq!(*w.get_ref(), []);
@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn test_buffered_writer_seek() {
-        task::block_on(async {
+        thread::spawn_task(async {
             let mut w = BufWriter::with_capacity(3, io::Cursor::new(Vec::new()));
             w.write_all(&[0, 1, 2, 3, 4, 5]).await.unwrap();
             w.write_all(&[6, 7]).await.unwrap();

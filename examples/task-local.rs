@@ -10,7 +10,7 @@ task_local! {
 }
 
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         println!("var = {}", VAR.with(|v| v.get()));
         VAR.with(|v| v.set(2));
         println!("var = {}", VAR.with(|v| v.get()));

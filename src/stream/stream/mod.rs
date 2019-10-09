@@ -7,7 +7,7 @@
 //! # Examples
 //!
 //! ```
-//! # fn main() { async_std::task::block_on(async {
+//! # fn main() { async_std::thread::spawn_task(async {
 //! #
 //! use async_std::prelude::*;
 //! use async_std::stream;
@@ -132,7 +132,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::pin::Pin;
 
@@ -185,7 +185,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -211,7 +211,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -247,7 +247,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -279,7 +279,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -316,7 +316,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -346,7 +346,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -380,7 +380,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -413,7 +413,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -444,7 +444,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -476,7 +476,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -517,7 +517,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -556,7 +556,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -572,7 +572,7 @@ extension_trait! {
             Calling `nth()` multiple times:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -590,7 +590,7 @@ extension_trait! {
             ```
             Returning `None` if the stream finished before returning `n` elements:
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -633,7 +633,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -648,7 +648,7 @@ extension_trait! {
             Empty stream:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -684,7 +684,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -699,7 +699,7 @@ extension_trait! {
             Resuming after a first find:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -729,7 +729,7 @@ extension_trait! {
             Applies function to the elements of stream and returns the first non-none result.
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -762,7 +762,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -793,7 +793,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
@@ -841,7 +841,7 @@ extension_trait! {
             Basic usage:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -855,7 +855,7 @@ extension_trait! {
             Empty stream:
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;
@@ -900,7 +900,7 @@ extension_trait! {
             ## Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -941,7 +941,7 @@ extension_trait! {
             ## Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -971,7 +971,7 @@ extension_trait! {
             ## Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -999,7 +999,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
             use std::sync::mpsc::channel;
@@ -1057,7 +1057,7 @@ extension_trait! {
             ## Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use std::collections::VecDeque;
 
@@ -1104,7 +1104,7 @@ extension_trait! {
             # Examples
 
             ```
-            # fn main() { async_std::task::block_on(async {
+            # fn main() { async_std::thread::spawn_task(async {
             #
             use async_std::prelude::*;
             use async_std::stream;

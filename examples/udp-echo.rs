@@ -11,7 +11,7 @@ use async_std::net::UdpSocket;
 use async_std::task;
 
 fn main() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let socket = UdpSocket::bind("127.0.0.1:8080").await?;
         let mut buf = vec![0u8; 1024];
 

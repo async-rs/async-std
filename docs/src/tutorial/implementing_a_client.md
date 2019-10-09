@@ -29,7 +29,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 // main
 fn run() -> Result<()> {
-    task::block_on(try_run("127.0.0.1:8080"))
+    thread::spawn_task(try_run("127.0.0.1:8080"))
 }
 
 async fn try_run(addr: impl ToSocketAddrs) -> Result<()> {

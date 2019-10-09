@@ -7,7 +7,7 @@ use futures::channel::mpsc;
 
 #[test]
 fn smoke() {
-    task::block_on(async {
+    thread::spawn_task(async {
         let m = Mutex::new(());
         drop(m.lock().await);
         drop(m.lock().await);
@@ -35,7 +35,7 @@ fn get_mut() {
 
 #[test]
 fn contention() {
-    task::block_on(async {
+    thread::spawn_task(async {
         let (tx, mut rx) = mpsc::unbounded();
 
         let tx = Arc::new(tx);

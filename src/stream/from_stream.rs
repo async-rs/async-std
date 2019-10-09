@@ -14,7 +14,7 @@ use std::pin::Pin;
 /// Basic usage:
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 ///  use crate::async_std::stream::FromStream;
 ///  use async_std::prelude::*;
 ///  use async_std::stream;
@@ -30,7 +30,7 @@ use std::pin::Pin;
 /// Using `collect` to  implicitly use `FromStream`
 ///
 ///```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// use async_std::prelude::*;
 /// use async_std::stream;
 /// let five_fives = stream::repeat(5).take(5);
@@ -87,7 +87,7 @@ use std::pin::Pin;
 ///     }
 /// }
 ///
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// // Now we can make a new stream...
 /// let stream = stream::repeat(5).take(5);
 ///
@@ -116,7 +116,7 @@ pub trait FromStream<T> {
     /// Basic usage:
     ///
     /// ```
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     ///  use crate::async_std::stream::FromStream;
     ///  use async_std::prelude::*;
     ///  use async_std::stream;

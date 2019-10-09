@@ -10,7 +10,7 @@ use async_std::task;
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");
 
-    task::block_on(async {
+    thread::spawn_task(async {
         let mut dir = fs::read_dir(&path).await?;
 
         while let Some(res) = dir.next().await {

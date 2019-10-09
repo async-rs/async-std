@@ -11,7 +11,7 @@ const THE_MERCHANT_OF_VENICE: &[u8] = b"
 
 #[test]
 fn send_recv() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let socket1 = UdpSocket::bind("127.0.0.1:0").await?;
         let socket2 = UdpSocket::bind("127.0.0.1:0").await?;
 

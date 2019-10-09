@@ -21,7 +21,7 @@ async fn process(stream: TcpStream) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let listener = TcpListener::bind("127.0.0.1:8080").await?;
         println!("Listening on {}", listener.local_addr()?);
 

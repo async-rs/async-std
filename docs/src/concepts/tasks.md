@@ -24,7 +24,7 @@ fn main() {
         }
     });
     println!("Started task!");
-    task::block_on(reader_task);
+    thread::spawn_task(reader_task);
     println!("Stopped task!");
 }
 ```
@@ -86,7 +86,7 @@ Tasks in `async_std` are one of the core abstractions. Much like Rust's `thread`
 # extern crate async_std;
 # use async_std::task;
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         // this is std::fs, which blocks
         std::fs::read_to_string("test_file");
     })
@@ -107,7 +107,7 @@ In practice, that means that `block_on` propagates panics to the blocking compon
 # extern crate async_std;
 # use async_std::task;
 fn main() {
-    task::block_on(async {
+    thread::spawn_task(async {
         panic!("test");
     });
 }
@@ -128,7 +128,7 @@ task::spawn(async {
     panic!("test");
 });
 
-task::block_on(async {
+thread::spawn_task(async {
     task::sleep(Duration::from_millis(10000)).await;
 })
 ```

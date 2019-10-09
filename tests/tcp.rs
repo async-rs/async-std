@@ -12,7 +12,7 @@ const THE_WINTERS_TALE: &[u8] = b"
 
 #[test]
 fn connect() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
         let t = task::spawn(async move { listener.accept().await });
@@ -29,7 +29,7 @@ fn connect() -> io::Result<()> {
 
 #[test]
 fn incoming_read() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
 

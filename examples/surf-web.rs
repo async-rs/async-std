@@ -4,7 +4,7 @@
 use async_std::task;
 
 fn main() -> Result<(), surf::Exception> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let url = "https://www.rust-lang.org";
         let mut response = surf::get(url).await?;
         let body = response.body_string().await?;

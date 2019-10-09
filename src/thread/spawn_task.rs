@@ -6,9 +6,9 @@ use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread::{self, Thread};
 
-use super::task;
-use super::task_local;
-use super::worker;
+use crate::task::task;
+use crate::task::task_local;
+use crate::task::worker;
 use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
 
@@ -29,15 +29,15 @@ use kv_log_macro::trace;
 /// # Examples
 ///
 /// ```no_run
-/// use async_std::task;
+/// use async_std::thread;
 ///
 /// fn main() {
-///     task::block_on(async {
+///     thread::spawn_task(async {
 ///         println!("Hello, world!");
 ///     })
 /// }
 /// ```
-pub fn block_on<F, T>(future: F) -> T
+pub fn spawn_task<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
@@ -60,11 +60,11 @@ where
         // Create a tag for the task.
         let tag = task::Tag::new(None);
 
-        // Log this `block_on` operation.
+        // Log this `spawn_task` operation.
         let child_id = tag.task_id().as_u64();
         let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
 
-        trace!("block_on", {
+        trace!("spawn_task", {
             parent_id: parent_id,
             child_id: child_id,
         });
@@ -74,7 +74,7 @@ where
 
         let future = async move {
             future.await;
-            trace!("block_on completed", {
+            trace!("spawn_task completed", {
                 parent_id: parent_id,
                 child_id: child_id,
             });

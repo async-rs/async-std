@@ -14,7 +14,7 @@ use crate::stream::IntoStream;
 /// ## Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # fn main() { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream::{self, Extend};

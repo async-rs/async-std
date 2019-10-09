@@ -31,7 +31,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
 /// #
 /// use async_std::io;
 /// use async_std::net::TcpListener;
@@ -65,7 +65,7 @@ impl TcpListener {
     /// Create a TCP listener bound to 127.0.0.1:0:
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::net::TcpListener;
     ///
@@ -104,7 +104,7 @@ impl TcpListener {
     /// ## Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::net::TcpListener;
     ///
@@ -136,7 +136,7 @@ impl TcpListener {
     /// ## Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::net::TcpListener;
     /// use async_std::prelude::*;
@@ -163,7 +163,7 @@ impl TcpListener {
     /// # Examples
     ///
     /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// # fn main() -> std::io::Result<()> { async_std::thread::spawn_task(async {
     /// #
     /// use async_std::net::TcpListener;
     ///

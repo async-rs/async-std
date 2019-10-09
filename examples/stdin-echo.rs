@@ -5,7 +5,7 @@ use async_std::prelude::*;
 use async_std::task;
 
 fn main() -> io::Result<()> {
-    task::block_on(async {
+    thread::spawn_task(async {
         let stdin = io::stdin();
         let mut stdout = io::stdout();
         let mut line = String::new();
