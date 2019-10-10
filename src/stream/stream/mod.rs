@@ -1293,7 +1293,7 @@ extension_trait! {
         ) -> impl Future<Output = Ordering> [CmpFuture<Self, S>]
         where
             Self: Sized + Stream,
-            S: Stream, 
+            S: Stream,
         {
             CmpFuture::new(self, other)
         }
