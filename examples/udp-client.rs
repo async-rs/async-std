@@ -14,7 +14,7 @@
 
 use async_std::io;
 use async_std::net::UdpSocket;
-use async_std::task;
+use async_std::thread;
 
 fn main() -> io::Result<()> {
     thread::spawn_task(async {

@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use async_std::io;
-use async_std::task;
+use async_std::thread;
 
 fn main() -> io::Result<()> {
     // This async scope times out after 5 seconds.

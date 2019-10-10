@@ -1,6 +1,6 @@
 //! Spawns a named task that prints its name.
 
-use async_std::task;
+use async_std::thread;
 
 async fn print_name() {
     println!("My name is {:?}", task::current().name());

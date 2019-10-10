@@ -5,7 +5,7 @@ use std::env::args;
 use async_std::fs::File;
 use async_std::io::{self, BufReader};
 use async_std::prelude::*;
-use async_std::task;
+use async_std::thread;
 
 fn main() -> io::Result<()> {
     let path = args().nth(1).expect("missing path argument");

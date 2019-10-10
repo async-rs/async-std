@@ -22,7 +22,7 @@
 //! fn main() {
 //!     thread::spawn_task(async {
 //!         println!("Hello, world!");
-//!     }).join()
+//!     })
 //! }
 //! ```
 //!
@@ -58,8 +58,8 @@ pub mod os;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
-pub mod thread;
 pub mod task;
+pub mod thread;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {

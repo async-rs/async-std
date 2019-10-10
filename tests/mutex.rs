@@ -3,6 +3,7 @@ use std::sync::Arc;
 use async_std::prelude::*;
 use async_std::sync::Mutex;
 use async_std::task;
+use async_std::thread;
 use futures::channel::mpsc;
 
 #[test]

@@ -1,6 +1,6 @@
 //! Spawns a task that says hello.
 
-use async_std::task;
+use async_std::thread;
 
 async fn say_hi() {
     println!("Hello, world!");

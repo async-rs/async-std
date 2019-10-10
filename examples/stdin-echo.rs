@@ -2,7 +2,8 @@
 
 use async_std::io;
 use async_std::prelude::*;
-use async_std::task;
+use async_std::thread;
+use async_std::thread;
 
 fn main() -> io::Result<()> {
     thread::spawn_task(async {

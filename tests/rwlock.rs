@@ -8,6 +8,7 @@ use std::task::{Context, Poll};
 use async_std::prelude::*;
 use async_std::sync::RwLock;
 use async_std::task;
+use async_std::thread;
 use futures::channel::mpsc;
 
 /// Generates a random number in `0..n`.

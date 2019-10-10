@@ -36,6 +36,7 @@ impl<T: Read + Unpin> Stream for Bytes<T> {
 mod tests {
     use crate::io;
     use crate::prelude::*;
+    use crate::thread;
     use crate::task;
 
     #[test]

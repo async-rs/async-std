@@ -3,7 +3,7 @@
 use std::cell::Cell;
 
 use async_std::prelude::*;
-use async_std::task;
+use async_std::thread;
 
 task_local! {
     static VAR: Cell<i32> = Cell::new(1);
