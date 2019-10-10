@@ -1272,21 +1272,17 @@ extension_trait! {
             use std::collections::VecDeque;
             
             use std::cmp::Ordering;
-            let result_equal = vec![1].into_iter().collect::<VecDeque<i64>>()
-                .cmp(vec![1].into_iter().collect::<VecDeque<i64>>()).await;
-            let result_less_count = vec![1].into_iter().collect::<VecDeque<i64>>()
-                .cmp(vec![1, 2].into_iter().collect::<VecDeque<i64>>()).await;
-            let result_greater_count = vec![1, 2].into_iter().collect::<VecDeque<i64>>()
-                .cmp(vec![1].into_iter().collect::<VecDeque<i64>>()).await;           
-            let result_less_vals = vec![1, 2, 3].into_iter().collect::<VecDeque<i64>>()
-                .cmp(vec![1, 2, 4].into_iter().collect::<VecDeque<i64>>()).await;
-            let result_greater_vals = vec![1, 2, 4].into_iter().collect::<VecDeque<i64>>()
-                .cmp(vec![1, 2, 3].into_iter().collect::<VecDeque<i64>>()).await;
-            assert_eq!(result_equal, Ordering::Equal);
-            assert_eq!(result_less_count, Ordering::Less);
-            assert_eq!(result_greater_count, Ordering::Greater);       
-            assert_eq!(result_less_vals, Ordering::Less);
-            assert_eq!(result_greater_vals, Ordering::Greater);                             
+            let s1 = VecDeque::from(vec![1]);
+            let s2 = VecDeque::from(vec![1, 2]);
+            let s3 = VecDeque::from(vec![1, 2, 3]);
+            let s4 = VecDeque::from(vec![1, 2, 4]);
+
+            assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
+            assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
+            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);       
+            assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
+            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);  
+
             #
             # }) }
             ```
