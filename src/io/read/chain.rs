@@ -176,7 +176,7 @@ impl<T: BufRead + Unpin, U: BufRead + Unpin> BufRead for Chain<T, U> {
 mod tests {
     use crate::io;
     use crate::prelude::*;
-    use crate::task;
+    use crate::thread;
 
     #[test]
     fn test_chain_basics() -> std::io::Result<()> {

@@ -218,7 +218,7 @@ impl<T: BufRead + Unpin> BufRead for Take<T> {
 mod tests {
     use crate::io;
     use crate::prelude::*;
-    use crate::task;
+    use crate::thread;
 
     #[test]
     fn test_take_basics() -> std::io::Result<()> {

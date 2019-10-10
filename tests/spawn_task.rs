@@ -1,4 +1,4 @@
-use async_std::task;
+use async_std::thread;
 
 #[test]
 fn smoke() {

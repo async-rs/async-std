@@ -308,7 +308,7 @@ mod tests {
     use super::BufWriter;
     use crate::io::{self, SeekFrom};
     use crate::prelude::*;
-    use crate::task;
+    use crate::thread;
 
     #[test]
     fn test_buffered_writer() {

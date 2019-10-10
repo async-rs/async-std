@@ -1,6 +1,6 @@
 use async_std::io;
 use async_std::net::UdpSocket;
-use async_std::task;
+use async_std::thread;
 
 const THE_MERCHANT_OF_VENICE: &[u8] = b"
     If you prick us, do we not bleed?

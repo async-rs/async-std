@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_std::io;
-use async_std::task;
+use async_std::thread;
 
 #[test]
 #[should_panic(expected = "timed out")]

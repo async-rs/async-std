@@ -37,7 +37,6 @@ mod tests {
     use crate::io;
     use crate::prelude::*;
     use crate::thread;
-    use crate::task;
 
     #[test]
     fn test_bytes_basics() -> std::io::Result<()> {

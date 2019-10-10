@@ -1,6 +1,7 @@
 //! Prints the runtime's execution log on the standard output.
 
 use async_std::thread;
+use async_std::task;
 
 fn main() {
     femme::start(log::LevelFilter::Trace).unwrap();

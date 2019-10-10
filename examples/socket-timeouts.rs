@@ -2,7 +2,8 @@
 
 use std::time::Duration;
 
-use async_std::{io, net::TcpStream, prelude::*, task};
+use async_std::{io, net::TcpStream, prelude::*};
+use async_std::thread;
 
 async fn get() -> io::Result<Vec<u8>> {
     let mut stream = TcpStream::connect("example.com:80").await?;

@@ -210,7 +210,7 @@ mod test {
     use futures_util::stream::StreamExt;
 
     use crate::sync::{Arc, Barrier};
-    use crate::task;
+    use crate::thread;
 
     #[test]
     fn test_barrier() {

@@ -5,7 +5,7 @@ use async_std::{
     io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
     prelude::*,
-    task,
+    thread,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

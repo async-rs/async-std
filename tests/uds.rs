@@ -3,7 +3,7 @@
 use async_std::io;
 use async_std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
 use async_std::prelude::*;
-use async_std::task;
+use async_std::thread;
 
 use tempdir::TempDir;
 
