@@ -32,6 +32,7 @@ mod find_map;
 mod fold;
 mod for_each;
 mod fuse;
+mod gt;
 mod inspect;
 mod map;
 mod min_by;
@@ -55,6 +56,7 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use gt::GtFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -1231,6 +1233,7 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
+
             use std::cmp::Ordering;
             let s1 = VecDeque::from(vec![1]);
             let s2 = VecDeque::from(vec![1, 2]);
@@ -1256,6 +1259,43 @@ extension_trait! {
         {
             PartialCmpFuture::new(self, other)
         }
+            
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than those of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+                        
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+
+            assert_eq!(single.clone().gt(single.clone()).await, false);
+            assert_eq!(single_gt.clone().gt(single.clone()).await, true);
+            assert_eq!(multi.clone().gt(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().gt(multi.clone()).await, true);
+            
+            #
+            # }) }
+            ```
+        "#]
+        fn gt<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> + '_ [GtFuture<Self, S>] 
+        where
+            Self: Sized + Stream,
+            S: Stream,             
+            Self::Item: PartialOrd<S::Item>,
+        {
+            GtFuture::new(self, other)
+        }                
     }
 
     impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
