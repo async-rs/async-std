@@ -21,7 +21,7 @@ use kv_log_macro::trace;
 ///
 /// See also: [`task::blocking`].
 ///
-/// [`task::blocking`]: fn.blocking.html
+/// [`task::blocking`]: ../task/fn.blocking.html
 ///
 /// [spawning]: https://doc.rust-lang.org/std/thread/fn.spawn.html
 /// [joining]: https://doc.rust-lang.org/std/thread/struct.JoinHandle.html#method.join
@@ -40,64 +40,65 @@ use kv_log_macro::trace;
 pub fn spawn_task<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
+    T: Send,
 {
-    unsafe {
-        // A place on the stack where the result will be stored.
-        let out = &mut UnsafeCell::new(None);
+        unsafe {
+            // A place on the stack where the result will be stored.
+            let out = &mut UnsafeCell::new(None);
 
-        // Wrap the future into one that stores the result into `out`.
-        let future = {
-            let out = out.get();
+            // Wrap the future into one that stores the result into `out`.
+            let future = {
+                let out = out.get();
 
-            async move {
-                let future = CatchUnwindFuture {
-                    future: AssertUnwindSafe(future),
-                };
-                *out = Some(future.await);
-            }
-        };
+                async move {
+                    let future = CatchUnwindFuture {
+                        future: AssertUnwindSafe(future),
+                    };
+                    *out = Some(future.await);
+                }
+            };
 
-        // Create a tag for the task.
-        let tag = task::Tag::new(None);
+            // Create a tag for the task.
+            let tag = task::Tag::new(None);
 
-        // Log this `spawn_task` operation.
-        let child_id = tag.task_id().as_u64();
-        let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
+            // Log this `spawn_task` operation.
+            let child_id = tag.task_id().as_u64();
+            let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
 
-        trace!("spawn_task", {
-            parent_id: parent_id,
-            child_id: child_id,
-        });
-
-        // Wrap the future into one that drops task-local variables on exit.
-        let future = task_local::add_finalizer(future);
-
-        let future = async move {
-            future.await;
-            trace!("spawn_task completed", {
+            trace!("spawn_task", {
                 parent_id: parent_id,
                 child_id: child_id,
             });
-        };
 
-        // Pin the future onto the stack.
-        pin_utils::pin_mut!(future);
+            // Wrap the future into one that drops task-local variables on exit.
+            let future = task_local::add_finalizer(future);
 
-        // Transmute the future into one that is futurestatic.
-        let future = mem::transmute::<
-            Pin<&'_ mut dyn Future<Output = ()>>,
-            Pin<&'static mut dyn Future<Output = ()>>,
-        >(future);
+            let future = async move {
+                future.await;
+                trace!("spawn_task completed", {
+                    parent_id: parent_id,
+                    child_id: child_id,
+                });
+            };
 
-        // Block on the future and and wait for it to complete.
-        worker::set_tag(&tag, || block(future));
+            // Pin the future onto the stack.
+            pin_utils::pin_mut!(future);
 
-        // Take out the result.
-        match (*out.get()).take().unwrap() {
-            Ok(v) => v,
-            Err(err) => panic::resume_unwind(err),
+            // Transmute the future into one that is futurestatic.
+            let future = mem::transmute::<
+                Pin<&'_ mut dyn Future<Output = ()>>,
+                Pin<&'static mut dyn Future<Output = ()>>,
+            >(future);
+
+                // Block on the future and and wait for it to complete.
+                worker::set_tag(&tag, || block(future));
+
+                // Take out the result.
+                match (*out.get()).take().unwrap() {
+                    Ok(v) => v,
+                    Err(err) => panic::resume_unwind(err),
+                }
         }
-    }
 }
 
 struct CatchUnwindFuture<F> {
