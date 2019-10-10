@@ -8,7 +8,7 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 // Determines if the elements of this `Stream` are lexicographically
-// greater than or equal to those of another.
+// greater than those of another.
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct GtFuture<L: Stream, R: Stream> {
