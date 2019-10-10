@@ -30,10 +30,9 @@ mod filter_map;
 mod find;
 mod find_map;
 mod fold;
-mod for_each;
 mod fuse;
 mod inspect;
-mod map;
+mod le;
 mod min_by;
 mod next;
 mod nth;
@@ -42,7 +41,6 @@ mod skip;
 mod skip_while;
 mod step_by;
 mod take;
-mod try_for_each;
 mod zip;
 
 use all::AllFuture;
@@ -52,17 +50,15 @@ use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
-use for_each::ForEachFuture;
+use le::LeFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
-use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
-pub use map::Map;
 pub use scan::Scan;
 pub use skip::Skip;
 pub use skip_while::SkipWhile;
@@ -338,37 +334,6 @@ extension_trait! {
             Self: Sized,
         {
             Enumerate::new(self)
-        }
-
-        #[doc = r#"
-            Takes a closure and creates a stream that calls that closure on every element of this stream.
-
-            # Examples
-
-            ```
-            # fn main() { async_std::task::block_on(async {
-            #
-            use async_std::prelude::*;
-            use std::collections::VecDeque;
-
-            let s: VecDeque<_> = vec![1, 2, 3].into_iter().collect();
-            let mut s = s.map(|x| 2 * x);
-
-            assert_eq!(s.next().await, Some(2));
-            assert_eq!(s.next().await, Some(4));
-            assert_eq!(s.next().await, Some(6));
-            assert_eq!(s.next().await, None);
-
-            #
-            # }) }
-            ```
-        "#]
-        fn map<B, F>(self, f: F) -> Map<Self, F, Self::Item, B>
-        where
-            Self: Sized,
-            F: FnMut(Self::Item) -> B,
-        {
-            Map::new(self, f)
         }
 
         #[doc = r#"
@@ -788,41 +753,6 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Call a closure on each element of the stream.
-
-            # Examples
-
-            ```
-            # fn main() { async_std::task::block_on(async {
-            #
-            use async_std::prelude::*;
-            use std::collections::VecDeque;
-            use std::sync::mpsc::channel;
-
-            let (tx, rx) = channel();
-
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
-            let sum = s.for_each(move |x| tx.clone().send(x).unwrap()).await;
-
-            let v: Vec<_> = rx.iter().collect();
-
-            assert_eq!(v, vec![1, 2, 3]);
-            #
-            # }) }
-            ```
-        "#]
-        fn for_each<F>(
-            self,
-            f: F,
-        ) -> impl Future<Output = ()> [ForEachFuture<Self, F, Self::Item>]
-        where
-            Self: Sized,
-            F: FnMut(Self::Item),
-        {
-            ForEachFuture::new(self, f)
-        }
-
-        #[doc = r#"
             Tests if any element of the stream matches a predicate.
 
             `any()` takes a closure that returns `true` or `false`. It applies
@@ -994,51 +924,6 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Applies a falliable function to each element in a stream, stopping at first error and returning it.
-
-            # Examples
-
-            ```
-            # fn main() { async_std::task::block_on(async {
-            #
-            use std::collections::VecDeque;
-            use std::sync::mpsc::channel;
-            use async_std::prelude::*;
-
-            let (tx, rx) = channel();
-
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
-            let s = s.try_for_each(|v| {
-                if v % 2 == 1 {
-                    tx.clone().send(v).unwrap();
-                    Ok(())
-                } else {
-                    Err("even")
-                }
-            });
-
-            let res = s.await;
-            drop(tx);
-            let values: Vec<_> = rx.iter().collect();
-
-            assert_eq!(values, vec![1]);
-            assert_eq!(res, Err("even"));
-            #
-            # }) }
-            ```
-        "#]
-        fn try_for_each<F, E>(
-            self,
-            f: F,
-        ) -> impl Future<Output = E> [TryForEeachFuture<Self, F, Self::Item, E>]
-        where
-            Self: Sized,
-            F: FnMut(Self::Item) -> Result<(), E>,
-        {
-            TryForEeachFuture::new(self, f)
-        }
-
-        #[doc = r#"
             'Zips up' two streams into a single stream of pairs.
 
             `zip()` returns a new stream that will iterate over two other streams, returning a
@@ -1147,6 +1032,44 @@ extension_trait! {
         {
             FromStream::from_stream(self)
         }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less or equal to those of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+                        
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+
+            assert_eq!(single.clone().le(single.clone()).await, true);
+            assert_eq!(single.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().le(multi.clone()).await, false);
+            
+            #
+            # }) }
+            ```
+        "#]
+        fn le<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> + '_ [LeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            Self::Item: PartialOrd<S::Item>,
+        {
+            LeFuture::new(self, other)
+        }
+
     }
 
     impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
