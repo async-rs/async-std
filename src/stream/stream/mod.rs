@@ -1290,11 +1290,10 @@ extension_trait! {
         fn cmp<S>(
            self,
            other: S
-        ) -> impl Future<Output = Ordering> + '_ [CmpFuture<Self, S>]
+        ) -> impl Future<Output = Ordering> [CmpFuture<Self, S>]
         where
             Self: Sized + Stream,
-            S: Stream<Item = Self::Item>,
-            Self::Item: Ord,
+            S: Stream, 
         {
             CmpFuture::new(self, other)
         }
