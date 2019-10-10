@@ -1,1 +1,7 @@
-status = ["continuous-integration/travis-ci/push"]
+status = [
+    "Build and test (ubuntu-latest, nightly)",
+    "Build and test (windows-latest, nightly)",
+    "Build and test (macOS-latest, nightly)",
+    "Checking fmt and docs",
+    "Clippy check",
+]
