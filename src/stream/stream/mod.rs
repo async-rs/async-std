@@ -351,14 +351,19 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use async_std::future;
+            use async_std::stream;
             use std::time::Duration;
 
-            let p1 = future::ready(1).delay(Duration::from_millis(200));
-            let p1 = future::ready(2).delay(Duration::from_millis(100));
-            let p1 = future::ready(3).delay(Duration::from_millis(300));
+            let a = stream::once(1).delay(Duration::from_millis(200));
+            let b = stream::once(2).delay(Duration::from_millis(100));
+            let c = stream::once(3).delay(Duration::from_millis(300));
 
-            assert_eq!(future::join!(p1, p2, p3).await, (1, 2, 3));
+            let s = stream::join!(a, b, c);
+
+            assert_eq!(stream.next().await, Some(1));
+            assert_eq!(stream.next().await, Some(2));
+            assert_eq!(stream.next().await, Some(3));
+            assert_eq!(stream.next().await, None);
             #
             # }) }
             ```
