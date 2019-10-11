@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod delay;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -61,6 +62,7 @@ use try_for_each::TryForEeachFuture;
 pub use chain::Chain;
 pub use filter::Filter;
 pub use fuse::Fuse;
+pub use delay::Delay;
 pub use inspect::Inspect;
 pub use map::Map;
 pub use scan::Scan;
@@ -338,6 +340,36 @@ extension_trait! {
             Self: Sized,
         {
             Enumerate::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream that is delayed before it starts yielding items.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::future;
+            use std::time::Duration;
+
+            let p1 = future::ready(1).delay(Duration::from_millis(200));
+            let p1 = future::ready(2).delay(Duration::from_millis(100));
+            let p1 = future::ready(3).delay(Duration::from_millis(300));
+
+            assert_eq!(future::join!(p1, p2, p3).await, (1, 2, 3));
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn delay(self, dur: std::time::Duration) -> Delay<Self>
+        where
+            Self: Sized,
+        {
+            Delay::new(self, dur)
         }
 
         #[doc = r#"
