@@ -54,7 +54,6 @@ use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
-use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
@@ -1105,11 +1104,11 @@ extension_trait! {
         fn partial_cmp<S>(
            self,
            other: S
-        ) -> impl Future<Output = Option<Ordering>>  [PartialCmpFuture<Self, S>]
+        ) -> impl Future<Output = Option<Ordering>> + '_ [PartialCmpFuture<Self, S>] 
         where
             Self: Sized + Stream,
-            S: Stream,
-            <Self as Stream>::Item: PartialOrd<S::Item>,
+            S: Stream,             
+            Self::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
         }        
