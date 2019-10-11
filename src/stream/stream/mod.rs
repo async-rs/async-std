@@ -1221,11 +1221,11 @@ extension_trait! {
         fn partial_cmp<S>(
            self,
            other: S
-        ) -> impl Future<Output = Option<Ordering>> + '_ [PartialCmpFuture<Self, S>] 
+        ) -> impl Future<Output = Option<Ordering>>  [PartialCmpFuture<Self, S>]
         where
             Self: Sized + Stream,
-            S: Stream,             
-            Self::Item: PartialOrd<S::Item>,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
         }        
