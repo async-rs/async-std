@@ -1,6 +1,5 @@
-use cfg_if::cfg_if;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io;
 use crate::path::Path;
 use crate::task::blocking;

@@ -42,9 +42,6 @@
 //! | `future::try_select` | `Result<T, E>`                 | Return on first `Ok`, reject on last Err
 
 #[doc(inline)]
-pub use std::future::Future;
-
-#[doc(inline)]
 pub use async_macros::{join, try_join};
 
 #[doc(inline)]
@@ -53,10 +50,12 @@ pub use async_macros::{select, try_select};
 
 use cfg_if::cfg_if;
 
+pub use future::Future;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
 
+pub(crate) mod future;
 mod pending;
 mod poll_fn;
 mod ready;

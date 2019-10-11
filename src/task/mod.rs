@@ -86,7 +86,7 @@ cfg_if::cfg_if! {
 #[inline]
 pub fn blocking<F, R>(future: F) -> task::JoinHandle<R>
 where
-    F: crate::future::Future<Output = R> + Send + 'static,
+    F: std::future::Future<Output = R> + Send + 'static,
     R: Send + 'static,
 {
     blocking::spawn(future)

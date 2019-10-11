@@ -95,7 +95,7 @@ cfg_if! {
 
         use std::pin::Pin;
 
-        use crate::future::Future;
+        use std::future::Future;
         use crate::stream::FromStream;
 
         pub use merge::Merge;

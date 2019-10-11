@@ -7,8 +7,8 @@ use std::sync::Mutex;
 use lazy_static::lazy_static;
 
 use super::worker;
-use crate::future::Future;
 use crate::utils::abort_on_panic;
+use std::future::Future;
 
 /// Declares task-local values.
 ///
