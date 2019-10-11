@@ -10,7 +10,7 @@ use futures_timer::Delay;
 
 /// Creates a new stream that yields at a set interval.
 ///
-/// The first stream first yields after `dur`, and continues to yield every
+/// The stream first yields after `dur`, and continues to yield every
 /// `dur` after that. The stream accounts for time elapsed between calls, and
 /// will adjust accordingly to prevent time skews.
 ///
