@@ -17,7 +17,6 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
     type Output = io::Result<()>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-
         // Process the interal Result the first time we run.
         if self.buffer.is_none() {
             match self.res.take().unwrap() {
@@ -26,15 +25,16 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
             };
         }
 
+        // Get the types from the future.
         let Self { writer, amt, buffer, .. } = &mut *self;
         let mut buffer = buffer.as_mut().unwrap();
 
+        // Copy the data from the buffer into the writer until it's done.
         loop {
             if buffer.is_empty() {
                 futures_core::ready!(Pin::new(&mut **writer).poll_flush(cx))?;
                 return Poll::Ready(Ok(()));
             }
-
             let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, &mut buffer))?;
             if i == 0 {
                 return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));

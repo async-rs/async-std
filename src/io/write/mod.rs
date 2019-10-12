@@ -234,6 +234,9 @@ extension_trait! {
         where
             Self: Unpin,
         {
+            // In order to not have to implement an async version of `fmt` including private types
+            // and all, we convert `Arguments` to a `Result<Vec<u8>>` and pass that to the Future.
+            // Doing an owned conversion saves us from juggling references.
             let mut string = String::new();
             let res = std::fmt::write(&mut string, fmt)
                 .map(|_| string.into_bytes())
