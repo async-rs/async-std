@@ -1,8 +1,11 @@
 mod lines;
 mod read_line;
 mod read_until;
+mod split;
 
 pub use lines::Lines;
+pub use split::Split;
+
 use read_line::ReadLineFuture;
 use read_until::ReadUntilFuture;
 
@@ -223,6 +226,57 @@ extension_trait! {
                 reader: self,
                 buf: String::new(),
                 bytes: Vec::new(),
+                read: 0,
+            }
+        }
+
+        #[doc = r#"
+            Returns a stream over the contents of this reader split on the byte byte.
+
+            The stream returned from this function will return instances of
+            [`io::Result`]`<`[`Vec<u8>`]`>`. Each vector returned will *not* have
+            the delimiter byte at the end.
+
+            This function will yield errors whenever [`read_until`] would have
+            also yielded an error.
+
+            [`io::Result`]: type.Result.html
+            [`Vec<u8>`]: ../vec/struct.Vec.html
+            [`read_until`]: #method.read_until
+
+            # Examples
+
+            [`std::io::Cursor`][`Cursor`] is a type that implements `BufRead`. In
+            this example, we use [`Cursor`] to iterate over all hyphen delimited
+            segments in a byte slice
+
+            [`Cursor`]: struct.Cursor.html
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::io;
+
+            let cursor = io::Cursor::new(b"lorem-ipsum-dolor");
+
+            let mut split_iter = cursor.split(b'-').map(|l| l.unwrap());
+            assert_eq!(split_iter.next().await, Some(b"lorem".to_vec()));
+            assert_eq!(split_iter.next().await, Some(b"ipsum".to_vec()));
+            assert_eq!(split_iter.next().await, Some(b"dolor".to_vec()));
+            assert_eq!(split_iter.next().await, None);
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn split(self, byte: u8) -> Split<Self>
+        where
+            Self: Unpin + Sized,
+        {
+            Split {
+                reader: self,
+                buf: Vec::new(),
+                delim: byte,
                 read: 0,
             }
         }
