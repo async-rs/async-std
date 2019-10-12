@@ -26,7 +26,12 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
         }
 
         // Get the types from the future.
-        let Self { writer, amt, buffer, .. } = &mut *self;
+        let Self {
+            writer,
+            amt,
+            buffer,
+            ..
+        } = &mut *self;
         let mut buffer = buffer.as_mut().unwrap();
 
         // Copy the data from the buffer into the writer until it's done.
