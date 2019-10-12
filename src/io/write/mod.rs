@@ -1,11 +1,13 @@
 mod flush;
 mod write;
 mod write_all;
+mod write_fmt;
 mod write_vectored;
 
 use flush::FlushFuture;
 use write::WriteFuture;
 use write_all::WriteAllFuture;
+use write_fmt::WriteFmtFuture;
 use write_vectored::WriteVectoredFuture;
 
 use cfg_if::cfg_if;
@@ -13,12 +15,12 @@ use cfg_if::cfg_if;
 use crate::io::IoSlice;
 use crate::utils::extension_trait;
 
+use crate::io;
+
 cfg_if! {
     if #[cfg(feature = "docs")] {
         use std::pin::Pin;
         use std::ops::{Deref, DerefMut};
-
-        use crate::io;
         use crate::task::{Context, Poll};
     }
 }
@@ -196,6 +198,47 @@ extension_trait! {
             Self: Unpin,
         {
             WriteAllFuture { writer: self, buf }
+        }
+
+        #[doc = r#"
+            Writes a formatted string into this writer, returning any error encountered.
+
+            This method will continuously call [`write`] until there is no more data to be
+            written or an error is returned. This method will not return until the entire
+            buffer has been successfully written or such an error occurs.
+
+            [`write`]: #tymethod.write
+
+            # Examples
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::io::prelude::*;
+            use async_std::fs::File;
+
+            let mut buffer = File::create("foo.txt").await?;
+
+            // this call
+            write!(buffer, "{:.*}", 2, 1.234567).await?;
+            // turns into this:
+            buffer.write_fmt(format_args!("{:.*}", 2, 1.234567)).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn write_fmt<'a>(
+            &'a mut self,
+            fmt: std::fmt::Arguments<'_>,
+        ) -> impl Future<Output = io::Result<()>> + 'a [WriteFmtFuture<'a, Self>]
+        where
+            Self: Unpin,
+        {
+            let mut string = String::new();
+            let res = std::fmt::write(&mut string, fmt)
+                .map(|_| string.into_bytes())
+                .map_err(|_| io::Error::new(io::ErrorKind::Other, "formatter error"));
+            WriteFmtFuture { writer: self, res: Some(res), buffer: None, amt: 0 }
         }
     }
 

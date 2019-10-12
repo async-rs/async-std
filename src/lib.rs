@@ -77,3 +77,6 @@ cfg_if! {
 }
 
 pub(crate) mod utils;
+
+#[doc(inline)]
+pub use std::{write, writeln};
