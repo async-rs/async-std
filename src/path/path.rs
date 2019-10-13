@@ -728,6 +728,28 @@ impl Path {
     pub fn with_extension<S: AsRef<OsStr>>(&self, extension: S) -> PathBuf {
         self.inner.with_extension(extension).into()
     }
+
+    /// Creates an owned [`PathBuf`] like `self` but with the given file name.
+    ///
+    /// See [`PathBuf::set_file_name`] for more details.
+    ///
+    /// [`PathBuf`]: struct.PathBuf.html
+    /// [`PathBuf::set_file_name`]: struct.PathBuf.html#method.set_file_name
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let path = Path::new("/tmp/foo.txt");
+    /// assert_eq!(path.with_file_name("bar.txt"), PathBuf::from("/tmp/bar.txt"));
+    ///
+    /// let path = Path::new("/tmp");
+    /// assert_eq!(path.with_file_name("var"), PathBuf::from("/var"));
+    /// ```
+    pub fn with_file_name<S: AsRef<OsStr>>(&self, file_name: S) -> PathBuf {
+        self.inner.with_file_name(file_name).into()
+    }
 }
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
