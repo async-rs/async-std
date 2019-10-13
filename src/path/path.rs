@@ -415,6 +415,27 @@ impl Path {
         self.inner.iter()
     }
 
+    /// Creates an owned [`PathBuf`] with `path` adjoined to `self`.
+    ///
+    /// See [`PathBuf::push`] for more details on what it means to adjoin a path.
+    ///
+    /// [`PathBuf`]: struct.PathBuf.html
+    /// [`PathBuf::push`]: struct.PathBuf.html#method.push
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// assert_eq!(Path::new("/etc").join("passwd"), PathBuf::from("/etc/passwd"));
+    /// ```
+    pub fn join<P: AsRef<Path>>(&self, path: P) -> PathBuf
+    where
+        P: std::convert::AsRef<std::path::Path>,
+    {
+        self.inner.join(path).into()
+    }
+
     /// Queries the file system to get information about a file, directory, etc.
     ///
     /// This function will traverse symbolic links to query information about the
