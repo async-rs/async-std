@@ -10,6 +10,24 @@ pub struct PathBuf {
     inner: std::path::PathBuf,
 }
 
+impl PathBuf {
+    /// Coerces to a [`Path`] slice.
+    ///
+    /// [`Path`]: struct.Path.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let p = PathBuf::from("/test");
+    /// assert_eq!(Path::new("/test"), p.as_path());
+    /// ```
+    pub fn as_path(&self) -> &Path {
+        self.inner.as_path().into()
+    }
+}
+
 impl From<std::path::PathBuf> for PathBuf {
     fn from(path: std::path::PathBuf) -> PathBuf {
         PathBuf { inner: path }
