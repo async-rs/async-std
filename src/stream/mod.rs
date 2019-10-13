@@ -7,7 +7,7 @@
 //! # Examples
 //!
 //! ```
-//! # fn main() { async_std::task::block_on(async {
+//! # async_std::task::block_on(async {
 //! #
 //! use async_std::prelude::*;
 //! use async_std::stream;
@@ -18,7 +18,7 @@
 //!     assert_eq!(v, 9);
 //! }
 //! #
-//! # }) }
+//! # })
 //! ```
 
 use cfg_if::cfg_if;

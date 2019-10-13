@@ -10,7 +10,7 @@
 //! Spawn a task and await its result:
 //!
 //! ```
-//! # fn main() { async_std::task::block_on(async {
+//! # async_std::task::block_on(async {
 //! #
 //! use async_std::task;
 //!
@@ -19,7 +19,7 @@
 //! });
 //! assert_eq!(handle.await, 3);
 //! #
-//! # }) }
+//! # })
 //! ```
 
 #[doc(inline)]
@@ -64,7 +64,7 @@ pub(crate) mod blocking;
 /// Basic usage:
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
 ///
@@ -72,7 +72,7 @@ pub(crate) mod blocking;
 ///     println!("long-running task here");
 /// }).await;
 /// #
-/// # }) }
+/// # })
 /// ```
 // Once this function stabilizes we should merge `blocking::spawn` into this so
 // all code in our crate uses `task::blocking` too.

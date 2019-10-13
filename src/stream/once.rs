@@ -8,7 +8,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
@@ -18,7 +18,7 @@ use crate::task::{Context, Poll};
 /// assert_eq!(s.next().await, Some(7));
 /// assert_eq!(s.next().await, None);
 /// #
-/// # }) }
+/// # })
 /// ```
 pub fn once<T>(t: T) -> Once<T> {
     Once { value: Some(t) }
