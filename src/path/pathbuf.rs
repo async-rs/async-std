@@ -64,6 +64,30 @@ impl PathBuf {
     pub fn new() -> PathBuf {
         std::path::PathBuf::new().into()
     }
+
+    /// Truncates `self` to [`self.parent`].
+    ///
+    /// Returns `false` and does nothing if [`self.parent`] is [`None`].
+    /// Otherwise, returns `true`.
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    /// [`self.parent`]: struct.PathBuf.html#method.parent
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let mut p = PathBuf::from("/test/test.rs");
+    ///
+    /// p.pop();
+    /// assert_eq!(Path::new("/test"), p.as_ref());
+    /// p.pop();
+    /// assert_eq!(Path::new("/"), p.as_ref());
+    /// ```
+    pub fn pop(&mut self) -> bool {
+        self.inner.pop()
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
