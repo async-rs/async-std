@@ -511,6 +511,38 @@ impl Path {
         self.inner.parent().map(|p| p.into())
     }
 
+    /// Returns an iterator over the entries within a directory.
+    ///
+    /// The iterator will yield instances of [`io::Result`]`<`[`DirEntry`]`>`. New
+    /// errors may be encountered after an iterator is initially constructed.
+    ///
+    /// This is an alias to [`fs::read_dir`].
+    ///
+    /// [`io::Result`]: ../io/type.Result.html
+    /// [`DirEntry`]: ../fs/struct.DirEntry.html
+    /// [`fs::read_dir`]: ../fs/fn.read_dir.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    /// use async_std::fs;
+    ///
+    /// let path = Path::new("/laputa");
+    /// let mut dir = fs::read_dir(&path).await.expect("read_dir call failed");
+    /// while let Some(res) = dir.next().await {
+    ///     let entry = res?;
+    ///     println!("{}", entry.file_name().to_string_lossy());
+    /// }
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn read_dir(&self) -> io::Result<fs::ReadDir> {
+        fs::read_dir(self).await
+    }
+
     /// Queries the metadata about a file without following symlinks.
     ///
     /// This is an alias to [`fs::symlink_metadata`].
@@ -582,6 +614,12 @@ impl AsRef<Path> for OsStr {
 }
 
 impl AsRef<Path> for str {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for String {
     fn as_ref(&self) -> &Path {
         Path::new(self)
     }
