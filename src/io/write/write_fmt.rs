@@ -36,7 +36,7 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
 
         // Copy the data from the buffer into the writer until it's done.
         loop {
-            if buffer.is_empty() {
+            if *amt == buffer.len() as u64 {
                 futures_core::ready!(Pin::new(&mut **writer).poll_flush(cx))?;
                 return Poll::Ready(Ok(()));
             }

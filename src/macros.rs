@@ -21,23 +21,135 @@
 /// # Examples
 ///
 /// ```
-/// use std::io::{self, Write};
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::prelude::*;
+/// use async_std::io;
+/// use async_std::print;
 ///
-/// print!("this ");
-/// print!("will ");
-/// print!("be ");
-/// print!("on ");
-/// print!("the ");
-/// print!("same ");
-/// print!("line ");
+/// print!("this ").await;
+/// print!("will ").await;
+/// print!("be ").await;
+/// print!("on ").await;
+/// print!("the ").await;
+/// print!("same ").await;
+/// print!("line ").await;
 ///
-/// io::stdout().flush().unwrap();
+/// io::stdout().flush().await.unwrap();
 ///
-/// print!("this string has a newline, why not choose println! instead?\n");
+/// print!("this string has a newline, why not choose println! instead?\n").await;
 ///
-/// io::stdout().flush().unwrap();
+/// io::stdout().flush().await.unwrap();
+/// #
+/// # Ok(()) }) }
 /// ```
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+}
+
+/// Prints to the standard output, with a newline.
+///
+/// On all platforms, the newline is the LINE FEED character (`\n`/`U+000A`) alone
+/// (no additional CARRIAGE RETURN (`\r`/`U+000D`)).
+///
+/// Use the [`format!`] syntax to write data to the standard output.
+/// See [`std::fmt`] for more information.
+///
+/// Use `println!` only for the primary output of your program. Use
+/// [`eprintln!`] instead to print error and progress messages.
+///
+/// [`format!`]: macro.format.html
+/// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
+/// [`eprintln!`]: macro.eprintln.html
+/// # Panics
+///
+/// Panics if writing to `io::stdout` fails.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::println;
+///
+/// println!().await; // prints just a newline
+/// println!("hello there!").await;
+/// println!("format {} arguments", "some").await;
+/// #
+/// # Ok(()) }) }
+/// ```
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+}
+
+/// Prints to the standard error.
+///
+/// Equivalent to the [`print!`] macro, except that output goes to
+/// [`io::stderr`] instead of `io::stdout`. See [`print!`] for
+/// example usage.
+///
+/// Use `eprint!` only for error and progress messages. Use `print!`
+/// instead for the primary output of your program.
+///
+/// [`io::stderr`]: io/struct.Stderr.html
+/// [`print!`]: macro.print.html
+///
+/// # Panics
+///
+/// Panics if writing to `io::stderr` fails.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::eprint;
+///
+/// eprint!("Error: Could not complete task").await;
+/// #
+/// # Ok(()) }) }
+/// ```
+#[macro_export]
+macro_rules! eprint {
+    ($($arg:tt)*) => ($crate::io::_eprint(format_args!($($arg)*)))
+}
+
+/// Prints to the standard error, with a newline.
+///
+/// Equivalent to the [`println!`] macro, except that output goes to
+/// [`io::stderr`] instead of `io::stdout`. See [`println!`] for
+/// example usage.
+///
+/// Use `eprintln!` only for error and progress messages. Use `println!`
+/// instead for the primary output of your program.
+///
+/// [`io::stderr`]: io/struct.Stderr.html
+/// [`println!`]: macro.println.html
+///
+/// # Panics
+///
+/// Panics if writing to `io::stderr` fails.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
+/// use async_std::eprintln;
+///
+/// eprintln!("Error: Could not complete task").await;
+/// #
+/// # Ok(()) }) }
+/// ```
+#[macro_export]
+macro_rules! eprintln {
+    () => (async { $crate::eprint!("\n").await; });
+    ($($arg:tt)*) => (
+        async {
+            $crate::io::_eprint(format_args!($($arg)*)).await;
+        }
+    );
 }
