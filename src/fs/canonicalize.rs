@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use crate::path::{Path, PathBuf};
 
 use crate::io;
 use crate::task::blocking;
@@ -32,6 +32,8 @@ use crate::task::blocking;
 /// # Ok(()) }) }
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
-    let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::canonicalize(path) }).await
+    let path: std::path::PathBuf = path.as_ref().to_path_buf().into();
+    Ok(blocking::spawn(async move { std::fs::canonicalize(&path) })
+        .await?
+        .into())
 }
