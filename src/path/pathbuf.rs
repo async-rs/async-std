@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 
 use crate::path::Path;
 
@@ -122,6 +122,35 @@ impl PathBuf {
     /// ```
     pub fn push<P: AsRef<std::path::Path>>(&mut self, path: P) {
         self.inner.push(path)
+    }
+
+    /// Updates [`self.extension`] to `extension`.
+    ///
+    /// Returns `false` and does nothing if [`self.file_name`] is [`None`],
+    /// returns `true` and updates the extension otherwise.
+    ///
+    /// If [`self.extension`] is [`None`], the extension is added; otherwise
+    /// it is replaced.
+    ///
+    /// [`self.file_name`]: struct.PathBuf.html#method.file_name
+    /// [`self.extension`]: struct.PathBuf.html#method.extension
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let mut p = PathBuf::from("/feel/the");
+    ///
+    /// p.set_extension("force");
+    /// assert_eq!(Path::new("/feel/the.force"), p.as_path());
+    ///
+    /// p.set_extension("dark_side");
+    /// assert_eq!(Path::new("/feel/the.dark_side"), p.as_path());
+    /// ```
+    pub fn set_extension<S: AsRef<OsStr>>(&mut self, extension: S) -> bool {
+        self.inner.set_extension(extension)
     }
 }
 
