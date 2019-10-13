@@ -1,5 +1,7 @@
 use std::ffi::OsString;
 
+use crate::path::Path;
+
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
@@ -24,6 +26,12 @@ impl Into<std::path::PathBuf> for PathBuf {
 impl From<OsString> for PathBuf {
     fn from(path: OsString) -> PathBuf {
         PathBuf { inner: path }
+    }
+}
+
+impl AsRef<Path> for PathBuf {
+    fn as_ref(&self) -> &Path {
+        Path::new(&self.inner)
     }
 }
 
