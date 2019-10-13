@@ -109,6 +109,17 @@ impl Path {
         fs::metadata(self).await.is_ok()
     }
 
+    /// Converts a [`Box<Path>`][`Box`] into a [`PathBuf`] without copying or
+    /// allocating.
+    ///
+    /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
+    /// [`PathBuf`]: struct.PathBuf.html
+    pub fn into_path_buf(self: Box<Path>) -> PathBuf {
+        let rw = Box::into_raw(self) as *mut std::path::Path;
+        let inner = unsafe { Box::from_raw(rw) };
+        inner.into_path_buf().into()
+    }
+
     /// Queries the file system to get information about a file, directory, etc.
     ///
     /// This function will traverse symbolic links to query information about the
