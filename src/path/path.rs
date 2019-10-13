@@ -529,6 +529,7 @@ impl Path {
     /// #
     /// use async_std::path::Path;
     /// use async_std::fs;
+    /// use futures_util::stream::StreamExt;
     ///
     /// let path = Path::new("/laputa");
     /// let mut dir = fs::read_dir(&path).await.expect("read_dir call failed");
@@ -541,6 +542,28 @@ impl Path {
     /// ```
     pub async fn read_dir(&self) -> io::Result<fs::ReadDir> {
         fs::read_dir(self).await
+    }
+
+    /// Reads a symbolic link, returning the file that the link points to.
+    ///
+    /// This is an alias to [`fs::read_link`].
+    ///
+    /// [`fs::read_link`]: ../fs/fn.read_link.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/laputa/sky_castle.rs");
+    /// let path_link = path.read_link().await.expect("read_link call failed");
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn read_link(&self) -> io::Result<PathBuf> {
+        fs::read_link(self).await
     }
 
     /// Queries the metadata about a file without following symlinks.
