@@ -7,7 +7,7 @@ use crate::{fs, io};
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.Path.html
 pub struct Path {
-    inner: OsStr,
+    inner: std::path::Path,
 }
 
 impl Path {
@@ -15,7 +15,7 @@ impl Path {
     ///
     /// [`OsStr`]: https://doc.rust-lang.org/std/ffi/struct.OsStr.html
     pub fn as_os_str(&self) -> &OsStr {
-        &self.inner
+        self.inner.as_os_str()
     }
 
     /// Returns the canonical, absolute form of the path with all intermediate
@@ -72,8 +72,7 @@ impl Path {
     /// [`Component`]: enum.Component.html
     /// [`CurDir`]: enum.Component.html#variant.CurDir
     pub fn components(&self) -> Components<'_> {
-        let path: &std::path::Path = self.into();
-        path.components()
+        self.inner.components()
     }
 
     /// Directly wraps a string slice as a `Path` slice.
@@ -99,7 +98,7 @@ impl Path {
     /// assert_eq!(from_string, from_path);
     /// ```
     pub fn new<S: AsRef<OsStr> + ?Sized>(s: &S) -> &Path {
-        unsafe { &*(s.as_ref() as *const OsStr as *const Path) }
+        unsafe { &*(std::path::Path::new(s) as *const std::path::Path as *const Path) }
     }
 
     /// Converts a `Path` to an owned [`PathBuf`].
@@ -115,7 +114,7 @@ impl Path {
     /// assert_eq!(path_buf, PathBuf::from("foo.txt"));
     /// ```
     pub fn to_path_buf(&self) -> PathBuf {
-        PathBuf::from(self.inner.to_os_string())
+        PathBuf::from(self.inner.to_path_buf())
     }
 }
 
@@ -137,40 +136,8 @@ impl AsRef<Path> for Path {
     }
 }
 
-impl AsRef<Path> for OsStr {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
-impl AsRef<Path> for str {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
 impl std::fmt::Debug for Path {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(&self.inner, formatter)
-    }
-}
-
-impl std::cmp::PartialEq for Path {
-    fn eq(&self, other: &Path) -> bool {
-        self.components().eq(other.components())
-    }
-}
-
-impl std::cmp::Eq for Path {}
-
-impl std::cmp::PartialOrd for Path {
-    fn partial_cmp(&self, other: &Path) -> Option<std::cmp::Ordering> {
-        self.components().partial_cmp(other.components())
-    }
-}
-
-impl std::cmp::Ord for Path {
-    fn cmp(&self, other: &Path) -> std::cmp::Ordering {
-        self.components().cmp(other.components())
     }
 }

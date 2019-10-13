@@ -6,14 +6,12 @@ use crate::path::Path;
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
 pub struct PathBuf {
-    inner: OsString,
+    inner: std::path::PathBuf,
 }
 
 impl From<std::path::PathBuf> for PathBuf {
     fn from(path: std::path::PathBuf) -> PathBuf {
-        PathBuf {
-            inner: path.into_os_string(),
-        }
+        PathBuf { inner: path }
     }
 }
 
@@ -25,7 +23,9 @@ impl Into<std::path::PathBuf> for PathBuf {
 
 impl From<OsString> for PathBuf {
     fn from(path: OsString) -> PathBuf {
-        PathBuf { inner: path }
+        PathBuf {
+            inner: std::path::PathBuf::from(path),
+        }
     }
 }
 
