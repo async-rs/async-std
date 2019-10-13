@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use crate::path::{Components, PathBuf};
+use crate::path::{Ancestors, Components, PathBuf};
 use crate::{fs, io};
 
 /// This struct is an async version of [`std::path::Path`].
@@ -12,6 +12,32 @@ pub struct Path {
 }
 
 impl Path {
+    /// Produces an iterator over `Path` and its ancestors.
+    ///
+    /// The iterator will yield the `Path` that is returned if the [`parent`] method is used zero
+    /// or more times. That means, the iterator will yield `&self`, `&self.parent().unwrap()`,
+    /// `&self.parent().unwrap().parent().unwrap()` and so on. If the [`parent`] method returns
+    /// [`None`], the iterator will do likewise. The iterator will always yield at least one value,
+    /// namely `&self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let mut ancestors = Path::new("/foo/bar").ancestors();
+    /// assert_eq!(ancestors.next(), Some(Path::new("/foo/bar").into()));
+    /// assert_eq!(ancestors.next(), Some(Path::new("/foo").into()));
+    /// assert_eq!(ancestors.next(), Some(Path::new("/").into()));
+    /// assert_eq!(ancestors.next(), None);
+    /// ```
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
+    /// [`parent`]: struct.Path.html#method.parent
+    pub fn ancestors(&self) -> Ancestors<'_> {
+        self.inner.ancestors()
+    }
+
     /// Yields the underlying [`OsStr`] slice.
     ///
     /// [`OsStr`]: https://doc.rust-lang.org/std/ffi/struct.OsStr.html
