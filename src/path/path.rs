@@ -173,6 +173,31 @@ impl Path {
         fs::metadata(self).await.is_ok()
     }
 
+    /// Extracts the extension of [`self.file_name`], if possible.
+    ///
+    /// The extension is:
+    ///
+    /// * [`None`], if there is no file name;
+    /// * [`None`], if there is no embedded `.`;
+    /// * [`None`], if the file name begins with `.` and has no other `.`s within;
+    /// * Otherwise, the portion of the file name after the final `.`
+    ///
+    /// [`self.file_name`]: struct.Path.html#method.file_name
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("foo.rs");
+    ///
+    /// assert_eq!("rs", path.extension().unwrap());
+    /// ```
+    pub fn extension(&self) -> Option<&OsStr> {
+        self.inner.extension()
+    }
+
     /// Converts a [`Box<Path>`][`Box`] into a [`PathBuf`] without copying or
     /// allocating.
     ///
