@@ -250,6 +250,26 @@ impl Path {
         self.inner.file_stem()
     }
 
+    /// Returns `true` if the `Path` has a root.
+    ///
+    /// * On Unix, a path has a root if it begins with `/`.
+    ///
+    /// * On Windows, a path has a root if it:
+    ///     * has no prefix and begins with a separator, e.g., `\windows`
+    ///     * has a prefix followed by a separator, e.g., `c:\windows` but not `c:windows`
+    ///     * has any non-disk prefix, e.g., `\\server\share`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// assert!(Path::new("/etc/passwd").has_root());
+    /// ```
+    pub fn has_root(&self) -> bool {
+        self.inner.has_root()
+    }
+
     /// Converts a [`Box<Path>`][`Box`] into a [`PathBuf`] without copying or
     /// allocating.
     ///
