@@ -76,6 +76,7 @@ cfg_if! {
     }
 }
 
+mod macros;
 pub(crate) mod utils;
 
 #[doc(inline)]

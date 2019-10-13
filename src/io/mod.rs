@@ -55,5 +55,6 @@ mod repeat;
 mod sink;
 mod stderr;
 mod stdin;
+mod stdio;
 mod stdout;
 mod timeout;
