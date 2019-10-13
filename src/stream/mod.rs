@@ -48,6 +48,6 @@ cfg_if! {
 
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[doc(inline)]
-        pub use async_macros::{join_stream as join, JoinStream as Join};
+        pub use async_macros::{join_stream as merge, JoinStream as Merge};
     }
 }
