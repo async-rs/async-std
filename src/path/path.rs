@@ -684,6 +684,31 @@ impl Path {
     pub fn to_str(&self) -> Option<&str> {
         self.inner.to_str()
     }
+
+    /// Converts a `Path` to a [`Cow<str>`].
+    ///
+    /// Any non-Unicode sequences are replaced with
+    /// [`U+FFFD REPLACEMENT CHARACTER`][U+FFFD].
+    ///
+    /// [`Cow<str>`]: https://doc.rust-lang.org/std/borrow/enum.Cow.html
+    /// [U+FFFD]: https://doc.rust-lang.org/std/char/constant.REPLACEMENT_CHARACTER.html
+    ///
+    /// # Examples
+    ///
+    /// Calling `to_string_lossy` on a `Path` with valid unicode:
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("foo.txt");
+    /// assert_eq!(path.to_string_lossy(), "foo.txt");
+    /// ```
+    ///
+    /// Had `path` contained invalid unicode, the `to_string_lossy` call might
+    /// have returned `"fo�.txt"`.
+    pub fn to_string_lossy(&self) -> std::borrow::Cow<'_, str> {
+        self.inner.to_string_lossy()
+    }
 }
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
