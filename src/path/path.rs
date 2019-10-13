@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use crate::path::{Ancestors, Components, PathBuf};
+use crate::path::{Ancestors, Components, Display, PathBuf};
 use crate::{fs, io};
 
 /// This struct is an async version of [`std::path::Path`].
@@ -104,6 +104,24 @@ impl Path {
     /// [`CurDir`]: enum.Component.html#variant.CurDir
     pub fn components(&self) -> Components<'_> {
         self.inner.components()
+    }
+
+    /// Returns an object that implements [`Display`] for safely printing paths
+    /// that may contain non-Unicode data.
+    ///
+    /// [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/tmp/foo.rs");
+    ///
+    /// println!("{}", path.display());
+    /// ```
+    pub fn display(&self) -> Display<'_> {
+        self.inner.display()
     }
 
     /// Returns `true` if the path points at an existing entity.
