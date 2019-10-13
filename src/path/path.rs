@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use crate::path::{Ancestors, Components, Display, PathBuf};
+use crate::path::{Ancestors, Components, Display, Iter, PathBuf};
 use crate::{fs, io};
 
 /// This struct is an async version of [`std::path::Path`].
@@ -388,6 +388,31 @@ impl Path {
     /// [`is_absolute`]: #method.is_absolute
     pub fn is_relative(&self) -> bool {
         self.inner.is_relative()
+    }
+
+    /// Produces an iterator over the path's components viewed as [`OsStr`]
+    /// slices.
+    ///
+    /// For more information about the particulars of how the path is separated
+    /// into components, see [`components`].
+    ///
+    /// [`components`]: #method.components
+    /// [`OsStr`]: https://doc.rust-lang.org/std/ffi/struct.OsStr.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{self, Path};
+    /// use std::ffi::OsStr;
+    ///
+    /// let mut it = Path::new("/tmp/foo.txt").iter();
+    /// assert_eq!(it.next(), Some(OsStr::new(&path::MAIN_SEPARATOR.to_string())));
+    /// assert_eq!(it.next(), Some(OsStr::new("tmp")));
+    /// assert_eq!(it.next(), Some(OsStr::new("foo.txt")));
+    /// assert_eq!(it.next(), None)
+    /// ```
+    pub fn iter(&self) -> Iter<'_> {
+        self.inner.iter()
     }
 
     /// Queries the file system to get information about a file, directory, etc.
