@@ -1,0 +1,50 @@
+use std::pin::Pin;
+
+use crate::future::Future;
+use crate::io::{self, Write};
+use crate::task::{Context, Poll};
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct WriteFmtFuture<'a, T: Unpin + ?Sized> {
+    pub(crate) writer: &'a mut T,
+    pub(crate) res: Option<io::Result<Vec<u8>>>,
+    pub(crate) buffer: Option<Vec<u8>>,
+    pub(crate) amt: u64,
+}
+
+impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
+    type Output = io::Result<()>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Process the interal Result the first time we run.
+        if self.buffer.is_none() {
+            match self.res.take().unwrap() {
+                Err(err) => return Poll::Ready(Err(err)),
+                Ok(buffer) => self.buffer = Some(buffer),
+            };
+        }
+
+        // Get the types from the future.
+        let Self {
+            writer,
+            amt,
+            buffer,
+            ..
+        } = &mut *self;
+        let mut buffer = buffer.as_mut().unwrap();
+
+        // Copy the data from the buffer into the writer until it's done.
+        loop {
+            if buffer.is_empty() {
+                futures_core::ready!(Pin::new(&mut **writer).poll_flush(cx))?;
+                return Poll::Ready(Ok(()));
+            }
+            let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, &mut buffer))?;
+            if i == 0 {
+                return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
+            }
+            *amt += i as u64;
+        }
+    }
+}
