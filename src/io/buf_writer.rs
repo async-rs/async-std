@@ -4,6 +4,7 @@ use std::pin::Pin;
 use futures_core::ready;
 
 use crate::io::{self, Seek, SeekFrom, Write};
+use crate::io::write::WriteExt;
 use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
@@ -82,6 +83,9 @@ pub struct BufWriter<W> {
     buf: Vec<u8>,
     written: usize,
 }
+
+#[derive(Debug)]
+pub struct IntoInnerError<W>(W, std::io::Error);
 
 impl<W: Write> BufWriter<W> {
     pin_utils::unsafe_pinned!(inner: W);
@@ -180,8 +184,28 @@ impl<W: Write> BufWriter<W> {
     /// For method that will attempt to write before returning the writer see [`poll_into_inner`]
     ///
     /// [`poll_into_inner`]: #method.poll_into_inner
-    pub fn into_inner(self) -> W {
-        self.inner
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    ///
+    /// let buf_writer = BufWriter::new(TcpStream::connect("127.0.0.1:34251").await?);
+    ///
+    /// // unwrap the TcpStream and flush the buffer
+    /// let stream = buf_writer.into_inner().await.unwrap();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn into_inner(mut self) -> Result<W, IntoInnerError<BufWriter<W>>>
+    where
+        Self: Unpin
+    {
+        match self.flush().await {
+            Err(e) => Err(IntoInnerError(self, e)),
+            Ok(()) => Ok(self.inner),
+        }
     }
 
     /// Returns a reference to the internally buffered data.

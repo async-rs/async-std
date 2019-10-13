@@ -53,7 +53,7 @@ fn test_buffered_writer_inner_into_inner_does_not_flush() {
         let mut w = BufWriter::with_capacity(3, Vec::new());
         w.write(&[0, 1]).await.unwrap();
         assert_eq!(*w.get_ref(), []);
-        let w = w.into_inner();
+        let w = w.into_inner().await.unwrap();
         assert_eq!(w, []);
     })
 }
