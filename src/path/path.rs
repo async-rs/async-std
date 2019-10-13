@@ -373,6 +373,23 @@ impl Path {
             .unwrap_or(false)
     }
 
+    /// Returns `true` if the `Path` is relative, i.e., not absolute.
+    ///
+    /// See [`is_absolute`]'s documentation for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// assert!(Path::new("foo.txt").is_relative());
+    /// ```
+    ///
+    /// [`is_absolute`]: #method.is_absolute
+    pub fn is_relative(&self) -> bool {
+        self.inner.is_relative()
+    }
+
     /// Queries the file system to get information about a file, directory, etc.
     ///
     /// This function will traverse symbolic links to query information about the
