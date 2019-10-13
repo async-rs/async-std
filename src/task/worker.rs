@@ -22,13 +22,13 @@ use crate::utils::abort_on_panic;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
 ///
 /// println!("The name of this task is {:?}", task::current().name());
 /// #
-/// # }) }
+/// # })
 /// ```
 pub fn current() -> Task {
     get_task(|task| task.clone()).expect("`task::current()` called outside the context of a task")

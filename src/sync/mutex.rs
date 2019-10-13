@@ -24,7 +24,7 @@ const BLOCKED: usize = 1 << 1;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use std::sync::Arc;
 ///
@@ -46,7 +46,7 @@ const BLOCKED: usize = 1 << 1;
 /// }
 /// assert_eq!(*m.lock().await, 10);
 /// #
-/// # }) }
+/// # })
 /// ```
 pub struct Mutex<T> {
     state: AtomicUsize,
@@ -82,7 +82,7 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
     ///
@@ -99,7 +99,7 @@ impl<T> Mutex<T> {
     ///
     /// assert_eq!(*m2.lock().await, 20);
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub async fn lock(&self) -> MutexGuard<'_, T> {
         pub struct LockFuture<'a, T> {
@@ -196,7 +196,7 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
     ///
@@ -217,7 +217,7 @@ impl<T> Mutex<T> {
     ///
     /// assert_eq!(*m2.lock().await, 20);
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         if self.state.fetch_or(LOCK, Ordering::Acquire) & LOCK == 0 {
@@ -249,7 +249,7 @@ impl<T> Mutex<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::Mutex;
     ///
@@ -257,7 +257,7 @@ impl<T> Mutex<T> {
     /// *mutex.get_mut() = 10;
     /// assert_eq!(*mutex.lock().await, 10);
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub fn get_mut(&mut self) -> &mut T {
         unsafe { &mut *self.value.get() }

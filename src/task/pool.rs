@@ -22,7 +22,7 @@ use crate::utils::abort_on_panic;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
 ///
@@ -32,7 +32,7 @@ use crate::utils::abort_on_panic;
 ///
 /// assert_eq!(handle.await, 3);
 /// #
-/// # }) }
+/// # })
 /// ```
 pub fn spawn<F, T>(future: F) -> JoinHandle<T>
 where

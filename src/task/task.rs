@@ -68,7 +68,7 @@ impl<T> JoinHandle<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::task;
     ///
@@ -77,7 +77,7 @@ impl<T> JoinHandle<T> {
     /// });
     /// println!("id = {}", handle.task().id());
     /// #
-    /// # }) }
+    /// # })
     pub fn task(&self) -> &Task {
         self.0.tag().task()
     }

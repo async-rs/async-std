@@ -33,7 +33,7 @@ const READ_COUNT_MASK: usize = !(ONE_READ - 1);
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::sync::RwLock;
 ///
@@ -51,7 +51,7 @@ const READ_COUNT_MASK: usize = !(ONE_READ - 1);
 /// *w += 1;
 /// assert_eq!(*w, 6);
 /// #
-/// # }) }
+/// # })
 /// ```
 pub struct RwLock<T> {
     state: AtomicUsize,
@@ -89,7 +89,7 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
     ///
@@ -100,7 +100,7 @@ impl<T> RwLock<T> {
     ///
     /// assert!(lock.try_read().is_some());
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub async fn read(&self) -> RwLockReadGuard<'_, T> {
         pub struct LockFuture<'a, T> {
@@ -211,7 +211,7 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
     ///
@@ -222,7 +222,7 @@ impl<T> RwLock<T> {
     ///
     /// assert!(lock.try_read().is_some());
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub fn try_read(&self) -> Option<RwLockReadGuard<'_, T>> {
         let mut state = self.state.load(Ordering::Acquire);
@@ -253,7 +253,7 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
     ///
@@ -264,7 +264,7 @@ impl<T> RwLock<T> {
     ///
     /// assert!(lock.try_read().is_none());
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub async fn write(&self) -> RwLockWriteGuard<'_, T> {
         pub struct LockFuture<'a, T> {
@@ -374,7 +374,7 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
     ///
@@ -385,7 +385,7 @@ impl<T> RwLock<T> {
     ///
     /// assert!(lock.try_write().is_none());
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub fn try_write(&self) -> Option<RwLockWriteGuard<'_, T>> {
         let mut state = self.state.load(Ordering::Acquire);
@@ -431,7 +431,7 @@ impl<T> RwLock<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::RwLock;
     ///
@@ -439,7 +439,7 @@ impl<T> RwLock<T> {
     /// *lock.get_mut() = 10;
     /// assert_eq!(*lock.write().await, 10);
     /// #
-    /// # }) }
+    /// # })
     /// ```
     pub fn get_mut(&mut self) -> &mut T {
         unsafe { &mut *self.value.get() }
