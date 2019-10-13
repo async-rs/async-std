@@ -1155,7 +1155,8 @@ extension_trait! {
         #[doc = r#"
             Combines multiple streams into a single stream of all their outputs.
 
-            This macro is only usable inside of async functions, closures, and blocks.
+            Items are yielded as soon as they're received, and the stream continues yield until both
+            streams have been exhausted.
 
             # Examples
 
