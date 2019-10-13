@@ -21,7 +21,7 @@
 /// # Examples
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::io;
@@ -41,7 +41,7 @@
 ///
 /// io::stdout().flush().await.unwrap();
 /// #
-/// # Ok(()) }) }
+/// # })
 /// ```
 #[macro_export]
 macro_rules! print {
@@ -69,7 +69,7 @@ macro_rules! print {
 /// # Examples
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::println;
 ///
@@ -77,7 +77,7 @@ macro_rules! print {
 /// println!("hello there!").await;
 /// println!("format {} arguments", "some").await;
 /// #
-/// # Ok(()) }) }
+/// # })
 /// ```
 #[macro_export]
 macro_rules! println {
@@ -104,13 +104,13 @@ macro_rules! println {
 /// # Examples
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::eprint;
 ///
 /// eprint!("Error: Could not complete task").await;
 /// #
-/// # Ok(()) }) }
+/// # })
 /// ```
 #[macro_export]
 macro_rules! eprint {
@@ -136,13 +136,13 @@ macro_rules! eprint {
 /// # Examples
 ///
 /// ```
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::eprintln;
 ///
 /// eprintln!("Error: Could not complete task").await;
 /// #
-/// # Ok(()) }) }
+/// # })
 /// ```
 #[macro_export]
 macro_rules! eprintln {
