@@ -462,29 +462,6 @@ impl Path {
         fs::metadata(self).await
     }
 
-    /// Queries the metadata about a file without following symlinks.
-    ///
-    /// This is an alias to [`fs::symlink_metadata`].
-    ///
-    /// [`fs::symlink_metadata`]: ../fs/fn.symlink_metadata.html
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    /// #
-    /// use async_std::path::Path;
-    ///
-    /// let path = Path::new("/Minas/tirith");
-    /// let metadata = path.symlink_metadata().await.expect("symlink_metadata call failed");
-    /// println!("{:?}", metadata.file_type());
-    /// #
-    /// # Ok(()) }) }
-    /// ```
-    pub async fn symlink_metadata(&self) -> io::Result<fs::Metadata> {
-        fs::symlink_metadata(self).await
-    }
-
     /// Directly wraps a string slice as a `Path` slice.
     ///
     /// This is a cost-free conversion.
@@ -509,6 +486,52 @@ impl Path {
     /// ```
     pub fn new<S: AsRef<OsStr> + ?Sized>(s: &S) -> &Path {
         unsafe { &*(std::path::Path::new(s) as *const std::path::Path as *const Path) }
+    }
+
+    /// Returns the `Path` without its final component, if there is one.
+    ///
+    /// Returns [`None`] if the path terminates in a root or prefix.
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/foo/bar");
+    /// let parent = path.parent().unwrap();
+    /// assert_eq!(parent, Path::new("/foo"));
+    ///
+    /// let grand_parent = parent.parent().unwrap();
+    /// assert_eq!(grand_parent, Path::new("/"));
+    /// assert_eq!(grand_parent.parent(), None);
+    /// ```
+    pub fn parent(&self) -> Option<&Path> {
+        self.inner.parent().map(|p| p.into())
+    }
+
+    /// Queries the metadata about a file without following symlinks.
+    ///
+    /// This is an alias to [`fs::symlink_metadata`].
+    ///
+    /// [`fs::symlink_metadata`]: ../fs/fn.symlink_metadata.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/Minas/tirith");
+    /// let metadata = path.symlink_metadata().await.expect("symlink_metadata call failed");
+    /// println!("{:?}", metadata.file_type());
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn symlink_metadata(&self) -> io::Result<fs::Metadata> {
+        fs::symlink_metadata(self).await
     }
 
     /// Converts a `Path` to an owned [`PathBuf`].
