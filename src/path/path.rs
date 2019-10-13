@@ -224,6 +224,32 @@ impl Path {
         self.inner.file_name()
     }
 
+    /// Extracts the stem (non-extension) portion of [`self.file_name`].
+    ///
+    /// [`self.file_name`]: struct.Path.html#method.file_name
+    ///
+    /// The stem is:
+    ///
+    /// * [`None`], if there is no file name;
+    /// * The entire file name if there is no embedded `.`;
+    /// * The entire file name if the file name begins with `.` and has no other `.`s within;
+    /// * Otherwise, the portion of the file name before the final `.`
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("foo.rs");
+    ///
+    /// assert_eq!("foo", path.file_stem().unwrap());
+    /// ```
+    pub fn file_stem(&self) -> Option<&OsStr> {
+        self.inner.file_stem()
+    }
+
     /// Converts a [`Box<Path>`][`Box`] into a [`PathBuf`] without copying or
     /// allocating.
     ///
