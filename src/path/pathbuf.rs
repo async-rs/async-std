@@ -26,6 +26,15 @@ impl PathBuf {
     pub fn as_path(&self) -> &Path {
         self.inner.as_path().into()
     }
+
+    /// Converts this `PathBuf` into a [boxed][`Box`] [`Path`].
+    ///
+    /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
+    /// [`Path`]: struct.Path.html
+    pub fn into_boxed_path(self) -> Box<Path> {
+        let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
+        unsafe { Box::from_raw(rw) }
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
