@@ -183,7 +183,7 @@ impl Path {
     /// * Otherwise, the portion of the file name after the final `.`
     ///
     /// [`self.file_name`]: struct.Path.html#method.file_name
-    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
     ///
     /// # Examples
     ///
@@ -196,6 +196,32 @@ impl Path {
     /// ```
     pub fn extension(&self) -> Option<&OsStr> {
         self.inner.extension()
+    }
+
+    /// Returns the final component of the `Path`, if there is one.
+    ///
+    /// If the path is a normal file, this is the file name. If it's the path of a directory, this
+    /// is the directory name.
+    ///
+    /// Returns [`None`] if the path terminates in `..`.
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    /// use std::ffi::OsStr;
+    ///
+    /// assert_eq!(Some(OsStr::new("bin")), Path::new("/usr/bin/").file_name());
+    /// assert_eq!(Some(OsStr::new("foo.txt")), Path::new("tmp/foo.txt").file_name());
+    /// assert_eq!(Some(OsStr::new("foo.txt")), Path::new("foo.txt/.").file_name());
+    /// assert_eq!(Some(OsStr::new("foo.txt")), Path::new("foo.txt/.//").file_name());
+    /// assert_eq!(None, Path::new("foo.txt/..").file_name());
+    /// assert_eq!(None, Path::new("/").file_name());
+    /// ```
+    pub fn file_name(&self) -> Option<&OsStr> {
+        self.inner.file_name()
     }
 
     /// Converts a [`Box<Path>`][`Box`] into a [`PathBuf`] without copying or
