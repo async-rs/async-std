@@ -2,8 +2,8 @@
 //!
 //! This module is a port of `libstd/io/stdio.rs`,and contains internal types for `print`/`eprint`.
 
-use crate::prelude::*;
 use crate::io::{stderr, stdout};
+use crate::prelude::*;
 use std::fmt;
 
 #[doc(hidden)]
