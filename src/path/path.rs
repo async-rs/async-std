@@ -281,6 +281,28 @@ impl Path {
         inner.into_path_buf().into()
     }
 
+    /// Returns `true` if the `Path` is absolute, i.e., if it is independent of
+    /// the current directory.
+    ///
+    /// * On Unix, a path is absolute if it starts with the root, so
+    /// `is_absolute` and [`has_root`] are equivalent.
+    ///
+    /// * On Windows, a path is absolute if it has a prefix and starts with the
+    /// root: `c:\windows` is absolute, while `c:temp` and `\temp` are not.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// assert!(!Path::new("foo.txt").is_absolute());
+    /// ```
+    ///
+    /// [`has_root`]: #method.has_root
+    pub fn is_absolute(&self) -> bool {
+        self.inner.is_absolute()
+    }
+
     /// Queries the file system to get information about a file, directory, etc.
     ///
     /// This function will traverse symbolic links to query information about the
