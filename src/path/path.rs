@@ -709,6 +709,25 @@ impl Path {
     pub fn to_string_lossy(&self) -> std::borrow::Cow<'_, str> {
         self.inner.to_string_lossy()
     }
+
+    /// Creates an owned [`PathBuf`] like `self` but with the given extension.
+    ///
+    /// See [`PathBuf::set_extension`] for more details.
+    ///
+    /// [`PathBuf`]: struct.PathBuf.html
+    /// [`PathBuf::set_extension`]: struct.PathBuf.html#method.set_extension
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let path = Path::new("foo.rs");
+    /// assert_eq!(path.with_extension("txt"), PathBuf::from("foo.txt"));
+    /// ```
+    pub fn with_extension<S: AsRef<OsStr>>(&self, extension: S) -> PathBuf {
+        self.inner.with_extension(extension).into()
+    }
 }
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
