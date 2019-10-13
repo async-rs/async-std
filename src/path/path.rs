@@ -75,6 +75,31 @@ impl Path {
         self.inner.components()
     }
 
+    /// Returns `true` if the path points at an existing entity.
+    ///
+    /// This function will traverse symbolic links to query information about the
+    /// destination file. In case of broken symbolic links this will return `false`.
+    ///
+    /// If you cannot access the directory containing the file, e.g., because of a
+    /// permission error, this will return `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_std::path::Path;
+    /// assert_eq!(Path::new("does_not_exist.txt").exists(), false);
+    /// ```
+    ///
+    /// # See Also
+    ///
+    /// This is a convenience function that coerces errors to false. If you want to
+    /// check errors, call [fs::metadata].
+    ///
+    /// [fs::metadata]: ../fs/fn.metadata.html
+    pub async fn exists(&self) -> bool {
+        fs::metadata(self).await.is_ok()
+    }
+
     /// Directly wraps a string slice as a `Path` slice.
     ///
     /// This is a cost-free conversion.
