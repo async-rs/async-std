@@ -35,6 +35,22 @@ impl PathBuf {
         let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
         unsafe { Box::from_raw(rw) }
     }
+
+    /// Consumes the `PathBuf`, yielding its internal [`OsString`] storage.
+    ///
+    /// [`OsString`]: https://doc.rust-lang.org/std/ffi/struct.OsString.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let p = PathBuf::from("/the/head");
+    /// let os_str = p.into_os_string();
+    /// ```
+    pub fn into_os_string(self) -> OsString {
+        self.inner.into_os_string()
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
