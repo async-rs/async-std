@@ -46,8 +46,6 @@ cfg_if! {
         pub use from_stream::FromStream;
         pub use into_stream::IntoStream;
 
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        #[doc(inline)]
-        pub use async_macros::{join_stream as join, JoinStream as Join};
+        pub use stream::Merge;
     }
 }

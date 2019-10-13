@@ -87,10 +87,14 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod merge;
+
         use std::pin::Pin;
 
         use crate::future::Future;
         use crate::stream::FromStream;
+
+        pub use merge::Merge;
     }
 }
 
@@ -1146,6 +1150,42 @@ extension_trait! {
             B: FromStream<Self::Item>,
         {
             FromStream::from_stream(self)
+        }
+
+        #[doc = r#"
+            Combines multiple streams into a single stream of all their outputs.
+
+            Items are yielded as soon as they're received, and the stream continues yield until both
+            streams have been exhausted.
+
+            # Examples
+
+            ```
+            # async_std::task::block_on(async {
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let a = stream::once(1u8);
+            let b = stream::once(2u8);
+            let c = stream::once(3u8);
+
+            let mut s = a.merge(b).merge(c);
+
+            assert_eq!(s.next().await, Some(1u8));
+            assert_eq!(s.next().await, Some(2u8));
+            assert_eq!(s.next().await, Some(3u8));
+            assert_eq!(s.next().await, None);
+            # });
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn merge<U>(self, other: U) -> Merge<Self, U>
+        where
+            Self: Sized,
+            U: Stream<Item = Self::Item> + Sized,
+        {
+            Merge::new(self, other)
         }
     }
 
