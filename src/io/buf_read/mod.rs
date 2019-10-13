@@ -231,7 +231,7 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Returns a stream over the contents of this reader split on the byte byte.
+            Returns a stream over the contents of this reader split on the byte `byte`.
 
             The stream returned from this function will return instances of
             [`io::Result`]`<`[`Vec<u8>`]`>`. Each vector returned will *not* have
