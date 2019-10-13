@@ -303,6 +303,76 @@ impl Path {
         self.inner.is_absolute()
     }
 
+    /// Returns `true` if the path exists on disk and is pointing at a directory.
+    ///
+    /// This function will traverse symbolic links to query information about the
+    /// destination file. In case of broken symbolic links this will return `false`.
+    ///
+    /// If you cannot access the directory containing the file, e.g., because of a
+    /// permission error, this will return `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    /// assert_eq!(Path::new("./is_a_directory/").is_dir().await, true);
+    /// assert_eq!(Path::new("a_file.txt").is_dir().await, false);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    ///
+    /// # See Also
+    ///
+    /// This is a convenience function that coerces errors to false. If you want to
+    /// check errors, call [fs::metadata] and handle its Result. Then call
+    /// [fs::Metadata::is_dir] if it was Ok.
+    ///
+    /// [fs::metadata]: ../fs/fn.metadata.html
+    /// [fs::Metadata::is_dir]: ../fs/struct.Metadata.html#method.is_dir
+    pub async fn is_dir(&self) -> bool {
+        fs::metadata(self)
+            .await
+            .map(|m| m.is_dir())
+            .unwrap_or(false)
+    }
+
+    /// Returns `true` if the path exists on disk and is pointing at a regular file.
+    ///
+    /// This function will traverse symbolic links to query information about the
+    /// destination file. In case of broken symbolic links this will return `false`.
+    ///
+    /// If you cannot access the directory containing the file, e.g., because of a
+    /// permission error, this will return `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    /// assert_eq!(Path::new("./is_a_directory/").is_file().await, false);
+    /// assert_eq!(Path::new("a_file.txt").is_file().await, true);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    ///
+    /// # See Also
+    ///
+    /// This is a convenience function that coerces errors to false. If you want to
+    /// check errors, call [fs::metadata] and handle its Result. Then call
+    /// [fs::Metadata::is_file] if it was Ok.
+    ///
+    /// [fs::metadata]: ../fs/fn.metadata.html
+    /// [fs::Metadata::is_file]: ../fs/struct.Metadata.html#method.is_file
+    pub async fn is_file(&self) -> bool {
+        fs::metadata(self)
+            .await
+            .map(|m| m.is_file())
+            .unwrap_or(false)
+    }
+
     /// Queries the file system to get information about a file, directory, etc.
     ///
     /// This function will traverse symbolic links to query information about the
