@@ -3,8 +3,8 @@ use std::pin::Pin;
 
 use futures_core::ready;
 
-use crate::io::{self, Seek, SeekFrom, Write};
 use crate::io::write::WriteExt;
+use crate::io::{self, Seek, SeekFrom, Write};
 use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
@@ -200,7 +200,7 @@ impl<W: Write> BufWriter<W> {
     /// ```
     pub async fn into_inner(mut self) -> Result<W, IntoInnerError<BufWriter<W>>>
     where
-        Self: Unpin
+        Self: Unpin,
     {
         match self.flush().await {
             Err(e) => Err(IntoInnerError(self, e)),
