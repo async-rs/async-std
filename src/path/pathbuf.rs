@@ -51,6 +51,19 @@ impl PathBuf {
     pub fn into_os_string(self) -> OsString {
         self.inner.into_os_string()
     }
+
+    /// Allocates an empty `PathBuf`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let path = PathBuf::new();
+    /// ```
+    pub fn new() -> PathBuf {
+        std::path::PathBuf::new().into()
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
