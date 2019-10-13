@@ -88,6 +88,41 @@ impl PathBuf {
     pub fn pop(&mut self) -> bool {
         self.inner.pop()
     }
+
+    /// Extends `self` with `path`.
+    ///
+    /// If `path` is absolute, it replaces the current path.
+    ///
+    /// On Windows:
+    ///
+    /// * if `path` has a root but no prefix (e.g., `\windows`), it
+    ///   replaces everything except for the prefix (if any) of `self`.
+    /// * if `path` has a prefix but no root, it replaces `self`.
+    ///
+    /// # Examples
+    ///
+    /// Pushing a relative path extends the existing path:
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let mut path = PathBuf::from("/tmp");
+    /// path.push("file.bk");
+    /// assert_eq!(path, PathBuf::from("/tmp/file.bk"));
+    /// ```
+    ///
+    /// Pushing an absolute path replaces the existing path:
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let mut path = PathBuf::from("/tmp");
+    /// path.push("/etc");
+    /// assert_eq!(path, PathBuf::from("/etc"));
+    /// ```
+    pub fn push<P: AsRef<std::path::Path>>(&mut self, path: P) {
+        self.inner.push(path)
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
