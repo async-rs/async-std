@@ -152,6 +152,44 @@ impl PathBuf {
     pub fn set_extension<S: AsRef<OsStr>>(&mut self, extension: S) -> bool {
         self.inner.set_extension(extension)
     }
+
+    /// Updates [`self.file_name`] to `file_name`.
+    ///
+    /// If [`self.file_name`] was [`None`], this is equivalent to pushing
+    /// `file_name`.
+    ///
+    /// Otherwise it is equivalent to calling [`pop`] and then pushing
+    /// `file_name`. The new path will be a sibling of the original path.
+    /// (That is, it will have the same parent.)
+    ///
+    /// [`self.file_name`]: struct.PathBuf.html#method.file_name
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    /// [`pop`]: struct.PathBuf.html#method.pop
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let mut buf = PathBuf::from("/");
+    /// assert!(buf.file_name() == None);
+    /// buf.set_file_name("bar");
+    /// assert!(buf == PathBuf::from("/bar"));
+    /// assert!(buf.file_name().is_some());
+    /// buf.set_file_name("baz.txt");
+    /// assert!(buf == PathBuf::from("/baz.txt"));
+    /// ```
+    pub fn set_file_name<S: AsRef<OsStr>>(&mut self, file_name: S) {
+        self.inner.set_file_name(file_name)
+    }
+}
+
+impl std::ops::Deref for PathBuf {
+    type Target = Path;
+
+    fn deref(&self) -> &Path {
+        self.as_ref()
+    }
 }
 
 impl From<std::path::PathBuf> for PathBuf {
