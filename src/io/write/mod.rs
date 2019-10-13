@@ -204,7 +204,7 @@ extension_trait! {
             Writes a formatted string into this writer, returning any error encountered.
 
             This method will continuously call [`write`] until there is no more data to be
-            written or an error is returned. This method will not return until the entire
+            written or an error is returned. This future will not resolve until the entire
             buffer has been successfully written or such an error occurs.
 
             [`write`]: #tymethod.write
