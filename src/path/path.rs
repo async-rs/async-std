@@ -6,6 +6,7 @@ use crate::{fs, io};
 /// This struct is an async version of [`std::path::Path`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.Path.html
+#[derive(Debug, PartialEq)]
 pub struct Path {
     inner: std::path::Path,
 }
@@ -28,10 +29,14 @@ impl Path {
     /// # Examples
     ///
     /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::path::{Path, PathBuf};
     ///
     /// let path = Path::new("/foo/test/../test/bar.rs");
-    /// assert_eq!(path.canonicalize().unwrap(), PathBuf::from("/foo/test/bar.rs"));
+    /// assert_eq!(path.canonicalize().await.unwrap(), PathBuf::from("/foo/test/bar.rs"));
+    /// #
+    /// # Ok(()) }) }
     /// ```
     pub async fn canonicalize(&self) -> io::Result<PathBuf> {
         fs::canonicalize(self).await
@@ -86,8 +91,12 @@ impl Path {
     /// # Examples
     ///
     /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
     /// use async_std::path::Path;
-    /// assert_eq!(Path::new("does_not_exist.txt").exists(), false);
+    /// assert_eq!(Path::new("does_not_exist.txt").exists().await, false);
+    /// #
+    /// # Ok(()) }) }
     /// ```
     ///
     /// # See Also
@@ -155,14 +164,26 @@ impl<'a> Into<&'a std::path::Path> for &'a Path {
     }
 }
 
+impl AsRef<OsStr> for Path {
+    fn as_ref(&self) -> &OsStr {
+        self.inner.as_ref()
+    }
+}
+
 impl AsRef<Path> for Path {
     fn as_ref(&self) -> &Path {
         self
     }
 }
 
-impl std::fmt::Debug for Path {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&self.inner, formatter)
+impl AsRef<Path> for OsStr {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for str {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
     }
 }
