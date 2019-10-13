@@ -197,6 +197,36 @@ extension_trait! {
         {
             WriteAllFuture { writer: self, buf }
         }
+
+        #[doc = r#"
+            Creates a "by reference" adaptor for this instance of `Write`.
+
+            The returned adaptor also implements `Write` and will simply borrow this
+            current writer.
+
+            # Examples
+
+            [`File`][file]s implement `Write`:
+
+            [file]: ../fs/struct.File.html
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::fs::File;
+
+            let mut buffer = File::create("foo.txt").await?;
+
+            let reference = buffer.by_ref();
+
+            // we can use reference just like our original buffer
+            reference.write_all(b"some bytes")?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
     }
 
     impl<T: Write + Unpin + ?Sized> Write for Box<T> {
