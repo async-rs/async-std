@@ -66,18 +66,18 @@ cfg_if! {
         pub mod path;
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
-
-        mod unit;
-        mod vec;
-        mod result;
-        mod option;
-        mod string;
-        mod collections;
     }
 }
 
-mod macros;
 pub(crate) mod utils;
+
+mod collections;
+mod macros;
+mod option;
+mod result;
+mod string;
+mod unit;
+mod vec;
 
 #[doc(inline)]
 pub use std::{write, writeln};

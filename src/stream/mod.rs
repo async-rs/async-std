@@ -24,6 +24,9 @@
 use cfg_if::cfg_if;
 
 pub use empty::{empty, Empty};
+pub use extend::Extend;
+pub use from_stream::FromStream;
+pub use into_stream::IntoStream;
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use stream::{Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, Zip};
@@ -31,20 +34,17 @@ pub use stream::{Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, St
 pub(crate) mod stream;
 
 mod empty;
+mod extend;
+mod from_stream;
+mod into_stream;
 mod once;
 mod repeat;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod double_ended_stream;
-        mod extend;
-        mod from_stream;
-        mod into_stream;
 
         pub use double_ended_stream::DoubleEndedStream;
-        pub use extend::Extend;
-        pub use from_stream::FromStream;
-        pub use into_stream::IntoStream;
 
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[doc(inline)]

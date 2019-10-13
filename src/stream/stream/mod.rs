@@ -72,9 +72,12 @@ pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::pin::Pin;
 
 use cfg_if::cfg_if;
 
+use crate::future::Future;
+use crate::stream::FromStream;
 use crate::utils::extension_trait;
 
 cfg_if! {
@@ -82,15 +85,6 @@ cfg_if! {
         use std::ops::{Deref, DerefMut};
 
         use crate::task::{Context, Poll};
-    }
-}
-
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        use std::pin::Pin;
-
-        use crate::future::Future;
-        use crate::stream::FromStream;
     }
 }
 
@@ -1135,8 +1129,6 @@ extension_trait! {
 
             [`stream`]: trait.Stream.html#tymethod.next
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
         fn collect<'a, B>(
             self,

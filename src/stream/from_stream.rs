@@ -106,8 +106,6 @@ use std::pin::Pin;
 ///```
 ///
 /// [`IntoStream`]: trait.IntoStream.html
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait FromStream<T> {
     /// Creates a value from a stream.
     ///
