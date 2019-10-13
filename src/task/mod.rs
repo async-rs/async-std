@@ -25,8 +25,6 @@
 #[doc(inline)]
 pub use std::task::{Context, Poll, Waker};
 
-#[cfg(any(feature = "unstable", feature = "docs"))]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
 pub use async_macros::ready;
 
