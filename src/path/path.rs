@@ -566,6 +566,31 @@ impl Path {
         fs::read_link(self).await
     }
 
+    /// Determines whether `base` is a prefix of `self`.
+    ///
+    /// Only considers whole path components to match.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/etc/passwd");
+    ///
+    /// assert!(path.starts_with("/etc"));
+    /// assert!(path.starts_with("/etc/"));
+    /// assert!(path.starts_with("/etc/passwd"));
+    /// assert!(path.starts_with("/etc/passwd/"));
+    ///
+    /// assert!(!path.starts_with("/e"));
+    /// ```
+    pub fn starts_with<P: AsRef<Path>>(&self, base: P) -> bool
+    where
+        P: std::convert::AsRef<std::path::Path>,
+    {
+        self.inner.starts_with(base)
+    }
+
     /// Queries the metadata about a file without following symlinks.
     ///
     /// This is an alias to [`fs::symlink_metadata`].
