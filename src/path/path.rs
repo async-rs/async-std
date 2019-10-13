@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use crate::path::{Ancestors, Components, Display, Iter, PathBuf};
+use crate::path::{Ancestors, Components, Display, Iter, PathBuf, StripPrefixError};
 use crate::{fs, io};
 
 /// This struct is an async version of [`std::path::Path`].
@@ -589,6 +589,41 @@ impl Path {
         P: std::convert::AsRef<std::path::Path>,
     {
         self.inner.starts_with(base)
+    }
+
+    /// Returns a path that, when joined onto `base`, yields `self`.
+    ///
+    /// # Errors
+    ///
+    /// If `base` is not a prefix of `self` (i.e., [`starts_with`]
+    /// returns `false`), returns [`Err`].
+    ///
+    /// [`starts_with`]: #method.starts_with
+    /// [`Err`]: https://doc.rust-lang.org/std/result/enum.Result.html#variant.Err
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let path = Path::new("/test/haha/foo.txt");
+    ///
+    /// assert_eq!(path.strip_prefix("/"), Ok(Path::new("test/haha/foo.txt")));
+    /// assert_eq!(path.strip_prefix("/test"), Ok(Path::new("haha/foo.txt")));
+    /// assert_eq!(path.strip_prefix("/test/"), Ok(Path::new("haha/foo.txt")));
+    /// assert_eq!(path.strip_prefix("/test/haha/foo.txt"), Ok(Path::new("")));
+    /// assert_eq!(path.strip_prefix("/test/haha/foo.txt/"), Ok(Path::new("")));
+    /// assert_eq!(path.strip_prefix("test").is_ok(), false);
+    /// assert_eq!(path.strip_prefix("/haha").is_ok(), false);
+    ///
+    /// let prefix = PathBuf::from("/test/");
+    /// assert_eq!(path.strip_prefix(prefix), Ok(Path::new("haha/foo.txt")));
+    /// ```
+    pub fn strip_prefix<P>(&self, base: P) -> Result<&Path, StripPrefixError>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        Ok(self.inner.strip_prefix(base)?.into())
     }
 
     /// Queries the metadata about a file without following symlinks.

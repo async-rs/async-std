@@ -39,3 +39,9 @@ impl AsRef<Path> for PathBuf {
         Path::new(&self.inner)
     }
 }
+
+impl AsRef<std::path::Path> for PathBuf {
+    fn as_ref(&self) -> &std::path::Path {
+        self.inner.as_ref()
+    }
+}
