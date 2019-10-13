@@ -109,6 +109,55 @@ impl Path {
         fs::metadata(self).await.is_ok()
     }
 
+    /// Queries the file system to get information about a file, directory, etc.
+    ///
+    /// This function will traverse symbolic links to query information about the
+    /// destination file.
+    ///
+    /// This is an alias to [`fs::metadata`].
+    ///
+    /// [`fs::metadata`]: ../fs/fn.metadata.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/Minas/tirith");
+    /// let metadata = path.metadata().await.expect("metadata call failed");
+    /// println!("{:?}", metadata.file_type());
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn metadata(&self) -> io::Result<fs::Metadata> {
+        fs::metadata(self).await
+    }
+
+    /// Queries the metadata about a file without following symlinks.
+    ///
+    /// This is an alias to [`fs::symlink_metadata`].
+    ///
+    /// [`fs::symlink_metadata`]: ../fs/fn.symlink_metadata.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/Minas/tirith");
+    /// let metadata = path.symlink_metadata().await.expect("symlink_metadata call failed");
+    /// println!("{:?}", metadata.file_type());
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn symlink_metadata(&self) -> io::Result<fs::Metadata> {
+        fs::symlink_metadata(self).await
+    }
+
     /// Directly wraps a string slice as a `Path` slice.
     ///
     /// This is a cost-free conversion.
