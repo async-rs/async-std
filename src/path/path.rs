@@ -124,6 +124,26 @@ impl Path {
         self.inner.display()
     }
 
+    /// Determines whether `child` is a suffix of `self`.
+    ///
+    /// Only considers whole path components to match.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("/etc/passwd");
+    ///
+    /// assert!(path.ends_with("passwd"));
+    /// ```
+    pub fn ends_with<P: AsRef<Path>>(&self, child: P) -> bool
+    where
+        P: std::convert::AsRef<std::path::Path>,
+    {
+        self.inner.ends_with(child)
+    }
+
     /// Returns `true` if the path points at an existing entity.
     ///
     /// This function will traverse symbolic links to query information about the
