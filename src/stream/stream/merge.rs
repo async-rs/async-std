@@ -3,11 +3,11 @@ use std::task::{Context, Poll};
 
 use futures_core::Stream;
 
-/// A stream merging two streams.
+/// A stream that merges two other streams into a single stream.
 ///
 /// This stream is returned by [`Stream::merge`].
 ///
-/// [`Stream::merge`]:
+/// [`Stream::merge`]: trait.Stream.html#method.merge
 #[derive(Debug)]
 pub struct Merge<L, R> {
     left: L,

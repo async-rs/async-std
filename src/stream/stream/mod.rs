@@ -34,7 +34,6 @@ mod for_each;
 mod fuse;
 mod inspect;
 mod map;
-mod merge;
 mod min_by;
 mod next;
 mod nth;
@@ -88,6 +87,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod merge;
+
         use std::pin::Pin;
 
         use crate::future::Future;
