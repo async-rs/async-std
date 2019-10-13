@@ -664,6 +664,26 @@ impl Path {
     pub fn to_path_buf(&self) -> PathBuf {
         PathBuf::from(self.inner.to_path_buf())
     }
+
+    /// Yields a [`&str`] slice if the `Path` is valid unicode.
+    ///
+    /// This conversion may entail doing a check for UTF-8 validity.
+    /// Note that validation is performed because non-UTF-8 strings are
+    /// perfectly valid for some OS.
+    ///
+    /// [`&str`]: https://doc.rust-lang.org/std/primitive.str.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path = Path::new("foo.txt");
+    /// assert_eq!(path.to_str(), Some("foo.txt"));
+    /// ```
+    pub fn to_str(&self) -> Option<&str> {
+        self.inner.to_str()
+    }
 }
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
