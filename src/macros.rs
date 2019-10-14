@@ -43,6 +43,8 @@
 /// #
 /// # })
 /// ```
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
@@ -79,6 +81,8 @@ macro_rules! print {
 /// #
 /// # })
 /// ```
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
@@ -112,6 +116,8 @@ macro_rules! println {
 /// #
 /// # })
 /// ```
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprint {
     ($($arg:tt)*) => ($crate::io::_eprint(format_args!($($arg)*)))
@@ -144,6 +150,8 @@ macro_rules! eprint {
 /// #
 /// # })
 /// ```
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprintln {
     () => (async { $crate::eprint!("\n").await; });
