@@ -1294,6 +1294,7 @@ extension_trait! {
         where
             Self: Sized + Stream,
             S: Stream,
+            <Self as Stream>::Item: Ord
         {
             CmpFuture::new(self, other)
         }
