@@ -9,7 +9,7 @@ mod pathbuf;
 
 // Structs re-export
 #[doc(inline)]
-pub use std::path::{Ancestors, Components, Display, Iter, PrefixComponent, StripPrefixError};
+pub use std::path::{Components, Display, Iter, PrefixComponent, StripPrefixError};
 
 // Enums re-export
 #[doc(inline)]
@@ -23,5 +23,5 @@ pub use std::path::MAIN_SEPARATOR;
 #[doc(inline)]
 pub use std::path::is_separator;
 
-pub use path::Path;
+pub use path::{Ancestors, Path};
 pub use pathbuf::PathBuf;

@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
+use std::iter::FusedIterator;
 
-use crate::path::{Ancestors, Components, Display, Iter, PathBuf, StripPrefixError};
+use crate::path::{Components, Display, Iter, PathBuf, StripPrefixError};
 use crate::{fs, io};
 
 /// This struct is an async version of [`std::path::Path`].
@@ -35,7 +36,7 @@ impl Path {
     /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
     /// [`parent`]: struct.Path.html#method.parent
     pub fn ancestors(&self) -> Ancestors<'_> {
-        self.inner.ancestors()
+        Ancestors { next: Some(&self) }
     }
 
     /// Yields the underlying [`OsStr`] slice.
@@ -751,6 +752,42 @@ impl Path {
         self.inner.with_file_name(file_name).into()
     }
 }
+
+/// An iterator over [`Path`] and its ancestors.
+///
+/// This `struct` is created by the [`ancestors`] method on [`Path`].
+/// See its documentation for more.
+///
+/// # Examples
+///
+/// ```
+/// use async_std::path::Path;
+///
+/// let path = Path::new("/foo/bar");
+///
+/// for ancestor in path.ancestors() {
+///     println!("{}", ancestor.display());
+/// }
+/// ```
+///
+/// [`ancestors`]: struct.Path.html#method.ancestors
+/// [`Path`]: struct.Path.html
+#[derive(Copy, Clone, Debug)]
+pub struct Ancestors<'a> {
+    next: Option<&'a Path>,
+}
+
+impl<'a> Iterator for Ancestors<'a> {
+    type Item = &'a Path;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.next;
+        self.next = next.and_then(Path::parent);
+        next
+    }
+}
+
+impl FusedIterator for Ancestors<'_> {}
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
     fn from(path: &'a std::path::Path) -> &'a Path {
