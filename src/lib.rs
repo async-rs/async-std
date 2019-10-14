@@ -82,3 +82,5 @@ pub(crate) mod utils;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
 pub use async_macros::{eprint, eprintln, print, println, write, writeln};
+
+pub use async_macros::task_local;

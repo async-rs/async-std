@@ -42,7 +42,7 @@ pub use write::Write;
 #[cfg(any(feature = "unstable", feature = "docs"))]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
-pub use async_macros::{print, println, eprint, eprintln, write, writeln};
+pub use async_macros::{eprint, eprintln, print, println, write, writeln};
 
 pub mod prelude;
 

@@ -24,7 +24,7 @@ pub use crate::io::Write as _;
 #[doc(no_inline)]
 pub use crate::stream::Stream;
 #[doc(no_inline)]
-pub use crate::task_local;
+pub use async_macros::task_local;
 
 #[doc(hidden)]
 pub use crate::io::buf_read::BufReadExt as _;
