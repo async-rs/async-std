@@ -66,6 +66,8 @@ cfg_if! {
         pub mod path;
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        pub mod process;
 
         mod unit;
         mod vec;
