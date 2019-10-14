@@ -37,6 +37,7 @@ mod repeat;
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod double_ended_stream;
+        mod fused_stream;
         mod extend;
         mod from_stream;
         mod into_stream;
@@ -45,6 +46,7 @@ cfg_if! {
         pub use extend::Extend;
         pub use from_stream::FromStream;
         pub use into_stream::IntoStream;
+        pub use fused_stream::FusedStream;
 
         pub use stream::Merge;
     }
