@@ -28,7 +28,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    Ok(blocking::spawn(async move { std::fs::read_link(path) })
-        .await?
-        .into())
+    blocking::spawn(async move { std::fs::read_link(path).map(Into::into) }).await
 }

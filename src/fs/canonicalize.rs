@@ -1,6 +1,5 @@
-use crate::path::{Path, PathBuf};
-
 use crate::io;
+use crate::path::{Path, PathBuf};
 use crate::task::blocking;
 
 /// Returns the canonical form of a path.
@@ -32,8 +31,6 @@ use crate::task::blocking;
 /// # Ok(()) }) }
 /// ```
 pub async fn canonicalize<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
-    let path: PathBuf = path.as_ref().to_owned();
-    Ok(blocking::spawn(async move { std::fs::canonicalize(&path) })
-        .await?
-        .into())
+    let path = path.as_ref().to_owned();
+    blocking::spawn(async move { std::fs::canonicalize(&path).map(Into::into) }).await
 }
