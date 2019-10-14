@@ -39,9 +39,10 @@ pub use stdout::{stdout, Stdout};
 pub use timeout::timeout;
 pub use write::Write;
 
-// For use in the print macros.
-#[doc(hidden)]
-pub use stdio::{_eprint, _print};
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_macros::{print, println, eprint, eprintln, write, writeln};
 
 pub mod prelude;
 
@@ -59,6 +60,5 @@ mod repeat;
 mod sink;
 mod stderr;
 mod stdin;
-mod stdio;
 mod stdout;
 mod timeout;

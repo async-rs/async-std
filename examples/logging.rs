@@ -9,7 +9,7 @@ fn main() {
     task::block_on(async {
         let handle = task::spawn(async {
             async_std::println!("hello").await;
-            log::info!("Hello world!");
+            // log::info!("Hello world!");
         });
 
         handle.await;

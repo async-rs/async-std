@@ -30,6 +30,11 @@ pub use std::task::{Context, Poll, Waker};
 #[doc(inline)]
 pub use async_macros::ready;
 
+// #[cfg(any(feature = "unstable", feature = "docs"))]
+// #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+// #[doc(inline)]
+// pub use async_macros::task_local;
+
 pub use block_on::block_on;
 pub use builder::Builder;
 pub use pool::spawn;
