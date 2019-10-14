@@ -47,7 +47,14 @@
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+    ($($arg:tt)*) => (
+        async {
+            let args = format_args!($($arg)*);
+            if let Err(e) = stdout().write_fmt(args).await {
+                panic!("failed printing to stdout: {}", e);
+            }
+        }
+    );
 }
 
 /// Prints to the standard output, with a newline.
@@ -86,7 +93,14 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+    ($($arg:tt)*) => (
+        async {
+            let args = format_args!($($arg)*);
+            if let Err(e) = stdout().write_fmt(args).await {
+                panic!("failed printing to stdout: {}", e);
+            }
+        }
+    );
 }
 
 /// Prints to the standard error.
@@ -120,7 +134,14 @@ macro_rules! println {
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprint {
-    ($($arg:tt)*) => ($crate::io::_eprint(format_args!($($arg)*)))
+    ($($arg:tt)*) => (
+        async {
+            let args = format_args!($($arg)*);
+            if let Err(e) = stderr().write_fmt(args).await {
+                panic!("failed printing to stderr: {}", e);
+            }
+        }
+    );
 }
 
 /// Prints to the standard error, with a newline.
@@ -154,10 +175,13 @@ macro_rules! eprint {
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprintln {
-    () => (async { $crate::eprint!("\n").await; });
+    () => ($crate::eprint!("\n"));
     ($($arg:tt)*) => (
         async {
-            $crate::io::_eprint(format_args!($($arg)*)).await;
+            let args = format_args!($($arg)*);
+            if let Err(e) = stderr().write_fmt(args).await {
+                panic!("failed printing to stderr: {}", e);
+            }
         }
     );
 }
