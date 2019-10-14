@@ -1,4 +1,3 @@
-use std::future::Future;
 use std::iter;
 use std::thread;
 
@@ -11,6 +10,7 @@ use super::task;
 use super::task_local;
 use super::worker;
 use super::{Builder, JoinHandle};
+use crate::future::Future;
 use crate::utils::abort_on_panic;
 
 /// Spawns a task.

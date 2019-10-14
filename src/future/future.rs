@@ -29,7 +29,7 @@ extension_trait! {
 
         [`Waker`]: ../task/struct.Waker.html
     "#]
-    pub trait Future [FutureExt: std::future::Future] {
+    pub trait Future {
         #[doc = r#"
             The type of value produced on completion.
         "#]
@@ -100,5 +100,8 @@ extension_trait! {
             [`Waker::wake`]: ../task/struct.Waker.html#method.wake
         "#]
         fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
+    }
+
+    pub trait FutureExt: std::future::Future {
     }
 }

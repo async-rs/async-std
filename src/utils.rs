@@ -36,9 +36,13 @@ macro_rules! extension_trait {
         // - `$name`: trait name that gets rendered in the docs
         // - `$ext`: name of the hidden extension trait
         // - `$base`: base trait from the `futures` crate
-        $(#[$attr:meta])*
-        pub trait $name:ident [$ext:ident: $base:path] {
-            $($body:tt)*
+        #[doc = $doc:tt]
+        pub trait $name:ident {
+            $($body_base:tt)*
+        }
+
+        pub trait $ext:ident: $base:path {
+            $($body_ext:tt)*
         }
 
         // Shim trait impls that only appear in docs.
@@ -58,11 +62,11 @@ macro_rules! extension_trait {
             pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
         }
 
-        // Render a fake trait containing all methods from the base trait and the extension trait.
+        // Render a fake trait combining the bodies of the base trait and the extension trait.
         #[cfg(feature = "docs")]
-        $(#[$attr])*
+        #[doc = $doc]
         pub trait $name {
-            extension_trait!(@doc () $($body)*);
+            extension_trait!(@doc () $($body_base)* $($body_ext)*);
         }
 
         // When not rendering docs, re-export the base trait from the futures crate.
@@ -70,9 +74,9 @@ macro_rules! extension_trait {
         pub use $base as $name;
 
         // The extension trait that adds methods to any type implementing the base trait.
-        $(#[$attr])*
+        /// Extension trait.
         pub trait $ext: $base {
-            extension_trait!(@ext () $($body)*);
+            extension_trait!(@ext () $($body_ext)*);
         }
 
         // Blanket implementation of the extension trait for any type implementing the base trait.
@@ -82,47 +86,15 @@ macro_rules! extension_trait {
         $(#[cfg(feature = "docs")] $imp)*
     };
 
-    // Parse an associated type.
-    (@doc ($($head:tt)*) type $name:ident; $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* type $name;) $($tail)*);
+    // Parse the return type in an extension method.
+    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
+        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$($lt,)? $out>) $($tail)*);
     };
-    (@ext ($($head:tt)*) type $ident:ty; $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)*) $($tail)*);
-    };
-
-    // Parse a required method.
-    (@doc ($($head:tt)*) fn $name:ident $args:tt $(-> $ret:ty)?; $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* fn $name $args $(-> $ret)?;) $($tail)*);
-    };
-    (@ext ($($head:tt)*) fn $name:ident $args:tt $(-> $ret:ty)?; $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)*) $($tail)*);
-    };
-
-    // Parse a provided method that exists in the base trait.
-    (@doc ($($head:tt)*) fn $name:ident $args:tt $(-> $ret:ty)? { $($body:tt)* } $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* fn $name $args $(-> $ret)? { $($body)* }) $($tail)*);
-    };
-    (@ext ($($head:tt)*) fn $name:ident $args:tt $(-> $ret:ty)? { $($body:tt)* } $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)*) $($tail)*);
-    };
-
-    // Parse the return type in an extension method where the future doesn't borrow.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
-    };
-    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*) => {
+    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
         extension_trait!(@ext ($($head)* -> $f) $($tail)*);
     };
 
-    // Parse the return type in an extension method where the future borrows its environment.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$lt, $out>) $($tail)*);
-    };
-    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
-    };
-
-    // Parse a token that doesn't fit into any of the previous patterns.
+    // Parse a token.
     (@doc ($($head:tt)*) $token:tt $($tail:tt)*) => {
         extension_trait!(@doc ($($head)* $token) $($tail)*);
     };

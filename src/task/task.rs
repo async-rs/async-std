@@ -1,5 +1,4 @@
 use std::fmt;
-use std::future::Future;
 use std::i64;
 use std::mem;
 use std::num::NonZeroU64;
@@ -8,6 +7,7 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use super::task_local;
+use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// A handle to a task.

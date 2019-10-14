@@ -1,6 +1,5 @@
 //! A thread pool for running blocking functions asynchronously.
 
-use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
@@ -8,6 +7,7 @@ use std::time::Duration;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
+use crate::future::Future;
 use crate::task::task::{JoinHandle, Tag};
 use crate::utils::abort_on_panic;
 
