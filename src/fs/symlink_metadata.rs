@@ -33,6 +33,6 @@ use crate::task::blocking;
 /// # Ok(()) }) }
 /// ```
 pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
-    let path: std::path::PathBuf = path.as_ref().to_path_buf().into();
+    let path = path.as_ref().to_owned();
     blocking::spawn(async move { std::fs::symlink_metadata(path) }).await
 }

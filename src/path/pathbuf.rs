@@ -192,6 +192,12 @@ impl std::ops::Deref for PathBuf {
     }
 }
 
+impl std::borrow::Borrow<Path> for PathBuf {
+    fn borrow(&self) -> &Path {
+        &**self
+    }
+}
+
 impl From<std::path::PathBuf> for PathBuf {
     fn from(path: std::path::PathBuf) -> PathBuf {
         PathBuf { inner: path }

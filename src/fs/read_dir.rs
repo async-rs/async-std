@@ -44,7 +44,7 @@ use crate::task::{blocking, Context, JoinHandle, Poll};
 /// # Ok(()) }) }
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
-    let path: std::path::PathBuf = path.as_ref().to_path_buf().into();
+    let path = path.as_ref().to_owned();
     blocking::spawn(async move { std::fs::read_dir(path) })
         .await
         .map(ReadDir::new)
