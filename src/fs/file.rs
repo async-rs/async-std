@@ -3,7 +3,6 @@ use std::cmp;
 use std::fmt;
 use std::io::{Read as _, Seek as _, Write as _};
 use std::ops::{Deref, DerefMut};
-use std::path::Path;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -13,6 +12,7 @@ use cfg_if::cfg_if;
 use crate::fs::{Metadata, Permissions};
 use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
+use crate::path::Path;
 use crate::prelude::*;
 use crate::task::{self, blocking, Context, Poll, Waker};
 

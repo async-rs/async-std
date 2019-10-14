@@ -801,15 +801,27 @@ impl<'a> Into<&'a std::path::Path> for &'a Path {
     }
 }
 
-impl AsRef<OsStr> for Path {
-    fn as_ref(&self) -> &OsStr {
-        self.inner.as_ref()
+impl AsRef<std::path::Path> for Path {
+    fn as_ref(&self) -> &std::path::Path {
+        self.into()
+    }
+}
+
+impl AsRef<Path> for std::path::Path {
+    fn as_ref(&self) -> &Path {
+        self.into()
     }
 }
 
 impl AsRef<Path> for Path {
     fn as_ref(&self) -> &Path {
         self
+    }
+}
+
+impl AsRef<OsStr> for Path {
+    fn as_ref(&self) -> &OsStr {
+        self.inner.as_ref()
     }
 }
 

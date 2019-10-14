@@ -1,9 +1,8 @@
-use std::path::Path;
-
 use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// A builder for creating directories with configurable options.

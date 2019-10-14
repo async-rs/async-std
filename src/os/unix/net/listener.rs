@@ -1,7 +1,6 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::path::Path;
 use std::pin::Pin;
 
 use mio_uds;
@@ -12,6 +11,7 @@ use crate::future::{self, Future};
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::path::Path;
 use crate::stream::Stream;
 use crate::task::{blocking, Context, Poll};
 
