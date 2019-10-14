@@ -843,6 +843,12 @@ impl AsRef<Path> for String {
     }
 }
 
+impl AsRef<Path> for std::path::PathBuf {
+    fn as_ref(&self) -> &Path {
+        Path::new(self.into())
+    }
+}
+
 impl std::borrow::ToOwned for Path {
     type Owned = PathBuf;
 
