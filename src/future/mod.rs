@@ -45,8 +45,11 @@
 pub use std::future::Future;
 
 #[doc(inline)]
+pub use async_macros::{join, try_join};
+
+#[doc(inline)]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub use async_macros::{join, select, try_join, try_select};
+pub use async_macros::{select, try_select};
 
 use cfg_if::cfg_if;
 
