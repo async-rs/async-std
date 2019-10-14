@@ -271,7 +271,7 @@ extension_trait! {
         "#]
         fn split(self, byte: u8) -> Split<Self>
         where
-            Self: Unpin + Sized,
+            Self: Sized,
         {
             Split {
                 reader: self,
