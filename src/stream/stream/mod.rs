@@ -43,6 +43,7 @@ mod skip;
 mod skip_while;
 mod step_by;
 mod take;
+mod take_while;
 mod try_for_each;
 mod zip;
 
@@ -70,6 +71,7 @@ pub use skip::Skip;
 pub use skip_while::SkipWhile;
 pub use step_by::StepBy;
 pub use take::Take;
+pub use take_while::TakeWhile;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
@@ -239,6 +241,35 @@ extension_trait! {
                 stream: self,
                 remaining: n,
             }
+        }
+
+        #[doc = r#"
+            Creates a stream that yields elements based on a predicate.
+
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
+            let mut s = s.take_while(|x| x < &3 );
+
+            assert_eq!(s.next().await, Some(1));
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, None);
+
+            #
+            # }) }
+        "#]
+        fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
+        where
+            Self: Sized,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            TakeWhile::new(self, predicate)
         }
 
         #[doc = r#"
