@@ -56,17 +56,17 @@ use cfg_if::cfg_if;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
+pub use timeout::{timeout, TimeoutError};
 
 mod pending;
 mod poll_fn;
 mod ready;
+mod timeout;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod into_future;
-        mod timeout;
 
         pub use into_future::IntoFuture;
-        pub use timeout::{timeout, TimeoutError};
     }
 }
