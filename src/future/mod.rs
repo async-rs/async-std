@@ -50,19 +50,20 @@ pub use async_macros::{join, select, try_join, try_select};
 
 use cfg_if::cfg_if;
 
-pub use into_future::IntoFuture;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
 
-mod into_future;
 mod pending;
 mod poll_fn;
 mod ready;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod into_future;
         mod timeout;
+
+        pub use into_future::IntoFuture;
         pub use timeout::{timeout, TimeoutError};
     }
 }
