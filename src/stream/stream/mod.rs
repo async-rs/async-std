@@ -1290,11 +1290,11 @@ extension_trait! {
         fn ge<S>(
            self,
            other: S
-        ) -> impl Future<Output = bool> + '_ [GeFuture<Self, S>]
+        ) -> impl Future<Output = bool> [GeFuture<Self, S>]
         where
             Self: Sized + Stream,
             S: Stream,
-            Self::Item: PartialOrd<S::Item>,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             GeFuture::new(self, other)
         }
