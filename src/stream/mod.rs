@@ -42,19 +42,23 @@ cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod double_ended_stream;
         mod exact_size_stream;
-        mod fused_stream;
         mod extend;
         mod from_stream;
-        mod into_stream;
+        mod fused_stream;
         mod interval;
+        mod into_stream;
+        mod product;
+        mod sum;
 
         pub use double_ended_stream::DoubleEndedStream;
         pub use exact_size_stream::ExactSizeStream;
         pub use extend::Extend;
         pub use from_stream::FromStream;
         pub use fused_stream::FusedStream;
-        pub use into_stream::IntoStream;
         pub use interval::{interval, Interval};
+        pub use into_stream::IntoStream;
+        pub use product::Product;
+        pub use sum::Sum;
 
         pub use stream::Merge;
     }
