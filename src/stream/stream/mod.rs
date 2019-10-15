@@ -32,6 +32,7 @@ mod find_map;
 mod fold;
 mod for_each;
 mod fuse;
+mod ge;
 mod gt;
 mod inspect;
 mod le;
@@ -58,6 +59,7 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use ge::GeFuture;
 use gt::GtFuture;
 use le::LeFuture;
 use lt::LtFuture;
@@ -1240,6 +1242,7 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
+
             use std::cmp::Ordering;
 
             let s1 = VecDeque::from(vec![1]);
@@ -1265,6 +1268,43 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
+        }
+
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than or equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_gt:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_gt:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().ge(single.clone()).await, true);
+            assert_eq!(single_gt.clone().ge(single.clone()).await, true);
+            assert_eq!(multi.clone().ge(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().ge(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ge<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [GeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            GeFuture::new(self, other)
         }
 
         #[doc = r#"
