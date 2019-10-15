@@ -24,6 +24,7 @@
 use cfg_if::cfg_if;
 
 pub use empty::{empty, Empty};
+pub use from_fn::{from_fn, FromFn};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use stream::{
@@ -33,6 +34,7 @@ pub use stream::{
 pub(crate) mod stream;
 
 mod empty;
+mod from_fn;
 mod once;
 mod repeat;
 
