@@ -33,6 +33,7 @@ mod fold;
 mod for_each;
 mod fuse;
 mod inspect;
+mod le;
 mod map;
 mod min_by;
 mod next;
@@ -55,6 +56,7 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use le::LeFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -1257,6 +1259,43 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less or equal to those of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+                        
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+
+            assert_eq!(single.clone().le(single.clone()).await, true);
+            assert_eq!(single.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().le(multi.clone()).await, false);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn le<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [LeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            LeFuture::new(self, other)
         }
     }
 
