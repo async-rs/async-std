@@ -1,5 +1,6 @@
 //! A thread pool for running blocking functions asynchronously.
 
+use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;

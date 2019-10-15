@@ -49,7 +49,7 @@ extension_trait! {
         [`poll_flush`]: #tymethod.poll_flush
         [`poll_close`]: #tymethod.poll_close
     "#]
-    pub trait Write [WriteExt: futures_io::AsyncWrite] {
+    pub trait Write {
         #[doc = r#"
             Attempt to write bytes from `buf` into the object.
         "#]
@@ -80,7 +80,9 @@ extension_trait! {
             Attempt to close the object.
         "#]
         fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
+    }
 
+    pub trait WriteExt: futures_io::AsyncWrite {
         #[doc = r#"
             Writes some bytes into the byte stream.
 
