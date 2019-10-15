@@ -20,7 +20,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
     t
 }
 
-/// Defines an extension trait for a base trait from the `futures` crate.
+/// Defines an extension trait for a base trait.
 ///
 /// In generated docs, the base trait will contain methods from the extension trait. In actual
 /// code, the base trait will be re-exported and the extension trait will be hidden. We then
@@ -35,7 +35,7 @@ macro_rules! extension_trait {
         // Interesting patterns:
         // - `$name`: trait name that gets rendered in the docs
         // - `$ext`: name of the hidden extension trait
-        // - `$base`: base trait from the `futures` crate
+        // - `$base`: base trait
         #[doc = $doc:tt]
         pub trait $name:ident {
             $($body_base:tt)*
@@ -87,10 +87,18 @@ macro_rules! extension_trait {
     };
 
     // Parse the return type in an extension method.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$($lt,)? $out>) $($tail)*);
+    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*) => {
+        extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
     };
     (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
+        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
+    };
+
+    // Parse the return type in an extension method.
+    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
+        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$lt, $out>) $($tail)*);
+    };
+    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
         extension_trait!(@ext ($($head)* -> $f) $($tail)*);
     };
 

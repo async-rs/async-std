@@ -1,13 +1,13 @@
 use std::cell::UnsafeCell;
 use std::error::Error;
 use std::fmt;
+use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
 
 use super::worker;
-use crate::future::Future;
 use crate::utils::abort_on_panic;
 
 /// Declares task-local values.
