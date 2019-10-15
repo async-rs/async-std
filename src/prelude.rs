@@ -11,6 +11,8 @@
 //! use async_std::prelude::*;
 //! ```
 
+use cfg_if::cfg_if;
+
 #[doc(no_inline)]
 pub use crate::future::Future;
 #[doc(no_inline)]
@@ -36,3 +38,13 @@ pub use crate::io::seek::SeekExt as _;
 pub use crate::io::write::WriteExt as _;
 #[doc(hidden)]
 pub use crate::stream::stream::StreamExt as _;
+
+cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        #[doc(no_inline)]
+        pub use crate::stream::DoubleEndedStream;
+
+        #[doc(no_inline)]
+        pub use crate::stream::ExactSizeStream;
+    }
+}

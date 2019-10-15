@@ -37,12 +37,14 @@ mod repeat;
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod double_ended_stream;
+        mod exact_size_stream;
         mod fused_stream;
         mod extend;
         mod from_stream;
         mod into_stream;
 
         pub use double_ended_stream::DoubleEndedStream;
+        pub use exact_size_stream::ExactSizeStream;
         pub use extend::Extend;
         pub use from_stream::FromStream;
         pub use into_stream::IntoStream;
