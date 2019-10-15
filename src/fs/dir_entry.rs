@@ -1,12 +1,12 @@
 use std::ffi::OsString;
 use std::fmt;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use cfg_if::cfg_if;
 
 use crate::fs::{FileType, Metadata};
 use crate::io;
+use crate::path::PathBuf;
 use crate::task::blocking;
 
 /// An entry in a directory.
@@ -50,7 +50,7 @@ impl DirEntry {
     /// # Ok(()) }) }
     /// ```
     pub fn path(&self) -> PathBuf {
-        self.0.path()
+        self.0.path().into()
     }
 
     /// Reads the metadata for this entry.

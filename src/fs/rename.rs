@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Renames a file or directory to a new location.

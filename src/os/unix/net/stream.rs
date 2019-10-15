@@ -3,7 +3,6 @@
 use std::fmt;
 use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
-use std::path::Path;
 use std::pin::Pin;
 
 use mio_uds;
@@ -12,6 +11,7 @@ use super::SocketAddr;
 use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::path::Path;
 use crate::task::{blocking, Context, Poll};
 
 /// A Unix stream socket.

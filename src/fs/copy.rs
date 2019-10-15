@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Copies the contents and permissions of a file to a new location.

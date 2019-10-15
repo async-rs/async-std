@@ -1,7 +1,6 @@
-use std::path::Path;
-
 use crate::fs::Permissions;
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Changes the permissions of a file or directory.

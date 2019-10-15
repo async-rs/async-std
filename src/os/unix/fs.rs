@@ -1,10 +1,9 @@
 //! Unix-specific filesystem extensions.
 
-use std::path::Path;
-
 use cfg_if::cfg_if;
 
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Creates a new symbolic link on the filesystem.

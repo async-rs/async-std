@@ -4,9 +4,13 @@
 //!
 //! [`std::path`]: https://doc.rust-lang.org/std/path/index.html
 
+mod ancestors;
+mod path;
+mod pathbuf;
+
 // Structs re-export
 #[doc(inline)]
-pub use std::path::{Ancestors, Components, Display, Iter, PrefixComponent, StripPrefixError};
+pub use std::path::{Components, Display, Iter, PrefixComponent, StripPrefixError};
 
 // Enums re-export
 #[doc(inline)]
@@ -19,3 +23,7 @@ pub use std::path::MAIN_SEPARATOR;
 // Functions re-export
 #[doc(inline)]
 pub use std::path::is_separator;
+
+use ancestors::Ancestors;
+pub use path::Path;
+pub use pathbuf::PathBuf;

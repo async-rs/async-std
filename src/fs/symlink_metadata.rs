@@ -1,7 +1,6 @@
-use std::path::Path;
-
 use crate::fs::Metadata;
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Reads metadata for a path without following symbolic links.

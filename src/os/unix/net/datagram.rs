@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::net::Shutdown;
-use std::path::Path;
 
 use mio_uds;
 
@@ -11,6 +10,7 @@ use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::path::Path;
 use crate::task::blocking;
 
 /// A Unix datagram socket.

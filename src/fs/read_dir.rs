@@ -1,9 +1,9 @@
-use std::path::Path;
 use std::pin::Pin;
 
 use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
+use crate::path::Path;
 use crate::stream::Stream;
 use crate::task::{blocking, Context, JoinHandle, Poll};
 
