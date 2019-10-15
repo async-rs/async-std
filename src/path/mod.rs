@@ -4,6 +4,7 @@
 //!
 //! [`std::path`]: https://doc.rust-lang.org/std/path/index.html
 
+mod ancestors;
 mod path;
 mod pathbuf;
 
@@ -23,5 +24,6 @@ pub use std::path::MAIN_SEPARATOR;
 #[doc(inline)]
 pub use std::path::is_separator;
 
-pub use path::{Ancestors, Path};
+use ancestors::Ancestors;
+pub use path::Path;
 pub use pathbuf::PathBuf;

@@ -11,6 +11,19 @@ pub struct PathBuf {
 }
 
 impl PathBuf {
+    /// Allocates an empty `PathBuf`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let path = PathBuf::new();
+    /// ```
+    pub fn new() -> PathBuf {
+        std::path::PathBuf::new().into()
+    }
+
     /// Coerces to a [`Path`] slice.
     ///
     /// [`Path`]: struct.Path.html
@@ -25,68 +38,6 @@ impl PathBuf {
     /// ```
     pub fn as_path(&self) -> &Path {
         self.inner.as_path().into()
-    }
-
-    /// Converts this `PathBuf` into a [boxed][`Box`] [`Path`].
-    ///
-    /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
-    /// [`Path`]: struct.Path.html
-    pub fn into_boxed_path(self) -> Box<Path> {
-        let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
-        unsafe { Box::from_raw(rw) }
-    }
-
-    /// Consumes the `PathBuf`, yielding its internal [`OsString`] storage.
-    ///
-    /// [`OsString`]: https://doc.rust-lang.org/std/ffi/struct.OsString.html
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use async_std::path::PathBuf;
-    ///
-    /// let p = PathBuf::from("/the/head");
-    /// let os_str = p.into_os_string();
-    /// ```
-    pub fn into_os_string(self) -> OsString {
-        self.inner.into_os_string()
-    }
-
-    /// Allocates an empty `PathBuf`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use async_std::path::PathBuf;
-    ///
-    /// let path = PathBuf::new();
-    /// ```
-    pub fn new() -> PathBuf {
-        std::path::PathBuf::new().into()
-    }
-
-    /// Truncates `self` to [`self.parent`].
-    ///
-    /// Returns `false` and does nothing if [`self.parent`] is [`None`].
-    /// Otherwise, returns `true`.
-    ///
-    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
-    /// [`self.parent`]: struct.PathBuf.html#method.parent
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use async_std::path::{Path, PathBuf};
-    ///
-    /// let mut p = PathBuf::from("/test/test.rs");
-    ///
-    /// p.pop();
-    /// assert_eq!(Path::new("/test"), p.as_ref());
-    /// p.pop();
-    /// assert_eq!(Path::new("/"), p.as_ref());
-    /// ```
-    pub fn pop(&mut self) -> bool {
-        self.inner.pop()
     }
 
     /// Extends `self` with `path`.
@@ -120,8 +71,62 @@ impl PathBuf {
     /// path.push("/etc");
     /// assert_eq!(path, PathBuf::from("/etc"));
     /// ```
-    pub fn push<P: AsRef<std::path::Path>>(&mut self, path: P) {
-        self.inner.push(path)
+    pub fn push<P: AsRef<Path>>(&mut self, path: P) {
+        self.inner.push(path.as_ref())
+    }
+
+    /// Truncates `self` to [`self.parent`].
+    ///
+    /// Returns `false` and does nothing if [`self.parent`] is [`None`].
+    /// Otherwise, returns `true`.
+    ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    /// [`self.parent`]: struct.PathBuf.html#method.parent
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::{Path, PathBuf};
+    ///
+    /// let mut p = PathBuf::from("/test/test.rs");
+    ///
+    /// p.pop();
+    /// assert_eq!(Path::new("/test"), p.as_ref());
+    /// p.pop();
+    /// assert_eq!(Path::new("/"), p.as_ref());
+    /// ```
+    pub fn pop(&mut self) -> bool {
+        self.inner.pop()
+    }
+
+    /// Updates [`self.file_name`] to `file_name`.
+    ///
+    /// If [`self.file_name`] was [`None`], this is equivalent to pushing
+    /// `file_name`.
+    ///
+    /// Otherwise it is equivalent to calling [`pop`] and then pushing
+    /// `file_name`. The new path will be a sibling of the original path.
+    /// (That is, it will have the same parent.)
+    ///
+    /// [`self.file_name`]: struct.PathBuf.html#method.file_name
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+    /// [`pop`]: struct.PathBuf.html#method.pop
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::PathBuf;
+    ///
+    /// let mut buf = PathBuf::from("/");
+    /// assert!(buf.file_name() == None);
+    /// buf.set_file_name("bar");
+    /// assert!(buf == PathBuf::from("/bar"));
+    /// assert!(buf.file_name().is_some());
+    /// buf.set_file_name("baz.txt");
+    /// assert!(buf == PathBuf::from("/baz.txt"));
+    /// ```
+    pub fn set_file_name<S: AsRef<OsStr>>(&mut self, file_name: S) {
+        self.inner.set_file_name(file_name)
     }
 
     /// Updates [`self.extension`] to `extension`.
@@ -153,34 +158,29 @@ impl PathBuf {
         self.inner.set_extension(extension)
     }
 
-    /// Updates [`self.file_name`] to `file_name`.
+    /// Consumes the `PathBuf`, yielding its internal [`OsString`] storage.
     ///
-    /// If [`self.file_name`] was [`None`], this is equivalent to pushing
-    /// `file_name`.
-    ///
-    /// Otherwise it is equivalent to calling [`pop`] and then pushing
-    /// `file_name`. The new path will be a sibling of the original path.
-    /// (That is, it will have the same parent.)
-    ///
-    /// [`self.file_name`]: struct.PathBuf.html#method.file_name
-    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
-    /// [`pop`]: struct.PathBuf.html#method.pop
+    /// [`OsString`]: https://doc.rust-lang.org/std/ffi/struct.OsString.html
     ///
     /// # Examples
     ///
     /// ```
     /// use async_std::path::PathBuf;
     ///
-    /// let mut buf = PathBuf::from("/");
-    /// assert!(buf.file_name() == None);
-    /// buf.set_file_name("bar");
-    /// assert!(buf == PathBuf::from("/bar"));
-    /// assert!(buf.file_name().is_some());
-    /// buf.set_file_name("baz.txt");
-    /// assert!(buf == PathBuf::from("/baz.txt"));
+    /// let p = PathBuf::from("/the/head");
+    /// let os_str = p.into_os_string();
     /// ```
-    pub fn set_file_name<S: AsRef<OsStr>>(&mut self, file_name: S) {
-        self.inner.set_file_name(file_name)
+    pub fn into_os_string(self) -> OsString {
+        self.inner.into_os_string()
+    }
+
+    /// Converts this `PathBuf` into a [boxed][`Box`] [`Path`].
+    ///
+    /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
+    /// [`Path`]: struct.Path.html
+    pub fn into_boxed_path(self) -> Box<Path> {
+        let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
+        unsafe { Box::from_raw(rw) }
     }
 }
 
