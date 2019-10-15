@@ -56,24 +56,29 @@ while let Some(_) = interval.next().await {
 ## Added
 
 - Added `FutureExt` to the `prelude`, allowing us to extend `Future`
+- Added `Stream::ge`
+- Added `Stream::le`
+- Added `Stream::lt`
 - Added `Stream::merge` as "unstable", replacing `stream::join!`
 - Added `Stream::partial_cmp`
 - Added `Stream::take_while`
 - Added `future::IntoFuture` as "unstable"
 - Added `io::BufRead::split`
 - Added `io::Write::write_fmt`
-- Added `stream::from_fn`
 - Added `print!`, `println!`, `eprint!`, `eprintln!` macros as "unstable"
 - Added `process` as "unstable", re-exporting std types only for now
+- Added `std::net` re-exports to the `net` submodule
 - Added `std::path::PathBuf` with all associated methods
 - Added `std::path::Path` with all associated methods
 - Added `stream::ExactSizeStream` as "unstable"
 - Added `stream::FusedStream` as "unstable"
+- Added `stream::Product`
+- Added `stream::Sum`
+- Added `stream::from_fn`
 - Added `stream::interval` as "unstable"
 - Added `task::spawn_blocking` as "unstable", replacing `task::blocking`
 - Added `task::yield_now`
 - Added `write!` and `writeln!` macros as "unstable"
-- Added `std::net` re-exports to the `net` submodule
 - Stabilized `future::join!` and `future::try_join!`
 - Stabilized `future::timeout`
 - Stabilized `path`
