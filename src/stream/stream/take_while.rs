@@ -24,7 +24,6 @@ impl<S, P, T> TakeWhile<S, P, T> {
     }
 }
 
-
 impl<S, P> Stream for TakeWhile<S, P, S::Item>
 where
     S: Stream,
