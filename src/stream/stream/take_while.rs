@@ -4,6 +4,7 @@ use std::pin::Pin;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
+/// A stream that yields elements based on a predicate.
 #[derive(Debug)]
 pub struct TakeWhile<S, P, T> {
     stream: S,
