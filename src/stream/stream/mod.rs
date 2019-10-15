@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod cloned;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -49,6 +50,7 @@ mod zip;
 
 use all::AllFuture;
 use any::AnyFuture;
+use cloned::ClonedFuture;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
@@ -712,6 +714,17 @@ extension_trait! {
                 f,
             }
         }
+
+        #[doc = r#""#]
+        fn cloned<'a, T>(self) -> ClonedFuture<Self>
+        where
+            Self: Stream<Item = &'a T> + Sized,
+            T: 'a + Clone,
+        {
+        unimplemented!()
+        }
+
+
 
         #[doc = r#"
             Searches for an element in a stream that satisfies a predicate.
