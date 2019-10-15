@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -133,6 +134,35 @@ impl Stdin {
             }
         })
         .await
+    }
+
+    /// Locks this handle to the standard input stream, returning a readable guard.
+    ///
+    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Read and BufRead traits for accessing the underlying data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io;
+    /// use std::io::Read;
+    ///
+    /// let mut buffer = String::new();
+    ///
+    /// let stdin = io::stdin();
+    /// let mut handle = stdin.lock().await;
+    ///
+    /// handle.read_to_string(&mut buffer)?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn lock(&self) -> std::io::StdinLock<'static> {
+        lazy_static! {
+            static ref STDIN: std::io::Stdin = std::io::stdin();
+        }
+
+        STDIN.lock()
     }
 }
 
