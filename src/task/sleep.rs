@@ -11,6 +11,10 @@ use crate::io;
 ///
 /// [`std::thread::sleep`]: https://doc.rust-lang.org/std/thread/fn.sleep.html
 ///
+/// See also: [`stream::interval`].
+///
+/// [`stream::interval`]: ../stream/fn.interval.html
+///
 /// # Examples
 ///
 /// ```

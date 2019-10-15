@@ -33,7 +33,7 @@ extension_trait! {
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
         [provided methods]: #provided-methods
     "#]
-    pub trait Seek [SeekExt: futures_io::AsyncSeek] {
+    pub trait Seek {
         #[doc = r#"
             Attempt to seek to an offset, in bytes, in a stream.
         "#]
@@ -42,7 +42,9 @@ extension_trait! {
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>>;
+    }
 
+    pub trait SeekExt: futures_io::AsyncSeek {
         #[doc = r#"
             Seeks to a new position in a byte stream.
 
@@ -70,7 +72,7 @@ extension_trait! {
         fn seek(
             &mut self,
             pos: SeekFrom,
-        ) -> impl Future<Output = io::Result<u64>> [SeekFuture<'_, Self>]
+        ) -> impl Future<Output = io::Result<u64>> + '_ [SeekFuture<'_, Self>]
         where
             Self: Unpin,
         {
