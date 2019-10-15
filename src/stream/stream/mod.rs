@@ -42,6 +42,7 @@ mod skip;
 mod skip_while;
 mod step_by;
 mod take;
+mod try_fold;
 mod try_for_each;
 mod zip;
 
@@ -56,6 +57,7 @@ use for_each::ForEachFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
+use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
@@ -991,6 +993,46 @@ extension_trait! {
             Self: Sized,
         {
             Skip::new(self, n)
+        }
+
+        #[doc = r#"
+            A combinator that applies a function as long as it returns successfully, producing a single, final value.
+            Immediately returns the error when the function returns unsuccessfully.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let sum = s.try_fold(0, |acc, v| {
+                if (acc+v) % 2 == 1 {
+                    Ok(v+3)
+                } else {
+                    Err("fail")
+                }
+            }).await;
+
+            assert_eq!(sum, Err("fail"));
+            #
+            # }) }
+            ```
+        "#]
+        fn try_fold<B, F, T, E>(
+            self,
+            init: T,
+            f: F,
+        ) -> impl Future<Output = Result<T, E>> [TryFoldFuture<Self, F, T>]
+        where
+            Self: Sized,
+            F: FnMut(B, Self::Item) -> Result<T, E>,
+        {
+            TryFoldFuture::new(self, init, f)
         }
 
         #[doc = r#"
