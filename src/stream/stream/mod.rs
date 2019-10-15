@@ -721,7 +721,7 @@ extension_trait! {
             Self: Stream<Item = &'a T> + Sized,
             T: 'a + Clone,
         {
-        unimplemented!()
+            ClonedFuture::new(self)
         }
 
 
