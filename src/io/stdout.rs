@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -77,6 +78,35 @@ struct Inner {
 enum Operation {
     Write(io::Result<usize>),
     Flush(io::Result<()>),
+}
+
+impl Stdout {
+    /// Locks this handle to the standard error stream, returning a writable guard.
+    ///
+    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Write trait for writing data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io;
+    /// use std::io::Write;
+    ///
+    /// let stdout = io::stdout();
+    /// let mut handle = stdout.lock().await;
+    ///
+    /// handle.write_all(b"hello world")?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn lock(&self) -> std::io::StdoutLock<'static> {
+        lazy_static! {
+            static ref STDOUT: std::io::Stdout = std::io::stdout();
+        }
+
+        STDOUT.lock()
+    }
 }
 
 impl Write for Stdout {
