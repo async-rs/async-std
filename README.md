@@ -1,41 +1,78 @@
-# Async version of the Rust standard library
+<h1 align="center">async-std</h1>
+<div align="center">
+ <strong>
+   Async version of the Rust standard library
+ </strong>
+</div>
 
-[![Build Status](https://travis-ci.com/async-rs/async-std.svg?branch=master)](https://travis-ci.com/async-rs/async-std)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/async-rs/async-std)
-[![Cargo](https://img.shields.io/crates/v/async-std.svg)](https://crates.io/crates/async-std)
-[![Documentation](https://docs.rs/async-std/badge.svg)](https://docs.rs/async-std)
-[![chat](https://img.shields.io/discord/598880689856970762.svg?logo=discord)](https://discord.gg/JvZeVNe)
+<br />
 
-This crate provides an async version of [`std`]. It provides all the interfaces you
-are used to, but in an async version and ready for Rust's `async`/`await` syntax.
+<div align="center">
+  <!-- Crates version -->
+  <a href="https://crates.io/crates/async-std">
+    <img src="https://img.shields.io/crates/v/async-std.svg?style=flat-square"
+    alt="Crates.io version" />
+  </a>
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/async-std">
+    <img src="https://img.shields.io/crates/d/async-std.svg?style=flat-square"
+      alt="Download" />
+  </a>
+  <!-- docs.rs docs -->
+  <a href="https://docs.rs/async-std">
+    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
+      alt="docs.rs docs" />
+  </a>
+
+  <a href="https://discord.gg/JvZeVNe">
+    <img src="https://img.shields.io/discord/598880689856970762.svg?logo=discord&style=flat-square"
+      alt="chat" />
+  </a>
+</div>
+
+<div align="center">
+  <h3>
+    <a href="https://docs.rs/async-std">
+      API Docs
+    </a>
+    <span> | </span>
+    <a href="https://book.async.rs">
+      Book
+    </a>
+    <span> | </span>
+    <a href="https://github.com/async-rs/async-std/releases">
+      Releases
+    </a>
+    <span> | </span>
+    <a href="https://async.rs/contribute">
+      Contributing
+    </a>
+  </h3>
+</div>
+
+<br/>
+
+This crate provides an async version of [`std`]. It provides all the interfaces
+you are used to, but in an async version and ready for Rust's `async`/`await`
+syntax.
 
 [`std`]: https://doc.rust-lang.org/std/index.html
 
-## Documentation
+## Features
 
-`async-std` comes with [extensive API documentation][docs] and a [book][book].
+- __Modern:__ Built from the ground up for `std::future` and `async/await` with
+    blazing fast compilation times.
+- __Fast:__ Our robust allocator and threadpool designs provide ultra-high
+    throughput with predictably low latency.
+- __Intuitive:__ Complete parity with the stdlib means you only need to learn
+    APIs once.
+- __Clear:__ [Detailed documentation][docs] and [accessible guides][book] mean
+    using async Rust was never easier.
 
 [docs]: https://docs.rs/async-std
 [book]: https://book.async.rs
 
-## Quickstart
-
-Add the following lines to your `Cargo.toml`:
-
-```toml
-[dependencies]
-async-std = "0.99"
-```
-
-Or use [cargo add][cargo-add] if you have it installed:
-
-```sh
-$ cargo add async-std
-```
-
-[cargo-add]: https://github.com/killercup/cargo-edit
-
-## Hello world
+## Examples
 
 ```rust
 use async_std::task;
@@ -47,96 +84,48 @@ fn main() {
 }
 ```
 
-## Low-Friction Sockets with Built-In Timeouts
+More examples, including networking and file access, can be found in our
+[`examples`] directory.
 
-```rust
-use std::time::Duration;
+[`examples`]: https://github.com/async-rs/async-std/tree/master/examples
 
-use async_std::{
-    prelude::*,
-    task,
-    io,
-    net::TcpStream,
-};
+## Philosophy
 
-async fn get() -> io::Result<Vec<u8>> {
-    let mut stream = TcpStream::connect("example.com:80").await?;
-    stream.write_all(b"GET /index.html HTTP/1.0\r\n\r\n").await?;
+We believe Async Rust should be as easy to pick up as Sync Rust. We also believe
+that the best API is the one you already know. And finally, we believe that
+providing an asynchronous counterpart to the standard library is the best way
+stdlib provides a reliable basis for both performance and productivity.
 
-    let mut buf = vec![];
+Async-std is the embodiment of that vision. It combines single-allocation task
+creation, with an adaptive lock-free executor, threadpool and network driver to
+create a smooth system that processes work at a high pace with low latency,
+using Rust's familiar stdlib API.
 
-    io::timeout(Duration::from_secs(5), async {
-        stream.read_to_end(&mut buf).await?;
-        Ok(buf)
-    }).await
-}
+## Installation
 
-fn main() {
-    task::block_on(async {
-        let raw_response = get().await.expect("request");
-        let response = String::from_utf8(raw_response)
-            .expect("utf8 conversion");
-        println!("received: {}", response);
-    });
-}
+With [cargo add][cargo-add] installed run:
+
+```sh
+$ cargo add async-std
 ```
 
-## Features
+We also provide a set of "unstable" features with async-std. See the [features
+documentation] on how to enable them.
 
-`async-std` is strongly commited to following semver. This means your code won't
-break unless _you_ decide to upgrade.
-
-However every now and then we come up with something that we think will work
-_great_ for `async-std`, and we want to provide a sneak-peek so you can try it
-out. This is what we call _"unstable"_ features. You can try out the unstable
-features by enabling the `unstable` feature in your `Cargo.toml` file:
-
-```toml
-[dependencies.async-std]
-version = "0.99"
-features = ["unstable"]
-```
-
-Just be careful when using these features, as they may change between
-versions.
-
-## Take a look around
-
-Clone the repo:
-
-```
-git clone git@github.com:async-rs/async-std.git && cd async-std
-```
-
-Generate docs:
-
-```
-cargo +nightly doc --features docs --open
-```
-
-Check out the [examples](examples). To run an example:
-
-```
-cargo +nightly run --example hello-world
-```
-
-## Contributing
-
-See [our contribution document][contribution].
-
-[contribution]: https://async.rs/contribute
+[cargo-add]: https://github.com/killercup/cargo-edit
+[features documentation]: https://docs.rs/async-std/#features
 
 ## License
 
-Licensed under either of
+<sup>
+Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+</sup>
 
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+<br/>
 
-at your option.
-
-#### Contribution
-
+<sub>
 Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
+be dual licensed as above, without any additional terms or conditions.
+</sub>

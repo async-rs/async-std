@@ -1,5 +1,6 @@
 //! A thread pool for running blocking functions asynchronously.
 
+use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
@@ -7,7 +8,6 @@ use std::time::Duration;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
-use crate::future::Future;
 use crate::task::task::{JoinHandle, Tag};
 use crate::utils::abort_on_panic;
 
@@ -96,12 +96,13 @@ fn schedule(t: async_task::Task<Tag>) {
 /// Spawns a blocking task.
 ///
 /// The task will be spawned onto a thread pool specifically dedicated to blocking tasks.
-pub(crate) fn spawn<F, R>(future: F) -> JoinHandle<R>
+pub(crate) fn spawn<F, R>(f: F) -> JoinHandle<R>
 where
-    F: Future<Output = R> + Send + 'static,
+    F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
     let tag = Tag::new(None);
+    let future = async move { f() };
     let (task, handle) = async_task::spawn(future, schedule, tag);
     task.schedule();
     JoinHandle::new(handle)

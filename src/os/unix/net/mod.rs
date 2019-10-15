@@ -13,7 +13,8 @@ mod stream;
 cfg_if! {
     if #[cfg(feature = "docs")] {
         use std::fmt;
-        use std::path::Path;
+
+        use crate::path::Path;
 
         /// An address associated with a Unix socket.
         ///
@@ -65,9 +66,8 @@ cfg_if! {
             /// With a pathname:
             ///
             /// ```no_run
-            /// use std::path::Path;
-            ///
             /// use async_std::os::unix::net::UnixListener;
+            /// use async_std::path::Path;
             ///
             /// let socket = UnixListener::bind("/tmp/socket").await?;
             /// let addr = socket.local_addr()?;

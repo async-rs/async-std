@@ -116,7 +116,7 @@ impl Write for Stderr {
                         inner.buf[..buf.len()].copy_from_slice(buf);
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
+                        *state = State::Busy(blocking::spawn(move || {
                             let res = std::io::Write::write(&mut inner.stderr, &inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
@@ -144,7 +144,7 @@ impl Write for Stderr {
                         let mut inner = opt.take().unwrap();
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
+                        *state = State::Busy(blocking::spawn(move || {
                             let res = std::io::Write::flush(&mut inner.stderr);
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))

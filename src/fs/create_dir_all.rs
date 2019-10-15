@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Creates a new directory and all of its parents if they are missing.
@@ -30,5 +29,5 @@ use crate::task::blocking;
 /// ```
 pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::create_dir_all(path) }).await
+    blocking::spawn(move || std::fs::create_dir_all(path)).await
 }

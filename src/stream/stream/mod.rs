@@ -7,7 +7,7 @@
 //! # Examples
 //!
 //! ```
-//! # fn main() { async_std::task::block_on(async {
+//! # async_std::task::block_on(async {
 //! #
 //! use async_std::prelude::*;
 //! use async_std::stream;
@@ -18,7 +18,7 @@
 //!     assert_eq!(v, 9);
 //! }
 //! #
-//! # }) }
+//! # })
 //! ```
 
 mod all;
@@ -37,11 +37,13 @@ mod map;
 mod min_by;
 mod next;
 mod nth;
+mod partial_cmp;
 mod scan;
 mod skip;
 mod skip_while;
 mod step_by;
 mod take;
+mod take_while;
 mod try_fold;
 mod try_for_each;
 mod zip;
@@ -57,6 +59,7 @@ use for_each::ForEachFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
+use partial_cmp::PartialCmpFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
 
@@ -70,6 +73,7 @@ pub use skip::Skip;
 pub use skip_while::SkipWhile;
 pub use step_by::StepBy;
 pub use take::Take;
+pub use take_while::TakeWhile;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
@@ -89,10 +93,14 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod merge;
+
         use std::pin::Pin;
 
         use crate::future::Future;
         use crate::stream::FromStream;
+
+        pub use merge::Merge;
     }
 }
 
@@ -116,7 +124,7 @@ extension_trait! {
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
     "#]
-    pub trait Stream [StreamExt: futures_core::stream::Stream] {
+    pub trait Stream {
         #[doc = r#"
             The type of items yielded by this stream.
         "#]
@@ -174,7 +182,9 @@ extension_trait! {
             ```
         "#]
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
+    }
 
+    pub trait StreamExt: futures_core::stream::Stream {
         #[doc = r#"
             Advances the stream and returns the next value.
 
@@ -235,6 +245,35 @@ extension_trait! {
                 stream: self,
                 remaining: n,
             }
+        }
+
+        #[doc = r#"
+            Creates a stream that yields elements based on a predicate.
+
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
+            let mut s = s.take_while(|x| x < &3 );
+
+            assert_eq!(s.next().await, Some(1));
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, None);
+
+            #
+            # }) }
+        "#]
+        fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
+        where
+            Self: Sized,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            TakeWhile::new(self, predicate)
         }
 
         #[doc = r#"
@@ -1188,6 +1227,78 @@ extension_trait! {
             B: FromStream<Self::Item>,
         {
             FromStream::from_stream(self)
+        }
+
+        #[doc = r#"
+            Combines multiple streams into a single stream of all their outputs.
+
+            Items are yielded as soon as they're received, and the stream continues yield until both
+            streams have been exhausted.
+
+            # Examples
+
+            ```
+            # async_std::task::block_on(async {
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let a = stream::once(1u8);
+            let b = stream::once(2u8);
+            let c = stream::once(3u8);
+
+            let mut s = a.merge(b).merge(c);
+
+            assert_eq!(s.next().await, Some(1u8));
+            assert_eq!(s.next().await, Some(2u8));
+            assert_eq!(s.next().await, Some(3u8));
+            assert_eq!(s.next().await, None);
+            # });
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn merge<U>(self, other: U) -> Merge<Self, U>
+        where
+            Self: Sized,
+            U: Stream<Item = Self::Item> + Sized,
+        {
+            Merge::new(self, other)
+        }
+
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another.
+            
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            use std::cmp::Ordering;
+            let s1 = VecDeque::from(vec![1]);
+            let s2 = VecDeque::from(vec![1, 2]);
+            let s3 = VecDeque::from(vec![1, 2, 3]);
+            let s4 = VecDeque::from(vec![1, 2, 4]);
+            assert_eq!(s1.clone().partial_cmp(s1.clone()).await, Some(Ordering::Equal));
+            assert_eq!(s1.clone().partial_cmp(s2.clone()).await, Some(Ordering::Less));
+            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));       
+            assert_eq!(s3.clone().partial_cmp(s4.clone()).await, Some(Ordering::Less));
+            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));                             
+            #
+            # }) }
+            ```
+        "#]
+        fn partial_cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Option<Ordering>>  [PartialCmpFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            PartialCmpFuture::new(self, other)
         }
     }
 

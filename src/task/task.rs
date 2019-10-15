@@ -1,4 +1,5 @@
 use std::fmt;
+use std::future::Future;
 use std::i64;
 use std::mem;
 use std::num::NonZeroU64;
@@ -7,7 +8,6 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use super::task_local;
-use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// A handle to a task.
@@ -68,7 +68,7 @@ impl<T> JoinHandle<T> {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::task;
     ///
@@ -77,7 +77,7 @@ impl<T> JoinHandle<T> {
     /// });
     /// println!("id = {}", handle.task().id());
     /// #
-    /// # }) }
+    /// # })
     pub fn task(&self) -> &Task {
         self.0.tag().task()
     }

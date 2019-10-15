@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::net::Shutdown;
-use std::path::Path;
 
 use mio_uds;
 
@@ -11,6 +10,7 @@ use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::path::Path;
 use crate::task::blocking;
 
 /// A Unix datagram socket.
@@ -67,7 +67,7 @@ impl UnixDatagram {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
-        let socket = blocking::spawn(async move { mio_uds::UnixDatagram::bind(path) }).await?;
+        let socket = blocking::spawn(move || mio_uds::UnixDatagram::bind(path)).await?;
         Ok(UnixDatagram::new(socket))
     }
 

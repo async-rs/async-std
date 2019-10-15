@@ -1,12 +1,12 @@
 use std::ffi::OsString;
 use std::fmt;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use cfg_if::cfg_if;
 
 use crate::fs::{FileType, Metadata};
 use crate::io;
+use crate::path::PathBuf;
 use crate::task::blocking;
 
 /// An entry in a directory.
@@ -50,7 +50,7 @@ impl DirEntry {
     /// # Ok(()) }) }
     /// ```
     pub fn path(&self) -> PathBuf {
-        self.0.path()
+        self.0.path().into()
     }
 
     /// Reads the metadata for this entry.
@@ -89,7 +89,7 @@ impl DirEntry {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let inner = self.0.clone();
-        blocking::spawn(async move { inner.metadata() }).await
+        blocking::spawn(move || inner.metadata()).await
     }
 
     /// Reads the file type for this entry.
@@ -127,7 +127,7 @@ impl DirEntry {
     /// ```
     pub async fn file_type(&self) -> io::Result<FileType> {
         let inner = self.0.clone();
-        blocking::spawn(async move { inner.file_type() }).await
+        blocking::spawn(move || inner.file_type()).await
     }
 
     /// Returns the bare name of this entry without the leading path.

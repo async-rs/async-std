@@ -39,6 +39,10 @@ pub use stdout::{stdout, Stdout};
 pub use timeout::timeout;
 pub use write::Write;
 
+// For use in the print macros.
+#[doc(hidden)]
+pub use stdio::{_eprint, _print};
+
 pub mod prelude;
 
 pub(crate) mod buf_read;
@@ -55,5 +59,6 @@ mod repeat;
 mod sink;
 mod stderr;
 mod stdin;
+mod stdio;
 mod stdout;
 mod timeout;

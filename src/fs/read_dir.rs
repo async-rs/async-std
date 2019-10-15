@@ -1,9 +1,9 @@
-use std::path::Path;
 use std::pin::Pin;
 
 use crate::fs::DirEntry;
 use crate::future::Future;
 use crate::io;
+use crate::path::Path;
 use crate::stream::Stream;
 use crate::task::{blocking, Context, JoinHandle, Poll};
 
@@ -45,7 +45,7 @@ use crate::task::{blocking, Context, JoinHandle, Poll};
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::read_dir(path) })
+    blocking::spawn(move || std::fs::read_dir(path))
         .await
         .map(ReadDir::new)
 }
@@ -91,7 +91,7 @@ impl Stream for ReadDir {
                     let mut inner = opt.take().unwrap();
 
                     // Start the operation asynchronously.
-                    self.0 = State::Busy(blocking::spawn(async move {
+                    self.0 = State::Busy(blocking::spawn(move || {
                         let next = inner.next();
                         (inner, next)
                     }));
