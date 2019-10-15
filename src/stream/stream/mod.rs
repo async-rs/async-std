@@ -50,7 +50,7 @@ mod zip;
 
 use all::AllFuture;
 use any::AnyFuture;
-use cloned::ClonedFuture;
+use cloned::Cloned;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
@@ -715,13 +715,38 @@ extension_trait! {
             }
         }
 
-        #[doc = r#""#]
-        fn cloned<'a, T>(self) -> ClonedFuture<Self>
+        #[doc = r#"
+            Creates an iterator which clones all of its elements.
+            This is useful when you have an iterator over &T, but you need an iterator over T.
+            # Examples
+
+            Basic usage:
+            ```
+            # async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::collections::VecDeque;
+
+            let mut s: VecDeque<u8> = vec![1, 2, 3].into_iter().collect();
+            let hoge = 9.clone();
+
+            let v_cloned: Vec<_> = s.cloned().collect().await;
+            assert_eq!(v_cloned, vec![1, 2, 3]);
+
+            //cloned is the same as .map(|&x| x), for integers
+            let v_map: Vec<_> = s.map(|x| x).collect().await;
+
+            assert_eq!(v_map, vec![1, 2, 3]);
+            # })
+            ```
+        "#]
+        fn cloned<T>(self) -> Cloned<Self>
         where
-            Self: Stream<Item = &'a T> + Sized,
-            T: 'a + Clone,
+            Self: Stream<Item = T> + Sized,
+            T: Clone,
         {
-            ClonedFuture::new(self)
+            Cloned::new(self)
         }
 
 
