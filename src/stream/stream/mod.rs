@@ -265,9 +265,9 @@ extension_trait! {
             # }) }
         "#]
         fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
-            where
-                Self: Sized,
-                P: FnMut(&Self::Item) -> bool,
+        where
+            Self: Sized,
+            P: FnMut(&Self::Item) -> bool,
         {
             TakeWhile::new(self, predicate)
         }
