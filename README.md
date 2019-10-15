@@ -113,7 +113,7 @@ We also provide a set of "unstable" features with async-std. See the [features
 documentation] on how to enable them.
 
 [cargo-add]: https://github.com/killercup/cargo-edit
-[features documentation]: https://docs.rs/async-std/0.99.9/async_std/#features
+[features documentation]: https://docs.rs/async-std/#features
 
 ## License
 
