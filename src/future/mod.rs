@@ -63,7 +63,10 @@ mod ready;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod into_future;
         mod timeout;
+
+        pub use into_future::IntoFuture;
         pub use timeout::{timeout, TimeoutError};
     }
 }
