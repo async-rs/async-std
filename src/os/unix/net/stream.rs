@@ -58,7 +58,7 @@ impl UnixStream {
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         let path = path.as_ref().to_owned();
 
-        blocking::spawn(async move {
+        blocking::spawn(move || {
             let std_stream = std::os::unix::net::UnixStream::connect(path)?;
             let mio_stream = mio_uds::UnixStream::from_stream(std_stream)?;
             Ok(UnixStream {

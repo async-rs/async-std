@@ -67,7 +67,7 @@ impl UnixDatagram {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
-        let socket = blocking::spawn(async move { mio_uds::UnixDatagram::bind(path) }).await?;
+        let socket = blocking::spawn(move || mio_uds::UnixDatagram::bind(path)).await?;
         Ok(UnixDatagram::new(socket))
     }
 
