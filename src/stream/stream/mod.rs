@@ -1259,7 +1259,7 @@ extension_trait! {
         {
             PartialCmpFuture::new(self, other)
         }
-            
+
         #[doc = r#"
             Determines if the elements of this `Stream` are lexicographically
             greater than those of another.
@@ -1288,14 +1288,14 @@ extension_trait! {
         fn gt<S>(
            self,
            other: S
-        ) -> impl Future<Output = bool> + '_ [GtFuture<Self, S>] 
+        ) -> impl Future<Output = bool> + '_ [GtFuture<Self, S>]
         where
             Self: Sized + Stream,
-            S: Stream,             
+            S: Stream,
             Self::Item: PartialOrd<S::Item>,
         {
             GtFuture::new(self, other)
-        }                
+        }
     }
 
     impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
