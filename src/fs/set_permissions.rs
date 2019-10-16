@@ -32,5 +32,5 @@ use crate::task::blocking;
 /// ```
 pub async fn set_permissions<P: AsRef<Path>>(path: P, perm: Permissions) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::set_permissions(path, perm) }).await
+    blocking::spawn(move || std::fs::set_permissions(path, perm)).await
 }

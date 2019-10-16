@@ -119,7 +119,7 @@ impl Stdin {
                             let mut inner = opt.take().unwrap();
 
                             // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
+                            *state = State::Busy(blocking::spawn(move || {
                                 inner.line.clear();
                                 let res = inner.stdin.read_line(&mut inner.line);
                                 inner.last_op = Some(Operation::ReadLine(res));
@@ -172,7 +172,7 @@ impl Read for Stdin {
                         }
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
+                        *state = State::Busy(blocking::spawn(move || {
                             let res = std::io::Read::read(&mut inner.stdin, &mut inner.buf);
                             inner.last_op = Some(Operation::Read(res));
                             State::Idle(Some(inner))

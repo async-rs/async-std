@@ -28,7 +28,7 @@ use crate::task::blocking;
 pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
-    blocking::spawn(async move { std::os::unix::fs::symlink(&src, &dst) }).await
+    blocking::spawn(move || std::os::unix::fs::symlink(&src, &dst)).await
 }
 
 cfg_if! {

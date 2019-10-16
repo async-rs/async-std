@@ -29,6 +29,8 @@ pub use crate::stream::Stream;
 pub use crate::task_local;
 
 #[doc(hidden)]
+pub use crate::future::future::FutureExt as _;
+#[doc(hidden)]
 pub use crate::io::buf_read::BufReadExt as _;
 #[doc(hidden)]
 pub use crate::io::read::ReadExt as _;

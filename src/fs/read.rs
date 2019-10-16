@@ -36,5 +36,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::read(path) }).await
+    blocking::spawn(move || std::fs::read(path)).await
 }

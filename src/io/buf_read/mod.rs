@@ -44,7 +44,7 @@ extension_trait! {
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
         [provided methods]: #provided-methods
     "#]
-    pub trait BufRead [BufReadExt: futures_io::AsyncBufRead] {
+    pub trait BufRead {
         #[doc = r#"
             Returns the contents of the internal buffer, filling it with more data from the
             inner reader if it is empty.
@@ -67,7 +67,9 @@ extension_trait! {
             should no longer be returned in calls to `read`.
         "#]
         fn consume(self: Pin<&mut Self>, amt: usize);
+    }
 
+    pub trait BufReadExt: futures_io::AsyncBufRead {
         #[doc = r#"
             Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
 

@@ -50,7 +50,7 @@ extension_trait! {
         [`poll_read`]: #tymethod.poll_read
         [`poll_read_vectored`]: #method.poll_read_vectored
     "#]
-    pub trait Read [ReadExt: futures_io::AsyncRead] {
+    pub trait Read {
         #[doc = r#"
             Attempt to read from the `AsyncRead` into `buf`.
         "#]
@@ -70,7 +70,9 @@ extension_trait! {
         ) -> Poll<io::Result<usize>> {
             unreachable!("this impl only appears in the rendered docs")
         }
+    }
 
+    pub trait ReadExt: futures_io::AsyncRead {
         #[doc = r#"
             Reads some bytes from the byte stream.
 

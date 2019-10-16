@@ -41,5 +41,5 @@ use crate::task::blocking;
 pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<u64> {
     let from = from.as_ref().to_owned();
     let to = to.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::copy(&from, &to) }).await
+    blocking::spawn(move || std::fs::copy(&from, &to)).await
 }
