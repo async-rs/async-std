@@ -30,7 +30,7 @@
 //! ```
 
 #[doc(inline)]
-pub use std::sync::{Arc, Weak};
+pub use std::sync::{atomic, Arc, Weak};
 
 #[cfg(any(feature = "unstable", feature = "docs"))]
 pub use barrier::{Barrier, BarrierWaitResult};
