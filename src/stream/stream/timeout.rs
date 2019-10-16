@@ -35,7 +35,7 @@ impl<S: Stream> Stream for TimeoutStream<S> {
             Poll::Ready(Some(v)) => Poll::Ready(Some(Ok(v))),
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Pending => match self.delay().poll(cx) {
-                Poll::Ready(_) => Poll::Ready(Some(Err(TimeoutError))),
+                Poll::Ready(_) => Poll::Ready(Some(Err(TimeoutError { _private: () }))),
                 Poll::Pending => Poll::Pending,
             },
         }
@@ -46,7 +46,9 @@ impl<S: Stream> Stream for TimeoutStream<S> {
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[cfg(any(feature = "unstable", feature = "docs"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct TimeoutError;
+pub struct TimeoutError {
+    _private: (),
+}
 
 impl Error for TimeoutError {}
 
