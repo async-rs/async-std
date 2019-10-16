@@ -27,6 +27,7 @@ pub use empty::{empty, Empty};
 pub use from_fn::{from_fn, FromFn};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
+pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::{
     Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, TakeWhile, Zip,
 };
@@ -37,6 +38,7 @@ mod empty;
 mod from_fn;
 mod once;
 mod repeat;
+mod repeat_with;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
