@@ -482,8 +482,8 @@ extension_trait! {
             
         "#]
         fn last(
-            &mut self,
-        ) -> impl Future<Output = Option<Self::Item>> + '_ [LastFuture<'_, Self>]
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [LastFuture<Self, Self::Item>]
         where
             Self: Sized,
         {

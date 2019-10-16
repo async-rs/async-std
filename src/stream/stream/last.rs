@@ -6,47 +6,43 @@ use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub struct LastFuture<'a, S> 
+pub struct LastFuture<S, T>
 where
-    S: Stream
+    S: Stream,
 {
-    stream: &'a mut S,
-    last: Option<S::Item>,
+    stream: S,
+    last: Option<T>,
 }
 
-impl<S: Unpin> Unpin for LastFuture<'_, S>
+impl<S, T> LastFuture<S, T>
 where
-    S: Stream
-{}
-
-impl<'a, S> LastFuture<'a, S> 
-where
-    S: Stream
+    S: Stream,
 {
-    //pin_utils::unsafe_pinned!(stream: S);
+    pin_utils::unsafe_pinned!(stream: S);
+    pin_utils::unsafe_pinned!(last: Option<T>);
 
-    pub(crate) fn new(stream: &'a mut S) -> Self
-    {
+    pub(crate) fn new(stream: S) -> Self {
         LastFuture { stream, last: None }
     }
 }
 
-impl<'a, S> Future for LastFuture<'a, S>
+impl<S> Future for LastFuture<S, S::Item>
 where
     S: Stream + Unpin + Sized,
+    S::Item: Copy,
 {
     type Output = Option<S::Item>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let next = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
+        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
 
         match next {
-            Some(v) => {
-                self.last = Some(v);
+            Some(new) => {
                 cx.waker().wake_by_ref();
-                return Poll::Pending;
+                *self.as_mut().last() = Some(new);
+                Poll::Pending
             }
-            None => return Poll::Ready(self.last),
+            None => Poll::Ready(self.last),
         }
     }
 }
