@@ -120,9 +120,9 @@ extension_trait! {
         ///
         /// ```
         /// # async_std::task::block_on(async {
+        /// use async_std::prelude::*;
         /// use async_std::future;
         /// use std::time::Duration;
-        /// use async_std::future::FutureExt;
         ///
         /// let a = future::ready(1).delay(Duration::from_millis(2000));
         /// dbg!(a.await);
