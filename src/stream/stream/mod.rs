@@ -63,9 +63,9 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
-use last::LastFuture;
 use ge::GeFuture;
 use gt::GtFuture;
+use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use min_by::MinByFuture;
@@ -480,7 +480,7 @@ extension_trait! {
             # }) }
             ```
 
-            An empty stream will return `None`:
+            An empty stream will return `None:
             ```
             # fn main() { async_std::task::block_on(async {
             #
