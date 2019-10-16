@@ -1,4 +1,4 @@
-//! Asynchronous iteration.
+//! Composable asynchronous iteration.
 //!
 //! This module is an async version of [`std::iter`].
 //!
