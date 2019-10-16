@@ -113,7 +113,7 @@ cfg_if! {
         use crate::stream::FromStream;
 
         pub use merge::Merge;
-        pub use timeout::TimeoutStream;
+        pub use timeout::Timeout;
     }
 }
 
@@ -1074,11 +1074,11 @@ extension_trait! {
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn timeout(self, dur: Duration) -> TimeoutStream<Self>
+        fn timeout(self, dur: Duration) -> Timeout<Self>
         where
             Self: Stream + Sized,
         {
-            TimeoutStream::new(self, dur)
+            Timeout::new(self, dur)
         }
 
         #[doc = r#"

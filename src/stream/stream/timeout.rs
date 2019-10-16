@@ -11,23 +11,23 @@ use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[derive(Debug)]
-pub struct TimeoutStream<S> {
+pub struct Timeout<S: Stream> {
     stream: S,
     delay: Delay,
 }
 
-impl<S> TimeoutStream<S> {
+impl<S: Stream> Timeout<S> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_pinned!(delay: Delay);
 
-    pub fn new(stream: S, dur: Duration) -> TimeoutStream<S> {
+    pub fn new(stream: S, dur: Duration) -> Timeout<S> {
         let delay = Delay::new(dur);
 
-        TimeoutStream { stream, delay }
+        Timeout { stream, delay }
     }
 }
 
-impl<S: Stream> Stream for TimeoutStream<S> {
+impl<S: Stream> Stream for Timeout<S> {
     type Item = Result<S::Item, TimeoutError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
