@@ -113,7 +113,7 @@ cfg_if! {
         use crate::stream::FromStream;
 
         pub use merge::Merge;
-        pub use timeout::Timeout;
+        pub use timeout::{TimeoutError, Timeout};
     }
 }
 
@@ -1332,9 +1332,9 @@ extension_trait! {
             let s4 = VecDeque::from(vec![1, 2, 4]);
             assert_eq!(s1.clone().partial_cmp(s1.clone()).await, Some(Ordering::Equal));
             assert_eq!(s1.clone().partial_cmp(s2.clone()).await, Some(Ordering::Less));
-            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));       
+            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));
             assert_eq!(s3.clone().partial_cmp(s4.clone()).await, Some(Ordering::Less));
-            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));                             
+            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));
             #
             # }) }
             ```
@@ -1353,7 +1353,7 @@ extension_trait! {
 
         #[doc = r#"
             Lexicographically compares the elements of this `Stream` with those
-            of another using 'Ord'. 
+            of another using 'Ord'.
 
             # Examples
 
@@ -1370,9 +1370,9 @@ extension_trait! {
             let s4 = VecDeque::from(vec![1, 2, 4]);
             assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
             assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
-            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);       
+            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);
             assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
-            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);  
+            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);
             #
             # }) }
             ```
