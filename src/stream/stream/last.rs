@@ -13,7 +13,7 @@ pub struct LastFuture<S, T> {
 
 impl<S, T> LastFuture<S, T> {
     pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_pinned!(last: Option<T>);
+    pin_utils::unsafe_unpinned!(last: Option<T>);
 
     pub(crate) fn new(stream: S) -> Self {
         LastFuture { stream, last: None }

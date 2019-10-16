@@ -472,10 +472,26 @@ extension_trait! {
 
             use async_std::prelude::*;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
             let last  = s.last().await;
             assert_eq!(last, Some(3));
+            #
+            # }) }
+            ```
+
+            An empty stream will return `None`:
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![].into_iter().collect();
+
+            let last  = s.last().await;
+            assert_eq!(last, None);
             #
             # }) }
             ```
