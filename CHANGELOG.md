@@ -56,12 +56,15 @@ while let Some(_) = interval.next().await {
 ## Added
 
 - Added `FutureExt` to the `prelude`, allowing us to extend `Future`
+- Added `Stream::cmp`
 - Added `Stream::ge`
+- Added `Stream::last`
 - Added `Stream::le`
 - Added `Stream::lt`
 - Added `Stream::merge` as "unstable", replacing `stream::join!`
 - Added `Stream::partial_cmp`
 - Added `Stream::take_while`
+- Added `Stream::try_fold`
 - Added `future::IntoFuture` as "unstable"
 - Added `io::BufRead::split`
 - Added `io::Write::write_fmt`
@@ -76,6 +79,7 @@ while let Some(_) = interval.next().await {
 - Added `stream::Sum`
 - Added `stream::from_fn`
 - Added `stream::interval` as "unstable"
+- Added `stream::repeat_with`
 - Added `task::spawn_blocking` as "unstable", replacing `task::blocking`
 - Added `task::yield_now`
 - Added `write!` and `writeln!` macros as "unstable"
@@ -93,6 +97,8 @@ while let Some(_) = interval.next().await {
 - Rewrote the README.md
 - Stabilized `io::Cursor`
 - Switched bors over to use GitHub actions
+- Updated the `io` documentation to match std's `io` docs
+- Updated the `task` documentation to match std's `thread` docs
 
 ## Removed
 
