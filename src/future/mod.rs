@@ -51,6 +51,7 @@ pub use async_macros::{select, try_select};
 use cfg_if::cfg_if;
 
 pub use future::Future;
+pub use future::FutureExt;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
@@ -65,9 +66,7 @@ mod timeout;
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod into_future;
-        mod delay;
 
         pub use into_future::IntoFuture;
-        pub use delay::delay;
     }
 }

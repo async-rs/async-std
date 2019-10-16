@@ -6,28 +6,6 @@ use futures_timer::Delay;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 
-/// Creates a future that is delayed before it starts yielding items.
-///
-/// # Examples
-///
-/// ```
-/// # async_std::task::block_on(async {
-/// use async_std::future;
-/// use std::time::Duration;
-
-/// let a = future::delay(future::ready(1) ,Duration::from_millis(2000));
-/// dbg!(a.await);
-/// # })
-/// ```
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
-pub fn delay<F>(f: F, dur: Duration) -> DelayFuture<F>
-where
-    F: Future,
-{
-    DelayFuture::new(f, dur)
-}
-
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct DelayFuture<F> {

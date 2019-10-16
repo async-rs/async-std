@@ -105,6 +105,28 @@ extension_trait! {
     }
 
     pub trait FutureExt: std::future::Future {
+        /// Creates a future that is delayed before it starts yielding items.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// # async_std::task::block_on(async {
+        /// use async_std::future;
+        /// use std::time::Duration;
+        /// use async_std::future::FutureExt;
+        ///
+        /// let a = future::ready(1).delay(Duration::from_millis(2000));
+        /// dbg!(a.await);
+        /// # })
+        /// ```
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        fn delay(self, dur: Duration) -> DelayFuture<Self>
+        where
+            Self: Future + Sized
+        {
+            DelayFuture::new(self, dur)
+        }
     }
 
     impl<F: Future + Unpin + ?Sized> Future for Box<F> {
