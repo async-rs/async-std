@@ -9,6 +9,15 @@ cfg_if::cfg_if! {
     }
 }
 
+cfg_if::cfg_if! {
+    if #[cfg(any(feature = "unstable", feature = "docs"))] {
+        mod delay;
+
+        use std::time::Duration;
+        use delay::DelayFuture;
+    }
+}
+
 extension_trait! {
     #[doc = r#"
         A future represents an asynchronous computation.
