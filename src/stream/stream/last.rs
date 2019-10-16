@@ -6,18 +6,12 @@ use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub struct LastFuture<S, T>
-where
-    S: Stream,
-{
+pub struct LastFuture<S, T> {
     stream: S,
     last: Option<T>,
 }
 
-impl<S, T> LastFuture<S, T>
-where
-    S: Stream,
-{
+impl<S, T> LastFuture<S, T> {
     pin_utils::unsafe_pinned!(stream: S);
     pin_utils::unsafe_pinned!(last: Option<T>);
 
