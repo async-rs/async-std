@@ -76,7 +76,7 @@ impl TcpStream {
         let mut last_err = None;
 
         for addr in addrs.to_socket_addrs().await? {
-            let res = blocking::spawn(async move {
+            let res = blocking::spawn(move || {
                 let std_stream = std::net::TcpStream::connect(addr)?;
                 let mio_stream = mio::net::TcpStream::from_stream(std_stream)?;
                 Ok(TcpStream {

@@ -196,7 +196,7 @@ impl ToSocketAddrs for (&str, u16) {
         }
 
         let host = host.to_string();
-        let task = blocking::spawn(async move {
+        let task = blocking::spawn(move || {
             std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
         });
         ToSocketAddrsFuture::Resolving(task)
@@ -217,8 +217,7 @@ impl ToSocketAddrs for str {
         }
 
         let addr = self.to_string();
-        let task =
-            blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()) });
+        let task = blocking::spawn(move || std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()));
         ToSocketAddrsFuture::Resolving(task)
     }
 }

@@ -33,7 +33,11 @@ mod find_map;
 mod fold;
 mod for_each;
 mod fuse;
+mod ge;
+mod gt;
 mod inspect;
+mod le;
+mod lt;
 mod map;
 mod min_by;
 mod next;
@@ -57,6 +61,10 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use ge::GeFuture;
+use gt::GtFuture;
+use le::LeFuture;
+use lt::LtFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -124,7 +132,7 @@ extension_trait! {
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
     "#]
-    pub trait Stream [StreamExt: futures_core::stream::Stream] {
+    pub trait Stream {
         #[doc = r#"
             The type of items yielded by this stream.
         "#]
@@ -182,7 +190,9 @@ extension_trait! {
             ```
         "#]
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
+    }
 
+    pub trait StreamExt: futures_core::stream::Stream {
         #[doc = r#"
             Advances the stream and returns the next value.
 
@@ -1226,8 +1236,9 @@ extension_trait! {
         #[doc = r#"
             Lexicographically compares the elements of this `Stream` with those
             of another.
-            
+
             # Examples
+
             ```
             # fn main() { async_std::task::block_on(async {
             #
@@ -1235,6 +1246,7 @@ extension_trait! {
             use std::collections::VecDeque;
 
             use std::cmp::Ordering;
+
             let s1 = VecDeque::from(vec![1]);
             let s2 = VecDeque::from(vec![1, 2]);
             let s3 = VecDeque::from(vec![1, 2, 3]);
@@ -1263,26 +1275,25 @@ extension_trait! {
         #[doc = r#"
             Lexicographically compares the elements of this `Stream` with those
             of another using 'Ord'. 
-            
+
             # Examples
+
             ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
             use std::collections::VecDeque;
-            
+
             use std::cmp::Ordering;
             let s1 = VecDeque::from(vec![1]);
             let s2 = VecDeque::from(vec![1, 2]);
             let s3 = VecDeque::from(vec![1, 2, 3]);
             let s4 = VecDeque::from(vec![1, 2, 4]);
-
             assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
             assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
             assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);       
             assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
             assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);  
-
             #
             # }) }
             ```
@@ -1297,6 +1308,151 @@ extension_trait! {
             <Self as Stream>::Item: Ord
         {
             CmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than or equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_gt:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_gt:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().ge(single.clone()).await, true);
+            assert_eq!(single_gt.clone().ge(single.clone()).await, true);
+            assert_eq!(multi.clone().ge(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().ge(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ge<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [GeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            GeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+            assert_eq!(single.clone().gt(single.clone()).await, false);
+            assert_eq!(single_gt.clone().gt(single.clone()).await, true);
+            assert_eq!(multi.clone().gt(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().gt(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn gt<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [GtFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            GtFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less or equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+            assert_eq!(single.clone().le(single.clone()).await, true);
+            assert_eq!(single.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().le(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn le<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [LeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            LeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less than those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single = VecDeque::from(vec![1]);
+            let single_gt = VecDeque::from(vec![10]);
+            let multi = VecDeque::from(vec![1,2]);
+            let multi_gt = VecDeque::from(vec![1,5]);
+
+            assert_eq!(single.clone().lt(single.clone()).await, false);
+            assert_eq!(single.clone().lt(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().lt(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().lt(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn lt<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [LtFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            LtFuture::new(self, other)
         }
     }
 
