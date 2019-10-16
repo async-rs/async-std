@@ -9,7 +9,7 @@ use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
+/// A stream with timeout time set
 #[derive(Debug)]
 pub struct Timeout<S: Stream> {
     stream: S,
