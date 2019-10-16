@@ -130,7 +130,7 @@ extension_trait! {
         /// ```
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[cfg(any(feature = "unstable", feature = "docs"))]
-        fn delay(self, dur: Duration) -> DelayFuture<Self>
+        fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
         where
             Self: Future + Sized
         {
