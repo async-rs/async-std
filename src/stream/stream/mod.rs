@@ -104,13 +104,16 @@ cfg_if! {
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod merge;
+        mod timeout;
 
         use std::pin::Pin;
+        use std::time::Duration;
 
         use crate::future::Future;
         use crate::stream::FromStream;
 
         pub use merge::Merge;
+        pub use timeout::TimeoutStream;
     }
 }
 
@@ -1042,6 +1045,40 @@ extension_trait! {
             Self: Sized,
         {
             Skip::new(self, n)
+        }
+
+        #[doc=r#"
+            Await a stream or times out after a duration of time.
+
+            If you want to await an I/O future consider using
+            [`io::timeout`](../io/fn.timeout.html) instead.
+
+            # Examples
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use std::time::Duration;
+
+            use async_std::stream;
+            use async_std::prelude::*;
+
+            let mut s = stream::repeat(1).take(3).timeout(Duration::from_secs(1));
+
+            while let Some(v) = s.next().await {
+                assert_eq!(v, Ok(1));
+            }
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn timeout(self, dur: Duration) -> TimeoutStream<Self>
+        where
+            Self: Stream + Sized,
+        {
+            TimeoutStream::new(self, dur)
         }
 
         #[doc = r#"
