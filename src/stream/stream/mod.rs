@@ -50,6 +50,7 @@ mod skip_while;
 mod step_by;
 mod take;
 mod take_while;
+mod throttle;
 mod try_fold;
 mod try_for_each;
 mod zip;
@@ -86,10 +87,12 @@ pub use skip_while::SkipWhile;
 pub use step_by::StepBy;
 pub use take::Take;
 pub use take_while::TakeWhile;
+pub use throttle::Throttle;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 use cfg_if::cfg_if;
 
@@ -286,6 +289,13 @@ extension_trait! {
             P: FnMut(&Self::Item) -> bool,
         {
             TakeWhile::new(self, predicate)
+        }
+
+        fn throttle(self, d: Duration) -> Throttle<Self>
+        where
+            Self: Sized,
+        {
+            Throttle::new(self, d)
         }
 
         #[doc = r#"
