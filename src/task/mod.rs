@@ -1,4 +1,4 @@
-//! Types and Traits for working with asynchronous tasks..
+//! Types and traits for working with asynchronous tasks.
 //!
 //! This module is similar to [`std::thread`], except it uses asynchronous tasks in place of
 //! threads.
