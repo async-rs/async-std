@@ -86,7 +86,10 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+    ($($arg:tt)*) => (async {
+        $crate::io::_print(format_args!($($arg)*)).await;
+        $crate::io::_print(format_args!("\n")).await;
+    })
 }
 
 /// Prints to the standard error.
@@ -158,6 +161,7 @@ macro_rules! eprintln {
     ($($arg:tt)*) => (
         async {
             $crate::io::_eprint(format_args!($($arg)*)).await;
+            $crate::io::_eprint(format_args!("\n")).await;
         }
     );
 }
