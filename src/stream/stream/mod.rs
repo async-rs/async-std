@@ -113,7 +113,7 @@ cfg_if! {
         use crate::stream::FromStream;
 
         pub use merge::Merge;
-        pub use timeout::TimeoutStream;
+        pub use timeout::{TimeoutError, TimeoutStream};
     }
 }
 
