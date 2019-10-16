@@ -474,8 +474,8 @@ extension_trait! {
 
             let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
-            let second = s.nth(1).await;
-            assert_eq!(second, Some(2));
+            let last  = s.last().await;
+            assert_eq!(last, Some(3));
             #
             # }) }
             ```
