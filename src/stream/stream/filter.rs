@@ -36,13 +36,11 @@ where
         let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
 
         match next {
-            Some(v) => match (self.as_mut().predicate())(&v) {
-                true => Poll::Ready(Some(v)),
-                false => {
-                    cx.waker().wake_by_ref();
-                    Poll::Pending
-                }
-            },
+            Some(v) if (self.as_mut().predicate())(&v) => Poll::Ready(Some(v)),
+            Some(_) => {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
             None => Poll::Ready(None),
         }
     }

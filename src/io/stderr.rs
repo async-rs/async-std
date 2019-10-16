@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::Future;
 use crate::io::{self, Write};
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard error of the current process.
 ///
@@ -56,7 +56,7 @@ enum State {
     /// The stderr is blocked on an asynchronous operation.
     ///
     /// Awaiting this operation will result in the new state of the stderr.
-    Busy(blocking::JoinHandle<State>),
+    Busy(JoinHandle<State>),
 }
 
 /// Inner representation of the asynchronous stderr.
@@ -116,8 +116,8 @@ impl Write for Stderr {
                         inner.buf[..buf.len()].copy_from_slice(buf);
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
-                            let res = std::io::Write::write(&mut inner.stderr, &mut inner.buf);
+                        *state = State::Busy(blocking::spawn(move || {
+                            let res = std::io::Write::write(&mut inner.stderr, &inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
                         }));
@@ -144,7 +144,7 @@ impl Write for Stderr {
                         let mut inner = opt.take().unwrap();
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
+                        *state = State::Busy(blocking::spawn(move || {
                             let res = std::io::Write::flush(&mut inner.stderr);
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))

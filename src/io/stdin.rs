@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 use crate::future::{self, Future};
 use crate::io::{self, Read};
-use crate::task::{blocking, Context, Poll};
+use crate::task::{blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -57,7 +57,7 @@ enum State {
     /// The stdin is blocked on an asynchronous operation.
     ///
     /// Awaiting this operation will result in the new state of the stdin.
-    Busy(blocking::JoinHandle<State>),
+    Busy(JoinHandle<State>),
 }
 
 /// Inner representation of the asynchronous stdin.
@@ -119,7 +119,7 @@ impl Stdin {
                             let mut inner = opt.take().unwrap();
 
                             // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(async move {
+                            *state = State::Busy(blocking::spawn(move || {
                                 inner.line.clear();
                                 let res = inner.stdin.read_line(&mut inner.line);
                                 inner.last_op = Some(Operation::ReadLine(res));
@@ -172,7 +172,7 @@ impl Read for Stdin {
                         }
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(async move {
+                        *state = State::Busy(blocking::spawn(move || {
                             let res = std::io::Read::read(&mut inner.stdin, &mut inner.buf);
                             inner.last_op = Some(Operation::Read(res));
                             State::Idle(Some(inner))

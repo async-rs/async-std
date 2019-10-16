@@ -9,7 +9,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
 ///
@@ -22,7 +22,7 @@ use crate::task::{Context, Poll};
 /// let res: io::Result<()> = io::timeout(dur, fut).await;
 /// assert!(res.is_err());
 /// #
-/// # }) }
+/// # })
 /// ```
 pub async fn pending<T>() -> T {
     let fut = Pending {

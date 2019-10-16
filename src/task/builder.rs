@@ -4,7 +4,7 @@ use crate::future::Future;
 use crate::io;
 
 /// Task builder that configures the settings of a new task.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Builder {
     pub(crate) name: Option<String>,
 }

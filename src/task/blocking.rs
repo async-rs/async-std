@@ -1,7 +1,5 @@
 //! A thread pool for running blocking functions asynchronously.
 
-use std::fmt;
-use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
@@ -9,8 +7,7 @@ use std::time::Duration;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use lazy_static::lazy_static;
 
-use crate::future::Future;
-use crate::task::{Context, Poll};
+use crate::task::task::{JoinHandle, Tag};
 use crate::utils::abort_on_panic;
 
 const MAX_THREADS: u64 = 10_000;
@@ -18,8 +15,8 @@ const MAX_THREADS: u64 = 10_000;
 static DYNAMIC_THREAD_COUNT: AtomicU64 = AtomicU64::new(0);
 
 struct Pool {
-    sender: Sender<async_task::Task<()>>,
-    receiver: Receiver<async_task::Task<()>>,
+    sender: Sender<async_task::Task<Tag>>,
+    receiver: Receiver<async_task::Task<Tag>>,
 }
 
 lazy_static! {
@@ -85,7 +82,7 @@ fn maybe_create_another_blocking_thread() {
 // Enqueues work, attempting to send to the threadpool in a
 // nonblocking way and spinning up another worker thread if
 // there is not a thread ready to accept the work.
-fn schedule(t: async_task::Task<()>) {
+fn schedule(t: async_task::Task<Tag>) {
     if let Err(err) = POOL.sender.try_send(t) {
         // We were not able to send to the channel without
         // blocking. Try to spin up another thread and then
@@ -98,35 +95,16 @@ fn schedule(t: async_task::Task<()>) {
 /// Spawns a blocking task.
 ///
 /// The task will be spawned onto a thread pool specifically dedicated to blocking tasks.
-pub fn spawn<F, R>(future: F) -> JoinHandle<R>
+pub(crate) fn spawn<F, R>(f: F) -> JoinHandle<R>
 where
-    F: Future<Output = R> + Send + 'static,
+    F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
 {
-    let (task, handle) = async_task::spawn(future, schedule, ());
+    let tag = Tag::new(None);
+    let future = async move { f() };
+    let (task, handle) = async_task::spawn(future, schedule, tag);
     task.schedule();
-    JoinHandle(handle)
-}
-
-/// A handle to a blocking task.
-pub struct JoinHandle<R>(async_task::JoinHandle<R, ()>);
-
-impl<R> Unpin for JoinHandle<R> {}
-
-impl<R> Future for JoinHandle<R> {
-    type Output = R;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        Pin::new(&mut self.0).poll(cx).map(|out| out.unwrap())
-    }
-}
-
-impl<R> fmt::Debug for JoinHandle<R> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("JoinHandle")
-            .field("handle", &self.0)
-            .finish()
-    }
+    JoinHandle::new(handle)
 }
 
 /// Generates a random number in `0..n`.
@@ -135,7 +113,7 @@ fn random(n: u32) -> u32 {
     use std::num::Wrapping;
 
     thread_local! {
-        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1406868647));
+        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
     }
 
     RNG.with(|rng| {
@@ -152,6 +130,6 @@ fn random(n: u32) -> u32 {
         //
         // Author: Daniel Lemire
         // Source: https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-        ((x.0 as u64).wrapping_mul(n as u64) >> 32) as u32
+        ((u64::from(x.0)).wrapping_mul(u64::from(n)) >> 32) as u32
     })
 }

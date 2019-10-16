@@ -1,20 +1,28 @@
-on: pull_request
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - staging
+      - trying
 
 jobs:
   build_and_test:
-    name: Build and test on ${{ matrix.os }}
+    name: Build and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [nightly]
 
     steps:
     - uses: actions/checkout@master
 
-    - name: Install nightly
+    - name: Install ${{ matrix.rust }}
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ matrix.rust }}
         override: true
 
     - name: check
@@ -41,12 +49,22 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
+    - id: component
+      uses: actions-rs/components-nightly@v1
+      with:
+        component: rustfmt
+
+    - uses: actions-rs/toolchain@v1
+      with:
+          toolchain: ${{ steps.component.outputs.toolchain }}
+          override: true
+
     - name: setup
       run: |
-        rustup default nightly
         rustup component add rustfmt
         test -x $HOME/.cargo/bin/mdbook || ./ci/install-mdbook.sh
         rustc --version
+
     - name: mdbook
       run: |
         mdbook build docs
@@ -54,4 +72,22 @@ jobs:
       run: cargo fmt --all -- --check
 
     - name: Docs
-      run: cargo doc --features docs,unstable
+      run: cargo doc --features docs
+
+  clippy_check:
+    name: Clippy check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - id: component
+        uses: actions-rs/components-nightly@v1
+        with:
+          component: clippy
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: ${{ steps.component.outputs.toolchain }}
+            override: true
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// Removes an empty directory.
@@ -30,5 +29,5 @@ use crate::task::blocking;
 /// ```
 pub async fn remove_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::remove_dir(path) }).await
+    blocking::spawn(move || std::fs::remove_dir(path)).await
 }

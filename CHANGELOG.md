@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [0.99.9] - 2019-10-08
+
+This patch upgrades our `futures-rs` version, allowing us to build on the 1.39
+beta. Additionally we've introduced `map` and `for_each` to `Stream`. And we've
+added about a dozen new `FromStream` implementations for `std` types, bringing
+us up to par with std's `FromIterator` implementations.
+
+And finally we've added a new "unstable" `task::blocking` function which can be
+used to convert blocking code into async code using a threadpool. We've been
+using this internally for a while now to async-std to power our `fs` and
+`net::SocketAddr` implementations. With this patch userland code now finally has
+access to this too.
+
+## Example
+
+__Create a stream of tuples, and collect into a hashmap__
+```rust
+let a = stream::once(1u8);
+let b = stream::once(0u8);
+
+let s = a.zip(b);
+
+let map: HashMap<u8, u8> = s.collect().await;
+assert_eq!(map.get(&1), Some(&0u8));
+```
+
+__Spawn a blocking task on a dedicated threadpool__
+```rust
+task::blocking(async {
+    println!("long-running task here");
+}).await;
+```
+
+## Added
+
+- Added `stream::Stream::map`
+- Added `stream::Stream::for_each`
+- Added `stream::Stream::try_for_each`
+- Added `task::blocking` as "unstable"
+- Added `FromStream` for all `std::{option, collections, result, string, sync}` types.
+- Added the `path` submodule as "unstable".
+
+## Changed
+
+- Updated `futures-preview` to `0.3.0-alpha.19`, allowing us to build on `rustc 1.39.0-beta`.
+- As a consequence of this upgrade, all of our concrete stream implementations
+  now make use of `Stream::size_hint` to optimize internal allocations.
+- We now use GitHub Actions through [actions-rs](https://github.com/actions-rs),
+  in addition to Travis CI. We intend to fully switch in the near future.
+- Fixed a bug introduced in 0.99.6 where Unix Domain Listeners would sometimes become unresponsive.
+- Updated our `sync::Barrier` docs to match std.
+- Updated our `stream::FromStream` docs to match std's `FromIterator`.
+
 # [0.99.8] - 2019-09-28
 
 ## Added
@@ -130,7 +183,8 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.8...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.9...HEAD
+[0.99.9]: https://github.com/async-rs/async-std/compare/v0.99.8...v0.99.9
 [0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8
 [0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...v0.99.7
 [0.99.6]: https://github.com/async-rs/async-std/compare/v0.99.5...v0.99.6

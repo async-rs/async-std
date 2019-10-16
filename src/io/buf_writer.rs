@@ -1,9 +1,11 @@
-use crate::task::{Context, Poll};
-use futures_core::ready;
-use futures_io::{AsyncSeek, AsyncWrite, SeekFrom};
 use std::fmt;
-use std::io;
 use std::pin::Pin;
+
+use futures_core::ready;
+
+use crate::io::write::WriteExt;
+use crate::io::{self, Seek, SeekFrom, Write};
+use crate::task::{Context, Poll};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
 
@@ -82,7 +84,10 @@ pub struct BufWriter<W> {
     written: usize,
 }
 
-impl<W: AsyncWrite> BufWriter<W> {
+#[derive(Debug)]
+pub struct IntoInnerError<W>(W, std::io::Error);
+
+impl<W: Write> BufWriter<W> {
     pin_utils::unsafe_pinned!(inner: W);
     pin_utils::unsafe_unpinned!(buf: Vec<u8>);
 
@@ -173,23 +178,35 @@ impl<W: AsyncWrite> BufWriter<W> {
         &mut self.inner
     }
 
-    //    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
-    //        self.inner()
-    //    }
-
     /// Consumes BufWriter, returning the underlying writer
     ///
     /// This method will not write leftover data, it will be lost.
     /// For method that will attempt to write before returning the writer see [`poll_into_inner`]
     ///
     /// [`poll_into_inner`]: #method.poll_into_inner
-    pub fn into_inner(self) -> W {
-        self.inner
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    ///
+    /// let buf_writer = BufWriter::new(TcpStream::connect("127.0.0.1:34251").await?);
+    ///
+    /// // unwrap the TcpStream and flush the buffer
+    /// let stream = buf_writer.into_inner().await.unwrap();
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn into_inner(mut self) -> Result<W, IntoInnerError<BufWriter<W>>>
+    where
+        Self: Unpin,
+    {
+        match self.flush().await {
+            Err(e) => Err(IntoInnerError(self, e)),
+            Ok(()) => Ok(self.inner),
+        }
     }
-
-    //    pub fn poll_into_inner(self: Pin<&mut Self>, _cx: Context<'_>) -> Poll<io::Result<usize>> {
-    //        unimplemented!("poll into inner method")
-    //    }
 
     /// Returns a reference to the internally buffered data.
     ///
@@ -251,7 +268,7 @@ impl<W: AsyncWrite> BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
+impl<W: Write> Write for BufWriter<W> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -278,7 +295,7 @@ impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite + fmt::Debug> fmt::Debug for BufWriter<W> {
+impl<W: Write + fmt::Debug> fmt::Debug for BufWriter<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BufReader")
             .field("writer", &self.inner)
@@ -287,11 +304,10 @@ impl<W: AsyncWrite + fmt::Debug> fmt::Debug for BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
+impl<W: Write + Seek> Seek for BufWriter<W> {
     /// Seek to the offset, in bytes, in the underlying writer.
     ///
     /// Seeking always writes out the internal buffer before seeking.
-
     fn poll_seek(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -299,82 +315,5 @@ impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
     ) -> Poll<io::Result<u64>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
         self.inner().poll_seek(cx, pos)
-    }
-}
-
-mod tests {
-    #![allow(unused_imports)]
-
-    use super::BufWriter;
-    use crate::io::{self, SeekFrom};
-    use crate::prelude::*;
-    use crate::task;
-
-    #[test]
-    fn test_buffered_writer() {
-        task::block_on(async {
-            let inner = Vec::new();
-            let mut writer = BufWriter::with_capacity(2, inner);
-
-            writer.write(&[0, 1]).await.unwrap();
-            assert_eq!(writer.buffer(), []);
-            assert_eq!(*writer.get_ref(), [0, 1]);
-
-            writer.write(&[2]).await.unwrap();
-            assert_eq!(writer.buffer(), [2]);
-            assert_eq!(*writer.get_ref(), [0, 1]);
-
-            writer.write(&[3]).await.unwrap();
-            assert_eq!(writer.buffer(), [2, 3]);
-            assert_eq!(*writer.get_ref(), [0, 1]);
-
-            writer.flush().await.unwrap();
-            assert_eq!(writer.buffer(), []);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3]);
-
-            writer.write(&[4]).await.unwrap();
-            writer.write(&[5]).await.unwrap();
-            assert_eq!(writer.buffer(), [4, 5]);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3]);
-
-            writer.write(&[6]).await.unwrap();
-            assert_eq!(writer.buffer(), [6]);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5]);
-
-            writer.write(&[7, 8]).await.unwrap();
-            assert_eq!(writer.buffer(), []);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-
-            writer.write(&[9, 10, 11]).await.unwrap();
-            assert_eq!(writer.buffer(), []);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-
-            writer.flush().await.unwrap();
-            assert_eq!(writer.buffer(), []);
-            assert_eq!(*writer.get_ref(), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-        })
-    }
-
-    #[test]
-    fn test_buffered_writer_inner_into_inner_does_not_flush() {
-        task::block_on(async {
-            let mut w = BufWriter::with_capacity(3, Vec::new());
-            w.write(&[0, 1]).await.unwrap();
-            assert_eq!(*w.get_ref(), []);
-            let w = w.into_inner();
-            assert_eq!(w, []);
-        })
-    }
-
-    #[test]
-    fn test_buffered_writer_seek() {
-        task::block_on(async {
-            let mut w = BufWriter::with_capacity(3, io::Cursor::new(Vec::new()));
-            w.write_all(&[0, 1, 2, 3, 4, 5]).await.unwrap();
-            w.write_all(&[6, 7]).await.unwrap();
-            assert_eq!(w.seek(SeekFrom::Current(0)).await.ok(), Some(8));
-            assert_eq!(&w.get_ref().get_ref()[..], &[0, 1, 2, 3, 4, 5, 6, 7][..]);
-            assert_eq!(w.seek(SeekFrom::Start(2)).await.ok(), Some(2));
-        })
     }
 }

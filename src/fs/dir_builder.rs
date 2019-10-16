@@ -1,9 +1,9 @@
-use std::path::Path;
+use std::future::Future;
 
 use cfg_if::cfg_if;
 
-use crate::future::Future;
 use crate::io;
+use crate::path::Path;
 use crate::task::blocking;
 
 /// A builder for creating directories with configurable options.
@@ -14,7 +14,7 @@ use crate::task::blocking;
 ///
 /// [`os::unix::fs::DirBuilderExt`]: ../os/unix/fs/trait.DirBuilderExt.html
 /// [`std::fs::DirBuilder`]: https://doc.rust-lang.org/std/fs/struct.DirBuilder.html
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DirBuilder {
     /// Set to `true` if non-existent parent directories should be created.
     recursive: bool,
@@ -109,7 +109,7 @@ impl DirBuilder {
         }
 
         let path = path.as_ref().to_owned();
-        async move { blocking::spawn(async move { builder.create(path) }).await }
+        async move { blocking::spawn(move || builder.create(path)).await }
     }
 }
 

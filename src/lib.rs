@@ -55,6 +55,7 @@ pub mod future;
 pub mod io;
 pub mod net;
 pub mod os;
+pub mod path;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
@@ -64,6 +65,8 @@ cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         pub mod pin;
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        pub mod process;
 
         mod unit;
         mod vec;
@@ -74,4 +77,10 @@ cfg_if! {
     }
 }
 
+mod macros;
 pub(crate) mod utils;
+
+#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use std::{write, writeln};

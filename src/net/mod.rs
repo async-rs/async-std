@@ -28,6 +28,11 @@
 //! # }) }
 //! ```
 
+pub use std::net::AddrParseError;
+pub use std::net::Shutdown;
+pub use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+pub use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+
 pub use addr::ToSocketAddrs;
 pub use tcp::{Incoming, TcpListener, TcpStream};
 pub use udp::UdpSocket;
