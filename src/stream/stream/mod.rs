@@ -33,6 +33,7 @@ mod fold;
 mod for_each;
 mod fuse;
 mod inspect;
+mod last;
 mod map;
 mod min_by;
 mod next;
@@ -55,6 +56,7 @@ use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use last::LastFuture;
 use min_by::MinByFuture;
 use next::NextFuture;
 use nth::NthFuture;
@@ -440,6 +442,38 @@ extension_trait! {
             F: FnMut(&Self::Item),
         {
             Inspect::new(self, f)
+        }
+
+        #[doc = r#"
+            Returns the last element of the stream.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let second = s.nth(1).await;
+            assert_eq!(second, Some(2));
+            #
+            # }) }
+            ```
+            
+        "#]
+        fn last(
+            &mut self,
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [LastFuture<'_, Self>]
+        where
+            Self: Sized,
+        {
+            LastFuture::new(self)
         }
 
         #[doc = r#"
