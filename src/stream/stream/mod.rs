@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod cmp;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -53,6 +54,7 @@ mod zip;
 
 use all::AllFuture;
 use any::AnyFuture;
+use cmp::CmpFuture;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
@@ -1270,6 +1272,43 @@ extension_trait! {
             PartialCmpFuture::new(self, other)
         }
 
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another using 'Ord'. 
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            use std::cmp::Ordering;
+            let s1 = VecDeque::from(vec![1]);
+            let s2 = VecDeque::from(vec![1, 2]);
+            let s3 = VecDeque::from(vec![1, 2, 3]);
+            let s4 = VecDeque::from(vec![1, 2, 4]);
+            assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
+            assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
+            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);       
+            assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
+            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);  
+            #
+            # }) }
+            ```
+        "#]
+        fn cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Ordering> [CmpFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: Ord
+        {
+            CmpFuture::new(self, other)
+        }
 
         #[doc = r#"
             Determines if the elements of this `Stream` are lexicographically
