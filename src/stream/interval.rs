@@ -43,6 +43,7 @@ use futures_timer::Delay;
 /// #
 /// # Ok(()) }) }
 /// ```
+#[cfg(any(feature = "unstable", feature = "docs"))]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
 pub fn interval(dur: Duration) -> Interval {
