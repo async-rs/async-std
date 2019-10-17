@@ -36,6 +36,7 @@ mod fuse;
 mod ge;
 mod gt;
 mod inspect;
+mod last;
 mod le;
 mod lt;
 mod map;
@@ -64,6 +65,7 @@ use fold::FoldFuture;
 use for_each::ForEachFuture;
 use ge::GeFuture;
 use gt::GtFuture;
+use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use min_by::MinByFuture;
@@ -454,6 +456,54 @@ extension_trait! {
             F: FnMut(&Self::Item),
         {
             Inspect::new(self, f)
+        }
+
+        #[doc = r#"
+            Returns the last element of the stream.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let last  = s.last().await;
+            assert_eq!(last, Some(3));
+            #
+            # }) }
+            ```
+
+            An empty stream will return `None:
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![].into_iter().collect();
+
+            let last  = s.last().await;
+            assert_eq!(last, None);
+            #
+            # }) }
+            ```
+            
+        "#]
+        fn last(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [LastFuture<Self, Self::Item>]
+        where
+            Self: Sized,
+        {
+            LastFuture::new(self)
         }
 
         #[doc = r#"
