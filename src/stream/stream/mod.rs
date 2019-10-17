@@ -106,6 +106,7 @@ cfg_if! {
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod merge;
+        mod flatten;
 
         use std::pin::Pin;
 
