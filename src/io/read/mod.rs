@@ -13,23 +13,17 @@ use read_to_end::{read_to_end_internal, ReadToEndFuture};
 use read_to_string::ReadToStringFuture;
 use read_vectored::ReadVectoredFuture;
 
-use cfg_if::cfg_if;
 use std::mem;
 
 use crate::io::IoSliceMut;
-use crate::utils::extension_trait;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
+crate::extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
 
-        use crate::io;
-        use crate::task::{Context, Poll};
-    }
-}
+    use crate::io;
+    use crate::task::{Context, Poll};
 
-extension_trait! {
     #[doc = r#"
         Allows reading from a byte stream.
 

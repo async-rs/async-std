@@ -1,15 +1,9 @@
-use crate::utils::extension_trait;
+crate::extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
+    use crate::task::{Context, Poll};
 
-        use crate::task::{Context, Poll};
-    }
-}
-
-extension_trait! {
     #[doc = r#"
         A future represents an asynchronous computation.
 

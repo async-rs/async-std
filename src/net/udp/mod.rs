@@ -1,7 +1,5 @@
 use std::io;
 use std::net::SocketAddr;
-
-use cfg_if::cfg_if;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::future;
@@ -463,61 +461,46 @@ impl From<std::net::UdpSocket> for UdpSocket {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-        // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        // use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+crate::unix! {
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl AsRawFd for UdpSocket {
+        fn as_raw_fd(&self) -> RawFd {
+            self.watcher.get_ref().as_raw_fd()
+        }
     }
-}
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for UdpSocket {
-            fn as_raw_fd(&self) -> RawFd {
-                self.watcher.get_ref().as_raw_fd()
-            }
+    impl FromRawFd for UdpSocket {
+        unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
+            std::net::UdpSocket::from_raw_fd(fd).into()
         }
+    }
 
-        impl FromRawFd for UdpSocket {
-            unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
-                std::net::UdpSocket::from_raw_fd(fd).into()
-            }
-        }
-
-        impl IntoRawFd for UdpSocket {
-            fn into_raw_fd(self) -> RawFd {
-                self.watcher.into_inner().into_raw_fd()
-            }
+    impl IntoRawFd for UdpSocket {
+        fn into_raw_fd(self) -> RawFd {
+            self.watcher.into_inner().into_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(windows)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        // use std::os::windows::io::{AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket};
-        //
-        // impl AsRawSocket for UdpSocket {
-        //     fn as_raw_socket(&self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-        //
-        // impl FromRawSocket for UdpSocket {
-        //     unsafe fn from_raw_socket(handle: RawSocket) -> UdpSocket {
-        //         net::UdpSocket::from_raw_socket(handle).into()
-        //     }
-        // }
-        //
-        // impl IntoRawSocket for UdpSocket {
-        //     fn into_raw_socket(self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-    }
+crate::windows! {
+    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+    //
+    // impl AsRawSocket for UdpSocket {
+    //     fn as_raw_socket(&self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
+    //
+    // impl FromRawSocket for UdpSocket {
+    //     unsafe fn from_raw_socket(handle: RawSocket) -> UdpSocket {
+    //         net::UdpSocket::from_raw_socket(handle).into()
+    //     }
+    // }
+    //
+    // impl IntoRawSocket for UdpSocket {
+    //     fn into_raw_socket(self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
 }

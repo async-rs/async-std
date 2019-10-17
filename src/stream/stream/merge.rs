@@ -8,7 +8,7 @@ use futures_core::Stream;
 /// This stream is returned by [`Stream::merge`].
 ///
 /// [`Stream::merge`]: trait.Stream.html#method.merge
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct Merge<L, R> {

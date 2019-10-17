@@ -44,12 +44,6 @@
 #[doc(inline)]
 pub use async_macros::{join, try_join};
 
-#[doc(inline)]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub use async_macros::{select, try_select};
-
-use cfg_if::cfg_if;
-
 pub use future::Future;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
@@ -62,10 +56,10 @@ mod poll_fn;
 mod ready;
 mod timeout;
 
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod into_future;
+crate::unstable! {
+    #[doc(inline)]
+    pub use async_macros::{select, try_select};
 
-        pub use into_future::IntoFuture;
-    }
+    pub use into_future::IntoFuture;
+    mod into_future;
 }

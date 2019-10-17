@@ -10,22 +10,14 @@ use write_all::WriteAllFuture;
 use write_fmt::WriteFmtFuture;
 use write_vectored::WriteVectoredFuture;
 
-use cfg_if::cfg_if;
+use crate::io::{self, IoSlice};
 
-use crate::io::IoSlice;
-use crate::utils::extension_trait;
+crate::extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
 
-use crate::io;
+    use crate::task::{Context, Poll};
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
-        use crate::task::{Context, Poll};
-    }
-}
-
-extension_trait! {
     #[doc = r#"
         Allows writing to a byte stream.
 

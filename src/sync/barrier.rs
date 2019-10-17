@@ -32,6 +32,7 @@ use crate::sync::Mutex;
 /// # });
 /// # }
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct Barrier {
@@ -61,6 +62,7 @@ struct BarrierState {
 /// let barrier = Barrier::new(1);
 /// let barrier_wait_result = barrier.wait();
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, Clone)]
 pub struct BarrierWaitResult(bool);

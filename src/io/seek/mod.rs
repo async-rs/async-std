@@ -1,19 +1,16 @@
-use std::pin::Pin;
+mod seek;
 
-use cfg_if::cfg_if;
+use seek::SeekFuture;
 
-use crate::future::Future;
-use crate::io::{self, SeekFrom};
-use crate::task::{Context, Poll};
-use crate::utils::extension_trait;
+use crate::io::SeekFrom;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
-    }
-}
+crate::extension_trait! {
+    use std::ops::{Deref, DerefMut};
+    use std::pin::Pin;
 
-extension_trait! {
+    use crate::io;
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         Allows seeking through a byte stream.
 
@@ -112,21 +109,5 @@ extension_trait! {
         ) -> Poll<io::Result<u64>> {
             unreachable!("this impl only appears in the rendered docs")
         }
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct SeekFuture<'a, T: Unpin + ?Sized> {
-    seeker: &'a mut T,
-    pos: SeekFrom,
-}
-
-impl<T: SeekExt + Unpin + ?Sized> Future for SeekFuture<'_, T> {
-    type Output = io::Result<u64>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let pos = self.pos;
-        Pin::new(&mut *self.seeker).poll_seek(cx, pos)
     }
 }

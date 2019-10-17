@@ -91,32 +91,22 @@ pub use zip::Zip;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
-use cfg_if::cfg_if;
+crate::unstable! {
+    use std::pin::Pin;
 
-use crate::utils::extension_trait;
+    use crate::future::Future;
+    use crate::stream::FromStream;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
+    pub use merge::Merge;
 
-        use crate::task::{Context, Poll};
-    }
+    mod merge;
 }
 
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod merge;
+crate::extension_trait! {
+    use std::ops::{Deref, DerefMut};
 
-        use std::pin::Pin;
+    use crate::task::{Context, Poll};
 
-        use crate::future::Future;
-        use crate::stream::FromStream;
-
-        pub use merge::Merge;
-    }
-}
-
-extension_trait! {
     #[doc = r#"
         An asynchronous stream of values.
 
@@ -1276,7 +1266,7 @@ extension_trait! {
 
             [`stream`]: trait.Stream.html#tymethod.next
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
         fn collect<'a, B>(
@@ -1315,7 +1305,7 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn merge<U>(self, other: U) -> Merge<Self, U>
         where

@@ -20,6 +20,69 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
     t
 }
 
+/// Declares unstable items.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! unstable {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "unstable")]
+            #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+            $item
+        )*
+    }
+}
+
+/// Declares Unix-specific items.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! unix {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(unix, feature = "docs"))]
+            #[cfg_attr(feature = "docs", doc(cfg(unix)))]
+            $item
+        )*
+    }
+}
+
+/// Declares Windows-specific items.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! windows {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(windows, feature = "docs"))]
+            #[cfg_attr(feature = "docs", doc(cfg(windows)))]
+            $item
+        )*
+    }
+}
+
+/// Declares items when the "docs" feature is enabled.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! docs {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "docs")]
+            $item
+        )*
+    }
+}
+
+/// Declares items when the "docs" feature is disabled.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! not_docs {
+    ($($item:item)*) => {
+        $(
+            #[cfg(not(feature = "docs"))]
+            $item
+        )*
+    }
+}
+
 /// Defines an extension trait for a base trait.
 ///
 /// In generated docs, the base trait will contain methods from the extension trait. In actual
@@ -66,7 +129,7 @@ macro_rules! extension_trait {
         #[cfg(feature = "docs")]
         #[doc = $doc]
         pub trait $name {
-            extension_trait!(@doc () $($body_base)* $($body_ext)*);
+            crate::extension_trait!(@doc () $($body_base)* $($body_ext)*);
         }
 
         // When not rendering docs, re-export the base trait from the futures crate.
@@ -76,7 +139,7 @@ macro_rules! extension_trait {
         // The extension trait that adds methods to any type implementing the base trait.
         /// Extension trait.
         pub trait $ext: $base {
-            extension_trait!(@ext () $($body_ext)*);
+            crate::extension_trait!(@ext () $($body_ext)*);
         }
 
         // Blanket implementation of the extension trait for any type implementing the base trait.
@@ -88,31 +151,37 @@ macro_rules! extension_trait {
 
     // Parse the return type in an extension method.
     (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
+        crate::extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
     };
     (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
+        crate::extension_trait!(@ext ($($head)* -> $f) $($tail)*);
     };
 
     // Parse the return type in an extension method.
     (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$lt, $out>) $($tail)*);
+        crate::extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$lt, $out>) $($tail)*);
     };
     (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
+        crate::extension_trait!(@ext ($($head)* -> $f) $($tail)*);
     };
 
     // Parse a token.
     (@doc ($($head:tt)*) $token:tt $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* $token) $($tail)*);
+        crate::extension_trait!(@doc ($($head)* $token) $($tail)*);
     };
     (@ext ($($head:tt)*) $token:tt $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* $token) $($tail)*);
+        crate::extension_trait!(@ext ($($head)* $token) $($tail)*);
     };
 
     // Handle the end of the token list.
     (@doc ($($head:tt)*)) => { $($head)* };
     (@ext ($($head:tt)*)) => { $($head)* };
-}
 
-pub use crate::extension_trait;
+    // Parse imports at the beginning of the macro.
+    ($import:item $($tail:tt)*) => {
+        #[cfg(feature = "docs")]
+        $import
+
+        crate::extension_trait!($($tail)*);
+    };
+}
