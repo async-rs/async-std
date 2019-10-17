@@ -30,6 +30,7 @@ pub use repeat::{repeat, Repeat};
 pub use stream::{
     Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, TakeWhile, Zip,
 };
+pub use successors::{successors, Successors};
 
 pub(crate) mod stream;
 
@@ -37,6 +38,7 @@ mod empty;
 mod from_fn;
 mod once;
 mod repeat;
+mod successors;
 
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
