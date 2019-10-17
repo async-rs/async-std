@@ -47,6 +47,11 @@ pub fn stdin() -> Stdin {
 #[derive(Debug)]
 pub struct Stdin(Mutex<State>);
 
+#[derive(Debug)]
+pub struct StdinLock<'a>(std::io::StdinLock<'a>);
+
+unsafe impl Send for StdinLock<'_> {}
+
 /// The state of the asynchronous stdin.
 ///
 /// The stdin can be either idle or busy performing an asynchronous operation.
@@ -157,12 +162,14 @@ impl Stdin {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn lock(&self) -> std::io::StdinLock<'static> {
+    pub async fn lock(&self) -> StdinLock<'static> {
         lazy_static! {
             static ref STDIN: std::io::Stdin = std::io::stdin();
         }
 
-        STDIN.lock()
+        blocking::spawn(async {
+            StdinLock(STDIN.lock())
+        }).await
     }
 }
 
@@ -246,5 +253,15 @@ cfg_if! {
                 std::io::stdin().as_raw_handle()
             }
         }
+    }
+}
+
+impl Read for StdinLock<'_> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        unimplemented!()
     }
 }
