@@ -7,7 +7,14 @@ use crate::task::{Context, Poll};
 #[allow(missing_debug_implementations)]
 pub struct Peekable<S: Stream> {
     stream: S,
-    peeked: Option<Option<S::Item>>,
+    peeked: Option<PeekFuture<Option<S::Item>>>,
+}
+
+pub struct PeekFuture<'a, T: Unpin + ?Sized> {
+    pub(crate) stream: &'a T,
+}
+
+impl<T: Stream + Unpin + ?Sized> Future for PeekFuture<'_, T> {
 }
 
 
