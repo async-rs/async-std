@@ -4,7 +4,7 @@ use seek::SeekFuture;
 
 use crate::io::SeekFrom;
 
-crate::extension_trait! {
+extension_trait! {
     use std::ops::{Deref, DerefMut};
     use std::pin::Pin;
 

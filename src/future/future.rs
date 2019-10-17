@@ -1,4 +1,4 @@
-crate::extension_trait! {
+extension_trait! {
     use std::pin::Pin;
     use std::ops::{Deref, DerefMut};
 

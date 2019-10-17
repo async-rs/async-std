@@ -1,10 +1,10 @@
 //! Unix-specific I/O extensions.
 
-crate::cfg_not_docs! {
+cfg_not_docs! {
     pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 }
 
-crate::cfg_docs! {
+cfg_docs! {
     /// Raw file descriptors.
     pub type RawFd = std::os::raw::c_int;
 

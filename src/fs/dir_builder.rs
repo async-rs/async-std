@@ -111,7 +111,7 @@ impl DirBuilder {
     }
 }
 
-crate::cfg_unix! {
+cfg_unix! {
     use crate::os::unix::fs::DirBuilderExt;
 
     impl DirBuilderExt for DirBuilder {

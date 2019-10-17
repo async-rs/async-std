@@ -39,7 +39,7 @@ pub use crate::io::write::WriteExt as _;
 #[doc(hidden)]
 pub use crate::stream::stream::StreamExt as _;
 
-crate::cfg_unstable! {
+cfg_unstable! {
     #[doc(no_inline)]
     pub use crate::stream::DoubleEndedStream;
     #[doc(no_inline)]

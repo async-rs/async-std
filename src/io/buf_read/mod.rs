@@ -15,7 +15,7 @@ use std::pin::Pin;
 use crate::io;
 use crate::task::{Context, Poll};
 
-crate::extension_trait! {
+extension_trait! {
     use std::ops::{Deref, DerefMut};
 
     #[doc = r#"
