@@ -158,7 +158,7 @@ impl fmt::Debug for DirEntry {
     }
 }
 
-crate::unix! {
+crate::cfg_unix! {
     use crate::os::unix::fs::DirEntryExt;
 
     impl DirEntryExt for DirEntry {

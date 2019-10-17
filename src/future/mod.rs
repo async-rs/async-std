@@ -56,7 +56,7 @@ mod poll_fn;
 mod ready;
 mod timeout;
 
-crate::unstable! {
+crate::cfg_unstable! {
     #[doc(inline)]
     pub use async_macros::{select, try_select};
 

@@ -8,11 +8,11 @@ mod datagram;
 mod listener;
 mod stream;
 
-crate::not_docs! {
+crate::cfg_not_docs! {
     pub use std::os::unix::net::SocketAddr;
 }
 
-crate::docs! {
+crate::cfg_docs! {
     use std::fmt;
 
     use crate::path::Path;

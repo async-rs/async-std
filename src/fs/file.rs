@@ -399,7 +399,7 @@ impl From<std::fs::File> for File {
     }
 }
 
-crate::unix! {
+crate::cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
     impl AsRawFd for File {
@@ -425,7 +425,7 @@ crate::unix! {
     }
 }
 
-crate::windows! {
+crate::cfg_windows! {
     use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
 
     impl AsRawHandle for File {

@@ -23,7 +23,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 /// Declares unstable items.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! unstable {
+macro_rules! cfg_unstable {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "unstable")]
@@ -36,7 +36,7 @@ macro_rules! unstable {
 /// Declares Unix-specific items.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! unix {
+macro_rules! cfg_unix {
     ($($item:item)*) => {
         $(
             #[cfg(any(unix, feature = "docs"))]
@@ -49,7 +49,7 @@ macro_rules! unix {
 /// Declares Windows-specific items.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! windows {
+macro_rules! cfg_windows {
     ($($item:item)*) => {
         $(
             #[cfg(any(windows, feature = "docs"))]
@@ -62,7 +62,7 @@ macro_rules! windows {
 /// Declares items when the "docs" feature is enabled.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! docs {
+macro_rules! cfg_docs {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "docs")]
@@ -74,7 +74,7 @@ macro_rules! docs {
 /// Declares items when the "docs" feature is disabled.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! not_docs {
+macro_rules! cfg_not_docs {
     ($($item:item)*) => {
         $(
             #[cfg(not(feature = "docs"))]

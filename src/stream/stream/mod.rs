@@ -91,7 +91,7 @@ pub use zip::Zip;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
-crate::unstable! {
+crate::cfg_unstable! {
     use std::pin::Pin;
 
     use crate::future::Future;

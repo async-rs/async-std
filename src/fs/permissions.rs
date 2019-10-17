@@ -1,8 +1,8 @@
-crate::not_docs! {
+crate::cfg_not_docs! {
     pub use std::fs::Permissions;
 }
 
-crate::docs! {
+crate::cfg_docs! {
     /// A set of permissions on a file or directory.
     ///
     /// This type is a re-export of [`std::fs::Permissions`].

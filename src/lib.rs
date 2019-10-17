@@ -61,7 +61,7 @@ pub mod stream;
 pub mod sync;
 pub mod task;
 
-unstable! {
+cfg_unstable! {
     pub mod pin;
     pub mod process;
 

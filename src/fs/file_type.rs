@@ -1,8 +1,8 @@
-crate::not_docs! {
+crate::cfg_not_docs! {
     pub use std::fs::FileType;
 }
 
-crate::docs! {
+crate::cfg_docs! {
     /// The type of a file or directory.
     ///
     /// A file type is returned by [`Metadata::file_type`].

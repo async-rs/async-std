@@ -1,9 +1,9 @@
 //! OS-specific extensions.
 
-crate::unix! {
+crate::cfg_unix! {
     pub mod unix;
 }
 
-crate::windows! {
+crate::cfg_windows! {
     pub mod windows;
 }

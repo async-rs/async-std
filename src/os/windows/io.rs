@@ -1,12 +1,12 @@
 //! Windows-specific I/O extensions.
 
-crate::not_docs! {
+crate::cfg_not_docs! {
     pub use std::os::windows::io::{
         AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket,
     };
 }
 
-crate::docs! {
+crate::cfg_docs! {
     /// Raw HANDLEs.
     pub type RawHandle = *mut std::os::raw::c_void;
 

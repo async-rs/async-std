@@ -143,7 +143,7 @@ mod worker;
 
 pub(crate) mod blocking;
 
-crate::unstable! {
+crate::cfg_unstable! {
     mod yield_now;
     pub use yield_now::yield_now;
 }
