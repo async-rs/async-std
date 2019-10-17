@@ -365,7 +365,7 @@ impl From<std::net::TcpStream> for TcpStream {
     }
 }
 
-crate::cfg_unix! {
+cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
     impl AsRawFd for TcpStream {
@@ -387,7 +387,7 @@ crate::cfg_unix! {
     }
 }
 
-crate::cfg_windows! {
+cfg_windows! {
     // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
     //
     // impl AsRawSocket for TcpStream {

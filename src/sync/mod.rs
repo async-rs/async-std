@@ -38,7 +38,7 @@ pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 mod mutex;
 mod rwlock;
 
-crate::cfg_unstable! {
+cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};
     mod barrier;
 }

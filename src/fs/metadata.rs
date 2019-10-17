@@ -37,11 +37,11 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     blocking::spawn(move || std::fs::metadata(path)).await
 }
 
-crate::cfg_not_docs! {
+cfg_not_docs! {
     pub use std::fs::Metadata;
 }
 
-crate::cfg_docs! {
+cfg_docs! {
     use std::time::SystemTime;
 
     use crate::fs::{FileType, Permissions};

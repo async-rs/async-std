@@ -38,7 +38,7 @@ mod once;
 mod repeat;
 mod repeat_with;
 
-crate::cfg_unstable! {
+cfg_unstable! {
     mod double_ended_stream;
     mod exact_size_stream;
     mod extend;

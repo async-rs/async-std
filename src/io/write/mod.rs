@@ -12,7 +12,7 @@ use write_vectored::WriteVectoredFuture;
 
 use crate::io::{self, IoSlice};
 
-crate::extension_trait! {
+extension_trait! {
     use std::pin::Pin;
     use std::ops::{Deref, DerefMut};
 

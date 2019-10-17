@@ -294,7 +294,7 @@ impl Default for OpenOptions {
     }
 }
 
-crate::cfg_unix! {
+cfg_unix! {
     use crate::os::unix::fs::OpenOptionsExt;
 
     impl OpenOptionsExt for OpenOptions {

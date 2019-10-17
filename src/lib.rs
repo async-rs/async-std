@@ -48,7 +48,8 @@
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "1024"]
 
-pub(crate) mod utils;
+#[macro_use]
+mod utils;
 
 pub mod fs;
 pub mod future;

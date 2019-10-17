@@ -210,7 +210,7 @@ impl From<std::net::TcpListener> for TcpListener {
     }
 }
 
-crate::cfg_unix! {
+cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
     impl AsRawFd for TcpListener {
@@ -232,7 +232,7 @@ crate::cfg_unix! {
     }
 }
 
-crate::cfg_windows! {
+cfg_windows! {
     // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
     //
     // impl AsRawSocket for TcpListener {

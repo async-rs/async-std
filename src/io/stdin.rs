@@ -184,7 +184,7 @@ impl Read for Stdin {
     }
 }
 
-crate::cfg_unix! {
+cfg_unix! {
     use crate::os::unix::io::{AsRawFd, RawFd};
 
     impl AsRawFd for Stdin {
@@ -194,7 +194,7 @@ crate::cfg_unix! {
     }
 }
 
-crate::cfg_windows! {
+cfg_windows! {
     use crate::os::windows::io::{AsRawHandle, RawHandle};
 
     impl AsRawHandle for Stdin {

@@ -29,11 +29,11 @@ pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Resu
     blocking::spawn(move || std::os::unix::fs::symlink(&src, &dst)).await
 }
 
-crate::cfg_not_docs! {
+cfg_not_docs! {
     pub use std::os::unix::fs::{DirBuilderExt, DirEntryExt, OpenOptionsExt};
 }
 
-crate::cfg_docs! {
+cfg_docs! {
     /// Unix-specific extensions to `DirBuilder`.
     pub trait DirBuilderExt {
         /// Sets the mode to create new directories with. This option defaults to

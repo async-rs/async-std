@@ -7,13 +7,13 @@ use crate::future::Future;
 use crate::io;
 use crate::task::{blocking, Context, JoinHandle, Poll};
 
-crate::cfg_not_docs! {
+cfg_not_docs! {
     macro_rules! ret {
         (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
     }
 }
 
-crate::cfg_docs! {
+cfg_docs! {
     #[doc(hidden)]
     pub struct ImplFuture<T>(std::marker::PhantomData<T>);
 
