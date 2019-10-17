@@ -57,6 +57,7 @@ mod partial_cmp;
 mod position;
 mod scan;
 mod skip;
+mod successor;
 mod skip_while;
 mod step_by;
 mod take;
