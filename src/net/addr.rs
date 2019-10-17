@@ -3,24 +3,22 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
 use crate::future::Future;
 use crate::io;
 use crate::task::{blocking, Context, JoinHandle, Poll};
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        #[doc(hidden)]
-        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+cfg_not_docs! {
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
+    }
+}
 
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
-        }
-    } else {
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
-        }
+cfg_docs! {
+    #[doc(hidden)]
+    pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
     }
 }
 

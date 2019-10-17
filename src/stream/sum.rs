@@ -11,8 +11,8 @@ use crate::stream::Stream;
 /// [`sum`]: trait.Sum.html#tymethod.sum
 /// [`FromStream`]: trait.FromStream.html
 /// [`Stream::sum`]: trait.Stream.html#method.sum
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait Sum<A = Self>: Sized {
     /// Method which takes a stream and generates `Self` from the elements by
     /// "summing up" the items.

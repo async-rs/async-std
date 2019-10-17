@@ -1,5 +1,3 @@
-use cfg_if::cfg_if;
-
 use crate::io;
 use crate::path::Path;
 use crate::task::blocking;
@@ -39,193 +37,193 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     blocking::spawn(move || std::fs::metadata(path)).await
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::time::SystemTime;
+cfg_not_docs! {
+    pub use std::fs::Metadata;
+}
 
-        use crate::fs::{FileType, Permissions};
+cfg_docs! {
+    use std::time::SystemTime;
 
-        /// Metadata for a file or directory.
+    use crate::fs::{FileType, Permissions};
+
+    /// Metadata for a file or directory.
+    ///
+    /// Metadata is returned by [`metadata`] and [`symlink_metadata`].
+    ///
+    /// This type is a re-export of [`std::fs::Metadata`].
+    ///
+    /// [`metadata`]: fn.metadata.html
+    /// [`symlink_metadata`]: fn.symlink_metadata.html
+    /// [`is_dir`]: #method.is_dir
+    /// [`is_file`]: #method.is_file
+    /// [`std::fs::Metadata`]: https://doc.rust-lang.org/std/fs/struct.Metadata.html
+    #[derive(Clone, Debug)]
+    pub struct Metadata {
+        _private: (),
+    }
+
+    impl Metadata {
+        /// Returns the file type from this metadata.
         ///
-        /// Metadata is returned by [`metadata`] and [`symlink_metadata`].
+        /// # Examples
         ///
-        /// This type is a re-export of [`std::fs::Metadata`].
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
         ///
-        /// [`metadata`]: fn.metadata.html
-        /// [`symlink_metadata`]: fn.symlink_metadata.html
-        /// [`is_dir`]: #method.is_dir
-        /// [`is_file`]: #method.is_file
-        /// [`std::fs::Metadata`]: https://doc.rust-lang.org/std/fs/struct.Metadata.html
-        #[derive(Clone, Debug)]
-        pub struct Metadata {
-            _private: (),
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.file_type());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn file_type(&self) -> FileType {
+            unimplemented!()
         }
 
-        impl Metadata {
-            /// Returns the file type from this metadata.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.file_type());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn file_type(&self) -> FileType {
-                unimplemented!()
-            }
-
-            /// Returns `true` if this metadata is for a regular directory.
-            ///
-            /// If this metadata is for a symbolic link, this method returns `false`.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata(".").await?;
-            /// println!("{:?}", metadata.is_dir());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn is_dir(&self) -> bool {
-                unimplemented!()
-            }
-
-            /// Returns `true` if this metadata is for a regular file.
-            ///
-            /// If this metadata is for a symbolic link, this method returns `false`.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.is_file());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn is_file(&self) -> bool {
-                unimplemented!()
-            }
-
-            /// Returns the file size in bytes.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{}", metadata.len());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn len(&self) -> u64 {
-                unimplemented!()
-            }
-
-            /// Returns the permissions from this metadata.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.permissions());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn permissions(&self) -> Permissions {
-                unimplemented!()
-            }
-
-            /// Returns the last modification time.
-            ///
-            /// # Errors
-            ///
-            /// This data may not be available on all platforms, in which case an error will be
-            /// returned.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.modified());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn modified(&self) -> io::Result<SystemTime> {
-                unimplemented!()
-            }
-
-            /// Returns the last access time.
-            ///
-            /// # Errors
-            ///
-            /// This data may not be available on all platforms, in which case an error will be
-            /// returned.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.accessed());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn accessed(&self) -> io::Result<SystemTime> {
-                unimplemented!()
-            }
-
-            /// Returns the creation time.
-            ///
-            /// # Errors
-            ///
-            /// This data may not be available on all platforms, in which case an error will be
-            /// returned.
-            ///
-            /// # Examples
-            ///
-            /// ```no_run
-            /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-            /// #
-            /// use async_std::fs;
-            ///
-            /// let metadata = fs::metadata("a.txt").await?;
-            /// println!("{:?}", metadata.created());
-            /// #
-            /// # Ok(()) }) }
-            /// ```
-            pub fn created(&self) -> io::Result<SystemTime> {
-                unimplemented!()
-            }
+        /// Returns `true` if this metadata is for a regular directory.
+        ///
+        /// If this metadata is for a symbolic link, this method returns `false`.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata(".").await?;
+        /// println!("{:?}", metadata.is_dir());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn is_dir(&self) -> bool {
+            unimplemented!()
         }
-    } else {
-        pub use std::fs::Metadata;
+
+        /// Returns `true` if this metadata is for a regular file.
+        ///
+        /// If this metadata is for a symbolic link, this method returns `false`.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.is_file());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn is_file(&self) -> bool {
+            unimplemented!()
+        }
+
+        /// Returns the file size in bytes.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{}", metadata.len());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn len(&self) -> u64 {
+            unimplemented!()
+        }
+
+        /// Returns the permissions from this metadata.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.permissions());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn permissions(&self) -> Permissions {
+            unimplemented!()
+        }
+
+        /// Returns the last modification time.
+        ///
+        /// # Errors
+        ///
+        /// This data may not be available on all platforms, in which case an error will be
+        /// returned.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.modified());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn modified(&self) -> io::Result<SystemTime> {
+            unimplemented!()
+        }
+
+        /// Returns the last access time.
+        ///
+        /// # Errors
+        ///
+        /// This data may not be available on all platforms, in which case an error will be
+        /// returned.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.accessed());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn accessed(&self) -> io::Result<SystemTime> {
+            unimplemented!()
+        }
+
+        /// Returns the creation time.
+        ///
+        /// # Errors
+        ///
+        /// This data may not be available on all platforms, in which case an error will be
+        /// returned.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+        /// #
+        /// use async_std::fs;
+        ///
+        /// let metadata = fs::metadata("a.txt").await?;
+        /// println!("{:?}", metadata.created());
+        /// #
+        /// # Ok(()) }) }
+        /// ```
+        pub fn created(&self) -> io::Result<SystemTime> {
+            unimplemented!()
+        }
     }
 }
