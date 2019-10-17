@@ -151,14 +151,14 @@ impl Stdin {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::io;
-    /// use std::io::Read;
+    /// use crate::async_std::prelude::*;
     ///
     /// let mut buffer = String::new();
     ///
     /// let stdin = io::stdin();
     /// let mut handle = stdin.lock().await;
     ///
-    /// handle.read_to_string(&mut buffer)?;
+    /// handle.read_to_string(&mut buffer).await?;
     /// #
     /// # Ok(()) }) }
     /// ```
