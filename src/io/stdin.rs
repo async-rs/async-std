@@ -167,9 +167,7 @@ impl Stdin {
             static ref STDIN: std::io::Stdin = std::io::stdin();
         }
 
-        blocking::spawn(async {
-            StdinLock(STDIN.lock())
-        }).await
+        blocking::spawn(async { StdinLock(STDIN.lock()) }).await
     }
 }
 
