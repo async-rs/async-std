@@ -1,8 +1,6 @@
 use std::pin::Pin;
 use std::sync::Mutex;
 
-use cfg_if::cfg_if;
-
 use crate::future::Future;
 use crate::io::{self, Write};
 use crate::task::{blocking, Context, JoinHandle, Poll};
@@ -162,35 +160,22 @@ impl Write for Stdout {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, RawFd};
-        use crate::os::windows::io::{AsRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        use std::os::windows::io::{AsRawHandle, RawHandle};
-    }
-}
+cfg_unix! {
+    use crate::os::unix::io::{AsRawFd, RawFd};
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for Stdout {
-            fn as_raw_fd(&self) -> RawFd {
-                std::io::stdout().as_raw_fd()
-            }
+    impl AsRawFd for Stdout {
+        fn as_raw_fd(&self) -> RawFd {
+            std::io::stdout().as_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        impl AsRawHandle for Stdout {
-            fn as_raw_handle(&self) -> RawHandle {
-                std::io::stdout().as_raw_handle()
-            }
+cfg_windows! {
+    use crate::os::windows::io::{AsRawHandle, RawHandle};
+
+    impl AsRawHandle for Stdout {
+        fn as_raw_handle(&self) -> RawHandle {
+            std::io::stdout().as_raw_handle()
         }
     }
 }

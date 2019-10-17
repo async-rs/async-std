@@ -11,8 +11,8 @@ use crate::stream::Stream;
 /// [`product`]: trait.Product.html#tymethod.product
 /// [`FromStream`]: trait.FromStream.html
 /// [`Stream::product`]: trait.Stream.html#method.product
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait Product<A = Self>: Sized {
     /// Method which takes a stream and generates `Self` from the elements by
     /// multiplying the items.

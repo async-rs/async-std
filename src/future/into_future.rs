@@ -30,7 +30,7 @@ use crate::future::Future;
 ///     }
 /// }
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait IntoFuture {
     /// The type of value produced on completion.
