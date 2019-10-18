@@ -78,7 +78,7 @@ use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
-pub use flatten::FlatMap;
+pub use flatten::{FlatMap, Flatten};
 pub use fuse::Fuse;
 pub use inspect::Inspect;
 pub use map::Map;
@@ -590,8 +590,7 @@ extension_trait! {
 
             let s: VecDeque<_> = vec![inner1, inner2].into_iter().collect();
 
-            let flat= s.flat_map(|s| s.into_stream() );
-            let v: Vec<u8> = flat.collect().await;
+            let v :Vec<_> = s.flat_map(|s| s.into_stream()).collect().await;
 
             assert_eq!(v, vec![1,2,3,4,5,6]);
 
@@ -605,6 +604,37 @@ extension_trait! {
                 F: FnMut(Self::Item) -> U,
         {
             FlatMap::new(self, f)
+        }
+
+        #[doc = r#"
+            Creates an stream that flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
+
+            let inner1: VecDeque<u8> = vec![1,2,3].into_iter().collect();
+            let inner2: VecDeque<u8> = vec![4,5,6].into_iter().collect();
+            let s: VecDeque<_> = vec![inner1, inner2].into_iter().collect();
+
+            let v: Vec<_> = s.flatten().collect().await;
+
+            assert_eq!(v, vec![1,2,3,4,5,6]);
+
+            # });
+        "#]
+        fn flatten(self) -> Flatten<Self>
+        where
+            Self: Sized,
+            Self::Item: IntoStream,
+        {
+            Flatten::new(self)
         }
 
         #[doc = r#"
