@@ -5,6 +5,11 @@ use crate::stream::stream::map::Map;
 use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 
+/// This `struct` is created by the [`flat_map`] method on [`Stream`]. See its
+/// documentation for more.
+///
+/// [`flat_map`]: trait.Stream.html#method.flat_map
+/// [`Stream`]: trait.Stream.html
 #[allow(missing_debug_implementations)]
 pub struct FlatMap<S: Stream, U: IntoStream, F> {
     inner: FlattenCompat<Map<S, F, S::Item, U>, U>,
@@ -39,6 +44,12 @@ where
     }
 }
 
+/// This `struct` is created by the [`flatten`] method on [`Stream`]. See its
+/// documentation for more.
+///
+/// [`flatten`]: trait.Stream.html#method.flatten
+/// [`Stream`]: trait.Stream.html
+#[allow(missing_debug_implementations)]
 pub struct Flatten<S: Stream>
 where
     S::Item: IntoStream,
