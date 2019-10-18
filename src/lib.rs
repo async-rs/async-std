@@ -49,7 +49,8 @@
 #![recursion_limit = "1024"]
 #![feature(associated_type_bounds)]
 
-use cfg_if::cfg_if;
+#[macro_use]
+mod utils;
 
 pub mod fs;
 pub mod future;
@@ -62,26 +63,19 @@ pub mod stream;
 pub mod sync;
 pub mod task;
 
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        pub mod pin;
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        pub mod process;
+cfg_unstable! {
+    pub mod pin;
+    pub mod process;
 
-        mod unit;
-        mod vec;
-        mod result;
-        mod option;
-        mod string;
-        mod collections;
-    }
+    mod unit;
+    mod vec;
+    mod result;
+    mod option;
+    mod string;
+    mod collections;
+
+    #[doc(inline)]
+    pub use std::{write, writeln};
 }
 
 mod macros;
-pub(crate) mod utils;
-
-#[cfg(any(feature = "unstable", feature = "docs"))]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[doc(inline)]
-pub use std::{write, writeln};

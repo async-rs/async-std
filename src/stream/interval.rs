@@ -43,9 +43,8 @@ use futures_timer::Delay;
 /// #
 /// # Ok(()) }) }
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[doc(inline)]
 pub fn interval(dur: Duration) -> Interval {
     Interval {
         delay: Delay::new(dur),
@@ -55,9 +54,9 @@ pub fn interval(dur: Duration) -> Interval {
 
 /// A stream representing notifications at fixed interval
 ///
-#[derive(Debug)]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[doc(inline)]
+#[derive(Debug)]
 pub struct Interval {
     delay: Delay,
     interval: Duration,

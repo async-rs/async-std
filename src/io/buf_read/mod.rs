@@ -12,19 +12,12 @@ use read_until::ReadUntilFuture;
 use std::mem;
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
 use crate::io;
 use crate::task::{Context, Poll};
-use crate::utils::extension_trait;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
-    }
-}
 
 extension_trait! {
+    use std::ops::{Deref, DerefMut};
+
     #[doc = r#"
         Allows reading from a buffered byte stream.
 

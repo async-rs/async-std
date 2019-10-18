@@ -76,8 +76,8 @@ pub use crate::stream::Stream;
 /// # });
 /// # }
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait ExactSizeStream: Stream {
     /// Returns the exact number of times the stream will iterate.
     ///

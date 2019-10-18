@@ -143,11 +143,9 @@ mod worker;
 
 pub(crate) mod blocking;
 
-cfg_if::cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod yield_now;
-        pub use yield_now::yield_now;
-    }
+cfg_unstable! {
+    mod yield_now;
+    pub use yield_now::yield_now;
 }
 
 /// Spawns a blocking task.
@@ -178,7 +176,7 @@ cfg_if::cfg_if! {
 /// ```
 // Once this function stabilizes we should merge `blocking::spawn` into this so
 // all code in our crate uses `task::blocking` too.
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
 pub fn spawn_blocking<F, R>(f: F) -> task::JoinHandle<R>
