@@ -37,6 +37,7 @@ pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 mod mutex;
 mod rwlock;
+mod waker_list;
 
 cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};

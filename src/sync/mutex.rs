@@ -4,10 +4,11 @@ use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use slab::Slab;
-
 use crate::future::Future;
-use crate::task::{Context, Poll, Waker};
+use crate::task::{Context, Poll};
+
+use super::waker_list::WakerList;
+use std::num::NonZeroUsize;
 
 /// Set if the mutex is locked.
 const LOCK: usize = 1;
@@ -17,7 +18,7 @@ const BLOCKED: usize = 1 << 1;
 
 struct RawMutex {
     state: AtomicUsize,
-    blocked: std::sync::Mutex<Slab<Option<Waker>>>,
+    blocked: std::sync::Mutex<WakerList>,
 }
 
 unsafe impl Send for RawMutex {}
@@ -29,7 +30,7 @@ impl RawMutex {
     pub fn new() -> RawMutex {
         RawMutex {
             state: AtomicUsize::new(0),
-            blocked: std::sync::Mutex::new(Slab::new()),
+            blocked: std::sync::Mutex::new(WakerList::new()),
         }
     }
 
@@ -54,13 +55,7 @@ impl RawMutex {
     #[cold]
     fn unlock_slow(&self) {
         let mut blocked = self.blocked.lock().unwrap();
-
-        if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-            // If there is no waker in this entry, that means it was already woken.
-            if let Some(w) = opt_waker.take() {
-                w.wake();
-            }
-        }
+        blocked.wake_one_weak();
     }
 
     /// Unlock this mutex.
@@ -77,7 +72,7 @@ impl RawMutex {
 
 struct RawLockFuture<'a> {
     mutex: &'a RawMutex,
-    opt_key: Option<usize>,
+    opt_key: Option<NonZeroUsize>,
     acquired: bool,
 }
 
@@ -94,21 +89,22 @@ impl<'a> Future for RawLockFuture<'a> {
             // Register the current task.
             match self.opt_key {
                 None => {
+                    if blocked.is_empty() {
+                        self.mutex.state.fetch_or(BLOCKED, Ordering::Relaxed);
+                    }
+
                     // Insert a new entry into the list of blocked tasks.
                     let w = cx.waker().clone();
                     let key = blocked.insert(Some(w));
                     self.opt_key = Some(key);
-
-                    if blocked.len() == 1 {
-                        self.mutex.state.fetch_or(BLOCKED, Ordering::Relaxed);
-                    }
                 }
                 Some(key) => {
                     // There is already an entry in the list of blocked tasks. Just
                     // reset the waker if it was removed.
-                    if blocked[key].is_none() {
+                    let opt_waker = unsafe { blocked.get(key) };
+                    if opt_waker.is_none() {
                         let w = cx.waker().clone();
-                        blocked[key] = Some(w);
+                        *opt_waker = Some(w);
                     }
                 }
             }
@@ -129,16 +125,11 @@ impl Drop for RawLockFuture<'_> {
     fn drop(&mut self) {
         if let Some(key) = self.opt_key {
             let mut blocked = self.mutex.blocked.lock().unwrap();
-            let opt_waker = blocked.remove(key);
+            let opt_waker = unsafe { blocked.remove(key) };
 
             if opt_waker.is_none() && !self.acquired {
                 // We were awoken but didn't acquire the lock. Wake up another task.
-                if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-                    // If there is no waker in this entry, that means it was already woken.
-                    if let Some(w) = opt_waker.take() {
-                        w.wake();
-                    }
-                }
+                blocked.wake_one_weak();
             }
 
             if blocked.is_empty() {
