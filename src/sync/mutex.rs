@@ -25,6 +25,7 @@ unsafe impl Sync for RawMutex {}
 
 impl RawMutex {
     /// Creates a new raw mutex.
+    #[inline]
     pub fn new() -> RawMutex {
         RawMutex {
             state: AtomicUsize::new(0),
@@ -35,6 +36,7 @@ impl RawMutex {
     /// Acquires the lock.
     ///
     /// We don't use `async` signature here for performance concern.
+    #[inline]
     pub fn lock(&self) -> RawLockFuture<'_> {
         RawLockFuture {
             mutex: self,
@@ -44,24 +46,31 @@ impl RawMutex {
     }
 
     /// Attempts to acquire the lock.
+    #[inline]
     pub fn try_lock(&self) -> bool {
         self.state.fetch_or(LOCK, Ordering::Acquire) & LOCK == 0
     }
 
+    #[cold]
+    fn unlock_slow(&self) {
+        let mut blocked = self.blocked.lock().unwrap();
+
+        if let Some((_, opt_waker)) = blocked.iter_mut().next() {
+            // If there is no waker in this entry, that means it was already woken.
+            if let Some(w) = opt_waker.take() {
+                w.wake();
+            }
+        }
+    }
+
     /// Unlock this mutex.
+    #[inline]
     pub fn unlock(&self) {
         let state = self.state.fetch_and(!LOCK, Ordering::AcqRel);
 
         // If there are any blocked tasks, wake one of them up.
         if state & BLOCKED != 0 {
-            let mut blocked = self.blocked.lock().unwrap();
-
-            if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
-            }
+            self.unlock_slow();
         }
     }
 }
@@ -190,6 +199,7 @@ impl<T> Mutex<T> {
     ///
     /// let mutex = Mutex::new(0);
     /// ```
+    #[inline]
     pub fn new(t: T) -> Mutex<T> {
         Mutex {
             mutex: RawMutex::new(),
@@ -261,6 +271,7 @@ impl<T> Mutex<T> {
     /// #
     /// # })
     /// ```
+    #[inline]
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         if self.mutex.try_lock() {
             Some(MutexGuard(self))
@@ -279,6 +290,7 @@ impl<T> Mutex<T> {
     /// let mutex = Mutex::new(10);
     /// assert_eq!(mutex.into_inner(), 10);
     /// ```
+    #[inline]
     pub fn into_inner(self) -> T {
         self.value.into_inner()
     }
@@ -301,6 +313,7 @@ impl<T> Mutex<T> {
     /// #
     /// # })
     /// ```
+    #[inline]
     pub fn get_mut(&mut self) -> &mut T {
         unsafe { &mut *self.value.get() }
     }
@@ -326,12 +339,14 @@ impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
 }
 
 impl<T> From<T> for Mutex<T> {
+    #[inline]
     fn from(val: T) -> Mutex<T> {
         Mutex::new(val)
     }
 }
 
 impl<T: Default> Default for Mutex<T> {
+    #[inline]
     fn default() -> Mutex<T> {
         Mutex::new(Default::default())
     }
@@ -344,6 +359,7 @@ unsafe impl<T: Send> Send for MutexGuard<'_, T> {}
 unsafe impl<T: Sync> Sync for MutexGuard<'_, T> {}
 
 impl<T> Drop for MutexGuard<'_, T> {
+    #[inline]
     fn drop(&mut self) {
         self.0.mutex.unlock();
     }
@@ -364,12 +380,14 @@ impl<T: fmt::Display> fmt::Display for MutexGuard<'_, T> {
 impl<T> Deref for MutexGuard<'_, T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &T {
         unsafe { &*self.0.value.get() }
     }
 }
 
 impl<T> DerefMut for MutexGuard<'_, T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.0.value.get() }
     }
