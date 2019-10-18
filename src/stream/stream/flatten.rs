@@ -54,6 +54,19 @@ impl<S: Stream<Item: IntoStream>> Flatten<S> {
     }
 }
 
+impl<S, U> Stream for Flatten<S>
+where
+    S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
+    U: Stream + std::marker::Unpin,
+{
+    type Item = U::Item;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.as_mut().inner().poll_next(cx)
+    }
+}
+
+
 /// Real logic of both `Flatten` and `FlatMap` which simply delegate to
 /// this type.
 #[derive(Clone, Debug)]
