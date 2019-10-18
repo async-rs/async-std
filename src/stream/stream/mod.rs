@@ -30,6 +30,7 @@ mod filter;
 mod filter_map;
 mod find;
 mod find_map;
+mod flatten;
 mod fold;
 mod for_each;
 mod fuse;
@@ -77,6 +78,7 @@ use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
+pub use flatten::FlatMap;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
 pub use map::Map;
@@ -93,6 +95,7 @@ use std::marker::PhantomData;
 
 use cfg_if::cfg_if;
 
+use crate::stream::IntoStream;
 use crate::utils::extension_trait;
 
 cfg_if! {
@@ -106,7 +109,6 @@ cfg_if! {
 cfg_if! {
     if #[cfg(any(feature = "unstable", feature = "docs"))] {
         mod merge;
-        mod flatten;
 
         use std::pin::Pin;
 
@@ -496,7 +498,6 @@ extension_trait! {
             #
             # }) }
             ```
-            
         "#]
         fn last(
             self,
@@ -568,6 +569,42 @@ extension_trait! {
             P: FnMut(&Self::Item) -> bool,
         {
             Filter::new(self, predicate)
+        }
+
+        #[doc= r#"
+            Creates an stream that works like map, but flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
+            use async_std::stream::IntoStream;
+
+            let inner1: VecDeque<u8> = vec![1,2,3].into_iter().collect();
+            let inner2: VecDeque<u8> = vec![4,5,6].into_iter().collect();
+
+            let s: VecDeque<_> = vec![inner1, inner2].into_iter().collect();
+
+            let flat= s.flat_map(|s| s.into_stream() );
+            let v: Vec<u8> = flat.collect().await;
+
+            assert_eq!(v, vec![1,2,3,4,5,6]);
+
+            # });
+            ```
+        "#]
+        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
+            where
+                Self: Sized,
+                U: IntoStream,
+                F: FnMut(Self::Item) -> U,
+        {
+            FlatMap::new(self, f)
         }
 
         #[doc = r#"
