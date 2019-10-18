@@ -39,9 +39,9 @@ where Fut: Future<Output=T>
 /// });
 ///
 /// pin_utils::pin_mut!(s);
-/// assert_eq!(s.next().await, Some(1));
-/// assert_eq!(s.next().await, Some(2));
-/// assert_eq!(s.next().await, Some(3));
+/// assert_eq!(s.next().await, Some(23));
+/// assert_eq!(s.next().await, Some(24));
+/// assert_eq!(s.next().await, Some(25));
 /// #
 /// # }) }
 ///
@@ -83,20 +83,18 @@ where
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match &self.future {
-            Some(_) => {
-                let next = futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
-                self.as_mut().future().set(None);
-
-                Poll::Ready(Some(next))
-            },
             None => {
                 let x = self.next;
                 let fut = (self.as_mut().successor())(x);
                 self.as_mut().future().set(Some(fut));
-                // Probably can poll the value here?
-                Poll::Pending
             }
+            _ => {},
         }
+
+        let next = futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
+        *self.as_mut().next() = next;
+        self.as_mut().future().set(None);
+        Poll::Ready(Some(next))
     }
 }
 
