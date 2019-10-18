@@ -176,9 +176,11 @@
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
 
+pub use condvar::Condvar;
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
+mod condvar;
 mod mutex;
 mod rwlock;
 

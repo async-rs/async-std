@@ -287,3 +287,7 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
         unsafe { &mut *self.0.value.get() }
     }
 }
+
+pub fn guard_lock<'a, T>(guard: &MutexGuard<'a, T>) -> &'a Mutex<T> {
+    guard.0
+}
