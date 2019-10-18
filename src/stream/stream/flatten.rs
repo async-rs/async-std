@@ -1,7 +1,43 @@
 use std::pin::Pin;
 
+use crate::prelude::*;
+use crate::stream::stream::map::Map;
 use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
+
+#[allow(missing_debug_implementations)]
+pub struct FlatMap<S: Stream, U: IntoStream, F> {
+    inner: FlattenCompat<Map<S, F, S::Item, U>, U>,
+}
+
+impl<S, U, F> FlatMap<S, U, F>
+where
+    S: Stream,
+    U: IntoStream,
+    F: FnMut(S::Item) -> U,
+{
+    pin_utils::unsafe_pinned!(inner: FlattenCompat<Map<S, F, S::Item, U>, U>);
+
+    pub fn new(stream: S, f: F) -> FlatMap<S, U, F> {
+        FlatMap {
+            inner: FlattenCompat::new(stream.map(f)),
+        }
+    }
+}
+
+impl<S, U, F> Stream for FlatMap<S, U, F>
+where
+    S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
+    S::Item: std::marker::Unpin,
+    U: Stream + std::marker::Unpin,
+    F: FnMut(S::Item) -> U + std::marker::Unpin,
+{
+    type Item = U::Item;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.as_mut().inner().poll_next(cx)
+    }
+}
 
 /// Real logic of both `Flatten` and `FlatMap` which simply delegate to
 /// this type.
@@ -10,6 +46,7 @@ struct FlattenCompat<S, U> {
     stream: S,
     frontiter: Option<U>,
 }
+
 impl<S, U> FlattenCompat<S, U> {
     pin_utils::unsafe_unpinned!(stream: S);
     pin_utils::unsafe_unpinned!(frontiter: Option<U>);
