@@ -39,6 +39,21 @@ where
     }
 }
 
+pub struct Flatten<S: Stream>
+where
+    S::Item: IntoStream,
+{
+    inner: FlattenCompat<S, <S::Item as IntoStream>::IntoStream>,
+}
+
+impl<S: Stream<Item: IntoStream>> Flatten<S> {
+    pin_utils::unsafe_pinned!(inner: FlattenCompat<S, <S::Item as IntoStream>::IntoStream>);
+
+    pub fn new(stream: S) -> Flatten<S> {
+        Flatten { inner: FlattenCompat::new(stream) }
+    }
+}
+
 /// Real logic of both `Flatten` and `FlatMap` which simply delegate to
 /// this type.
 #[derive(Clone, Debug)]
