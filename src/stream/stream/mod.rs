@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod chain;
 mod cmp;
+mod count;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -57,6 +58,7 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
+use count::CountFuture;
 use enumerate::Enumerate;
 use filter_map::FilterMap;
 use find::FindFuture;
@@ -1390,6 +1392,33 @@ extension_trait! {
             <Self as Stream>::Item: Ord
         {
             CmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Counts the number of elements in the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let s1 = VecDeque::from(vec![0]);
+            let s2 = VecDeque::from(vec![1, 2, 3]);
+
+            assert_eq!(s1.count().await, 1);
+            assert_eq!(s2.count().await, 3);
+            #
+            # }) }
+            ```
+        "#]
+        fn count(self) -> impl Future<Output = Ordering> [CountFuture<Self>]
+        where
+            Self: Sized + Stream,
+        {
+            CountFuture::new(self)
         }
 
         #[doc = r#"
