@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::marker::PhantomData;
+use std::pin::Pin;
 
 use crate::future::Future;
 use crate::stream::Stream;
@@ -12,13 +12,14 @@ use crate::task::{Context, Poll};
 ///
 /// [`successor`]: fn.successor.html
 #[derive(Debug)]
-pub struct Successor<F, Fut, T> 
-where Fut: Future<Output=T>
+pub struct Successor<F, Fut, T>
+where
+    Fut: Future<Output = T>,
 {
     successor: F,
     future: Option<Fut>,
     next: T,
-    _marker: PhantomData<Fut>
+    _marker: PhantomData<Fut>,
 }
 
 /// Creates a new stream where to produce each new element a clousre is called with the previous
@@ -51,29 +52,27 @@ where
     F: FnMut(T) -> Fut,
     Fut: Future<Output = T>,
     T: Copy,
-    {
-        Successor {
-            successor: func,
-            future: None,
-            next: start,
-            _marker: PhantomData,
-        }
+{
+    Successor {
+        successor: func,
+        future: None,
+        next: start,
+        _marker: PhantomData,
     }
+}
 
-impl <F, Fut, T> Successor<F, Fut, T>
+impl<F, Fut, T> Successor<F, Fut, T>
 where
     F: FnMut(T) -> Fut,
     Fut: Future<Output = T>,
     T: Copy,
-
 {
     pin_utils::unsafe_unpinned!(successor: F);
     pin_utils::unsafe_unpinned!(next: T);
     pin_utils::unsafe_pinned!(future: Option<Fut>);
-
 }
 
-impl <F, Fut, T> Stream for Successor<F, Fut, T>
+impl<F, Fut, T> Stream for Successor<F, Fut, T>
 where
     Fut: Future<Output = T>,
     F: FnMut(T) -> Fut,
@@ -88,7 +87,7 @@ where
                 let fut = (self.as_mut().successor())(x);
                 self.as_mut().future().set(Some(fut));
             }
-            _ => {},
+            _ => {}
         }
 
         let next = futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
@@ -97,4 +96,3 @@ where
         Poll::Ready(Some(next))
     }
 }
-

@@ -308,6 +308,7 @@ pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
+pub use successor::{successor, Successor};
 
 pub(crate) mod stream;
 
