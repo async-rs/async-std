@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::future::Future;
 use crate::task::{Context, Poll};
 
-use super::waker_list::WakerList;
+use super::waker_list::{WakerList, WakerListLock};
 use std::num::NonZeroUsize;
 
 /// Set if the mutex is locked.
@@ -18,7 +18,7 @@ const BLOCKED: usize = 1 << 1;
 
 struct RawMutex {
     state: AtomicUsize,
-    blocked: std::sync::Mutex<WakerList>,
+    blocked: WakerListLock,
 }
 
 unsafe impl Send for RawMutex {}
@@ -30,7 +30,7 @@ impl RawMutex {
     pub fn new() -> RawMutex {
         RawMutex {
             state: AtomicUsize::new(0),
-            blocked: std::sync::Mutex::new(WakerList::new()),
+            blocked: WakerListLock::new(WakerList::new()),
         }
     }
 
@@ -54,7 +54,7 @@ impl RawMutex {
 
     #[cold]
     fn unlock_slow(&self) {
-        let mut blocked = self.blocked.lock().unwrap();
+        let mut blocked = self.blocked.lock();
         blocked.wake_one_weak();
     }
 
@@ -84,7 +84,7 @@ impl<'a> Future for RawLockFuture<'a> {
             self.acquired = true;
             Poll::Ready(())
         } else {
-            let mut blocked = self.mutex.blocked.lock().unwrap();
+            let mut blocked = self.mutex.blocked.lock();
 
             // Register the current task.
             match self.opt_key {
@@ -124,7 +124,7 @@ impl<'a> Future for RawLockFuture<'a> {
 impl Drop for RawLockFuture<'_> {
     fn drop(&mut self) {
         if let Some(key) = self.opt_key {
-            let mut blocked = self.mutex.blocked.lock().unwrap();
+            let mut blocked = self.mutex.blocked.lock();
             let opt_waker = unsafe { blocked.remove(key) };
 
             if opt_waker.is_none() && !self.acquired {
