@@ -150,25 +150,6 @@ impl FromStream<()> for () {
     }
 }
 
-impl<T> FromStream<T> for Vec<T> {
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = vec![];
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
 impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
     fn from_stream<'a, S: IntoStream<Item = T>>(
         stream: S,
@@ -177,10 +158,8 @@ impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
-
             Cow::Owned(FromStream::from_stream(stream).await)
         })
     }
@@ -194,10 +173,8 @@ impl<T> FromStream<T> for Box<[T]> {
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into_boxed_slice()
         })
     }
@@ -211,10 +188,8 @@ impl<T> FromStream<T> for Rc<[T]> {
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into()
         })
     }
@@ -228,10 +203,8 @@ impl<T> FromStream<T> for Arc<[T]> {
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into()
         })
     }
@@ -251,7 +224,6 @@ where
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
@@ -291,7 +263,6 @@ where
         <S as IntoStream>::IntoStream: 'a,
     {
         let stream = stream.into_stream();
-
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
@@ -320,238 +291,61 @@ where
     }
 }
 
-impl FromStream<char> for String {
-    fn from_stream<'a, S: IntoStream<Item = char>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
+macro_rules! using_extend {
+    (
+        impl$(<$($generic:tt),+>)? FromStream<$t:ty> for $collection:ty $(
+        where
+            $($bounded:ty: $head:tt $(+ $tail:tt)*),+ $(,)?
+        )?
+    ) => {
+        impl$(<$($generic),+>)? FromStream<$t> for $collection $(
+        where
+            $($bounded: $head $(+ $tail)*),+
+        )? {
+            fn from_stream<'a, S: IntoStream<Item = $t>>(
+                stream: S,
+            ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
+            where
+                <S as IntoStream>::IntoStream: 'a,
+            {
+                let stream = stream.into_stream();
 
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
+                Box::pin(async move {
+                    pin_utils::pin_mut!(stream);
 
-            let mut out = String::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
+                    let mut out = Self::default();
+                    out.stream_extend(stream).await;
+                    out
+                })
+            }
+        }
+    };
 }
 
-impl<'b> FromStream<&'b char> for String {
-    fn from_stream<'a, S: IntoStream<Item = &'b char>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
+using_extend!(impl FromStream<char> for String);
+using_extend!(impl<'b> FromStream<&'b char> for String);
+using_extend!(impl<'b> FromStream<&'b str> for String);
+using_extend!(impl FromStream<String> for String);
+using_extend!(impl<'b> FromStream<Cow<'b, str>> for String);
+
+using_extend!(impl<T> FromStream<T> for Vec<T>);
+
+using_extend!(
+    impl<K, V, H> FromStream<(K, V)> for HashMap<K, V, H>
     where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = String::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<'b> FromStream<&'b str> for String {
-    fn from_stream<'a, S: IntoStream<Item = &'b str>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
+        K: Eq + Hash,
+        H: BuildHasher + Default,
+);
+using_extend!(
+    impl<T, H> FromStream<T> for HashSet<T, H>
     where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
+        T: Eq + Hash,
+        H: BuildHasher + Default,
+);
 
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
+using_extend!(impl<T> FromStream<T> for BTreeSet<T> where T: Ord);
+using_extend!(impl<K, V> FromStream<(K, V)> for BTreeMap<K, V> where K: Ord);
 
-            let mut out = String::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl FromStream<String> for String {
-    fn from_stream<'a, S: IntoStream<Item = String>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = String::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<'b> FromStream<Cow<'b, str>> for String {
-    fn from_stream<'a, S: IntoStream<Item = Cow<'b, str>>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = String::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<T: Ord> FromStream<T> for BinaryHeap<T> {
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = BinaryHeap::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<K: Ord, V> FromStream<(K, V)> for BTreeMap<K, V> {
-    fn from_stream<'a, S: IntoStream<Item = (K, V)>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = BTreeMap::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<T: Ord> FromStream<T> for BTreeSet<T> {
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = BTreeSet::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<K, V, H> FromStream<(K, V)> for HashMap<K, V, H>
-where
-    K: Eq + Hash,
-    H: BuildHasher + Default,
-{
-    fn from_stream<'a, S: IntoStream<Item = (K, V)>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = HashMap::with_hasher(Default::default());
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<T, H> FromStream<T> for HashSet<T, H>
-where
-    T: Eq + Hash,
-    H: BuildHasher + Default,
-{
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = HashSet::with_hasher(Default::default());
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<T> FromStream<T> for LinkedList<T> {
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = LinkedList::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
-
-impl<T> FromStream<T> for VecDeque<T> {
-    fn from_stream<'a, S: IntoStream<Item = T>>(
-        stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
-        Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
-            let mut out = VecDeque::new();
-            out.stream_extend(stream).await;
-            out
-        })
-    }
-}
+using_extend!(impl<T> FromStream<T> for BinaryHeap<T> where T: Ord);
+using_extend!(impl<T> FromStream<T> for VecDeque<T>);
+using_extend!(impl<T> FromStream<T> for LinkedList<T>);
