@@ -47,6 +47,7 @@ fn test_buffered_writer() {
     })
 }
 
+#[ignore]
 #[test]
 fn test_buffered_writer_inner_into_inner_flushes() {
     task::block_on(async {
