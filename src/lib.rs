@@ -66,13 +66,6 @@ cfg_unstable! {
     pub mod pin;
     pub mod process;
 
-    mod unit;
-    mod vec;
-    mod result;
-    mod option;
-    mod string;
-    mod collections;
-
     #[doc(inline)]
     pub use std::{write, writeln};
 }
