@@ -111,13 +111,18 @@ impl<'a> Future for RawLockFuture<'a> {
         } else {
             let mut blocked = self.mutex.blocked.lock();
 
+            // Try locking again because it's possible the mutex got unlocked before
+            // we acquire the lock of `blocked`.
+            let state = self.mutex.state.fetch_or(LOCK | BLOCKED, Ordering::Relaxed);
+            if state & LOCK == 0 {
+                std::mem::drop(blocked);
+                self.deregister_waker(true);
+                return Poll::Ready(())
+            }
+
             // Register the current task.
             match self.opt_key {
                 None => {
-                    if blocked.is_empty() {
-                        self.mutex.state.fetch_or(BLOCKED, Ordering::Relaxed);
-                    }
-
                     // Insert a new entry into the list of blocked tasks.
                     let w = cx.waker().clone();
                     let key = blocked.insert(Some(w));
@@ -134,15 +139,7 @@ impl<'a> Future for RawLockFuture<'a> {
                 }
             }
 
-            // Try locking again because it's possible the mutex got unlocked just
-            // before the current task was registered as a blocked task.
-            if self.mutex.try_lock() {
-                std::mem::drop(blocked);
-                self.deregister_waker(true);
-                Poll::Ready(())
-            } else {
-                Poll::Pending
-            }
+            Poll::Pending
         }
     }
 }
