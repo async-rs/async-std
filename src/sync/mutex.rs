@@ -60,7 +60,7 @@ impl RawMutex {
     /// Unlock this mutex.
     #[inline]
     pub fn unlock(&self) {
-        let state = self.state.fetch_and(!LOCK, Ordering::AcqRel);
+        let state = self.state.fetch_and(!LOCK, Ordering::Release);
 
         // If there are any blocked tasks, wake one of them up.
         if state & BLOCKED != 0 {
