@@ -1,5 +1,6 @@
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
 use futures_timer::Delay;
@@ -60,8 +61,19 @@ impl WaitTimeoutResult {
 /// ```
 #[derive(Debug)]
 pub struct Condvar {
-    has_blocked: AtomicBool,
-    blocked: std::sync::Mutex<Slab<Option<Waker>>>,
+    blocked: std::sync::Mutex<Slab<WaitEntry>>,
+}
+
+/// Flag to mark if the task was notified
+const NOTIFIED: usize = 1;
+/// State if the task was notified with `notify_once`
+/// so it should notify another task if the future is dropped without waking.
+const NOTIFIED_ONCE: usize = 0b11;
+
+#[derive(Debug)]
+struct WaitEntry {
+    state: Arc<AtomicUsize>,
+    waker: Option<Waker>,
 }
 
 impl Condvar {
@@ -76,7 +88,6 @@ impl Condvar {
     /// ```
     pub fn new() -> Self {
         Condvar {
-            has_blocked: AtomicBool::new(false),
             blocked: std::sync::Mutex::new(Slab::new()),
         }
     }
@@ -126,6 +137,7 @@ impl Condvar {
         AwaitNotify {
             cond: self,
             guard: Some(guard),
+            state: Arc::new(AtomicUsize::new(0)),
             key: None,
         }
     }
@@ -261,14 +273,8 @@ impl Condvar {
     /// # }) }
     /// ```
     pub fn notify_one(&self) {
-        if self.has_blocked.load(Ordering::Acquire) {
-            let mut blocked = self.blocked.lock().unwrap();
-            if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
-            }
-        }
+        let blocked = self.blocked.lock().unwrap();
+        notify(blocked, false);
     }
 
     /// Wakes up all blocked tasks on this condvar.
@@ -304,12 +310,20 @@ impl Condvar {
     /// # }) }
     /// ```
     pub fn notify_all(&self) {
-        if self.has_blocked.load(Ordering::Acquire) {
-            let mut blocked = self.blocked.lock().unwrap();
-            for (_, opt_waker) in blocked.iter_mut() {
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
+        let blocked = self.blocked.lock().unwrap();
+        notify(blocked, true);
+    }
+}
+
+#[inline]
+fn notify(mut blocked: std::sync::MutexGuard<'_, Slab<WaitEntry>>, all: bool) {
+    let state = if all { NOTIFIED } else { NOTIFIED_ONCE };
+    for (_, entry) in blocked.iter_mut() {
+        if let Some(w) = entry.waker.take() {
+            entry.state.store(state, Ordering::Release);
+            w.wake();
+            if !all {
+                return;
             }
         }
     }
@@ -318,6 +332,7 @@ impl Condvar {
 struct AwaitNotify<'a, 'b, T> {
     cond: &'a Condvar,
     guard: Option<MutexGuard<'b, T>>,
+    state: Arc<AtomicUsize>,
     key: Option<usize>,
 }
 
@@ -329,15 +344,21 @@ impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
             Some(_) => {
                 let mut blocked = self.cond.blocked.lock().unwrap();
                 let w = cx.waker().clone();
-                self.key = Some(blocked.insert(Some(w)));
+                self.key = Some(blocked.insert(WaitEntry {
+                    state: self.state.clone(),
+                    waker: Some(w),
+                }));
 
-                if blocked.len() == 1 {
-                    self.cond.has_blocked.store(true, Ordering::Relaxed);
-                }
                 // the guard is dropped when we return, which frees the lock
                 Poll::Pending
             }
-            None => Poll::Ready(()),
+            None => {
+                if self.state.fetch_and(!NOTIFIED, Ordering::AcqRel) & NOTIFIED != 0 {
+                    Poll::Ready(())
+                } else {
+                    Poll::Pending
+                }
+            }
         }
     }
 }
@@ -348,8 +369,10 @@ impl<'a, 'b, T> Drop for AwaitNotify<'a, 'b, T> {
             let mut blocked = self.cond.blocked.lock().unwrap();
             blocked.remove(key);
 
-            if blocked.is_empty() {
-                self.cond.has_blocked.store(false, Ordering::Relaxed);
+            if !blocked.is_empty() && self.state.load(Ordering::Acquire) == NOTIFIED_ONCE {
+                // we got a notification form notify_once but didn't handle it,
+                // so send it to a different task
+                notify(blocked, false);
             }
         }
     }
@@ -369,12 +392,12 @@ impl<'a, 'b, T> Future for TimeoutWaitFuture<'a, 'b, T> {
     type Output = WaitTimeoutResult;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.as_mut().await_notify().poll(cx) {
-            Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(false)),
-            Poll::Pending => match self.delay().poll(cx) {
-                Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(true)),
+        match self.as_mut().delay().poll(cx) {
+            Poll::Pending => match self.await_notify().poll(cx) {
+                Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(false)),
                 Poll::Pending => Poll::Pending,
             },
+            Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(true)),
         }
     }
 }
