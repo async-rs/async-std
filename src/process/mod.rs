@@ -20,7 +20,7 @@ use crate::future::Future;
 use crate::task::Poll;
 use std::ffi::OsStr;
 
-struct Child {
+pub struct Child {
     stdin: Option<ChildStdin>,
     stdout: Option<ChildStdout>,
     stderr: Option<ChildStderr>,
@@ -51,20 +51,25 @@ struct ChildStdin;
 struct ChildStdout;
 struct ChildStderr;
 
-struct Command;
+pub struct Command;
 
 impl Command {
-    fn new<S: AsRef<OsStr>>(program: S) -> Command {
+    pub fn new<S: AsRef<OsStr>>(program: S) -> Command {
         unimplemented!();
     }
     /// ```
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::process::Command;
     /// let child = Command::new("ls").spawn();
     /// let future = child.expect("failed to spawn child");
     /// let result = future.await?;
-    /// assert!(!result.empty());
+    /// assert!(result.success());
     /// assert!(false);
+    /// #
+    /// # Ok(()) }) }
     /// ```
-    fn spawn(&mut self) -> io::Result<Child> {
+    pub fn spawn(&mut self) -> io::Result<Child> {
         unimplemented!();
     }
 }
