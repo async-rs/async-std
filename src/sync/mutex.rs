@@ -42,7 +42,6 @@ impl RawMutex {
         RawLockFuture {
             mutex: self,
             opt_key: None,
-            acquired: false,
         }
     }
 
@@ -72,8 +71,34 @@ impl RawMutex {
 
 struct RawLockFuture<'a> {
     mutex: &'a RawMutex,
+    /// None indicates that the Future isn't yet polled, or has already returned `Ready`.
+    /// RawLockFuture does not distinguish between these two states.
     opt_key: Option<NonZeroUsize>,
-    acquired: bool,
+}
+
+impl<'a> RawLockFuture<'a> {
+    /// Remove waker registration. This should be called upon successful acqusition of the lock.
+    fn deregister_waker(&mut self, acquired: bool) {
+        if let Some(key) = self.opt_key.take() {
+            let mut blocked = self.mutex.blocked.lock();
+            let opt_waker = unsafe { blocked.remove(key) };
+
+            if opt_waker.is_none() && !acquired {
+                // We were awoken but didn't acquire the lock. Wake up another task.
+                blocked.wake_one_weak();
+            }
+
+            if blocked.is_empty() {
+                self.mutex.state.fetch_and(!BLOCKED, Ordering::Relaxed);
+            }
+        }
+    }
+
+    /// Cold path of drop. Only to be hit when locking is cancelled.
+    #[cold]
+    fn drop_slow(&mut self) {
+        self.deregister_waker(false);
+    }
 }
 
 impl<'a> Future for RawLockFuture<'a> {
@@ -81,7 +106,7 @@ impl<'a> Future for RawLockFuture<'a> {
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.mutex.try_lock() {
-            self.acquired = true;
+            self.deregister_waker(true);
             Poll::Ready(())
         } else {
             let mut blocked = self.mutex.blocked.lock();
@@ -112,7 +137,8 @@ impl<'a> Future for RawLockFuture<'a> {
             // Try locking again because it's possible the mutex got unlocked just
             // before the current task was registered as a blocked task.
             if self.mutex.try_lock() {
-                self.acquired = true;
+                std::mem::drop(blocked);
+                self.deregister_waker(true);
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -122,19 +148,11 @@ impl<'a> Future for RawLockFuture<'a> {
 }
 
 impl Drop for RawLockFuture<'_> {
+    #[inline]
     fn drop(&mut self) {
-        if let Some(key) = self.opt_key {
-            let mut blocked = self.mutex.blocked.lock();
-            let opt_waker = unsafe { blocked.remove(key) };
-
-            if opt_waker.is_none() && !self.acquired {
-                // We were awoken but didn't acquire the lock. Wake up another task.
-                blocked.wake_one_weak();
-            }
-
-            if blocked.is_empty() {
-                self.mutex.state.fetch_and(!BLOCKED, Ordering::Relaxed);
-            }
+        if self.opt_key.is_some() {
+            // This cold path is only going to be reached when we drop the future when locking is cancelled.
+            self.drop_slow();
         }
     }
 }
