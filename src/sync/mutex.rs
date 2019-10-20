@@ -78,6 +78,7 @@ struct RawLockFuture<'a> {
 
 impl<'a> RawLockFuture<'a> {
     /// Remove waker registration. This should be called upon successful acqusition of the lock.
+    #[cold]
     fn deregister_waker(&mut self, acquired: bool) {
         if let Some(key) = self.opt_key.take() {
             let mut blocked = self.mutex.blocked.lock();
@@ -94,6 +95,57 @@ impl<'a> RawLockFuture<'a> {
         }
     }
 
+    /// The cold path where the first poll of a mutex will cause the mutex to block.
+    #[cold]
+    fn poll_would_block(&mut self, cx: &mut Context<'_>) -> Poll<()> {
+        let mut blocked = self.mutex.blocked.lock();
+
+        // Try locking again because it's possible the mutex got unlocked before
+        // we acquire the lock of `blocked`.
+        let state = self.mutex.state.fetch_or(LOCK | BLOCKED, Ordering::Relaxed);
+        if state & LOCK == 0 {
+            return Poll::Ready(());
+        }
+
+        // Register the current task.
+        // Insert a new entry into the list of blocked tasks.
+        let w = cx.waker().clone();
+        let key = blocked.insert(Some(w));
+        self.opt_key = Some(key);
+
+        Poll::Pending
+    }
+
+    /// The cold path where we are polling an already-blocked mutex
+    #[cold]
+    fn poll_blocked(&mut self, cx: &mut Context<'_>) -> Poll<()> {
+        if self.mutex.try_lock() {
+            self.deregister_waker(true);
+            Poll::Ready(())
+        } else {
+            let mut blocked = self.mutex.blocked.lock();
+
+            // Try locking again because it's possible the mutex got unlocked before
+            // we acquire the lock of `blocked`. On this path we know we have BLOCKED
+            // set, so don't bother to set it again.
+            if self.mutex.try_lock() {
+                std::mem::drop(blocked);
+                self.deregister_waker(true);
+                return Poll::Ready(());
+            }
+
+            // There is already an entry in the list of blocked tasks. Just
+            // reset the waker if it was removed.
+            let opt_waker = unsafe { blocked.get(self.opt_key.unwrap()) };
+            if opt_waker.is_none() {
+                let w = cx.waker().clone();
+                *opt_waker = Some(w);
+            }
+
+            Poll::Pending
+        }
+    }
+
     /// Cold path of drop. Only to be hit when locking is cancelled.
     #[cold]
     fn drop_slow(&mut self) {
@@ -104,57 +156,17 @@ impl<'a> RawLockFuture<'a> {
 impl<'a> Future for RawLockFuture<'a> {
     type Output = ();
 
+    #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.opt_key {
             None => {
                 if self.mutex.try_lock() {
                     Poll::Ready(())
                 } else {
-                    let mut blocked = self.mutex.blocked.lock();
-
-                    // Try locking again because it's possible the mutex got unlocked before
-                    // we acquire the lock of `blocked`.
-                    let state = self.mutex.state.fetch_or(LOCK | BLOCKED, Ordering::Relaxed);
-                    if state & LOCK == 0 {
-                        return Poll::Ready(());
-                    }
-
-                    // Register the current task.
-                    // Insert a new entry into the list of blocked tasks.
-                    let w = cx.waker().clone();
-                    let key = blocked.insert(Some(w));
-                    self.opt_key = Some(key);
-
-                    Poll::Pending
+                    self.poll_would_block(cx)
                 }
             }
-            Some(key) => {
-                if self.mutex.try_lock() {
-                    self.deregister_waker(true);
-                    Poll::Ready(())
-                } else {
-                    let mut blocked = self.mutex.blocked.lock();
-
-                    // Try locking again because it's possible the mutex got unlocked before
-                    // we acquire the lock of `blocked`. On this path we know we have BLOCKED
-                    // set, so don't bother to set it again.
-                    if self.mutex.try_lock() {
-                        std::mem::drop(blocked);
-                        self.deregister_waker(true);
-                        return Poll::Ready(());
-                    }
-
-                    // There is already an entry in the list of blocked tasks. Just
-                    // reset the waker if it was removed.
-                    let opt_waker = unsafe { blocked.get(key) };
-                    if opt_waker.is_none() {
-                        let w = cx.waker().clone();
-                        *opt_waker = Some(w);
-                    }
-
-                    Poll::Pending
-                }
-            }
+            Some(_) => self.poll_blocked(cx),
         }
     }
 }
