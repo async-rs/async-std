@@ -55,6 +55,9 @@ where
     type Output = Option<S::Item>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        use Direction::*;
+        use Ordering::*;
+
         let this = self.project();
         let next = futures_core::ready!(this.stream.poll_next(cx));
 
@@ -64,9 +67,8 @@ where
 
                 match this.value.take() {
                     None => this.value.replace(new),
-                    Some(old) => match (this.compare)(&new, &old) {
-                        Ordering::Less if Direction::Minimizing == *this.direction => this.value.replace(new),
-                        Ordering::Greater if Direction::Maximizing == *this.direction => this.value.replace(new),
+                    Some(old) => match ((this.compare)(&new, &old), this.direction) {
+                        (Less, Minimizing) | (Greater, Maximizing) => this.value.replace(new),
                         _ => this.value.replace(old),
                     },
                 };
