@@ -15,7 +15,12 @@ pin_project! {
         stream: S,
         compare: F,
         min: Option<T>,
+        direction: Direction,
     }
+}
+enum Direction {
+    Maximizing,
+    Minimizing,
 }
 
 impl<S, F, T> MinByFuture<S, F, T> {
@@ -24,6 +29,7 @@ impl<S, F, T> MinByFuture<S, F, T> {
             stream,
             compare,
             min: None,
+            direction: Direction::Minimizing,
         }
     }
 }
