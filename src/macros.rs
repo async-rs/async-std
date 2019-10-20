@@ -43,7 +43,7 @@
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! print {
@@ -81,7 +81,7 @@ macro_rules! print {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! println {
@@ -119,7 +119,7 @@ macro_rules! println {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprint {
@@ -153,7 +153,7 @@ macro_rules! eprint {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprintln {

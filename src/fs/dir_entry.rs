@@ -2,8 +2,6 @@ use std::ffi::OsString;
 use std::fmt;
 use std::sync::Arc;
 
-use cfg_if::cfg_if;
-
 use crate::fs::{FileType, Metadata};
 use crate::io;
 use crate::path::PathBuf;
@@ -160,21 +158,12 @@ impl fmt::Debug for DirEntry {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::fs::DirEntryExt;
-    } else if #[cfg(unix)] {
-        use std::os::unix::fs::DirEntryExt;
-    }
-}
+cfg_unix! {
+    use crate::os::unix::fs::DirEntryExt;
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl DirEntryExt for DirEntry {
-            fn ino(&self) -> u64 {
-                self.0.ino()
-            }
+    impl DirEntryExt for DirEntry {
+        fn ino(&self) -> u64 {
+            self.0.ino()
         }
     }
 }

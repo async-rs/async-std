@@ -94,32 +94,22 @@ use std::cmp::Ordering;
 use std::marker::PhantomData;
 use std::time::Duration;
 
-use cfg_if::cfg_if;
+cfg_unstable! {
+    use std::pin::Pin;
 
-use crate::utils::extension_trait;
+    use crate::future::Future;
+    use crate::stream::FromStream;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
+    pub use merge::Merge;
 
-        use crate::task::{Context, Poll};
-    }
-}
-
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod merge;
-
-        use std::pin::Pin;
-
-        use crate::future::Future;
-        use crate::stream::FromStream;
-
-        pub use merge::Merge;
-    }
+    mod merge;
 }
 
 extension_trait! {
+    use std::ops::{Deref, DerefMut};
+
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         An asynchronous stream of values.
 
@@ -505,7 +495,7 @@ extension_trait! {
             #
             # }) }
             ```
-            
+
         "#]
         fn last(
             self,
@@ -1286,7 +1276,7 @@ extension_trait! {
 
             [`stream`]: trait.Stream.html#tymethod.next
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
         fn collect<'a, B>(
@@ -1325,7 +1315,7 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn merge<U>(self, other: U) -> Merge<Self, U>
         where
@@ -1355,9 +1345,9 @@ extension_trait! {
             let s4 = VecDeque::from(vec![1, 2, 4]);
             assert_eq!(s1.clone().partial_cmp(s1.clone()).await, Some(Ordering::Equal));
             assert_eq!(s1.clone().partial_cmp(s2.clone()).await, Some(Ordering::Less));
-            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));       
+            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));
             assert_eq!(s3.clone().partial_cmp(s4.clone()).await, Some(Ordering::Less));
-            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));                             
+            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));
             #
             # }) }
             ```
@@ -1376,7 +1366,7 @@ extension_trait! {
 
         #[doc = r#"
             Lexicographically compares the elements of this `Stream` with those
-            of another using 'Ord'. 
+            of another using 'Ord'.
 
             # Examples
 
@@ -1393,9 +1383,9 @@ extension_trait! {
             let s4 = VecDeque::from(vec![1, 2, 4]);
             assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
             assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
-            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);       
+            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);
             assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
-            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);  
+            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);
             #
             # }) }
             ```
