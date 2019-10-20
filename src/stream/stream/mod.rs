@@ -96,6 +96,7 @@ cfg_unstable! {
 
     use crate::future::Future;
     use crate::stream::FromStream;
+    use crate::stream::{Product, Sum};
 
     pub use merge::Merge;
 
@@ -1535,6 +1536,95 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             LtFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Sums the elements of an iterator.
+
+            Takes each element, adds them together, and returns the result.
+
+            An empty iterator returns the zero value of the type.
+
+            # Panics
+
+            When calling `sum()` and a primitive integer type is being returned, this
+            method will panic if the computation overflows and debug assertions are
+            enabled.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
+
+            let s: VecDeque<_> = vec![0u8, 1, 2, 3, 4].into_iter().collect();
+            let sum: u8 = s.sum().await;
+
+            assert_eq!(sum, 10);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn sum<'a, S>(
+            self,
+        ) -> impl Future<Output = S> + 'a [Pin<Box<dyn Future<Output = S> + 'a>>]
+        where
+            Self: Sized + Stream<Item = S> + 'a,
+            S: Sum,
+        {
+            Sum::sum(self)
+        }
+
+        #[doc = r#"
+            Iterates over the entire iterator, multiplying all the elements
+
+            An empty iterator returns the one value of the type.
+
+            # Panics
+
+            When calling `product()` and a primitive integer type is being returned,
+            method will panic if the computation overflows and debug assertions are
+            enabled.
+
+            # Examples
+
+            This example calculates the factorial of n (i.e. the product of the numbers from 1 to
+            n, inclusive):
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            async fn factorial(n: u32) -> u32 {
+                use std::collections::VecDeque;
+                use async_std::prelude::*;
+
+                let s: VecDeque<_> = (1..=n).collect();
+                s.product().await
+            }
+
+            assert_eq!(factorial(0).await, 1);
+            assert_eq!(factorial(1).await, 1);
+            assert_eq!(factorial(5).await, 120);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn product<'a, P>(
+            self,
+        ) -> impl Future<Output = P> + 'a [Pin<Box<dyn Future<Output = P> + 'a>>]
+        where
+            Self: Sized + Stream<Item = P> + 'a,
+            P: Product,
+        {
+            Product::product(self)
         }
     }
 
