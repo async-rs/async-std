@@ -636,7 +636,7 @@ extension_trait! {
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
-            MinMaxByFuture::new(self, compare, min_by::Direction::Maximizing)
+            MinMaxByFuture::new_max(self, compare)
         }
 
         #[doc = r#"
@@ -675,7 +675,7 @@ extension_trait! {
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
-            MinMaxByFuture::new(self, compare, min_by::Direction::Minimizing)
+            MinMaxByFuture::new_min(self, compare)
         }
 
         #[doc = r#"

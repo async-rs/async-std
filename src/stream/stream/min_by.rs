@@ -20,19 +20,28 @@ pin_project! {
 }
 
 #[derive(PartialEq, Eq)]
-pub(crate) enum Direction {
+enum Direction {
     Maximizing,
     Minimizing,
 }
 
 
 impl<S, F, T> MinMaxByFuture<S, F, T> {
-    pub(super) fn new(stream: S, compare: F, direction: Direction) -> Self {
+    pub(super) fn new_min(stream: S, compare: F) -> Self {
         MinMaxByFuture {
             stream,
             compare,
             value: None,
-            direction,
+            direction: Direction::Minimizing,
+        }
+    }
+
+    pub(super) fn new_max(stream: S, compare: F) -> Self {
+        MinMaxByFuture {
+            stream,
+            compare,
+            value: None,
+            direction: Direction::Maximizing,
         }
     }
 }
