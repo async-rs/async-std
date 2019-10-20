@@ -12,7 +12,7 @@ use crate::task::{Context, Poll};
 ///
 /// [`successor`]: fn.successor.html
 #[derive(Debug)]
-pub struct Successor<F, Fut, T>
+pub struct Successors<F, Fut, T>
 where
     Fut: Future<Output = T>,
 {
@@ -22,7 +22,7 @@ where
     _marker: PhantomData<Fut>,
 }
 
-/// Creates a new stream where to produce each new element a clousre is called with the previous
+/// Creates a new stream where to produce each new element a closure is called with the previous
 /// value.
 ///
 /// #Examples
@@ -33,7 +33,7 @@ where
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::successor(22, |val| {
+/// let s = stream::successors(22, |val| {
 ///     async move {
 ///         val + 1
 ///     }
@@ -47,13 +47,13 @@ where
 /// # }) }
 ///
 /// ```
-pub fn successor<F, Fut, T>(start: T, func: F) -> Successor<F, Fut, T>
+pub fn successors<F, Fut, T>(start: T, func: F) -> Successors<F, Fut, T>
 where
     F: FnMut(T) -> Fut,
     Fut: Future<Output = T>,
     T: Copy,
 {
-    Successor {
+    Successors {
         successor: func,
         future: None,
         next: start,
@@ -61,7 +61,7 @@ where
     }
 }
 
-impl<F, Fut, T> Successor<F, Fut, T>
+impl<F, Fut, T> Successors<F, Fut, T>
 where
     F: FnMut(T) -> Fut,
     Fut: Future<Output = T>,
@@ -72,7 +72,7 @@ where
     pin_utils::unsafe_pinned!(future: Option<Fut>);
 }
 
-impl<F, Fut, T> Stream for Successor<F, Fut, T>
+impl<F, Fut, T> Stream for Successors<F, Fut, T>
 where
     Fut: Future<Output = T>,
     F: FnMut(T) -> Fut,
