@@ -14,7 +14,7 @@ pin_project! {
         #[pin]
         stream: S,
         compare: F,
-        min: Option<T>,
+        value: Option<T>,
         direction: Direction,
     }
 }
@@ -29,7 +29,7 @@ impl<S, F, T> MinMaxByFuture<S, F, T> {
         MinMaxByFuture {
             stream,
             compare,
-            min: None,
+            value: None,
             direction: Direction::Minimizing,
         }
     }
@@ -50,16 +50,16 @@ where
         match next {
             Some(new) => {
                 cx.waker().wake_by_ref();
-                match this.min.take() {
-                    None => *this.min = Some(new),
+                match this.value.take() {
+                    None => this.value.replace(new),
                     Some(old) => match (this.compare)(&new, &old) {
-                        Ordering::Less => *this.min = Some(new),
-                        _ => *this.min = Some(old),
+                        Ordering::Less => this.value.replace(new),
+                        _ => this.value.replace(old),
                     },
-                }
+                };
                 Poll::Pending
             }
-            None => Poll::Ready(*this.min),
+            None => Poll::Ready(*this.value),
         }
     }
 }
