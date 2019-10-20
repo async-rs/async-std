@@ -14,11 +14,11 @@ use crate::task::{Context, Poll};
 #[derive(Debug)]
 pub struct Successors<F, Fut, T>
 where
-    Fut: Future<Output = T>,
+    Fut: Future<Output = Option<T>>,
 {
     successor: F,
     future: Option<Fut>,
-    next: T,
+    next: Option<T>,
     _marker: PhantomData<Fut>,
 }
 
@@ -33,9 +33,9 @@ where
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::successors(22, |val| {
+/// let s = stream::successors(Some(22), |val| {
 ///     async move {
-///         val + 1
+///         Some(val + 1)
 ///     }
 /// });
 ///
@@ -43,14 +43,25 @@ where
 /// assert_eq!(s.next().await, Some(23));
 /// assert_eq!(s.next().await, Some(24));
 /// assert_eq!(s.next().await, Some(25));
+///
+///
+///let never = stream::successors(None, |val: usize| {
+///     async move {
+///         Some(val + 1)
+///     }
+/// });
+///
+/// pin_utils::pin_mut!(never);
+/// assert_eq!(never.next().await, None);
+/// assert_eq!(never.next().await, None);
 /// #
 /// # }) }
 ///
 /// ```
-pub fn successors<F, Fut, T>(start: T, func: F) -> Successors<F, Fut, T>
+pub fn successors<F, Fut, T>(start: Option<T>, func: F) -> Successors<F, Fut, T>
 where
     F: FnMut(T) -> Fut,
-    Fut: Future<Output = T>,
+    Fut: Future<Output = Option<T>>,
     T: Copy,
 {
     Successors {
@@ -64,26 +75,30 @@ where
 impl<F, Fut, T> Successors<F, Fut, T>
 where
     F: FnMut(T) -> Fut,
-    Fut: Future<Output = T>,
+    Fut: Future<Output = Option<T>>,
     T: Copy,
 {
     pin_utils::unsafe_unpinned!(successor: F);
-    pin_utils::unsafe_unpinned!(next: T);
+    pin_utils::unsafe_unpinned!(next: Option<T>);
     pin_utils::unsafe_pinned!(future: Option<Fut>);
 }
 
 impl<F, Fut, T> Stream for Successors<F, Fut, T>
 where
-    Fut: Future<Output = T>,
+    Fut: Future<Output = Option<T>>,
     F: FnMut(T) -> Fut,
     T: Copy,
 {
     type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        if self.next.is_none() {
+            return Poll::Ready(None);
+        }
+
         match &self.future {
             None => {
-                let x = self.next;
+                let x = self.next.unwrap();
                 let fut = (self.as_mut().successor())(x);
                 self.as_mut().future().set(Some(fut));
             }
@@ -93,6 +108,6 @@ where
         let next = futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
         *self.as_mut().next() = next;
         self.as_mut().future().set(None);
-        Poll::Ready(Some(next))
+        Poll::Ready(next)
     }
 }
