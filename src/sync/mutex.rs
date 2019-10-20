@@ -105,30 +105,45 @@ impl<'a> Future for RawLockFuture<'a> {
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.mutex.try_lock() {
-            self.deregister_waker(true);
-            Poll::Ready(())
-        } else {
-            let mut blocked = self.mutex.blocked.lock();
+        match self.opt_key {
+            None => {
+                if self.mutex.try_lock() {
+                    Poll::Ready(())
+                } else {
+                    let mut blocked = self.mutex.blocked.lock();
 
-            // Try locking again because it's possible the mutex got unlocked before
-            // we acquire the lock of `blocked`.
-            let state = self.mutex.state.fetch_or(LOCK | BLOCKED, Ordering::Relaxed);
-            if state & LOCK == 0 {
-                std::mem::drop(blocked);
-                self.deregister_waker(true);
-                return Poll::Ready(())
-            }
+                    // Try locking again because it's possible the mutex got unlocked before
+                    // we acquire the lock of `blocked`.
+                    let state = self.mutex.state.fetch_or(LOCK | BLOCKED, Ordering::Relaxed);
+                    if state & LOCK == 0 {
+                        return Poll::Ready(());
+                    }
 
-            // Register the current task.
-            match self.opt_key {
-                None => {
+                    // Register the current task.
                     // Insert a new entry into the list of blocked tasks.
                     let w = cx.waker().clone();
                     let key = blocked.insert(Some(w));
                     self.opt_key = Some(key);
+
+                    Poll::Pending
                 }
-                Some(key) => {
+            }
+            Some(key) => {
+                if self.mutex.try_lock() {
+                    self.deregister_waker(true);
+                    Poll::Ready(())
+                } else {
+                    let mut blocked = self.mutex.blocked.lock();
+
+                    // Try locking again because it's possible the mutex got unlocked before
+                    // we acquire the lock of `blocked`. On this path we know we have BLOCKED
+                    // set, so don't bother to set it again.
+                    if self.mutex.try_lock() {
+                        std::mem::drop(blocked);
+                        self.deregister_waker(true);
+                        return Poll::Ready(());
+                    }
+
                     // There is already an entry in the list of blocked tasks. Just
                     // reset the waker if it was removed.
                     let opt_waker = unsafe { blocked.get(key) };
@@ -136,10 +151,10 @@ impl<'a> Future for RawLockFuture<'a> {
                         let w = cx.waker().clone();
                         *opt_waker = Some(w);
                     }
+
+                    Poll::Pending
                 }
             }
-
-            Poll::Pending
         }
     }
 }
