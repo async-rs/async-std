@@ -318,7 +318,7 @@ mod from_iter;
 mod once;
 mod repeat;
 mod repeat_with;
-mod successor;
+mod successors;
 
 cfg_unstable! {
     mod double_ended_stream;
