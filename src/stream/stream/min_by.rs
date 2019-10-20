@@ -18,6 +18,8 @@ pin_project! {
         direction: Direction,
     }
 }
+
+#[derive(PartialEq, Eq)]
 enum Direction {
     Maximizing,
     Minimizing,
@@ -53,7 +55,7 @@ where
                 match this.value.take() {
                     None => this.value.replace(new),
                     Some(old) => match (this.compare)(&new, &old) {
-                        Ordering::Less => this.value.replace(new),
+                        Ordering::Less if Direction::Minimizing == *this.direction => this.value.replace(new),
                         _ => this.value.replace(old),
                     },
                 };
