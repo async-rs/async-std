@@ -10,7 +10,7 @@ use crate::task::{Context, Poll};
 pin_project! {
     #[doc(hidden)]
     #[allow(missing_debug_implementations)]
-    pub struct MinByFuture<S, F, T> {
+    pub struct MinMaxByFuture<S, F, T> {
         #[pin]
         stream: S,
         compare: F,
@@ -23,9 +23,10 @@ enum Direction {
     Minimizing,
 }
 
-impl<S, F, T> MinByFuture<S, F, T> {
+
+impl<S, F, T> MinMaxByFuture<S, F, T> {
     pub(super) fn new(stream: S, compare: F) -> Self {
-        MinByFuture {
+        MinMaxByFuture {
             stream,
             compare,
             min: None,
@@ -34,7 +35,7 @@ impl<S, F, T> MinByFuture<S, F, T> {
     }
 }
 
-impl<S, F> Future for MinByFuture<S, F, S::Item>
+impl<S, F> Future for MinMaxByFuture<S, F, S::Item>
 where
     S: Stream + Unpin + Sized,
     S::Item: Copy,

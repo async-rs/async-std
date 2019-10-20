@@ -68,7 +68,7 @@ use gt::GtFuture;
 use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
-use min_by::MinByFuture;
+use min_by::MinMaxByFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
@@ -631,12 +631,12 @@ extension_trait! {
         fn min_by<F>(
             self,
             compare: F,
-        ) -> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> [MinMaxByFuture<Self, F, Self::Item>]
         where
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
-            MinByFuture::new(self, compare)
+            MinMaxByFuture::new(self, compare)
         }
 
         #[doc = r#"
