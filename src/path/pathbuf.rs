@@ -1,6 +1,12 @@
 use std::ffi::{OsStr, OsString};
+#[cfg(feature = "unstable")]
+use std::pin::Pin;
 
 use crate::path::Path;
+#[cfg(feature = "unstable")]
+use crate::prelude::*;
+#[cfg(feature = "unstable")]
+use crate::stream::{Extend, FromStream, IntoStream};
 
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
@@ -206,7 +212,7 @@ impl From<std::path::PathBuf> for PathBuf {
 
 impl Into<std::path::PathBuf> for PathBuf {
     fn into(self) -> std::path::PathBuf {
-        self.inner.into()
+        self.inner
     }
 }
 
@@ -231,5 +237,46 @@ impl AsRef<Path> for PathBuf {
 impl AsRef<std::path::Path> for PathBuf {
     fn as_ref(&self) -> &std::path::Path {
         self.inner.as_ref()
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl<P: AsRef<Path>> Extend<P> for PathBuf {
+    fn stream_extend<'a, S: IntoStream<Item = P>>(
+        &'a mut self,
+        stream: S,
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
+    where
+        P: 'a,
+        <S as IntoStream>::IntoStream: 'a,
+    {
+        let stream = stream.into_stream();
+
+        //TODO: This can be added back in once this issue is resolved:
+        // https://github.com/rust-lang/rust/issues/58234
+        //self.reserve(stream.size_hint().0);
+
+        Box::pin(stream.for_each(move |item| self.push(item.as_ref())))
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
+    #[inline]
+    fn from_stream<'a, S: IntoStream<Item = P>>(
+        stream: S,
+    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
+    where
+        <S as IntoStream>::IntoStream: 'a,
+    {
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            let mut out = Self::new();
+            out.stream_extend(stream).await;
+            out
+        })
     }
 }
