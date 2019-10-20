@@ -20,19 +20,19 @@ pin_project! {
 }
 
 #[derive(PartialEq, Eq)]
-enum Direction {
+pub(crate) enum Direction {
     Maximizing,
     Minimizing,
 }
 
 
 impl<S, F, T> MinMaxByFuture<S, F, T> {
-    pub(super) fn new(stream: S, compare: F) -> Self {
+    pub(super) fn new(stream: S, compare: F, direction: Direction) -> Self {
         MinMaxByFuture {
             stream,
             compare,
             value: None,
-            direction: Direction::Minimizing,
+            direction,
         }
     }
 }
@@ -52,10 +52,12 @@ where
         match next {
             Some(new) => {
                 cx.waker().wake_by_ref();
+
                 match this.value.take() {
                     None => this.value.replace(new),
                     Some(old) => match (this.compare)(&new, &old) {
                         Ordering::Less if Direction::Minimizing == *this.direction => this.value.replace(new),
+                        Ordering::Greater if Direction::Maximizing == *this.direction => this.value.replace(new),
                         _ => this.value.replace(old),
                     },
                 };
