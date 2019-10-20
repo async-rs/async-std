@@ -22,7 +22,7 @@ impl<S> CountFuture<S> {
 
 impl<S> Future for CountFuture<S>
 where
-    S: Sized + Stream,
+    S: Stream,
 {
     type Output = usize;
 
