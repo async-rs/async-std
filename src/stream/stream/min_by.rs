@@ -28,20 +28,19 @@ enum Direction {
 
 impl<S, F, T> MinMaxByFuture<S, F, T> {
     pub(super) fn new_min(stream: S, compare: F) -> Self {
-        MinMaxByFuture {
-            stream,
-            compare,
-            value: None,
-            direction: Direction::Minimizing,
-        }
+        MinMaxByFuture::new(stream, compare, Direction::Minimizing)
     }
 
     pub(super) fn new_max(stream: S, compare: F) -> Self {
+        MinMaxByFuture::new(stream, compare, Direction::Maximizing)
+    }
+
+    fn new(stream: S, compare: F, direction: Direction) -> Self {
         MinMaxByFuture {
             stream,
             compare,
             value: None,
-            direction: Direction::Maximizing,
+            direction,
         }
     }
 }
