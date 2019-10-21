@@ -1,6 +1,4 @@
 use std::pin::Pin;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 use std::time::Duration;
 
 use futures_timer::Delay;
@@ -61,19 +59,7 @@ impl WaitTimeoutResult {
 /// ```
 #[derive(Debug)]
 pub struct Condvar {
-    blocked: std::sync::Mutex<Slab<WaitEntry>>,
-}
-
-/// Flag to mark if the task was notified
-const NOTIFIED: usize = 1;
-/// State if the task was notified with `notify_once`
-/// so it should notify another task if the future is dropped without waking.
-const NOTIFIED_ONCE: usize = 0b11;
-
-#[derive(Debug)]
-struct WaitEntry {
-    state: Arc<AtomicUsize>,
-    waker: Option<Waker>,
+    blocked: std::sync::Mutex<Slab<Option<Waker>>>,
 }
 
 impl Condvar {
@@ -137,8 +123,8 @@ impl Condvar {
         AwaitNotify {
             cond: self,
             guard: Some(guard),
-            state: Arc::new(AtomicUsize::new(0)),
             key: None,
+            notified: false,
         }
     }
 
@@ -316,11 +302,9 @@ impl Condvar {
 }
 
 #[inline]
-fn notify(mut blocked: std::sync::MutexGuard<'_, Slab<WaitEntry>>, all: bool) {
-    let state = if all { NOTIFIED } else { NOTIFIED_ONCE };
+fn notify(mut blocked: std::sync::MutexGuard<'_, Slab<Option<Waker>>>, all: bool) {
     for (_, entry) in blocked.iter_mut() {
-        if let Some(w) = entry.waker.take() {
-            entry.state.store(state, Ordering::Release);
+        if let Some(w) = entry.take() {
             w.wake();
             if !all {
                 return;
@@ -332,8 +316,8 @@ fn notify(mut blocked: std::sync::MutexGuard<'_, Slab<WaitEntry>>, all: bool) {
 struct AwaitNotify<'a, 'b, T> {
     cond: &'a Condvar,
     guard: Option<MutexGuard<'b, T>>,
-    state: Arc<AtomicUsize>,
     key: Option<usize>,
+    notified: bool,
 }
 
 impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
@@ -344,20 +328,14 @@ impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
             Some(_) => {
                 let mut blocked = self.cond.blocked.lock().unwrap();
                 let w = cx.waker().clone();
-                self.key = Some(blocked.insert(WaitEntry {
-                    state: self.state.clone(),
-                    waker: Some(w),
-                }));
+                self.key = Some(blocked.insert(Some(w)));
 
                 // the guard is dropped when we return, which frees the lock
                 Poll::Pending
             }
             None => {
-                if self.state.fetch_and(!NOTIFIED, Ordering::AcqRel) & NOTIFIED != 0 {
-                    Poll::Ready(())
-                } else {
-                    Poll::Pending
-                }
+                self.notified = true;
+                Poll::Ready(())
             }
         }
     }
@@ -367,12 +345,14 @@ impl<'a, 'b, T> Drop for AwaitNotify<'a, 'b, T> {
     fn drop(&mut self) {
         if let Some(key) = self.key {
             let mut blocked = self.cond.blocked.lock().unwrap();
-            blocked.remove(key);
+            let opt_waker = blocked.remove(key);
 
-            if !blocked.is_empty() && self.state.load(Ordering::Acquire) == NOTIFIED_ONCE {
-                // we got a notification form notify_once but didn't handle it,
-                // so send it to a different task
+            if opt_waker.is_none() && !self.notified {
+                // wake up the next task, because this task was notified, but
+                // we are dropping it before it can finished.
+                // This may result in a spurious wake-up, but that's ok.
                 notify(blocked, false);
+
             }
         }
     }
