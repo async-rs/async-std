@@ -1,22 +1,25 @@
 use std::pin::Pin;
 
+use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub struct Peekable<S: Stream> {
+pub struct Peekable<S: Stream>
+where
+    S: Sized,
+{
     stream: S,
-    peeked: Option<PeekFuture<Option<S::Item>>>,
+    peeked: Option<Option<S::Item>>,
 }
 
-pub struct PeekFuture<'a, T: Unpin + ?Sized> {
-    pub(crate) stream: &'a T,
-}
+//pub struct PeekFuture<'a, T: Unpin + ?Sized> {
+//pub(crate) stream: &'a T,
+//}
 
-impl<T: Stream + Unpin + ?Sized> Future for PeekFuture<'_, T> {
-}
-
+//impl<T: Stream + Unpin + ?Sized> Future for PeekFuture<'_, T> {
+//}
 
 impl<S> Peekable<S>
 where
@@ -26,16 +29,15 @@ where
     pin_utils::unsafe_unpinned!(peeked: Option<Option<S::Item>>);
 
     pub(crate) fn new(stream: S) -> Self {
-        Peekable{
+        Peekable {
             stream: stream,
             peeked: None,
         }
     }
 
-    pub fn peek(&mut self) -> PeekFuture<Option<&S::Item>> {
-        Poll::Ready(None)
+    pub fn peek(&mut self) -> impl Future<Output = Option<S::Item>> {
+        async { None }
     }
-
 }
 
 impl<S> Stream for Peekable<S>
@@ -46,18 +48,18 @@ where
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match &self.peeked {
-            Some(_) =>  {
+            Some(_) => {
                 let v = Poll::Ready(self.as_mut().peeked().take().unwrap());
-                self.peeked = None;
+                *self.as_mut().peeked() = None;
                 v
-            },
+            }
             None => {
                 let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
                 match next {
                     Some(v) => Poll::Ready(Some(v)),
                     None => Poll::Ready(None),
                 }
-            },
+            }
         }
     }
 }
