@@ -32,7 +32,7 @@ where
         }
     }
 
-    pub fn peek(&mut self) -> Poll<Option<&S::Item>> {
+    pub fn peek(&mut self) -> PeekFuture<Option<&S::Item>> {
         Poll::Ready(None)
     }
 
@@ -46,11 +46,18 @@ where
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match &self.peeked {
-            Some(_) =>  Poll::Ready(self.as_mut().peeked().take().unwrap()) ,
+            Some(_) =>  {
+                let v = Poll::Ready(self.as_mut().peeked().take().unwrap());
+                self.peeked = None;
+                v
+            },
             None => {
                 let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
-                Poll::Ready(next)
-            }
+                match next {
+                    Some(v) => Poll::Ready(Some(v)),
+                    None => Poll::Ready(None),
+                }
+            },
         }
     }
 }
