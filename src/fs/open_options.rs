@@ -3,7 +3,7 @@ use std::future::Future;
 use crate::fs::File;
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// A builder for opening files with configurable options.
 ///
@@ -285,7 +285,7 @@ impl OpenOptions {
         let path = path.as_ref().to_owned();
         let options = self.0.clone();
         async move {
-            let file = blocking::spawn(move || options.open(path)).await?;
+            let file = spawn_blocking(move || options.open(path)).await?;
             Ok(File::new(file, true))
         }
     }

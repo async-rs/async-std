@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::fs::{FileType, Metadata};
 use crate::io;
 use crate::path::PathBuf;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// An entry in a directory.
 ///
@@ -87,7 +87,7 @@ impl DirEntry {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let inner = self.0.clone();
-        blocking::spawn(move || inner.metadata()).await
+        spawn_blocking(move || inner.metadata()).await
     }
 
     /// Reads the file type for this entry.
@@ -125,7 +125,7 @@ impl DirEntry {
     /// ```
     pub async fn file_type(&self) -> io::Result<FileType> {
         let inner = self.0.clone();
-        blocking::spawn(move || inner.file_type()).await
+        spawn_blocking(move || inner.file_type()).await
     }
 
     /// Returns the bare name of this entry without the leading path.

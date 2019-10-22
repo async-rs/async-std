@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use crate::future::Future;
 use crate::io::{self, Write};
-use crate::task::{blocking, Context, JoinHandle, Poll};
+use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard output of the current process.
 ///
@@ -124,7 +124,7 @@ impl Write for Stdout {
                         inner.buf[..buf.len()].copy_from_slice(buf);
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(move || {
+                        *state = State::Busy(spawn_blocking(move || {
                             let res = std::io::Write::write(&mut inner.stdout, &inner.buf);
                             inner.last_op = Some(Operation::Write(res));
                             State::Idle(Some(inner))
@@ -152,7 +152,7 @@ impl Write for Stdout {
                         let mut inner = opt.take().unwrap();
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(move || {
+                        *state = State::Busy(spawn_blocking(move || {
                             let res = std::io::Write::flush(&mut inner.stdout);
                             inner.last_op = Some(Operation::Flush(res));
                             State::Idle(Some(inner))

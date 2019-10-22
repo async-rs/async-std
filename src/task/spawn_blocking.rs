@@ -1,5 +1,3 @@
-//! A thread pool for running blocking functions asynchronously.
-
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
@@ -7,16 +5,57 @@ use std::time::Duration;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use once_cell::sync::Lazy;
 
-use crate::task::task::{JoinHandle, Tag};
-use crate::utils::abort_on_panic;
+use crate::task::{JoinHandle, Task};
+use crate::utils::{abort_on_panic, random};
+
+type Runnable = async_task::Task<Task>;
+
+/// Spawns a blocking task.
+///
+/// The task will be spawned onto a thread pool specifically dedicated to blocking tasks. This
+/// is useful to prevent long-running synchronous operations from blocking the main futures
+/// executor.
+///
+/// See also: [`task::block_on`], [`task::spawn`].
+///
+/// [`task::block_on`]: fn.block_on.html
+/// [`task::spawn`]: fn.spawn.html
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # #[cfg(feature = "unstable")]
+/// # async_std::task::block_on(async {
+/// #
+/// use async_std::task;
+///
+/// task::spawn_blocking(|| {
+///     println!("long-running task here");
+/// }).await;
+/// #
+/// # })
+/// ```
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[inline]
+pub fn spawn_blocking<F, T>(f: F) -> JoinHandle<T>
+where
+    F: FnOnce() -> T + Send + 'static,
+    T: Send + 'static,
+{
+    let (task, handle) = async_task::spawn(async { f() }, schedule, Task::new(None));
+    task.schedule();
+    JoinHandle::new(handle)
+}
 
 const MAX_THREADS: u64 = 10_000;
 
 static DYNAMIC_THREAD_COUNT: AtomicU64 = AtomicU64::new(0);
 
 struct Pool {
-    sender: Sender<async_task::Task<Tag>>,
-    receiver: Receiver<async_task::Task<Tag>>,
+    sender: Sender<Runnable>,
+    receiver: Receiver<Runnable>,
 }
 
 static POOL: Lazy<Pool> = Lazy::new(|| {
@@ -82,54 +121,12 @@ fn maybe_create_another_blocking_thread() {
 // Enqueues work, attempting to send to the threadpool in a
 // nonblocking way and spinning up another worker thread if
 // there is not a thread ready to accept the work.
-fn schedule(t: async_task::Task<Tag>) {
-    if let Err(err) = POOL.sender.try_send(t) {
+pub(crate) fn schedule(task: Runnable) {
+    if let Err(err) = POOL.sender.try_send(task) {
         // We were not able to send to the channel without
         // blocking. Try to spin up another thread and then
         // retry sending while blocking.
         maybe_create_another_blocking_thread();
         POOL.sender.send(err.into_inner()).unwrap();
     }
-}
-
-/// Spawns a blocking task.
-///
-/// The task will be spawned onto a thread pool specifically dedicated to blocking tasks.
-pub(crate) fn spawn<F, R>(f: F) -> JoinHandle<R>
-where
-    F: FnOnce() -> R + Send + 'static,
-    R: Send + 'static,
-{
-    let tag = Tag::new(None);
-    let future = async move { f() };
-    let (task, handle) = async_task::spawn(future, schedule, tag);
-    task.schedule();
-    JoinHandle::new(handle)
-}
-
-/// Generates a random number in `0..n`.
-fn random(n: u32) -> u32 {
-    use std::cell::Cell;
-    use std::num::Wrapping;
-
-    thread_local! {
-        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
-    }
-
-    RNG.with(|rng| {
-        // This is the 32-bit variant of Xorshift.
-        //
-        // Source: https://en.wikipedia.org/wiki/Xorshift
-        let mut x = rng.get();
-        x ^= x << 13;
-        x ^= x >> 17;
-        x ^= x << 5;
-        rng.set(x);
-
-        // This is a fast alternative to `x % n`.
-        //
-        // Author: Daniel Lemire
-        // Source: https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-        ((u64::from(x.0)).wrapping_mul(u64::from(n)) >> 32) as u32
-    })
 }

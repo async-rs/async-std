@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use crate::future::{self, Future};
 use crate::io::{self, Read};
-use crate::task::{blocking, Context, JoinHandle, Poll};
+use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -127,7 +127,7 @@ impl Stdin {
                             let mut inner = opt.take().unwrap();
 
                             // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(move || {
+                            *state = State::Busy(spawn_blocking(move || {
                                 inner.line.clear();
                                 let res = inner.stdin.read_line(&mut inner.line);
                                 inner.last_op = Some(Operation::ReadLine(res));
@@ -180,7 +180,7 @@ impl Read for Stdin {
                         }
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(move || {
+                        *state = State::Busy(spawn_blocking(move || {
                             let res = std::io::Read::read(&mut inner.stdin, &mut inner.buf);
                             inner.last_op = Some(Operation::Read(res));
                             State::Idle(Some(inner))

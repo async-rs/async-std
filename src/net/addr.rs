@@ -5,7 +5,7 @@ use std::pin::Pin;
 
 use crate::future::Future;
 use crate::io;
-use crate::task::{blocking, Context, JoinHandle, Poll};
+use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
 cfg_not_docs! {
     macro_rules! ret {
@@ -194,7 +194,7 @@ impl ToSocketAddrs for (&str, u16) {
         }
 
         let host = host.to_string();
-        let task = blocking::spawn(move || {
+        let task = spawn_blocking(move || {
             std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
         });
         ToSocketAddrsFuture::Resolving(task)
@@ -215,7 +215,7 @@ impl ToSocketAddrs for str {
         }
 
         let addr = self.to_string();
-        let task = blocking::spawn(move || std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()));
+        let task = spawn_blocking(move || std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()));
         ToSocketAddrsFuture::Resolving(task)
     }
 }

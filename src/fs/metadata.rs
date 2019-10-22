@@ -1,6 +1,6 @@
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Reads metadata for a path.
 ///
@@ -34,7 +34,7 @@ use crate::task::blocking;
 /// ```
 pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(move || std::fs::metadata(path)).await
+    spawn_blocking(move || std::fs::metadata(path)).await
 }
 
 cfg_not_docs! {
