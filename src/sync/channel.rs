@@ -233,7 +233,7 @@ impl<T> Sender<T> {
         self.channel.is_empty()
     }
 
-    /// Returns `true` if the channel is empty.
+    /// Returns `true` if the channel is full.
     ///
     /// # Examples
     ///
@@ -440,7 +440,7 @@ impl<T> Receiver<T> {
         self.channel.is_empty()
     }
 
-    /// Returns `true` if the channel is empty.
+    /// Returns `true` if the channel is full.
     ///
     /// # Examples
     ///
