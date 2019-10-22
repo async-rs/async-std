@@ -11,6 +11,8 @@ jobs:
   build_and_test:
     name: Build and test
     runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: -Dwarnings
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -46,6 +48,8 @@ jobs:
   check_fmt_and_docs:
     name: Checking fmt and docs
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@master
 
@@ -77,6 +81,8 @@ jobs:
   clippy_check:
     name: Clippy check
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
     steps:
       - uses: actions/checkout@v1
       - id: component
