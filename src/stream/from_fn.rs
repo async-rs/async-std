@@ -30,7 +30,7 @@ pin_project! {
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::sync::Mutex;
@@ -58,8 +58,7 @@ pin_project! {
 /// assert_eq!(s.next().await, Some(3));
 /// assert_eq!(s.next().await, None);
 /// #
-/// # }) }
-///
+/// # })
 /// ```
 pub fn from_fn<T, F, Fut>(f: F) -> FromFn<F, Fut, T>
 where

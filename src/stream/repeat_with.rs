@@ -29,7 +29,7 @@ pin_project! {
 /// Basic usage:
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
@@ -42,13 +42,13 @@ pin_project! {
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
-/// # }) }
+/// # })
 /// ```
 ///
 /// Going finite:
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
@@ -60,7 +60,7 @@ pin_project! {
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, None);
-/// # }) }
+/// # })
 /// ```
 pub fn repeat_with<F, Fut, A>(repeater: F) -> RepeatWith<F, Fut, A>
 where
