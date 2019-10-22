@@ -25,7 +25,6 @@ enum Direction {
     Minimizing,
 }
 
-
 impl<S, F, T> MinMaxByFuture<S, F, T> {
     pub(super) fn new_min(stream: S, compare: F) -> Self {
         MinMaxByFuture::new(stream, compare, Direction::Minimizing)
