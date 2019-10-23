@@ -1,20 +1,25 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that repeats elements of type `T` endlessly by applying a provided closure.
-///
-/// This stream is constructed by the [`repeat_with`] function.
-///
-/// [`repeat_with`]: fn.repeat_with.html
-#[derive(Debug)]
-pub struct RepeatWith<F, Fut, A> {
-    f: F,
-    future: Option<Fut>,
-    __a: PhantomData<A>,
+pin_project! {
+    /// A stream that repeats elements of type `T` endlessly by applying a provided closure.
+    ///
+    /// This stream is constructed by the [`repeat_with`] function.
+    ///
+    /// [`repeat_with`]: fn.repeat_with.html
+    #[derive(Debug)]
+    pub struct RepeatWith<F, Fut, A> {
+        f: F,
+        #[pin]
+        future: Option<Fut>,
+        __a: PhantomData<A>,
+    }
 }
 
 /// Creates a new stream that repeats elements of type `A` endlessly by applying the provided closure.
@@ -69,11 +74,6 @@ where
     }
 }
 
-impl<F, Fut, A> RepeatWith<F, Fut, A> {
-    pin_utils::unsafe_unpinned!(f: F);
-    pin_utils::unsafe_pinned!(future: Option<Fut>);
-}
-
 impl<F, Fut, A> Stream for RepeatWith<F, Fut, A>
 where
     F: FnMut() -> Fut,
@@ -81,22 +81,19 @@ where
 {
     type Item = A;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
         loop {
-            match &self.future {
-                Some(_) => {
-                    let res =
-                        futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
+            if this.future.is_some() {
+                let res = futures_core::ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
 
-                    self.as_mut().future().set(None);
+                this.future.set(None);
 
-                    return Poll::Ready(Some(res));
-                }
-                None => {
-                    let fut = (self.as_mut().f())();
+                return Poll::Ready(Some(res));
+            } else {
+                let fut = (this.f)();
 
-                    self.as_mut().future().set(Some(fut));
-                }
+                this.future.set(Some(fut));
             }
         }
     }

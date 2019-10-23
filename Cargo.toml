@@ -43,6 +43,7 @@ pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 kv-log-macro = "1.0.4"
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
+pin-project-lite = "0.1"
 
 [dev-dependencies]
 femme = "1.2.0"

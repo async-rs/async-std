@@ -1,24 +1,25 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct FoldFuture<S, F, T, B> {
-    stream: S,
-    f: F,
-    acc: Option<B>,
-    __t: PhantomData<T>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct FoldFuture<S, F, T, B> {
+        #[pin]
+        stream: S,
+        f: F,
+        acc: Option<B>,
+        __t: PhantomData<T>,
+    }
 }
 
 impl<S, F, T, B> FoldFuture<S, F, T, B> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-    pin_utils::unsafe_unpinned!(acc: Option<B>);
-
     pub(super) fn new(stream: S, init: B, f: F) -> Self {
         FoldFuture {
             stream,
@@ -36,17 +37,18 @@ where
 {
     type Output = B;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
         loop {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
             match next {
                 Some(v) => {
-                    let old = self.as_mut().acc().take().unwrap();
-                    let new = (self.as_mut().f())(old, v);
-                    *self.as_mut().acc() = Some(new);
+                    let old = this.acc.take().unwrap();
+                    let new = (this.f)(old, v);
+                    *this.acc = Some(new);
                 }
-                None => return Poll::Ready(self.as_mut().acc().take().unwrap()),
+                None => return Poll::Ready(this.acc.take().unwrap()),
             }
         }
     }

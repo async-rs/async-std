@@ -2,21 +2,23 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct FilterMap<S, F, T, B> {
-    stream: S,
-    f: F,
-    __from: PhantomData<T>,
-    __to: PhantomData<B>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct FilterMap<S, F, T, B> {
+        #[pin]
+        stream: S,
+        f: F,
+        __from: PhantomData<T>,
+        __to: PhantomData<B>,
+    }
 }
 
 impl<S, F, T, B> FilterMap<S, F, T, B> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-
     pub(crate) fn new(stream: S, f: F) -> Self {
         FilterMap {
             stream,
@@ -34,10 +36,11 @@ where
 {
     type Item = B;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
+        let next = futures_core::ready!(this.stream.poll_next(cx));
         match next {
-            Some(v) => match (self.as_mut().f())(v) {
+            Some(v) => match (this.f)(v) {
                 Some(b) => Poll::Ready(Some(b)),
                 None => {
                     cx.waker().wake_by_ref();
