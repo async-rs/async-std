@@ -281,7 +281,7 @@ extension_trait! {
             TakeWhile::new(self, predicate)
         }
 
-        fn throttle(self, d: Duration) -> Throttle<Self>
+        fn throttle(self, d: Duration) -> Throttle<Self, Self::Item>
         where
             Self: Sized,
         {
