@@ -71,7 +71,7 @@ where
         }
 
         if this.timeout.poll(cx).is_ready() {
-            let err = Err(io::Error::new(io::ErrorKind::TimedOut, "future timed out").into());
+            let err = Err(io::Error::new(io::ErrorKind::TimedOut, "future timed out"));
             Poll::Ready(err)
         } else {
             Poll::Pending
