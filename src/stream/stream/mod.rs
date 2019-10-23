@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod chain;
 mod cmp;
+mod debounce;
 mod enumerate;
 mod filter;
 mod filter_map;
@@ -76,6 +77,7 @@ use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
+pub use debounce::Debounce;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -90,6 +92,7 @@ pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 cfg_unstable! {
     use std::pin::Pin;
@@ -347,6 +350,17 @@ extension_trait! {
             U: Stream<Item = Self::Item> + Sized,
         {
             Chain::new(self, other)
+        }
+
+        #[doc = r#"
+            A debounced stream will yield the latest event only after a
+            inactivity period of the given duration.
+        "#]
+        fn debounce(self, duration: Duration) -> Debounce<Self>
+        where
+            Self: Sized
+        {
+            Debounce::new(self, duration)
         }
 
         #[doc = r#"
