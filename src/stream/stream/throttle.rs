@@ -45,6 +45,8 @@ impl<S: Stream> Stream for Throttle<S, S::Item> {
                     // Sets last to None.
                     *self.as_mut().delay() = Some(Delay::new(self.duration));
                     return Poll::Ready(Some(v));
+                } else {
+                    *self.as_mut().delay() = None;
                 }
             }
         }
