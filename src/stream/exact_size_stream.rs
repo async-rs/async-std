@@ -59,7 +59,7 @@ pub use crate::stream::Stream;
 /// #         }
 /// #     }
 /// # }
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// impl ExactSizeStream for Counter {
 ///     // We can easily calculate the remaining number of iterations.
@@ -74,10 +74,9 @@ pub use crate::stream::Stream;
 ///
 /// assert_eq!(5, counter.len());
 /// # });
-/// # }
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait ExactSizeStream: Stream {
     /// Returns the exact number of times the stream will iterate.
     ///

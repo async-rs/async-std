@@ -20,6 +20,64 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
     t
 }
 
+/// Declares unstable items.
+#[doc(hidden)]
+macro_rules! cfg_unstable {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "unstable")]
+            #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+            $item
+        )*
+    }
+}
+
+/// Declares Unix-specific items.
+#[doc(hidden)]
+macro_rules! cfg_unix {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(unix, feature = "docs"))]
+            #[cfg_attr(feature = "docs", doc(cfg(unix)))]
+            $item
+        )*
+    }
+}
+
+/// Declares Windows-specific items.
+#[doc(hidden)]
+macro_rules! cfg_windows {
+    ($($item:item)*) => {
+        $(
+            #[cfg(any(windows, feature = "docs"))]
+            #[cfg_attr(feature = "docs", doc(cfg(windows)))]
+            $item
+        )*
+    }
+}
+
+/// Declares items when the "docs" feature is enabled.
+#[doc(hidden)]
+macro_rules! cfg_docs {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "docs")]
+            $item
+        )*
+    }
+}
+
+/// Declares items when the "docs" feature is disabled.
+#[doc(hidden)]
+macro_rules! cfg_not_docs {
+    ($($item:item)*) => {
+        $(
+            #[cfg(not(feature = "docs"))]
+            $item
+        )*
+    }
+}
+
 /// Defines an extension trait for a base trait.
 ///
 /// In generated docs, the base trait will contain methods from the extension trait. In actual
@@ -29,7 +87,6 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 /// Inside invocations of this macro, we write a definitions that looks similar to the final
 /// rendered docs, and the macro then generates all the boilerplate for us.
 #[doc(hidden)]
-#[macro_export]
 macro_rules! extension_trait {
     (
         // Interesting patterns:
@@ -113,6 +170,12 @@ macro_rules! extension_trait {
     // Handle the end of the token list.
     (@doc ($($head:tt)*)) => { $($head)* };
     (@ext ($($head:tt)*)) => { $($head)* };
-}
 
-pub use crate::extension_trait;
+    // Parse imports at the beginning of the macro.
+    ($import:item $($tail:tt)*) => {
+        #[cfg(feature = "docs")]
+        $import
+
+        extension_trait!($($tail)*);
+    };
+}

@@ -1,7 +1,5 @@
 use std::future::Future;
 
-use cfg_if::cfg_if;
-
 use crate::fs::File;
 use crate::io;
 use crate::path::Path;
@@ -296,27 +294,18 @@ impl Default for OpenOptions {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::fs::OpenOptionsExt;
-    } else if #[cfg(unix)] {
-        use std::os::unix::fs::OpenOptionsExt;
-    }
-}
+cfg_unix! {
+    use crate::os::unix::fs::OpenOptionsExt;
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl OpenOptionsExt for OpenOptions {
-            fn mode(&mut self, mode: u32) -> &mut Self {
-                self.0.mode(mode);
-                self
-            }
+    impl OpenOptionsExt for OpenOptions {
+        fn mode(&mut self, mode: u32) -> &mut Self {
+            self.0.mode(mode);
+            self
+        }
 
-            fn custom_flags(&mut self, flags: i32) -> &mut Self {
-                self.0.custom_flags(flags);
-                self
-            }
+        fn custom_flags(&mut self, flags: i32) -> &mut Self {
+            self.0.custom_flags(flags);
+            self
         }
     }
 }

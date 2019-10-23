@@ -8,7 +8,7 @@ use crate::sync::Mutex;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::sync::{Arc, Barrier};
 /// use async_std::task;
@@ -30,8 +30,8 @@ use crate::sync::Mutex;
 ///     handle.await;
 /// }
 /// # });
-/// # }
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct Barrier {
@@ -61,6 +61,7 @@ struct BarrierState {
 /// let barrier = Barrier::new(1);
 /// let barrier_wait_result = barrier.wait();
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, Clone)]
 pub struct BarrierWaitResult(bool);
@@ -118,7 +119,7 @@ impl Barrier {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::{Arc, Barrier};
     /// use async_std::task;
@@ -140,7 +141,6 @@ impl Barrier {
     ///     handle.await;
     /// }
     /// # });
-    /// # }
     /// ```
     pub async fn wait(&self) -> BarrierWaitResult {
         let mut lock = self.state.lock().await;
@@ -188,7 +188,7 @@ impl BarrierWaitResult {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::Barrier;
     ///
@@ -196,7 +196,6 @@ impl BarrierWaitResult {
     /// let barrier_wait_result = barrier.wait().await;
     /// println!("{:?}", barrier_wait_result.is_leader());
     /// # });
-    /// # }
     /// ```
     pub fn is_leader(&self) -> bool {
         self.0

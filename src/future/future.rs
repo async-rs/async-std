@@ -1,24 +1,17 @@
-use crate::utils::extension_trait;
+cfg_unstable! {
+    mod delay;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
+    use std::time::Duration;
 
-        use crate::task::{Context, Poll};
-    }
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod delay;
-
-        use std::time::Duration;
-        use delay::DelayFuture;
-    }
+    use delay::DelayFuture;
 }
 
 extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
+
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         A future represents an asynchronous computation.
 

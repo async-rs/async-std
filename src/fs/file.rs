@@ -7,8 +7,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use cfg_if::cfg_if;
-
 use crate::fs::{Metadata, Permissions};
 use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
@@ -401,67 +399,54 @@ impl From<std::fs::File> for File {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-        use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+cfg_unix! {
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl AsRawFd for File {
+        fn as_raw_fd(&self) -> RawFd {
+            self.file.as_raw_fd()
+        }
     }
-}
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for File {
-            fn as_raw_fd(&self) -> RawFd {
-                self.file.as_raw_fd()
-            }
+    impl FromRawFd for File {
+        unsafe fn from_raw_fd(fd: RawFd) -> File {
+            std::fs::File::from_raw_fd(fd).into()
         }
+    }
 
-        impl FromRawFd for File {
-            unsafe fn from_raw_fd(fd: RawFd) -> File {
-                std::fs::File::from_raw_fd(fd).into()
-            }
-        }
-
-        impl IntoRawFd for File {
-            fn into_raw_fd(self) -> RawFd {
-                let file = self.file.clone();
-                drop(self);
-                Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of the file handle after drop")
-                    .into_raw_fd()
-            }
+    impl IntoRawFd for File {
+        fn into_raw_fd(self) -> RawFd {
+            let file = self.file.clone();
+            drop(self);
+            Arc::try_unwrap(file)
+                .expect("cannot acquire ownership of the file handle after drop")
+                .into_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(windows)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        impl AsRawHandle for File {
-            fn as_raw_handle(&self) -> RawHandle {
-                self.file.as_raw_handle()
-            }
-        }
+cfg_windows! {
+    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
 
-        impl FromRawHandle for File {
-            unsafe fn from_raw_handle(handle: RawHandle) -> File {
-                std::fs::File::from_raw_handle(handle).into()
-            }
+    impl AsRawHandle for File {
+        fn as_raw_handle(&self) -> RawHandle {
+            self.file.as_raw_handle()
         }
+    }
 
-        impl IntoRawHandle for File {
-            fn into_raw_handle(self) -> RawHandle {
-                let file = self.file.clone();
-                drop(self);
-                Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of the file handle after drop")
-                    .into_raw_handle()
-            }
+    impl FromRawHandle for File {
+        unsafe fn from_raw_handle(handle: RawHandle) -> File {
+            std::fs::File::from_raw_handle(handle).into()
+        }
+    }
+
+    impl IntoRawHandle for File {
+        fn into_raw_handle(self) -> RawHandle {
+            let file = self.file.clone();
+            drop(self);
+            Arc::try_unwrap(file)
+                .expect("cannot acquire ownership of the file handle after drop")
+                .into_raw_handle()
         }
     }
 }
