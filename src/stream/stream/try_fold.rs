@@ -1,24 +1,25 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct TryFoldFuture<S, F, T> {
-    stream: S,
-    f: F,
-    acc: Option<T>,
-    __t: PhantomData<T>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct TryFoldFuture<S, F, T> {
+        #[pin]
+        stream: S,
+        f: F,
+        acc: Option<T>,
+        __t: PhantomData<T>,
+    }
 }
 
 impl<S, F, T> TryFoldFuture<S, F, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-    pin_utils::unsafe_unpinned!(acc: Option<T>);
-
     pub(super) fn new(stream: S, init: T, f: F) -> Self {
         TryFoldFuture {
             stream,
@@ -36,23 +37,22 @@ where
 {
     type Output = Result<T, E>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
         loop {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
             match next {
                 Some(v) => {
-                    let old = self.as_mut().acc().take().unwrap();
-                    let new = (self.as_mut().f())(old, v);
+                    let old = this.acc.take().unwrap();
+                    let new = (this.f)(old, v);
 
                     match new {
-                        Ok(o) => {
-                            *self.as_mut().acc() = Some(o);
-                        }
+                        Ok(o) => *this.acc = Some(o),
                         Err(e) => return Poll::Ready(Err(e)),
                     }
                 }
-                None => return Poll::Ready(Ok(self.as_mut().acc().take().unwrap())),
+                None => return Poll::Ready(Ok(this.acc.take().unwrap())),
             }
         }
     }

@@ -11,6 +11,8 @@ jobs:
   build_and_test:
     name: Build and test
     runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: -Dwarnings
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -29,7 +31,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --all --benches --bins --examples --tests
+        args: --all --bins --examples
 
     - name: check unstable
       uses: actions-rs/cargo@v1
@@ -41,11 +43,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --all --doc --features unstable
+        args: --all --features unstable
 
   check_fmt_and_docs:
     name: Checking fmt and docs
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@master
 
@@ -77,6 +81,9 @@ jobs:
   clippy_check:
     name: Clippy check
     runs-on: ubuntu-latest
+    # TODO: There is a lot of warnings
+    # env:
+    #   RUSTFLAGS: -Dwarnings
     steps:
       - uses: actions/checkout@v1
       - id: component

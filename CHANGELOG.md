@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [0.99.10] - 2019-10-16
+
+This patch stabilizes several core concurrency macros, introduces async versions
+of `Path` and `PathBuf`, and adds almost 100 other commits.
+
+## Examples
+
+__Asynchronously read directories from the filesystem__
+```rust
+use async_std::fs;
+use async_std::path::Path;
+use async_std::prelude::*;
+
+let path = Path::new("/laputa");
+let mut dir = fs::read_dir(&path).await.unwrap();
+while let Some(entry) = dir.next().await {
+    if let Ok(entry) = entry {
+        println!("{:?}", entry.path());
+    }
+}
+```
+
+__Cooperatively reschedule the current task on the executor__
+```rust
+use async_std::prelude::*;
+use async_std::task;
+
+task::spawn(async {
+    let x = fibonnacci(1000); // Do expensive work
+    task::yield_now().await;  // Allow other tasks to run
+    x + fibonnacci(100)       // Do more work
+})
+```
+
+__Create an interval stream__
+```rust
+use async_std::prelude::*;
+use async_std::stream;
+use std::time::Duration;
+
+let mut interval = stream::interval(Duration::from_secs(4));
+while let Some(_) = interval.next().await {
+    println!("prints every four seconds");
+}
+```
+
+## Added
+
+- Added `FutureExt` to the `prelude`, allowing us to extend `Future`
+- Added `Stream::cmp`
+- Added `Stream::ge`
+- Added `Stream::last`
+- Added `Stream::le`
+- Added `Stream::lt`
+- Added `Stream::merge` as "unstable", replacing `stream::join!`
+- Added `Stream::partial_cmp`
+- Added `Stream::take_while`
+- Added `Stream::try_fold`
+- Added `future::IntoFuture` as "unstable"
+- Added `io::BufRead::split`
+- Added `io::Write::write_fmt`
+- Added `print!`, `println!`, `eprint!`, `eprintln!` macros as "unstable"
+- Added `process` as "unstable", re-exporting std types only for now
+- Added `std::net` re-exports to the `net` submodule
+- Added `std::path::PathBuf` with all associated methods
+- Added `std::path::Path` with all associated methods
+- Added `stream::ExactSizeStream` as "unstable"
+- Added `stream::FusedStream` as "unstable"
+- Added `stream::Product`
+- Added `stream::Sum`
+- Added `stream::from_fn`
+- Added `stream::interval` as "unstable"
+- Added `stream::repeat_with`
+- Added `task::spawn_blocking` as "unstable", replacing `task::blocking`
+- Added `task::yield_now`
+- Added `write!` and `writeln!` macros as "unstable"
+- Stabilized `future::join!` and `future::try_join!`
+- Stabilized `future::timeout`
+- Stabilized `path`
+- Stabilized `task::ready!`
+
+## Changed
+
+- Fixed `BufWriter::into_inner` so it calls `flush` before yielding
+- Refactored `io::BufWriter` internals
+- Refactored `net::ToSocketAddrs` internals
+- Removed Travis CI entirely
+- Rewrote the README.md
+- Stabilized `io::Cursor`
+- Switched bors over to use GitHub actions
+- Updated the `io` documentation to match std's `io` docs
+- Updated the `task` documentation to match std's `thread` docs
+
+## Removed
+
+- Removed the "unstable" `stream::join!` in favor of `Stream::merge`
+- Removed the "unstable" `task::blocking` in favor of `task::spawn_blocking`
+
 # [0.99.9] - 2019-10-08
 
 This patch upgrades our `futures-rs` version, allowing us to build on the 1.39
@@ -183,7 +281,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.9...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.10...HEAD
+[0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.9...v0.99.10
 [0.99.9]: https://github.com/async-rs/async-std/compare/v0.99.8...v0.99.9
 [0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8
 [0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...v0.99.7

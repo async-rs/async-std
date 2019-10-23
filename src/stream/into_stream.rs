@@ -13,8 +13,8 @@ use crate::stream::Stream;
 /// See also: [`FromStream`].
 ///
 /// [`FromStream`]: trait.FromStream.html
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait IntoStream {
     /// The type of the elements being iterated over.
     type Item;

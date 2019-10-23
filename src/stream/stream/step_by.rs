@@ -1,21 +1,22 @@
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that steps a given amount of elements of another stream.
-#[derive(Debug)]
-pub struct StepBy<S> {
-    stream: S,
-    step: usize,
-    i: usize,
+pin_project! {
+    /// A stream that steps a given amount of elements of another stream.
+    #[derive(Debug)]
+    pub struct StepBy<S> {
+        #[pin]
+        stream: S,
+        step: usize,
+        i: usize,
+    }
 }
 
 impl<S> StepBy<S> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(step: usize);
-    pin_utils::unsafe_unpinned!(i: usize);
-
     pub(crate) fn new(stream: S, step: usize) -> Self {
         StepBy {
             stream,
@@ -31,17 +32,18 @@ where
 {
     type Item = S::Item;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
         loop {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
             match next {
-                Some(v) => match self.i {
+                Some(v) => match this.i {
                     0 => {
-                        *self.as_mut().i() = self.step;
+                        *this.i = *this.step;
                         return Poll::Ready(Some(v));
                     }
-                    _ => *self.as_mut().i() -= 1,
+                    _ => *this.i -= 1,
                 },
                 None => return Poll::Ready(None),
             }
