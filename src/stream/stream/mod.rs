@@ -53,6 +53,7 @@ mod take_while;
 mod try_fold;
 mod try_for_each;
 mod zip;
+mod min_by_key;
 
 use all::AllFuture;
 use any::AnyFuture;
@@ -74,6 +75,7 @@ use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
+use min_by_key::MinByKeyFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
@@ -598,6 +600,42 @@ extension_trait! {
             F: FnMut(Self::Item) -> Option<B>,
         {
             FilterMap::new(self, f)
+        }
+
+         #[doc = r#"
+            Returns the element that gives the minimum value with respect to the
+            specified key function. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<i32> = vec![1, 2, -3].into_iter().collect();
+
+            let min = s.clone().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, Some(1));
+
+            let min = VecDeque::<isize>::new().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min_by_key<K>(
+            self,
+            key_by: K,
+        ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, K>]
+        where
+            Self: Sized,
+            K: FnMut(&Self::Item) -> Self::Item,
+        {
+            MinByKeyFuture::new(self, key_by)
         }
 
         #[doc = r#"
