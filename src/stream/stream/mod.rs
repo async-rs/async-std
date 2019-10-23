@@ -642,8 +642,8 @@ extension_trait! {
         }
 
          #[doc = r#"
-            Returns the element that gives the minimum value with respect to the
-            specified comparison function. If several elements are equally minimum,
+            Returns the element that gives the maximum value with respect to the
+            specified comparison function. If several elements are equally maximum,
             the first element is returned. If the stream is empty, `None` is returned.
 
             # Examples
