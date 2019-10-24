@@ -18,3 +18,21 @@ impl<T: Copy> Stream for Cycle<T> {
         Poll::Pending
     }
 }
+
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+///
+///  let values = vec![1,2,3];
+///
+/// # Ok(()) }) }
+///```
+fn cycle<T: Copy>(values: Vec<T>) -> impl Stream<Item = T> {
+    Cycle {
+        source: values,
+        index: 0,
+    }
+}
