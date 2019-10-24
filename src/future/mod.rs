@@ -55,6 +55,7 @@ mod pending;
 mod poll_fn;
 mod ready;
 mod timeout;
+mod delay;
 
 cfg_unstable! {
     #[doc(inline)]

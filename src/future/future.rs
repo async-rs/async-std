@@ -1,3 +1,5 @@
+use crate::future::delay::Delay;
+
 extension_trait! {
     use std::pin::Pin;
     use std::ops::{Deref, DerefMut};
@@ -99,6 +101,13 @@ extension_trait! {
     }
 
     pub trait FutureExt: std::future::Future {
+        #[doc = r#"
+        "#]
+        fn delay(self, dur: std::time::Duration) -> Delay<Self>
+            where Self: Sized
+        {
+            Delay::new(self, dur)
+        }
     }
 
     impl<F: Future + Unpin + ?Sized> Future for Box<F> {
