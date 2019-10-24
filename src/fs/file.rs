@@ -7,8 +7,6 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use cfg_if::cfg_if;
-
 use crate::fs::{Metadata, Permissions};
 use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
@@ -97,7 +95,7 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { std::fs::File::open(&path) }).await?;
+        let file = blocking::spawn(move || std::fs::File::open(&path)).await?;
         Ok(file.into())
     }
 
@@ -132,7 +130,7 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(async move { std::fs::File::create(&path) }).await?;
+        let file = blocking::spawn(move || std::fs::File::create(&path)).await?;
         Ok(file.into())
     }
 
@@ -165,7 +163,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.sync_all() }).await
+        blocking::spawn(move || state.file.sync_all()).await
     }
 
     /// Synchronizes OS-internal buffered contents to disk.
@@ -201,7 +199,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.sync_data() }).await
+        blocking::spawn(move || state.file.sync_data()).await
     }
 
     /// Truncates or extends the file.
@@ -234,7 +232,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(async move { state.file.set_len(size) }).await
+        blocking::spawn(move || state.file.set_len(size)).await
     }
 
     /// Reads the file's metadata.
@@ -253,7 +251,7 @@ impl File {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let file = self.file.clone();
-        blocking::spawn(async move { file.metadata() }).await
+        blocking::spawn(move || file.metadata()).await
     }
 
     /// Changes the permissions on the file.
@@ -282,7 +280,7 @@ impl File {
     /// ```
     pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         let file = self.file.clone();
-        blocking::spawn(async move { file.set_permissions(perm) }).await
+        blocking::spawn(move || file.set_permissions(perm)).await
     }
 }
 
@@ -401,67 +399,54 @@ impl From<std::fs::File> for File {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-        use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+cfg_unix! {
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl AsRawFd for File {
+        fn as_raw_fd(&self) -> RawFd {
+            self.file.as_raw_fd()
+        }
     }
-}
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for File {
-            fn as_raw_fd(&self) -> RawFd {
-                self.file.as_raw_fd()
-            }
+    impl FromRawFd for File {
+        unsafe fn from_raw_fd(fd: RawFd) -> File {
+            std::fs::File::from_raw_fd(fd).into()
         }
+    }
 
-        impl FromRawFd for File {
-            unsafe fn from_raw_fd(fd: RawFd) -> File {
-                std::fs::File::from_raw_fd(fd).into()
-            }
-        }
-
-        impl IntoRawFd for File {
-            fn into_raw_fd(self) -> RawFd {
-                let file = self.file.clone();
-                drop(self);
-                Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of the file handle after drop")
-                    .into_raw_fd()
-            }
+    impl IntoRawFd for File {
+        fn into_raw_fd(self) -> RawFd {
+            let file = self.file.clone();
+            drop(self);
+            Arc::try_unwrap(file)
+                .expect("cannot acquire ownership of the file handle after drop")
+                .into_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(windows)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        impl AsRawHandle for File {
-            fn as_raw_handle(&self) -> RawHandle {
-                self.file.as_raw_handle()
-            }
-        }
+cfg_windows! {
+    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
 
-        impl FromRawHandle for File {
-            unsafe fn from_raw_handle(handle: RawHandle) -> File {
-                std::fs::File::from_raw_handle(handle).into()
-            }
+    impl AsRawHandle for File {
+        fn as_raw_handle(&self) -> RawHandle {
+            self.file.as_raw_handle()
         }
+    }
 
-        impl IntoRawHandle for File {
-            fn into_raw_handle(self) -> RawHandle {
-                let file = self.file.clone();
-                drop(self);
-                Arc::try_unwrap(file)
-                    .expect("cannot acquire ownership of the file handle after drop")
-                    .into_raw_handle()
-            }
+    impl FromRawHandle for File {
+        unsafe fn from_raw_handle(handle: RawHandle) -> File {
+            std::fs::File::from_raw_handle(handle).into()
+        }
+    }
+
+    impl IntoRawHandle for File {
+        fn into_raw_handle(self) -> RawHandle {
+            let file = self.file.clone();
+            drop(self);
+            Arc::try_unwrap(file)
+                .expect("cannot acquire ownership of the file handle after drop")
+                .into_raw_handle()
         }
     }
 }
@@ -702,7 +687,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a read operation asynchronously.
-        blocking::spawn(async move {
+        blocking::spawn(move || {
             // Read some data from the file into the cache.
             let res = {
                 let State { file, cache, .. } = &mut *self;
@@ -811,7 +796,7 @@ impl LockGuard<State> {
                 self.register(cx);
 
                 // Start a write operation asynchronously.
-                blocking::spawn(async move {
+                blocking::spawn(move || {
                     match (&*self.file).write_all(&self.cache) {
                         Ok(_) => {
                             // Switch to idle mode.
@@ -844,7 +829,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a flush operation asynchronously.
-        blocking::spawn(async move {
+        blocking::spawn(move || {
             match (&*self.file).flush() {
                 Ok(()) => {
                     // Mark the file as flushed.

@@ -3,24 +3,22 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
 use crate::future::Future;
 use crate::io;
 use crate::task::{blocking, Context, JoinHandle, Poll};
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        #[doc(hidden)]
-        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+cfg_not_docs! {
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
+    }
+}
 
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
-        }
-    } else {
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
-        }
+cfg_docs! {
+    #[doc(hidden)]
+    pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
     }
 }
 
@@ -196,7 +194,7 @@ impl ToSocketAddrs for (&str, u16) {
         }
 
         let host = host.to_string();
-        let task = blocking::spawn(async move {
+        let task = blocking::spawn(move || {
             std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
         });
         ToSocketAddrsFuture::Resolving(task)
@@ -212,13 +210,12 @@ impl ToSocketAddrs for str {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        if let Some(addr) = self.parse().ok() {
+        if let Ok(addr) = self.parse() {
             return ToSocketAddrsFuture::Ready(Ok(vec![addr].into_iter()));
         }
 
         let addr = self.to_string();
-        let task =
-            blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()) });
+        let task = blocking::spawn(move || std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()));
         ToSocketAddrsFuture::Resolving(task)
     }
 }

@@ -33,5 +33,5 @@ use crate::task::blocking;
 pub async fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref().to_owned();
     let contents = contents.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::write(path, contents) }).await
+    blocking::spawn(move || std::fs::write(path, contents)).await
 }

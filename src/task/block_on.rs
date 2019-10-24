@@ -1,10 +1,13 @@
-use std::cell::UnsafeCell;
+use std::cell::{Cell, UnsafeCell};
 use std::mem::{self, ManuallyDrop};
 use std::panic::{self, AssertUnwindSafe, UnwindSafe};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
-use std::thread::{self, Thread};
+use std::thread;
+
+use crossbeam_utils::sync::Parker;
+use pin_project_lite::pin_project;
 
 use super::task;
 use super::task_local;
@@ -19,9 +22,9 @@ use kv_log_macro::trace;
 /// Calling this function is similar to [spawning] a thread and immediately [joining] it, except an
 /// asynchronous task will be spawned.
 ///
-/// See also: [`task::blocking`].
+/// See also: [`task::spawn_blocking`].
 ///
-/// [`task::blocking`]: fn.blocking.html
+/// [`task::spawn_blocking`]: fn.spawn_blocking.html
 ///
 /// [spawning]: https://doc.rust-lang.org/std/thread/fn.spawn.html
 /// [joining]: https://doc.rust-lang.org/std/thread/struct.JoinHandle.html#method.join
@@ -98,19 +101,18 @@ where
     }
 }
 
-struct CatchUnwindFuture<F> {
-    future: F,
-}
-
-impl<F> CatchUnwindFuture<F> {
-    pin_utils::unsafe_pinned!(future: F);
+pin_project! {
+    struct CatchUnwindFuture<F> {
+        #[pin]
+        future: F,
+    }
 }
 
 impl<F: Future + UnwindSafe> Future for CatchUnwindFuture<F> {
     type Output = thread::Result<F::Output>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        panic::catch_unwind(AssertUnwindSafe(|| self.future().poll(cx)))?.map(Ok)
+        panic::catch_unwind(AssertUnwindSafe(|| self.project().future.poll(cx)))?.map(Ok)
     }
 }
 
@@ -119,13 +121,21 @@ where
     F: Future<Output = T>,
 {
     thread_local! {
-        static ARC_THREAD: Arc<Thread> = Arc::new(thread::current());
+        // May hold a pre-allocated parker that can be reused for efficiency.
+        //
+        // Note that each invocation of `block` needs its own parker. In particular, if `block`
+        // recursively calls itself, we must make sure that each recursive call uses a distinct
+        // parker instance.
+        static CACHE: Cell<Option<Arc<Parker>>> = Cell::new(None);
     }
 
     pin_utils::pin_mut!(f);
 
-    ARC_THREAD.with(|arc_thread: &Arc<Thread>| {
-        let ptr = (&**arc_thread as *const Thread) as *const ();
+    CACHE.with(|cache| {
+        // Reuse a cached parker or create a new one for this invocation of `block`.
+        let arc_parker: Arc<Parker> = cache.take().unwrap_or_else(|| Arc::new(Parker::new()));
+
+        let ptr = (&*arc_parker as *const Parker) as *const ();
         let vt = vtable();
 
         let waker = unsafe { ManuallyDrop::new(Waker::from_raw(RawWaker::new(ptr, vt))) };
@@ -133,32 +143,34 @@ where
 
         loop {
             if let Poll::Ready(t) = f.as_mut().poll(cx) {
+                // Save the parker for the next invocation of `block`.
+                cache.set(Some(arc_parker));
                 return t;
             }
-            thread::park();
+            arc_parker.park();
         }
     })
 }
 
 fn vtable() -> &'static RawWakerVTable {
     unsafe fn clone_raw(ptr: *const ()) -> RawWaker {
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Thread));
+        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
         mem::forget(arc.clone());
         RawWaker::new(ptr, vtable())
     }
 
     unsafe fn wake_raw(ptr: *const ()) {
-        let arc = Arc::from_raw(ptr as *const Thread);
-        arc.unpark();
+        let arc = Arc::from_raw(ptr as *const Parker);
+        arc.unparker().unpark();
     }
 
     unsafe fn wake_by_ref_raw(ptr: *const ()) {
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Thread));
-        arc.unpark();
+        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
+        arc.unparker().unpark();
     }
 
     unsafe fn drop_raw(ptr: *const ()) {
-        drop(Arc::from_raw(ptr as *const Thread))
+        drop(Arc::from_raw(ptr as *const Parker))
     }
 
     &RawWakerVTable::new(clone_raw, wake_raw, wake_by_ref_raw, drop_raw)

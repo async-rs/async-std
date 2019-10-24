@@ -14,7 +14,7 @@ use crate::stream::IntoStream;
 /// ## Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream::{self, Extend};
@@ -25,8 +25,9 @@ use crate::stream::IntoStream;
 ///
 /// assert_eq!(v, vec![1, 2, 3, 3, 3]);
 /// #
-/// # }) }
+/// # })
 /// ```
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Extend<A> {
     /// Extends a collection with the contents of a stream.

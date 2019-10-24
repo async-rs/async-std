@@ -10,8 +10,8 @@ use std::task::{Context, Poll};
 /// `Item`s from the back, as well as the front.
 ///
 /// [`Stream`]: trait.Stream.html
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub trait DoubleEndedStream: Stream {
     /// Removes and returns an element from the end of the stream.
     ///

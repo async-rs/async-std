@@ -13,23 +13,17 @@ use read_to_end::{read_to_end_internal, ReadToEndFuture};
 use read_to_string::ReadToStringFuture;
 use read_vectored::ReadVectoredFuture;
 
-use cfg_if::cfg_if;
 use std::mem;
 
 use crate::io::IoSliceMut;
-use crate::utils::extension_trait;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
-
-        use crate::io;
-        use crate::task::{Context, Poll};
-    }
-}
 
 extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
+
+    use crate::io;
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         Allows reading from a byte stream.
 
@@ -50,7 +44,7 @@ extension_trait! {
         [`poll_read`]: #tymethod.poll_read
         [`poll_read_vectored`]: #method.poll_read_vectored
     "#]
-    pub trait Read [ReadExt: futures_io::AsyncRead] {
+    pub trait Read {
         #[doc = r#"
             Attempt to read from the `AsyncRead` into `buf`.
         "#]
@@ -70,7 +64,9 @@ extension_trait! {
         ) -> Poll<io::Result<usize>> {
             unreachable!("this impl only appears in the rendered docs")
         }
+    }
 
+    pub trait ReadExt: futures_io::AsyncRead {
         #[doc = r#"
             Reads some bytes from the byte stream.
 
@@ -307,34 +303,34 @@ extension_trait! {
 
         #[doc = r#"
             Creates a "by reference" adaptor for this instance of `Read`.
-           
+
             The returned adaptor also implements `Read` and will simply borrow this
             current reader.
-           
+
             # Examples
-           
+
             [`File`][file]s implement `Read`:
-           
+
             [file]: ../fs/struct.File.html
-           
+
             ```no_run
             # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
-           
+
             let mut f = File::open("foo.txt").await?;
             let mut buffer = Vec::new();
             let mut other_buffer = Vec::new();
-           
+
             {
                 let reference = f.by_ref();
-           
+
                 // read at most 5 bytes
                 reference.take(5).read_to_end(&mut buffer).await?;
-           
+
             } // drop our &mut reference so we can use f again
-           
+
             // original file still usable, read the rest
             f.read_to_end(&mut other_buffer).await?;
             #
@@ -346,27 +342,27 @@ extension_trait! {
 
         #[doc = r#"
             Transforms this `Read` instance to a `Stream` over its bytes.
-           
+
             The returned type implements `Stream` where the `Item` is
             `Result<u8, io::Error>`.
             The yielded item is `Ok` if a byte was successfully read and `Err`
             otherwise. EOF is mapped to returning `None` from this iterator.
-           
+
             # Examples
-           
+
             [`File`][file]s implement `Read`:
-           
+
             [file]: ../fs/struct.File.html
-           
+
             ```no_run
             # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
-           
+
             let f = File::open("foo.txt").await?;
             let mut s = f.bytes();
-           
+
             while let Some(byte) = s.next().await {
                 println!("{}", byte.unwrap());
             }
@@ -380,29 +376,29 @@ extension_trait! {
 
         #[doc = r#"
             Creates an adaptor which will chain this stream with another.
-           
+
             The returned `Read` instance will first read all bytes from this object
             until EOF is encountered. Afterwards the output is equivalent to the
             output of `next`.
-           
+
             # Examples
-           
+
             [`File`][file]s implement `Read`:
-           
+
             [file]: ../fs/struct.File.html
-           
+
             ```no_run
             # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
             use async_std::fs::File;
-           
+
             let f1 = File::open("foo.txt").await?;
             let f2 = File::open("bar.txt").await?;
-           
+
             let mut handle = f1.chain(f2);
             let mut buffer = String::new();
-           
+
             // read the value into a String. We could use any Read method here,
             // this is just one example.
             handle.read_to_string(&mut buffer).await?;

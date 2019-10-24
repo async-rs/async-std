@@ -43,7 +43,7 @@
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! print {
@@ -81,12 +81,15 @@ macro_rules! print {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::io::_print(format_args!($($arg)*)))
+    ($($arg:tt)*) => (async {
+        $crate::io::_print(format_args!($($arg)*)).await;
+        $crate::io::_print(format_args!("\n")).await;
+    })
 }
 
 /// Prints to the standard error.
@@ -116,7 +119,7 @@ macro_rules! println {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprint {
@@ -150,7 +153,7 @@ macro_rules! eprint {
 /// #
 /// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[macro_export]
 macro_rules! eprintln {
@@ -158,6 +161,7 @@ macro_rules! eprintln {
     ($($arg:tt)*) => (
         async {
             $crate::io::_eprint(format_args!($($arg)*)).await;
+            $crate::io::_eprint(format_args!("\n")).await;
         }
     );
 }

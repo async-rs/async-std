@@ -1,6 +1,6 @@
 [package]
 name = "async-std"
-version = "0.99.9"
+version = "0.99.10"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "Yoshua Wuyts <yoshuawuyts@gmail.com>",
@@ -21,18 +21,18 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
-docs = ["broadcaster"]
+docs = ["unstable"]
 unstable = ["broadcaster"]
 
 [dependencies]
 async-macros = "1.0.0"
 async-task = "1.0.0"
-cfg-if = "0.1.9"
 crossbeam-channel = "0.3.9"
 crossbeam-deque = "0.7.1"
+crossbeam-utils = "0.6.6"
 futures-core-preview = "=0.3.0-alpha.19"
 futures-io-preview = "=0.3.0-alpha.19"
-futures-timer = "0.4.0"
+futures-timer = "1.0.2"
 lazy_static = "1.4.0"
 log = { version = "0.4.8", features = ["kv_unstable"] }
 memchr = "2.2.1"
@@ -43,9 +43,11 @@ pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 kv-log-macro = "1.0.4"
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
+pin-project-lite = "0.1"
 
 [dev-dependencies]
 femme = "1.2.0"
+rand = "0.7.2"
 # surf = "1.0.2"
 tempdir = "0.3.7"
 futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }

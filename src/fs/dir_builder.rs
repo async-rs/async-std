@@ -1,6 +1,5 @@
-use cfg_if::cfg_if;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io;
 use crate::path::Path;
 use crate::task::blocking;
@@ -108,26 +107,17 @@ impl DirBuilder {
         }
 
         let path = path.as_ref().to_owned();
-        async move { blocking::spawn(async move { builder.create(path) }).await }
+        async move { blocking::spawn(move || builder.create(path)).await }
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::fs::DirBuilderExt;
-    } else if #[cfg(unix)] {
-        use std::os::unix::fs::DirBuilderExt;
-    }
-}
+cfg_unix! {
+    use crate::os::unix::fs::DirBuilderExt;
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl DirBuilderExt for DirBuilder {
-            fn mode(&mut self, mode: u32) -> &mut Self {
-                self.mode = Some(mode);
-                self
-            }
+    impl DirBuilderExt for DirBuilder {
+        fn mode(&mut self, mode: u32) -> &mut Self {
+            self.mode = Some(mode);
+            self
         }
     }
 }

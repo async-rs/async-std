@@ -10,22 +10,14 @@ use write_all::WriteAllFuture;
 use write_fmt::WriteFmtFuture;
 use write_vectored::WriteVectoredFuture;
 
-use cfg_if::cfg_if;
-
-use crate::io::IoSlice;
-use crate::utils::extension_trait;
-
-use crate::io;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
-        use crate::task::{Context, Poll};
-    }
-}
+use crate::io::{self, IoSlice};
 
 extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
+
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         Allows writing to a byte stream.
 
@@ -49,7 +41,7 @@ extension_trait! {
         [`poll_flush`]: #tymethod.poll_flush
         [`poll_close`]: #tymethod.poll_close
     "#]
-    pub trait Write [WriteExt: futures_io::AsyncWrite] {
+    pub trait Write {
         #[doc = r#"
             Attempt to write bytes from `buf` into the object.
         "#]
@@ -80,7 +72,9 @@ extension_trait! {
             Attempt to close the object.
         "#]
         fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
+    }
 
+    pub trait WriteExt: futures_io::AsyncWrite {
         #[doc = r#"
             Writes some bytes into the byte stream.
 

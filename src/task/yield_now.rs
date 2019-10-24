@@ -18,15 +18,15 @@ use std::pin::Pin;
 /// Basic usage:
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
 ///
 /// task::yield_now().await;
 /// #
-/// # }) }
+/// # })
 /// ```
-#[cfg(any(feature = "unstable", feature = "docs"))]
+#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
 pub async fn yield_now() {

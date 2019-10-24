@@ -32,7 +32,7 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
             buffer,
             ..
         } = &mut *self;
-        let mut buffer = buffer.as_mut().unwrap();
+        let buffer = buffer.as_mut().unwrap();
 
         // Copy the data from the buffer into the writer until it's done.
         loop {
@@ -40,7 +40,7 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
                 futures_core::ready!(Pin::new(&mut **writer).poll_flush(cx))?;
                 return Poll::Ready(Ok(()));
             }
-            let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, &mut buffer))?;
+            let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, buffer))?;
             if i == 0 {
                 return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
             }

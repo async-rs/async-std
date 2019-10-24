@@ -42,28 +42,24 @@
 //! | `future::try_select` | `Result<T, E>`                 | Return on first `Ok`, reject on last Err
 
 #[doc(inline)]
-pub use std::future::Future;
-
-#[doc(inline)]
 pub use async_macros::{join, try_join};
 
-#[doc(inline)]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub use async_macros::{select, try_select};
-
-use cfg_if::cfg_if;
-
+pub use future::Future;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
+pub use timeout::{timeout, TimeoutError};
 
+pub(crate) mod future;
 mod pending;
 mod poll_fn;
 mod ready;
+mod timeout;
 
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        mod timeout;
-        pub use timeout::{timeout, TimeoutError};
-    }
+cfg_unstable! {
+    #[doc(inline)]
+    pub use async_macros::{select, try_select};
+
+    pub use into_future::IntoFuture;
+    mod into_future;
 }
