@@ -22,11 +22,7 @@ impl<T: Copy> Stream for Cycle<T> {
 
         let next = self.index + 1;
 
-        if next >= self.len {
-            self.as_mut().index = 0;
-        } else {
-            self.as_mut().index = next;
-        }
+        self.as_mut().index = next % self.len;
 
         Poll::Ready(Some(value))
     }
