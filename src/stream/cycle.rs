@@ -28,6 +28,8 @@ impl<T: Copy> Stream for Cycle<T> {
     }
 }
 
+/// Creats a stream that yields the provided values infinitely and in order.
+///
 /// # Examples
 ///
 /// Basic usage:
