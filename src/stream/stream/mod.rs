@@ -24,9 +24,10 @@
 mod all;
 mod any;
 mod chain;
-mod cmp;
-mod copied;
 mod enumerate;
+mod cycle;
+mod copied;
+mod cmp;
 mod eq;
 mod filter;
 mod filter_map;
