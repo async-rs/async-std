@@ -10,7 +10,7 @@ use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
 
 /// Set if a write lock is held.
-const WRITE_LOCK: usize = 1;
+const WRITE_LOCK: usize = 1 << 0;
 
 /// Set if there are read operations blocked on the lock.
 const BLOCKED_READS: usize = 1 << 1;

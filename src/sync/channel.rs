@@ -4,17 +4,17 @@ use std::future::Future;
 use std::isize;
 use std::marker::PhantomData;
 use std::mem;
-use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::process;
 use std::ptr;
-use std::sync::atomic::{self, AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::task::{Context, Poll, Waker};
+use std::task::{Context, Poll};
 
 use crossbeam_utils::{Backoff, CachePadded};
-use futures_core::stream::Stream;
-use slab::Slab;
+
+use crate::stream::Stream;
+use crate::sync::Registry;
 
 /// Creates a bounded multi-producer multi-consumer channel.
 ///
@@ -937,196 +937,4 @@ enum PopError {
 
     /// The channel is empty and disconnected.
     Disconnected,
-}
-
-/// A list of blocked channel operations.
-struct Blocked {
-    /// A list of registered channel operations.
-    ///
-    /// Each entry has a waker associated with the task that is executing the operation. If the
-    /// waker is set to `None`, that means the task has been woken up but hasn't removed itself
-    /// from the registry yet.
-    entries: Slab<Option<Waker>>,
-
-    /// The number of wakers in the entry list.
-    waker_count: usize,
-}
-
-/// A registry of blocked channel operations.
-///
-/// Blocked operations register themselves in a registry. Successful operations on the opposite
-/// side of the channel wake blocked operations in the registry.
-struct Registry {
-    /// A list of blocked channel operations.
-    blocked: Spinlock<Blocked>,
-
-    /// Set to `true` if there are no wakers in the registry.
-    ///
-    /// Note that this either means there are no entries in the registry, or that all entries have
-    /// been notified.
-    is_empty: AtomicBool,
-}
-
-impl Registry {
-    /// Creates a new registry.
-    fn new() -> Registry {
-        Registry {
-            blocked: Spinlock::new(Blocked {
-                entries: Slab::new(),
-                waker_count: 0,
-            }),
-            is_empty: AtomicBool::new(true),
-        }
-    }
-
-    /// Registers a blocked channel operation and returns a key associated with it.
-    fn register(&self, cx: &Context<'_>) -> usize {
-        let mut blocked = self.blocked.lock();
-
-        // Insert a new entry into the list of blocked tasks.
-        let w = cx.waker().clone();
-        let key = blocked.entries.insert(Some(w));
-
-        blocked.waker_count += 1;
-        if blocked.waker_count == 1 {
-            self.is_empty.store(false, Ordering::SeqCst);
-        }
-
-        key
-    }
-
-    /// Re-registers a blocked channel operation by filling in its waker.
-    fn reregister(&self, key: usize, cx: &Context<'_>) {
-        let mut blocked = self.blocked.lock();
-
-        let was_none = blocked.entries[key].is_none();
-        let w = cx.waker().clone();
-        blocked.entries[key] = Some(w);
-
-        if was_none {
-            blocked.waker_count += 1;
-            if blocked.waker_count == 1 {
-                self.is_empty.store(false, Ordering::SeqCst);
-            }
-        }
-    }
-
-    /// Unregisters a channel operation.
-    ///
-    /// If `completed` is `true`, the operation will be removed from the registry. If `completed`
-    /// is `false`, that means the operation was cancelled so another one will be notified.
-    fn unregister(&self, key: usize, completed: bool) {
-        let mut blocked = self.blocked.lock();
-        let mut removed = false;
-
-        match blocked.entries.remove(key) {
-            Some(_) => removed = true,
-            None => {
-                if !completed {
-                    // This operation was cancelled. Notify another one.
-                    if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
-                        if let Some(w) = opt_waker.take() {
-                            w.wake();
-                            removed = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        if removed {
-            blocked.waker_count -= 1;
-            if blocked.waker_count == 0 {
-                self.is_empty.store(true, Ordering::SeqCst);
-            }
-        }
-    }
-
-    /// Notifies one blocked channel operation.
-    #[inline]
-    fn notify_one(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
-            let mut blocked = self.blocked.lock();
-
-            if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-
-                    blocked.waker_count -= 1;
-                    if blocked.waker_count == 0 {
-                        self.is_empty.store(true, Ordering::SeqCst);
-                    }
-                }
-            }
-        }
-    }
-
-    /// Notifies all blocked channel operations.
-    #[inline]
-    fn notify_all(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
-            let mut blocked = self.blocked.lock();
-
-            for (_, opt_waker) in blocked.entries.iter_mut() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
-            }
-
-            blocked.waker_count = 0;
-            self.is_empty.store(true, Ordering::SeqCst);
-        }
-    }
-}
-
-/// A simple spinlock.
-struct Spinlock<T> {
-    flag: AtomicBool,
-    value: UnsafeCell<T>,
-}
-
-impl<T> Spinlock<T> {
-    /// Returns a new spinlock initialized with `value`.
-    fn new(value: T) -> Spinlock<T> {
-        Spinlock {
-            flag: AtomicBool::new(false),
-            value: UnsafeCell::new(value),
-        }
-    }
-
-    /// Locks the spinlock.
-    fn lock(&self) -> SpinlockGuard<'_, T> {
-        let backoff = Backoff::new();
-        while self.flag.swap(true, Ordering::Acquire) {
-            backoff.snooze();
-        }
-        SpinlockGuard { parent: self }
-    }
-}
-
-/// A guard holding a spinlock locked.
-struct SpinlockGuard<'a, T> {
-    parent: &'a Spinlock<T>,
-}
-
-impl<'a, T> Drop for SpinlockGuard<'a, T> {
-    fn drop(&mut self) {
-        self.parent.flag.store(false, Ordering::Release);
-    }
-}
-
-impl<'a, T> Deref for SpinlockGuard<'a, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        unsafe { &*self.parent.value.get() }
-    }
-}
-
-impl<'a, T> DerefMut for SpinlockGuard<'a, T> {
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.parent.value.get() }
-    }
 }

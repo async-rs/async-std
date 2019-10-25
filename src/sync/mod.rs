@@ -45,3 +45,6 @@ cfg_unstable! {
     mod barrier;
     mod channel;
 }
+
+pub(crate) mod registry;
+pub(crate) use registry::Registry;
