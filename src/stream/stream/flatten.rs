@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use pin_project_lite::pin_project;
+use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::stream::map::Map;
@@ -25,7 +25,6 @@ where
     U: IntoStream,
     F: FnMut(S::Item) -> U,
 {
-
     pub fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
         FlatMap {
             inner: FlattenCompat::new(stream.map(f)),
@@ -46,7 +45,7 @@ where
     }
 }
 
-pin_project!{
+pin_project! {
     /// This `struct` is created by the [`flatten`] method on [`Stream`]. See its
     /// documentation for more.
     ///
@@ -61,7 +60,9 @@ pin_project!{
 
 impl<S: Stream<Item: IntoStream>> Flatten<S, S::Item> {
     pub fn new(stream: S) -> Flatten<S, S::Item> {
-        Flatten { inner: FlattenCompat::new(stream) }
+        Flatten {
+            inner: FlattenCompat::new(stream),
+        }
     }
 }
 
@@ -76,7 +77,6 @@ where
         self.project().inner.poll_next(cx)
     }
 }
-
 
 pin_project! {
     /// Real logic of both `Flatten` and `FlatMap` which simply delegate to
