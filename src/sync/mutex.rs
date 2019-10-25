@@ -125,8 +125,7 @@ impl<T> Mutex<T> {
                 if poll.is_ready() {
                     // If the current task was registered, unregister now.
                     if let Some(key) = self.opt_key.take() {
-                        // `true` means the operation is completed.
-                        self.mutex.registry.unregister(key, true);
+                        self.mutex.registry.complete(key);
                     }
                 }
 
@@ -138,8 +137,7 @@ impl<T> Mutex<T> {
             fn drop(&mut self) {
                 // If the current task was registered, unregister now.
                 if let Some(key) = self.opt_key {
-                    // `false` means the operation is canceled.
-                    self.mutex.registry.unregister(key, false);
+                    self.mutex.registry.cancel(key);
                 }
             }
         }

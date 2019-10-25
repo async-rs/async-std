@@ -169,8 +169,7 @@ impl<T> Sender<T> {
                 if poll.is_ready() {
                     // If the current task was registered, unregister now.
                     if let Some(key) = self.opt_key.take() {
-                        // `true` means the send operation is completed.
-                        self.sender.channel.sends.unregister(key, true);
+                        self.sender.channel.sends.complete(key);
                     }
                 }
 
@@ -182,8 +181,7 @@ impl<T> Sender<T> {
             fn drop(&mut self) {
                 // If the current task was registered, unregister now.
                 if let Some(key) = self.opt_key {
-                    // `false` means the send operation is cancelled.
-                    self.sender.channel.sends.unregister(key, false);
+                    self.sender.channel.sends.cancel(key);
                 }
             }
         }
@@ -390,8 +388,7 @@ impl<T> Receiver<T> {
             fn drop(&mut self) {
                 // If the current task was registered, unregister now.
                 if let Some(key) = self.opt_key {
-                    // `false` means the receive operation is cancelled.
-                    self.channel.recvs.unregister(key, false);
+                    self.channel.recvs.cancel(key);
                 }
             }
         }
@@ -486,8 +483,7 @@ impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         // If the current task was registered as blocked on this stream, unregister now.
         if let Some(key) = self.opt_key {
-            // `false` means the last request for a stream item is cancelled.
-            self.channel.streams.unregister(key, false);
+            self.channel.streams.cancel(key);
         }
 
         // Decrement the receiver count and disconnect the channel if it drops down to zero.
@@ -561,8 +557,7 @@ fn poll_recv<T>(
     if poll.is_ready() {
         // If the current task was registered, unregister now.
         if let Some(key) = opt_key.take() {
-            // `true` means the receive operation is completed.
-            registry.unregister(key, true);
+            registry.complete(key);
         }
     }
 

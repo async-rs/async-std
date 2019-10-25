@@ -85,25 +85,25 @@ impl Registry {
         }
     }
 
-    /// Unregisters an operation.
-    ///
-    /// If `completed` is `true`, the operation will be removed from the registry. If `completed`
-    /// is `false`, that means the operation was canceled so another one will be notified instead.
-    pub fn unregister(&self, key: usize, completed: bool) {
+    /// Unregisters a completed operation.
+    pub fn complete(&self, key: usize) {
         let mut blocked = self.lock();
+        if blocked.entries.remove(key).is_none() {
+            blocked.none_count -= 1;
+        }
+    }
 
-        // Remove the operation and check if it has been notified.
+    /// Unregisters a cancelled operation.
+    pub fn cancel(&self, key: usize) {
+        let mut blocked = self.lock();
         if blocked.entries.remove(key).is_none() {
             blocked.none_count -= 1;
 
-            // If the operation was notified but also canceled...
-            if !completed {
-                // Notify another operation.
-                if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
-                    if let Some(w) = opt_waker.take() {
-                        w.wake();
-                        blocked.none_count += 1;
-                    }
+            // The operation was cancelled and notified so notify another operation instead.
+            if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
+                if let Some(w) = opt_waker.take() {
+                    w.wake();
+                    blocked.none_count += 1;
                 }
             }
         }
