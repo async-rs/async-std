@@ -108,7 +108,7 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
         loop {
-            if let Some(inner) = this.frontiter {
+            if let Some(inner) = this.frontiter.as_mut().as_pin_mut() {
                 if let item @ Some(_) = futures_core::ready!(Pin::new(inner).poll_next(cx)) {
                     return Poll::Ready(item);
                 }
