@@ -30,7 +30,6 @@ mod filter;
 mod filter_map;
 mod find;
 mod find_map;
-mod flatten;
 mod fold;
 mod for_each;
 mod fuse;
@@ -78,7 +77,6 @@ use try_for_each::TryForEeachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
-pub use flatten::{FlatMap, Flatten};
 pub use fuse::Fuse;
 pub use inspect::Inspect;
 pub use map::Map;
@@ -101,8 +99,10 @@ cfg_unstable! {
     use crate::stream::into_stream::IntoStream;
 
     pub use merge::Merge;
+    pub use flatten::{FlatMap, Flatten};
 
     mod merge;
+    mod flatten;
 }
 
 extension_trait! {
@@ -588,6 +588,8 @@ extension_trait! {
             # });
             ```
         "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, Self::Item, F>
             where
                 Self: Sized,
@@ -620,6 +622,8 @@ extension_trait! {
 
             # });
         "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn flatten(self) -> Flatten<Self, Self::Item>
         where
             Self: Sized,
