@@ -3,7 +3,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use futures_timer::Delay;
-use pin_utils::unsafe_pinned;
+use pin_project_lite::pin_project;
 
 use crate::future::Future;
 use crate::io;
@@ -43,22 +43,18 @@ where
     .await
 }
 
-/// Future returned by the `FutureExt::timeout` method.
-#[derive(Debug)]
-pub struct Timeout<F, T>
-where
-    F: Future<Output = io::Result<T>>,
-{
-    future: F,
-    timeout: Delay,
-}
-
-impl<F, T> Timeout<F, T>
-where
-    F: Future<Output = io::Result<T>>,
-{
-    unsafe_pinned!(future: F);
-    unsafe_pinned!(timeout: Delay);
+pin_project! {
+    /// Future returned by the `FutureExt::timeout` method.
+    #[derive(Debug)]
+    pub struct Timeout<F, T>
+    where
+        F: Future<Output = io::Result<T>>,
+    {
+        #[pin]
+        future: F,
+        #[pin]
+        timeout: Delay,
+    }
 }
 
 impl<F, T> Future for Timeout<F, T>
@@ -67,14 +63,15 @@ where
 {
     type Output = io::Result<T>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.as_mut().future().poll(cx) {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        match this.future.poll(cx) {
             Poll::Pending => {}
             other => return other,
         }
 
-        if self.timeout().poll(cx).is_ready() {
-            let err = Err(io::Error::new(io::ErrorKind::TimedOut, "future timed out").into());
+        if this.timeout.poll(cx).is_ready() {
+            let err = Err(io::Error::new(io::ErrorKind::TimedOut, "future timed out"));
             Poll::Ready(err)
         } else {
             Poll::Pending

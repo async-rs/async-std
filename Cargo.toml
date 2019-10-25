@@ -43,9 +43,11 @@ pin-utils = "0.1.0-alpha.4"
 slab = "0.4.2"
 kv-log-macro = "1.0.4"
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
+pin-project-lite = "0.1"
 
 [dev-dependencies]
 femme = "1.2.0"
+rand = "0.7.2"
 # surf = "1.0.2"
 tempdir = "0.3.7"
 futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
