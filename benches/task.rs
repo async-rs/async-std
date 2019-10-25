@@ -3,7 +3,7 @@
 extern crate test;
 
 use async_std::task;
-use test::{black_box, Bencher};
+use test::Bencher;
 
 #[bench]
 fn block_on(b: &mut Bencher) {
