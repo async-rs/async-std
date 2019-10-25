@@ -116,7 +116,7 @@ where
 
             match futures_core::ready!(this.stream.as_mut().poll_next(cx)) {
                 None => return Poll::Ready(None),
-                Some(inner) => *this.frontiter = Some(inner.into_stream()),
+                Some(inner) => this.frontiter.set(Some(inner.into_stream())),
             }
         }
     }
