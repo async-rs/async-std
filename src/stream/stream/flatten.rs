@@ -13,27 +13,27 @@ pin_project! {
     /// [`flat_map`]: trait.Stream.html#method.flat_map
     /// [`Stream`]: trait.Stream.html
     #[allow(missing_debug_implementations)]
-    pub struct FlatMap<S: Stream, U: IntoStream, F> {
+    pub struct FlatMap<S, U, T, F> {
         #[pin]
-        inner: FlattenCompat<Map<S, F, S::Item, U>, U>,
+        inner: FlattenCompat<Map<S, F, T, U>, U>,
     }
 }
 
-impl<S, U, F> FlatMap<S, U, F>
+impl<S, U, F> FlatMap<S, U, S::Item, F>
 where
     S: Stream,
     U: IntoStream,
     F: FnMut(S::Item) -> U,
 {
 
-    pub fn new(stream: S, f: F) -> FlatMap<S, U, F> {
+    pub fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
         FlatMap {
             inner: FlattenCompat::new(stream.map(f)),
         }
     }
 }
 
-impl<S, U, F> Stream for FlatMap<S, U, F>
+impl<S, U, F> Stream for FlatMap<S, U, S::Item, F>
 where
     S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
     U: Stream + std::marker::Unpin,
@@ -53,22 +53,19 @@ pin_project!{
     /// [`flatten`]: trait.Stream.html#method.flatten
     /// [`Stream`]: trait.Stream.html
     #[allow(missing_debug_implementations)]
-    pub struct Flatten<S: Stream>
-    where
-        S::Item: IntoStream,
-    {
+    pub struct Flatten<S, U> {
         #[pin]
-        inner: FlattenCompat<S, <S::Item as IntoStream>::IntoStream>,
+        inner: FlattenCompat<S, U>
     }
 }
 
-impl<S: Stream<Item: IntoStream>> Flatten<S> {
-    pub fn new(stream: S) -> Flatten<S> {
+impl<S: Stream<Item: IntoStream>> Flatten<S, S::Item> {
+    pub fn new(stream: S) -> Flatten<S, S::Item> {
         Flatten { inner: FlattenCompat::new(stream) }
     }
 }
 
-impl<S, U> Stream for Flatten<S>
+impl<S, U> Stream for Flatten<S, <S::Item as IntoStream>::IntoStream>
 where
     S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
     U: Stream + std::marker::Unpin,
