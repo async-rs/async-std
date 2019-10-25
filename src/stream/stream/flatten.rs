@@ -34,8 +34,9 @@ where
 
 impl<S, U, F> Stream for FlatMap<S, U, S::Item, F>
 where
-    S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
-    U: Stream + std::marker::Unpin,
+    S: Stream,
+    S::Item: IntoStream<IntoStream = U, Item = U::Item>,
+    U: Stream,
     F: FnMut(S::Item) -> U,
 {
     type Item = U::Item;
@@ -58,7 +59,11 @@ pin_project! {
     }
 }
 
-impl<S: Stream<Item: IntoStream>> Flatten<S, S::Item> {
+impl<S> Flatten<S, S::Item>
+where
+    S: Stream,
+    S::Item: IntoStream,
+{
     pub fn new(stream: S) -> Flatten<S, S::Item> {
         Flatten {
             inner: FlattenCompat::new(stream),
@@ -68,8 +73,9 @@ impl<S: Stream<Item: IntoStream>> Flatten<S, S::Item> {
 
 impl<S, U> Stream for Flatten<S, <S::Item as IntoStream>::IntoStream>
 where
-    S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
-    U: Stream + std::marker::Unpin,
+     S: Stream,
+     S::Item: IntoStream<IntoStream = U, Item = U::Item>,
+     U: Stream,
 {
     type Item = U::Item;
 
@@ -83,7 +89,9 @@ pin_project! {
     /// this type.
     #[derive(Clone, Debug)]
     struct FlattenCompat<S, U> {
+        #[pin]
         stream: S,
+        #[pin]
         frontiter: Option<U>,
     }
 }
@@ -100,8 +108,9 @@ impl<S, U> FlattenCompat<S, U> {
 
 impl<S, U> Stream for FlattenCompat<S, U>
 where
-    S: Stream<Item: IntoStream<IntoStream = U, Item = U::Item>> + std::marker::Unpin,
-    U: Stream + std::marker::Unpin,
+    S: Stream,
+    S::Item: IntoStream<IntoStream = U, Item = U::Item>,
+    U: Stream,
 {
     type Item = U::Item;
 
