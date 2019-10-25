@@ -109,7 +109,7 @@ where
         let mut this = self.project();
         loop {
             if let Some(inner) = this.frontiter.as_mut().as_pin_mut() {
-                if let item @ Some(_) = futures_core::ready!(Pin::new(inner).poll_next(cx)) {
+                if let item @ Some(_) = futures_core::ready!(inner.poll_next(cx)) {
                     return Poll::Ready(item);
                 }
             }
