@@ -46,7 +46,7 @@
 #![doc(test(attr(deny(rust_2018_idioms, warnings))))]
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
-#![recursion_limit = "1024"]
+#![recursion_limit = "2048"]
 #![feature(associated_type_bounds)]
 
 #[macro_use]
