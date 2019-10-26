@@ -7,12 +7,13 @@ on:
       - staging
       - trying
 
+env:
+  RUSTFLAGS: -Dwarnings
+
 jobs:
   build_and_test:
     name: Build and test
     runs-on: ${{ matrix.os }}
-    env:
-      RUSTFLAGS: -Dwarnings
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -48,8 +49,6 @@ jobs:
   check_fmt_and_docs:
     name: Checking fmt and docs
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@master
 
@@ -81,19 +80,11 @@ jobs:
   clippy_check:
     name: Clippy check
     runs-on: ubuntu-latest
-    # TODO: There is a lot of warnings
-    # env:
-    #   RUSTFLAGS: -Dwarnings
     steps:
       - uses: actions/checkout@v1
-      - id: component
-        uses: actions-rs/components-nightly@v1
-        with:
-          component: clippy
-      - uses: actions-rs/toolchain@v1
-        with:
-            toolchain: ${{ steps.component.outputs.toolchain }}
-            override: true
-      - run: rustup component add clippy
+      - name: Install rust
+        run: rustup update beta && rustup default beta
+      - name: Install clippy
+        run: rustup component add clippy
       - name: clippy
         run: cargo clippy --all --features unstable

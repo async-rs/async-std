@@ -167,6 +167,7 @@ impl Tag {
     }
 
     pub fn task(&self) -> &Task {
+        #[allow(clippy::transmute_ptr_to_ptr)]
         unsafe {
             let raw = self.raw_metadata.load(Ordering::Acquire);
 
@@ -189,6 +190,7 @@ impl Tag {
                 }
             }
 
+            #[allow(clippy::transmute_ptr_to_ptr)]
             mem::transmute::<&AtomicUsize, &Option<Task>>(&self.raw_metadata)
                 .as_ref()
                 .unwrap()
