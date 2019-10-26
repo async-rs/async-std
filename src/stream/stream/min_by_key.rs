@@ -30,7 +30,7 @@ impl<S, T, K> MinByKeyFuture<S, T, K> {
 
 impl<S, K> Future for MinByKeyFuture<S, S::Item, K>
 where
-    S: Stream + Unpin + Sized,
+    S: Stream,
     K: FnMut(&S::Item) -> S::Item,
     S::Item: Ord + Copy,
 {
