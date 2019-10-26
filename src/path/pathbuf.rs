@@ -5,7 +5,7 @@ use crate::path::Path;
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct PathBuf {
     inner: std::path::PathBuf,
 }
@@ -206,7 +206,7 @@ impl From<std::path::PathBuf> for PathBuf {
 
 impl Into<std::path::PathBuf> for PathBuf {
     fn into(self) -> std::path::PathBuf {
-        self.inner.into()
+        self.inner
     }
 }
 

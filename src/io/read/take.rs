@@ -1,19 +1,24 @@
 use std::cmp;
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::io::{self, BufRead, Read};
 use crate::task::{Context, Poll};
 
-/// Reader adaptor which limits the bytes read from an underlying reader.
-///
-/// This struct is generally created by calling [`take`] on a reader.
-/// Please see the documentation of [`take`] for more details.
-///
-/// [`take`]: trait.Read.html#method.take
-#[derive(Debug)]
-pub struct Take<T> {
-    pub(crate) inner: T,
-    pub(crate) limit: u64,
+pin_project! {
+    /// Reader adaptor which limits the bytes read from an underlying reader.
+    ///
+    /// This struct is generally created by calling [`take`] on a reader.
+    /// Please see the documentation of [`take`] for more details.
+    ///
+    /// [`take`]: trait.Read.html#method.take
+    #[derive(Debug)]
+    pub struct Take<T> {
+        #[pin]
+        pub(crate) inner: T,
+        pub(crate) limit: u64,
+    }
 }
 
 impl<T> Take<T> {
@@ -152,15 +157,15 @@ impl<T> Take<T> {
     }
 }
 
-impl<T: Read + Unpin> Read for Take<T> {
+impl<T: Read> Read for Take<T> {
     /// Attempt to read from the `AsyncRead` into `buf`.
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let Self { inner, limit } = &mut *self;
-        take_read_internal(Pin::new(inner), cx, buf, limit)
+        let this = self.project();
+        take_read_internal(this.inner, cx, buf, this.limit)
     }
 }
 
@@ -186,31 +191,30 @@ pub fn take_read_internal<R: Read + ?Sized>(
     }
 }
 
-impl<T: BufRead + Unpin> BufRead for Take<T> {
+impl<T: BufRead> BufRead for Take<T> {
     fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        let Self { inner, limit } = unsafe { self.get_unchecked_mut() };
-        let inner = unsafe { Pin::new_unchecked(inner) };
+        let this = self.project();
 
-        if *limit == 0 {
+        if *this.limit == 0 {
             return Poll::Ready(Ok(&[]));
         }
 
-        match futures_core::ready!(inner.poll_fill_buf(cx)) {
+        match futures_core::ready!(this.inner.poll_fill_buf(cx)) {
             Ok(buf) => {
-                let cap = cmp::min(buf.len() as u64, *limit) as usize;
+                let cap = cmp::min(buf.len() as u64, *this.limit) as usize;
                 Poll::Ready(Ok(&buf[..cap]))
             }
             Err(e) => Poll::Ready(Err(e)),
         }
     }
 
-    fn consume(mut self: Pin<&mut Self>, amt: usize) {
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        let this = self.project();
         // Don't let callers reset the limit by passing an overlarge value
-        let amt = cmp::min(amt as u64, self.limit) as usize;
-        self.limit -= amt as u64;
+        let amt = cmp::min(amt as u64, *this.limit) as usize;
+        *this.limit -= amt as u64;
 
-        let rd = Pin::new(&mut self.inner);
-        rd.consume(amt);
+        this.inner.consume(amt);
     }
 }
 
