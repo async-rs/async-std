@@ -30,7 +30,7 @@ impl<S, F, T> MaxByFuture<S, F, T> {
 
 impl<S, F> Future for MaxByFuture<S, F, S::Item>
 where
-    S: Stream + Unpin + Sized,
+    S: Stream,
     S::Item: Copy,
     F: FnMut(&S::Item, &S::Item) -> Ordering,
 {
