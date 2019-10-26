@@ -7,24 +7,53 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that will repeatedly yield the same list of elements
-    pub struct Cycle<T> {
-        source: Vec<T>,
+    pub struct Cycle<S, T> {
+        #[pin]
+        source: S,
         index: usize,
-        len: usize,
+        buffer: Vec<T>,
+        state: CycleState,
     }
 }
 
-impl<T: Copy> Stream for Cycle<T> {
-    type Item = T;
+#[derive(Eq, PartialEq)]
+enum CycleState {
+    FromStream,
+    FromBuffer,
+}
 
-    fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let value = self.source[self.index];
+impl<S, T> Stream for Cycle<S,T>
+    where
+        S: Stream<Item = T>,
+        T: Copy,
+{
 
-        let next = self.index + 1;
+    type Item = S::Item;
 
-        self.as_mut().index = next % self.len;
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
 
-        Poll::Ready(Some(value))
+        let mut next;
+        if CycleState::FromStream == *this.state {
+            next = futures_core::ready!(this.source.poll_next(cx));
+
+            if let Some(val) = next {
+                this.buffer.push(val);
+            } else {
+                *this.state = CycleState::FromBuffer;
+                next = Some(this.buffer[*this.index]);
+            }
+        } else {
+            let mut index = *this.index;
+            if  index == this.buffer.len() {
+                index = 0
+            }
+            next = Some(this.buffer[index]);
+
+            *this.index = index + 1;
+        }
+
+        Poll::Ready(next)
     }
 }
 
@@ -40,21 +69,21 @@ impl<T: Copy> Stream for Cycle<T> {
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let mut s = stream::cycle(vec![1,2,3]);
+/// let mut s = stream::cycle(stream::once(7));
 ///
-/// assert_eq!(s.next().await, Some(1));
-/// assert_eq!(s.next().await, Some(2));
-/// assert_eq!(s.next().await, Some(3));
-/// assert_eq!(s.next().await, Some(1));
-/// assert_eq!(s.next().await, Some(2));
+/// assert_eq!(s.next().await, Some(7));
+/// assert_eq!(s.next().await, Some(7));
+/// assert_eq!(s.next().await, Some(7));
+/// assert_eq!(s.next().await, Some(7));
+/// assert_eq!(s.next().await, Some(7));
 /// #
 /// # })
 /// ```
-pub fn cycle<T: Copy>(source: Vec<T>) -> impl Stream<Item = T> {
-    let len = source.len();
+pub fn cycle<S: Stream<Item = T>, T: Copy>(source: S) -> impl Stream<Item = S::Item> {
     Cycle {
         source,
         index: 0,
-        len,
+        buffer: Vec::new(),
+        state: CycleState::FromStream,
     }
 }
