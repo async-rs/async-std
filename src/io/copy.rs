@@ -1,5 +1,7 @@
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::future::Future;
 use crate::io::{self, BufRead, BufReader, Read, Write};
 use crate::task::{Context, Poll};
@@ -46,47 +48,38 @@ where
     R: Read + Unpin + ?Sized,
     W: Write + Unpin + ?Sized,
 {
-    pub struct CopyFuture<'a, R, W: ?Sized> {
-        reader: R,
-        writer: &'a mut W,
-        amt: u64,
-    }
-
-    impl<R, W: Unpin + ?Sized> CopyFuture<'_, R, W> {
-        fn project(self: Pin<&mut Self>) -> (Pin<&mut R>, Pin<&mut W>, &mut u64) {
-            unsafe {
-                let this = self.get_unchecked_mut();
-                (
-                    Pin::new_unchecked(&mut this.reader),
-                    Pin::new(&mut *this.writer),
-                    &mut this.amt,
-                )
-            }
+    pin_project! {
+        struct CopyFuture<R, W> {
+            #[pin]
+            reader: R,
+            #[pin]
+            writer: W,
+            amt: u64,
         }
     }
 
-    impl<R, W> Future for CopyFuture<'_, R, W>
+    impl<R, W> Future for CopyFuture<R, W>
     where
         R: BufRead,
-        W: Write + Unpin + ?Sized,
+        W: Write + Unpin,
     {
         type Output = io::Result<u64>;
 
         fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-            let (mut reader, mut writer, amt) = self.project();
+            let mut this = self.project();
             loop {
-                let buffer = futures_core::ready!(reader.as_mut().poll_fill_buf(cx))?;
+                let buffer = futures_core::ready!(this.reader.as_mut().poll_fill_buf(cx))?;
                 if buffer.is_empty() {
-                    futures_core::ready!(writer.as_mut().poll_flush(cx))?;
-                    return Poll::Ready(Ok(*amt));
+                    futures_core::ready!(this.writer.as_mut().poll_flush(cx))?;
+                    return Poll::Ready(Ok(*this.amt));
                 }
 
-                let i = futures_core::ready!(writer.as_mut().poll_write(cx, buffer))?;
+                let i = futures_core::ready!(this.writer.as_mut().poll_write(cx, buffer))?;
                 if i == 0 {
                     return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
                 }
-                *amt += i as u64;
-                reader.as_mut().consume(i);
+                *this.amt += i as u64;
+                this.reader.as_mut().consume(i);
             }
         }
     }

@@ -4,8 +4,6 @@ use std::time::{Duration, Instant};
 
 use futures_core::future::Future;
 use futures_core::stream::Stream;
-use pin_utils::unsafe_pinned;
-
 use futures_timer::Delay;
 
 /// Creates a new stream that yields at a set interval.
@@ -62,15 +60,11 @@ pub struct Interval {
     interval: Duration,
 }
 
-impl Interval {
-    unsafe_pinned!(delay: Delay);
-}
-
 impl Stream for Interval {
     type Item = ();
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if Pin::new(&mut *self).delay().poll(cx).is_pending() {
+        if Pin::new(&mut self.delay).poll(cx).is_pending() {
             return Poll::Pending;
         }
         let when = Instant::now();
