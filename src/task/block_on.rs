@@ -7,6 +7,7 @@ use std::task::{RawWaker, RawWakerVTable};
 use std::thread;
 
 use crossbeam_utils::sync::Parker;
+use pin_project_lite::pin_project;
 
 use super::task;
 use super::task_local;
@@ -100,19 +101,18 @@ where
     }
 }
 
-struct CatchUnwindFuture<F> {
-    future: F,
-}
-
-impl<F> CatchUnwindFuture<F> {
-    pin_utils::unsafe_pinned!(future: F);
+pin_project! {
+    struct CatchUnwindFuture<F> {
+        #[pin]
+        future: F,
+    }
 }
 
 impl<F: Future + UnwindSafe> Future for CatchUnwindFuture<F> {
     type Output = thread::Result<F::Output>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        panic::catch_unwind(AssertUnwindSafe(|| self.future().poll(cx)))?.map(Ok)
+        panic::catch_unwind(AssertUnwindSafe(|| self.project().future.poll(cx)))?.map(Ok)
     }
 }
 

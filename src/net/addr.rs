@@ -210,7 +210,7 @@ impl ToSocketAddrs for str {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        if let Some(addr) = self.parse().ok() {
+        if let Ok(addr) = self.parse() {
             return ToSocketAddrsFuture::Ready(Ok(vec![addr].into_iter()));
         }
 
