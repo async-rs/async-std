@@ -32,7 +32,7 @@ impl<S, K> Future for MinByKeyFuture<S, S::Item, K>
 where
     S: Stream,
     K: FnMut(&S::Item) -> S::Item,
-    S::Item: Ord + Copy,
+    S::Item: Ord,
 {
     type Output = Option<S::Item>;
 
