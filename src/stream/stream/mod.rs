@@ -1416,7 +1416,7 @@ extension_trait! {
         "#]
         fn count(self) -> impl Future<Output = Ordering> [CountFuture<Self>]
         where
-            Self: Sized + Stream,
+            Self: Sized,
         {
             CountFuture::new(self)
         }
