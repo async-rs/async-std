@@ -54,7 +54,7 @@ where
                 }
                 Poll::Pending
             }
-            None => Poll::Ready(*this.min),
+            None => Poll::Ready(this.min.take()),
         }
     }
 }

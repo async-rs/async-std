@@ -633,6 +633,7 @@ extension_trait! {
         ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, K>]
         where
             Self: Sized,
+            Self::Item: Ord,
             K: FnMut(&Self::Item) -> Self::Item,
         {
             MinByKeyFuture::new(self, key_by)
