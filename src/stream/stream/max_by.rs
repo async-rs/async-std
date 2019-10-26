@@ -51,7 +51,7 @@ where
                 }
                 Poll::Pending
             }
-            None => Poll::Ready(*this.max),
+            None => Poll::Ready(this.max.take()),
         }
     }
 }
