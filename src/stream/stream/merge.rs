@@ -7,9 +7,11 @@ use pin_project_lite::pin_project;
 pin_project! {
     /// A stream that merges two other streams into a single stream.
     ///
-    /// This stream is returned by [`Stream::merge`].
+    /// This `struct` is created by the [`merge`] method on [`Stream`]. See its
+    /// documentation for more.
     ///
-    /// [`Stream::merge`]: trait.Stream.html#method.merge
+    /// [`merge`]: trait.Stream.html#method.merge
+    /// [`Stream`]: trait.Stream.html
     #[cfg(feature = "unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]

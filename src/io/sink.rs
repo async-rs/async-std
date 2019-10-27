@@ -25,7 +25,8 @@ pub fn sink() -> Sink {
 
 /// A writer that consumes and drops all data.
 ///
-/// This writer is constructed by the [`sink`] function.
+/// This writer is constructed by the [`sink`] function. See its documentation
+/// for more.
 ///
 /// [`sink`]: fn.sink.html
 pub struct Sink {

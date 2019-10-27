@@ -29,7 +29,8 @@ pub fn repeat(byte: u8) -> Repeat {
 
 /// A reader which yields one byte over and over and over and over and over and...
 ///
-/// This reader is constructed by the [`repeat`] function.
+/// This reader is created by the [`repeat`] function. See its
+/// documentation for more.
 ///
 /// [`repeat`]: fn.repeat.html
 pub struct Repeat {

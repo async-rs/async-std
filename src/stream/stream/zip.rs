@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// An iterator that iterates two other iterators simultaneously.
+    ///
+    /// This `struct` is created by the [`zip`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`zip`]: trait.Stream.html#method.zip
+    /// [`Stream`]: trait.Stream.html
     pub struct Zip<A: Stream, B> {
         item_slot: Option<A::Item>,
         #[pin]
