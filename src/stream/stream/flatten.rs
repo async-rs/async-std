@@ -98,7 +98,7 @@ pin_project! {
 
 impl<S, U> FlattenCompat<S, U> {
     /// Adapts an iterator by flattening it, for use in `flatten()` and `flat_map()`.
-    pub fn new(stream: S) -> FlattenCompat<S, U> {
+    fn new(stream: S) -> FlattenCompat<S, U> {
         FlattenCompat {
             stream,
             frontiter: None,
