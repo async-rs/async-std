@@ -64,7 +64,7 @@ where
     S: Stream,
     S::Item: IntoStream,
 {
-    pub fn new(stream: S) -> Flatten<S, S::Item> {
+    pub(super) fn new(stream: S) -> Flatten<S, S::Item> {
         Flatten {
             inner: FlattenCompat::new(stream),
         }
