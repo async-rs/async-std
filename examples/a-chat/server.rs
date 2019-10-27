@@ -45,7 +45,7 @@ async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result
     let mut lines = reader.lines();
 
     let name = match lines.next().await {
-        None => Err("peer disconnected immediately")?,
+        None => return Err("peer disconnected immediately".into()),
         Some(line) => line?,
     };
     let (_shutdown_sender, shutdown_receiver) = mpsc::unbounded::<Void>();
