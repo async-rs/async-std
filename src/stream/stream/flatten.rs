@@ -25,7 +25,7 @@ where
     U: IntoStream,
     F: FnMut(S::Item) -> U,
 {
-    pub fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
+    pub(super) fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
         FlatMap {
             inner: FlattenCompat::new(stream.map(f)),
         }
