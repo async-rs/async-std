@@ -32,7 +32,7 @@ where
 /// This stream is created by the [`repeat`] function. See its
 /// documentation for more.
 ///
-/// [`repeat`]: fn.once.html
+/// [`repeat`]: fn.repeat.html
 #[derive(Debug)]
 pub struct Repeat<T> {
     item: T,
