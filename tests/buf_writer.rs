@@ -4,6 +4,7 @@ use async_std::task;
 
 #[test]
 fn test_buffered_writer() {
+    #![allow(clippy::cognitive_complexity)]
     task::block_on(async {
         let inner = Vec::new();
         let mut writer = BufWriter::with_capacity(2, inner);
