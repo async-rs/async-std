@@ -125,7 +125,7 @@ impl<T> Mutex<T> {
                 if poll.is_ready() {
                     // If the current task is in the map, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.mutex.wakers.remove(key);
+                        self.mutex.wakers.complete(key);
                     }
                 }
 
@@ -136,10 +136,8 @@ impl<T> Mutex<T> {
         impl<T> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the map, that means it is being cancelled now.
-                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.mutex.wakers.remove(key);
-                    self.mutex.wakers.notify_one();
+                    self.mutex.wakers.cancel(key);
                 }
             }
         }

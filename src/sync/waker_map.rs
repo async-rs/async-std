@@ -85,11 +85,28 @@ impl WakerMap {
         }
     }
 
-    /// Removes a waker.
-    pub fn remove(&self, key: usize) {
+    /// Removes the waker of a completed operation.
+    pub fn complete(&self, key: usize) {
         let mut inner = self.lock();
         if inner.entries.remove(key).is_none() {
             inner.none_count -= 1;
+        }
+    }
+
+    /// Removes the waker of a cancelled operation.
+    pub fn cancel(&self, key: usize) {
+        let mut inner = self.lock();
+        if inner.entries.remove(key).is_none() {
+            inner.none_count -= 1;
+
+            // The operation was cancelled and notified so notify another operation instead.
+            if let Some((_, opt_waker)) = inner.entries.iter_mut().next() {
+                // If there is no waker in this entry, that means it was already woken.
+                if let Some(w) = opt_waker.take() {
+                    w.wake();
+                    inner.none_count += 1;
+                }
+            }
         }
     }
 

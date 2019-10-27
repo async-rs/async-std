@@ -169,7 +169,7 @@ impl<T> Sender<T> {
                 if poll.is_ready() {
                     // If the current task is in the map, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.channel.send_wakers.remove(key);
+                        self.channel.send_wakers.complete(key);
                     }
                 }
 
@@ -182,8 +182,7 @@ impl<T> Sender<T> {
                 // If the current task is still in the map, that means it is being cancelled now.
                 // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.channel.send_wakers.remove(key);
-                    self.channel.send_wakers.notify_one();
+                    self.channel.send_wakers.cancel(key);
                 }
             }
         }
@@ -394,10 +393,8 @@ impl<T> Receiver<T> {
         impl<T> Drop for RecvFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the map, that means it is being cancelled now.
-                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.channel.recv_wakers.remove(key);
-                    self.channel.recv_wakers.notify_one();
+                    self.channel.recv_wakers.cancel(key);
                 }
             }
         }
@@ -491,10 +488,8 @@ impl<T> Receiver<T> {
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         // If the current task is still in the stream map, that means it is being cancelled now.
-        // Wake up another stream task instead.
         if let Some(key) = self.opt_key {
-            self.channel.stream_wakers.remove(key);
-            self.channel.stream_wakers.notify_one();
+            self.channel.stream_wakers.cancel(key);
         }
 
         // Decrement the receiver count and disconnect the channel if it drops down to zero.
@@ -573,7 +568,7 @@ fn poll_recv<T>(
     if poll.is_ready() {
         // If the current task is in the map, remove it.
         if let Some(key) = opt_key.take() {
-            wakers.remove(key);
+            wakers.complete(key);
         }
     }
 
