@@ -29,9 +29,10 @@ where
 
 /// A stream that yields the same item repeatedly.
 ///
-/// This stream is constructed by the [`repeat`] function.
+/// This stream is created by the [`repeat`] function. See its
+/// documentation for more.
 ///
-/// [`repeat`]: fn.repeat.html
+/// [`repeat`]: fn.once.html
 #[derive(Debug)]
 pub struct Repeat<T> {
     item: T,

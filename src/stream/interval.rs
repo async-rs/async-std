@@ -52,6 +52,10 @@ pub fn interval(dur: Duration) -> Interval {
 
 /// A stream representing notifications at fixed interval
 ///
+/// This stream is created by the [`interval`] function. See its
+/// documentation for more.
+///
+/// [`interval`]: fn.interval.html
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
