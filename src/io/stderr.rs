@@ -44,6 +44,11 @@ pub fn stderr() -> Stderr {
 #[derive(Debug)]
 pub struct Stderr(Mutex<State>);
 
+#[derive(Debug)]
+pub struct StderrLock<'a>(std::io::StderrLock<'a>);
+
+unsafe impl Send for StderrLock<'_> {}
+
 /// The state of the asynchronous stderr.
 ///
 /// The stderr can be either idle or busy performing an asynchronous operation.
@@ -98,12 +103,12 @@ impl Stderr {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn lock(&self) -> std::io::StderrLock<'static> {
+    pub async fn lock(&self) -> StderrLock<'static> {
         lazy_static! {
             static ref STDERR: std::io::Stderr = std::io::stderr();
         }
 
-        STDERR.lock()
+        blocking::spawn(move || StderrLock(STDERR.lock())).await
     }
 }
 
@@ -207,5 +212,23 @@ cfg_windows! {
         fn as_raw_handle(&self) -> RawHandle {
             std::io::stderr().as_raw_handle()
         }
+    }
+}
+
+impl Write for StderrLock<'_> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        unimplemented!()
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        unimplemented!()
+    }
+
+    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        unimplemented!()
     }
 }

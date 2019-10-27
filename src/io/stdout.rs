@@ -44,6 +44,11 @@ pub fn stdout() -> Stdout {
 #[derive(Debug)]
 pub struct Stdout(Mutex<State>);
 
+#[derive(Debug)]
+pub struct StdoutLock<'a>(std::io::StdoutLock<'a>);
+
+unsafe impl Send for StdoutLock<'_> {}
+
 /// The state of the asynchronous stdout.
 ///
 /// The stdout can be either idle or busy performing an asynchronous operation.
@@ -98,12 +103,12 @@ impl Stdout {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn lock(&self) -> std::io::StdoutLock<'static> {
+    pub async fn lock(&self) -> StdoutLock<'static> {
         lazy_static! {
             static ref STDOUT: std::io::Stdout = std::io::stdout();
         }
 
-        STDOUT.lock()
+        blocking::spawn(move || StdoutLock(STDOUT.lock())).await
     }
 }
 
@@ -207,5 +212,23 @@ cfg_windows! {
         fn as_raw_handle(&self) -> RawHandle {
             std::io::stdout().as_raw_handle()
         }
+    }
+}
+
+impl Write for StdoutLock<'_> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        unimplemented!()
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        unimplemented!()
+    }
+
+    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        unimplemented!()
     }
 }
