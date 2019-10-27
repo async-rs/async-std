@@ -14,7 +14,7 @@ use std::task::{Context, Poll};
 use crossbeam_utils::{Backoff, CachePadded};
 
 use crate::stream::Stream;
-use crate::sync::Registry;
+use crate::sync::WakerMap;
 
 /// Creates a bounded multi-producer multi-consumer channel.
 ///
@@ -128,7 +128,7 @@ impl<T> Sender<T> {
     /// ```
     pub async fn send(&self, msg: T) {
         struct SendFuture<'a, T> {
-            sender: &'a Sender<T>,
+            channel: &'a Channel<T>,
             msg: Option<T>,
             opt_key: Option<usize>,
         }
@@ -142,23 +142,23 @@ impl<T> Sender<T> {
                 let msg = self.msg.take().unwrap();
 
                 // Try sending the message.
-                let poll = match self.sender.channel.push(msg) {
+                let poll = match self.channel.try_send(msg) {
                     Ok(()) => Poll::Ready(()),
-                    Err(PushError::Disconnected(msg)) => {
+                    Err(TrySendError::Disconnected(msg)) => {
                         self.msg = Some(msg);
                         Poll::Pending
                     }
-                    Err(PushError::Full(msg)) => {
-                        // Register the current task.
+                    Err(TrySendError::Full(msg)) => {
+                        // Insert this send operation.
                         match self.opt_key {
-                            None => self.opt_key = Some(self.sender.channel.sends.register(cx)),
-                            Some(key) => self.sender.channel.sends.reregister(key, cx),
+                            None => self.opt_key = Some(self.channel.send_wakers.insert(cx)),
+                            Some(key) => self.channel.send_wakers.update(key, cx),
                         }
 
                         // Try sending the message again.
-                        match self.sender.channel.push(msg) {
+                        match self.channel.try_send(msg) {
                             Ok(()) => Poll::Ready(()),
-                            Err(PushError::Disconnected(msg)) | Err(PushError::Full(msg)) => {
+                            Err(TrySendError::Disconnected(msg)) | Err(TrySendError::Full(msg)) => {
                                 self.msg = Some(msg);
                                 Poll::Pending
                             }
@@ -167,9 +167,9 @@ impl<T> Sender<T> {
                 };
 
                 if poll.is_ready() {
-                    // If the current task was registered, unregister now.
+                    // If the current task is in the map, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.sender.channel.sends.complete(key);
+                        self.channel.send_wakers.remove(key);
                     }
                 }
 
@@ -179,15 +179,17 @@ impl<T> Sender<T> {
 
         impl<T> Drop for SendFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task was registered, unregister now.
+                // If the current task is still in the map, that means it is being cancelled now.
+                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.sender.channel.sends.cancel(key);
+                    self.channel.send_wakers.remove(key);
+                    self.channel.send_wakers.notify_one();
                 }
             }
         }
 
         SendFuture {
-            sender: self,
+            channel: &self.channel,
             msg: Some(msg),
             opt_key: None,
         }
@@ -338,7 +340,7 @@ pub struct Receiver<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
 
-    /// The registration key for this receiver in the `channel.streams` registry.
+    /// The key for this receiver in the `channel.stream_wakers` map.
     opt_key: Option<usize>,
 }
 
@@ -380,15 +382,22 @@ impl<T> Receiver<T> {
             type Output = Option<T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                poll_recv(&self.channel, &self.channel.recvs, &mut self.opt_key, cx)
+                poll_recv(
+                    &self.channel,
+                    &self.channel.recv_wakers,
+                    &mut self.opt_key,
+                    cx,
+                )
             }
         }
 
         impl<T> Drop for RecvFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task was registered, unregister now.
+                // If the current task is still in the map, that means it is being cancelled now.
+                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.channel.recvs.cancel(key);
+                    self.channel.recv_wakers.remove(key);
+                    self.channel.recv_wakers.notify_one();
                 }
             }
         }
@@ -481,9 +490,11 @@ impl<T> Receiver<T> {
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        // If the current task was registered as blocked on this stream, unregister now.
+        // If the current task is still in the stream map, that means it is being cancelled now.
+        // Wake up another stream task instead.
         if let Some(key) = self.opt_key {
-            self.channel.streams.cancel(key);
+            self.channel.stream_wakers.remove(key);
+            self.channel.stream_wakers.notify_one();
         }
 
         // Decrement the receiver count and disconnect the channel if it drops down to zero.
@@ -514,7 +525,12 @@ impl<T> Stream for Receiver<T> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
-        poll_recv(&this.channel, &this.channel.streams, &mut this.opt_key, cx)
+        poll_recv(
+            &this.channel,
+            &this.channel.stream_wakers,
+            &mut this.opt_key,
+            cx,
+        )
     }
 }
 
@@ -526,38 +542,38 @@ impl<T> fmt::Debug for Receiver<T> {
 
 /// Polls a receive operation on a channel.
 ///
-/// If the receive operation is blocked, the current task will be registered in `registry` and its
-/// registration key will then be stored in `opt_key`.
+/// If the receive operation is blocked, the current task will be inserted into `wakers` and its
+/// associated key will then be stored in `opt_key`.
 fn poll_recv<T>(
     channel: &Channel<T>,
-    registry: &Registry,
+    wakers: &WakerMap,
     opt_key: &mut Option<usize>,
     cx: &mut Context<'_>,
 ) -> Poll<Option<T>> {
     // Try receiving a message.
-    let poll = match channel.pop() {
+    let poll = match channel.try_recv() {
         Ok(msg) => Poll::Ready(Some(msg)),
-        Err(PopError::Disconnected) => Poll::Ready(None),
-        Err(PopError::Empty) => {
-            // Register the current task.
+        Err(TryRecvError::Disconnected) => Poll::Ready(None),
+        Err(TryRecvError::Empty) => {
+            // Insert this receive operation.
             match *opt_key {
-                None => *opt_key = Some(registry.register(cx)),
-                Some(key) => registry.reregister(key, cx),
+                None => *opt_key = Some(wakers.insert(cx)),
+                Some(key) => wakers.update(key, cx),
             }
 
             // Try receiving a message again.
-            match channel.pop() {
+            match channel.try_recv() {
                 Ok(msg) => Poll::Ready(Some(msg)),
-                Err(PopError::Disconnected) => Poll::Ready(None),
-                Err(PopError::Empty) => Poll::Pending,
+                Err(TryRecvError::Disconnected) => Poll::Ready(None),
+                Err(TryRecvError::Empty) => Poll::Pending,
             }
         }
     };
 
     if poll.is_ready() {
-        // If the current task was registered, unregister now.
+        // If the current task is in the map, remove it.
         if let Some(key) = opt_key.take() {
-            registry.complete(key);
+            wakers.remove(key);
         }
     }
 
@@ -607,13 +623,13 @@ struct Channel<T> {
     mark_bit: usize,
 
     /// Send operations waiting while the channel is full.
-    sends: Registry,
+    send_wakers: WakerMap,
 
     /// Receive operations waiting while the channel is empty and not disconnected.
-    recvs: Registry,
+    recv_wakers: WakerMap,
 
     /// Streams waiting while the channel is empty and not disconnected.
-    streams: Registry,
+    stream_wakers: WakerMap,
 
     /// The number of currently active `Sender`s.
     sender_count: AtomicUsize,
@@ -667,17 +683,17 @@ impl<T> Channel<T> {
             mark_bit,
             head: CachePadded::new(AtomicUsize::new(head)),
             tail: CachePadded::new(AtomicUsize::new(tail)),
-            sends: Registry::new(),
-            recvs: Registry::new(),
-            streams: Registry::new(),
+            send_wakers: WakerMap::new(),
+            recv_wakers: WakerMap::new(),
+            stream_wakers: WakerMap::new(),
             sender_count: AtomicUsize::new(1),
             receiver_count: AtomicUsize::new(1),
             _marker: PhantomData,
         }
     }
 
-    /// Attempts to push a message.
-    fn push(&self, msg: T) -> Result<(), PushError<T>> {
+    /// Attempts to send a message.
+    fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
         let backoff = Backoff::new();
         let mut tail = self.tail.load(Ordering::Relaxed);
 
@@ -716,10 +732,10 @@ impl<T> Channel<T> {
                         slot.stamp.store(stamp, Ordering::Release);
 
                         // Wake a blocked receive operation.
-                        self.recvs.notify_one();
+                        self.recv_wakers.notify_one();
 
                         // Wake all blocked streams.
-                        self.streams.notify_all();
+                        self.stream_wakers.notify_all();
 
                         return Ok(());
                     }
@@ -738,9 +754,9 @@ impl<T> Channel<T> {
 
                     // Check if the channel is disconnected.
                     if tail & self.mark_bit != 0 {
-                        return Err(PushError::Disconnected(msg));
+                        return Err(TrySendError::Disconnected(msg));
                     } else {
-                        return Err(PushError::Full(msg));
+                        return Err(TrySendError::Full(msg));
                     }
                 }
 
@@ -754,8 +770,8 @@ impl<T> Channel<T> {
         }
     }
 
-    /// Attempts to pop a message.
-    fn pop(&self) -> Result<T, PopError> {
+    /// Attempts to receive a message.
+    fn try_recv(&self) -> Result<T, TryRecvError> {
         let backoff = Backoff::new();
         let mut head = self.head.load(Ordering::Relaxed);
 
@@ -794,7 +810,7 @@ impl<T> Channel<T> {
                         slot.stamp.store(stamp, Ordering::Release);
 
                         // Wake a blocked send operation.
-                        self.sends.notify_one();
+                        self.send_wakers.notify_one();
 
                         return Ok(msg);
                     }
@@ -811,10 +827,10 @@ impl<T> Channel<T> {
                 if (tail & !self.mark_bit) == head {
                     // If the channel is disconnected...
                     if tail & self.mark_bit != 0 {
-                        return Err(PopError::Disconnected);
+                        return Err(TryRecvError::Disconnected);
                     } else {
                         // Otherwise, the receive operation is not ready.
-                        return Err(PopError::Empty);
+                        return Err(TryRecvError::Empty);
                     }
                 }
 
@@ -883,9 +899,9 @@ impl<T> Channel<T> {
 
         if tail & self.mark_bit == 0 {
             // Notify everyone blocked on this channel.
-            self.sends.notify_all();
-            self.recvs.notify_all();
-            self.streams.notify_all();
+            self.send_wakers.notify_all();
+            self.recv_wakers.notify_all();
+            self.stream_wakers.notify_all();
         }
     }
 }
@@ -916,8 +932,8 @@ impl<T> Drop for Channel<T> {
     }
 }
 
-/// An error returned from the `push()` method.
-enum PushError<T> {
+/// An error returned from the `try_send()` method.
+enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
 
@@ -925,8 +941,8 @@ enum PushError<T> {
     Disconnected(T),
 }
 
-/// An error returned from the `pop()` method.
-enum PopError {
+/// An error returned from the `try_recv()` method.
+enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
 

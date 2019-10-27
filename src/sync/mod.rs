@@ -46,5 +46,5 @@ cfg_unstable! {
     mod channel;
 }
 
-pub(crate) mod registry;
-pub(crate) use registry::Registry;
+pub(crate) mod waker_map;
+pub(crate) use waker_map::WakerMap;

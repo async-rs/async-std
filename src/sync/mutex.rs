@@ -5,7 +5,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::future::Future;
-use crate::sync::Registry;
+use crate::sync::WakerMap;
 use crate::task::{Context, Poll};
 
 /// A mutual exclusion primitive for protecting shared data.
@@ -43,7 +43,7 @@ use crate::task::{Context, Poll};
 /// ```
 pub struct Mutex<T> {
     locked: AtomicBool,
-    registry: Registry,
+    wakers: WakerMap,
     value: UnsafeCell<T>,
 }
 
@@ -63,7 +63,7 @@ impl<T> Mutex<T> {
     pub fn new(t: T) -> Mutex<T> {
         Mutex {
             locked: AtomicBool::new(false),
-            registry: Registry::new(),
+            wakers: WakerMap::new(),
             value: UnsafeCell::new(t),
         }
     }
@@ -107,14 +107,14 @@ impl<T> Mutex<T> {
                 let poll = match self.mutex.try_lock() {
                     Some(guard) => Poll::Ready(guard),
                     None => {
-                        // Register the current task.
+                        // Insert this lock operation.
                         match self.opt_key {
-                            None => self.opt_key = Some(self.mutex.registry.register(cx)),
-                            Some(key) => self.mutex.registry.reregister(key, cx),
+                            None => self.opt_key = Some(self.mutex.wakers.insert(cx)),
+                            Some(key) => self.mutex.wakers.update(key, cx),
                         }
 
                         // Try locking again because it's possible the mutex got unlocked just
-                        // before the current task was registered as a blocked task.
+                        // before the current task was inserted into the waker map.
                         match self.mutex.try_lock() {
                             Some(guard) => Poll::Ready(guard),
                             None => Poll::Pending,
@@ -123,9 +123,9 @@ impl<T> Mutex<T> {
                 };
 
                 if poll.is_ready() {
-                    // If the current task was registered, unregister now.
+                    // If the current task is in the map, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.mutex.registry.complete(key);
+                        self.mutex.wakers.remove(key);
                     }
                 }
 
@@ -135,9 +135,11 @@ impl<T> Mutex<T> {
 
         impl<T> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task was registered, unregister now.
+                // If the current task is still in the map, that means it is being cancelled now.
+                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    self.mutex.registry.cancel(key);
+                    self.mutex.wakers.remove(key);
+                    self.mutex.wakers.notify_one();
                 }
             }
         }
@@ -229,18 +231,15 @@ impl<T> Mutex<T> {
 
 impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.try_lock() {
-            None => {
-                struct LockedPlaceholder;
-                impl fmt::Debug for LockedPlaceholder {
-                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                        f.write_str("<locked>")
-                    }
-                }
-                f.debug_struct("Mutex")
-                    .field("data", &LockedPlaceholder)
-                    .finish()
+        struct Locked;
+        impl fmt::Debug for Locked {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("<locked>")
             }
+        }
+
+        match self.try_lock() {
+            None => f.debug_struct("Mutex").field("data", &Locked).finish(),
             Some(guard) => f.debug_struct("Mutex").field("data", &&*guard).finish(),
         }
     }
@@ -268,11 +267,11 @@ impl<T> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
         // Use `AcqRel` to:
         // 1. Release changes made to the value inside the mutex.
-        // 2. Acquire changes made to the registry.
+        // 2. Acquire changes made to the waker map.
         self.0.locked.swap(false, Ordering::AcqRel);
 
         // Notify one blocked `lock()` operation.
-        self.0.registry.notify_one();
+        self.0.wakers.notify_one();
     }
 }
 
