@@ -501,9 +501,11 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Transforms this `Stream` into a "fused" `Stream` such that after the first time
-            `poll` returns `Poll::Ready(None)`, all future calls to `poll` will also return
-            `Poll::Ready(None)`.
+            Creates a stream which ends after the first `None`.
+
+            After a stream returns `None`, future calls may or may not yield `Some(T)` again.
+            `fuse()` adapts an iterator, ensuring that after a `None` is given, it will always
+            return `None` forever.
 
             # Examples
 
