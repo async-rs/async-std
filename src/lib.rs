@@ -58,13 +58,13 @@ pub mod io;
 pub mod net;
 pub mod os;
 pub mod path;
+pub mod pin;
 pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
 
 cfg_unstable! {
-    pub mod pin;
     pub mod process;
 
     mod unit;
