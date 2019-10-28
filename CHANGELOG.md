@@ -43,6 +43,9 @@ assert_eq!(r.recv().await, Some(2));
 - Added `sync::channel` as "unstable".
 - Added doc links from instantiated structs to the methods that create them.
 - Implemented `Extend` + `FromStream` for `PathBuf`.
+- Added `Stream::sum` as "unstable"
+- Added `Stream::product` as "unstable"
+- Added `Stream::timeout` as "unstable"
 
 ## Changed
 - Fixed an issue with `block_on` so it works even when nested.
@@ -51,6 +54,7 @@ assert_eq!(r.recv().await, Some(2));
 - Updated the homepage link in `Cargo.toml` to point to [async.rs](https://async.rs).
 - Updated the module-level documentation for `stream` and `sync`.
 - Various typos and grammar fixes.
+- Removed redundant file flushes, improving the performance of `File` operations
 
 ## Removed
 Nothing was removed in this release.
