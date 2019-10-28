@@ -107,7 +107,7 @@ extension_trait! {
     }
 
     pub trait FutureExt: std::future::Future {
-        /// Creates a future that is delayed before it starts yielding items.
+        /// Returns a Future that delays execution for a specified time.
         ///
         /// # Examples
         ///
