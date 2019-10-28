@@ -1,8 +1,10 @@
 cfg_unstable! {
     mod delay;
+    mod select;
 
     use std::time::Duration;
 
+    use select::Select;
     use delay::DelayFuture;
 }
 
@@ -147,9 +149,9 @@ extension_trait! {
             # Examples
 
             ```
-            #![feature(async_await)]
             # futures::executor::block_on(async {
-            use futures::future;
+            use async_std::prelude::*;
+            use async_std::future;
 
             let a = future::pending();
             let b = future::ready(1u8);
@@ -160,8 +162,12 @@ extension_trait! {
             # });
             ```
         "#]
-        fn select(&mut self) -> () {
-            ()
+        fn select<F>(self, other: F) -> Select<Self, F>
+            where
+                Self: Sized,
+                F: Future<Output = Self::Output>,
+        {
+            Select::new(self, other)
         }
     }
 
