@@ -37,6 +37,7 @@ fn capacity() {
 
 #[test]
 fn len_empty_full() {
+    #![allow(clippy::cognitive_complexity)]
     task::block_on(async {
         let (s, r) = channel(2);
 
