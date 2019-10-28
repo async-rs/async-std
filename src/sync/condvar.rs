@@ -15,7 +15,7 @@ pub struct WaitTimeoutResult(bool);
 /// not
 impl WaitTimeoutResult {
     /// Returns `true` if the wait was known to have timed out.
-    pub fn timed_out(&self) -> bool {
+    pub fn timed_out(self) -> bool {
         self.0
     }
 }
@@ -60,6 +60,12 @@ impl WaitTimeoutResult {
 #[derive(Debug)]
 pub struct Condvar {
     blocked: std::sync::Mutex<Slab<Option<Waker>>>,
+}
+
+impl Default for Condvar {
+    fn default() -> Self {
+        Condvar::new()
+    }
 }
 
 impl Condvar {
@@ -111,6 +117,7 @@ impl Condvar {
     /// }
     /// # }) }
     /// ```
+    #[allow(clippy::needless_lifetimes)]
     pub async fn wait<'a, T>(&self, guard: MutexGuard<'a, T>) -> MutexGuard<'a, T> {
         let mutex = guard_lock(&guard);
 
@@ -161,6 +168,7 @@ impl Condvar {
     /// # }) }
     /// ```
     #[cfg(feature = "unstable")]
+    #[allow(clippy::needless_lifetimes)]
     pub async fn wait_until<'a, T, F>(
         &self,
         mut guard: MutexGuard<'a, T>,
@@ -213,6 +221,7 @@ impl Condvar {
     /// #
     /// # }) }
     /// ```
+    #[allow(clippy::needless_lifetimes)]
     pub async fn wait_timeout<'a, T>(
         &self,
         guard: MutexGuard<'a, T>,
@@ -352,7 +361,6 @@ impl<'a, 'b, T> Drop for AwaitNotify<'a, 'b, T> {
                 // we are dropping it before it can finished.
                 // This may result in a spurious wake-up, but that's ok.
                 notify(blocked, false);
-
             }
         }
     }

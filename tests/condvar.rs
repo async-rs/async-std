@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_std::sync::{Condvar, Mutex};
-use async_std::task;
+use async_std::task::{self, JoinHandle};
 
 #[test]
 fn wait_timeout() {
@@ -25,3 +25,38 @@ fn wait_timeout() {
     })
 }
 
+#[test]
+fn notify_all() {
+    task::block_on(async {
+        let mut tasks: Vec<JoinHandle<()>> = Vec::new();
+        let pair = Arc::new((Mutex::new(0u32), Condvar::new()));
+
+        for _ in 0..10 {
+            let pair = pair.clone();
+            tasks.push(task::spawn(async move {
+                let (m, c) = &*pair;
+                let mut count = m.lock().await;
+                while *count == 0 {
+                    count = c.wait(count).await;
+                }
+                *count += 1;
+            }));
+        }
+
+        // Give some time for tasks to start up
+        task::sleep(Duration::from_millis(5)).await;
+
+        let (m, c) = &*pair;
+        {
+            let mut count = m.lock().await;
+            *count += 1;
+            c.notify_all();
+        }
+
+        for t in tasks {
+            t.await;
+        }
+        let count = m.lock().await;
+        assert_eq!(11, *count);
+    })
+}
