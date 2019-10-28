@@ -1,11 +1,13 @@
 cfg_unstable! {
     mod delay;
     mod select;
+    mod try_select;
 
     use std::time::Duration;
 
-    use select::Select;
     use delay::DelayFuture;
+    use select::Select;
+    use try_select::TrySelect;
 }
 
 extension_trait! {
@@ -133,7 +135,7 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Waits for either one of several similarly-typed futures to complete.
+            Waits for one of two similarly-typed futures to complete.
 
             Awaits multiple futures simultaneously, returning all results once complete.
 
@@ -149,7 +151,7 @@ extension_trait! {
             # Examples
 
             ```
-            # futures::executor::block_on(async {
+            # async_std::task::block_on(async {
             use async_std::prelude::*;
             use async_std::future;
 
@@ -162,12 +164,51 @@ extension_trait! {
             # });
             ```
         "#]
-        fn select<F>(self, other: F) -> Select<Self, F>
+        fn select<F>(self, other: F) ->
+            impl Future<Output = Self::Output> [Select<Self, F>]
             where
-                Self: Sized,
-                F: Future<Output = Self::Output>,
+                Self: Sized + Future,
+                F: std::future::Future<Output = <Self as Future>::Output>,
         {
             Select::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for one of two similarly-typed fallible futures to complete.
+
+            Awaits multiple futures simultaneously, returning all results once complete.
+
+            `try_select` is similar to [`select`], but keeps going if a future
+            resolved to an error until all futures have been resolved. In which case
+            the error of the `other` future will be returned.
+
+            # Examples
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::future;
+            use std::io::{Error, ErrorKind};
+
+            let a = future::pending::<Result<_, Error>>();
+            let b = future::ready(Err(Error::from(ErrorKind::Other)));
+            let c = future::ready(Ok(1u8));
+
+            let f = a.try_select(b).try_select(c);
+            assert_eq!(f.await?, 1u8);
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn try_select<F, T, E>(self, other: F) ->
+            impl Future<Output = Self::Output> [TrySelect<Self, F>]
+            where
+                Self: Sized,
+                Self: Future<Output = Result<T, E>>,
+                F: Future<Output = Self::Output>,
+        {
+            TrySelect::new(self, other)
         }
     }
 
