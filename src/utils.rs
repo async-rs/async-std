@@ -144,7 +144,7 @@ macro_rules! extension_trait {
     };
 
     // Parse the return type in an extension method.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*) => {
+    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
         extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
     };
     (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {

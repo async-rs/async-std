@@ -166,11 +166,13 @@ extension_trait! {
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn select<F>(self, other: F) ->
-        impl Future<Output = Self::Output> [Select<Self, F>]
+        fn select<F>(
+            self,
+            other: F
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [Select<Self, F>]
         where
-            Self: Sized + Future,
-            F: std::future::Future<Output = <Self as Future>::Output>,
+            Self: std::future::Future + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
             Select::new(self, other)
         }
@@ -205,12 +207,13 @@ extension_trait! {
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn try_select<F, T, E>(self, other: F) ->
-        impl Future<Output = Self::Output> [TrySelect<Self, F>]
+        fn try_select<F: std::future::Future, T, E>(
+            self,
+            other: F
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [TrySelect<Self, F>]
         where
-            Self: Sized,
-            Self: Future<Output = Result<T, E>>,
-            F: Future<Output = Self::Output>,
+            Self: std::future::Future<Output = Result<T, E>> + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
             TrySelect::new(self, other)
         }
