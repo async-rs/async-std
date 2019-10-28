@@ -129,6 +129,40 @@ extension_trait! {
         {
             DelayFuture::new(self, dur)
         }
+
+        #[doc = r#"
+            Waits for either one of several similarly-typed futures to complete.
+
+            Awaits multiple futures simultaneously, returning all results once complete.
+
+            This function will return a new future which awaits for either one of both
+            futures to complete. If multiple futures are completed at the same time,
+            resolution will occur in the order that they have been passed.
+
+            Note that this macro consumes all futures passed, and once a future is
+            completed, all other futures are dropped.
+
+            This macro is only usable inside of async functions, closures, and blocks.
+
+            # Examples
+
+            ```
+            #![feature(async_await)]
+            # futures::executor::block_on(async {
+            use futures::future;
+
+            let a = future::pending();
+            let b = future::ready(1u8);
+            let c = future::ready(2u8);
+
+            let f = a.select(b).select(c);
+            assert_eq!(f.await, 1u8);
+            # });
+            ```
+        "#]
+        fn select(&mut self) -> () {
+            ()
+        }
     }
 
     impl<F: Future + Unpin + ?Sized> Future for Box<F> {
