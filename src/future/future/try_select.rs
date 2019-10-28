@@ -53,7 +53,9 @@ where
         // future also resolved to err. Continue if not.
         let mut right = this.right;
         if Future::poll(Pin::new(&mut right), cx).is_ready() {
-            if right.as_ref().output().unwrap().is_ok() || left_errored {
+            if right.as_ref().output().unwrap().is_ok() {
+                return Poll::Ready(right.take().unwrap());
+            } else if left_errored {
                 return Poll::Ready(right.take().unwrap());
             }
         }
