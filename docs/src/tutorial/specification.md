@@ -12,7 +12,7 @@ After that, the client can send messages to other clients using the following sy
 login1, login2, ... loginN: message
 ```
 
-Each of the specified clients than receives a `from login: message` message.
+Each of the specified clients then receives a `from login: message` message.
 
 A possible session might look like this
 
