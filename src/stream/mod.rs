@@ -156,7 +156,7 @@
 //!
 //! # while let Loops and IntoStream
 //!
-//! Rust's `while let` loop syntax is actually sugar for streams. Here's a basic
+//! Rust's `while let` loop syntax is an idiomatic way to iterate over streams. Here's a basic
 //! example of `while let`:
 //!
 //! ```
@@ -191,7 +191,7 @@
 //! # Adapters
 //!
 //! Functions which take an [`Stream`] and return another [`Stream`] are
-//! often called 'stream adapters', as they're a form of the 'adapter
+//! often called 'stream adapters', as they are a form of the 'adapter
 //! pattern'.
 //!
 //! Common stream adapters include [`map`], [`take`], and [`filter`].
