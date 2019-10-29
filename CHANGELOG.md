@@ -40,12 +40,17 @@ assert_eq!(r.recv().await, Some(2));
 ```
 
 ## Added
+- Added `Future::delay` as "unstable"
+- Added `Stream::flat_map` as "unstable"
+- Added `Stream::flatten` as "unstable"
+- Added `Stream::product` as "unstable"
+- Added `Stream::sum` as "unstable"
+- Added `Stream::min_by_key`
+- Added `Stream::max_by`
+- Added `Stream::timeout` as "unstable"
 - Added `sync::channel` as "unstable".
 - Added doc links from instantiated structs to the methods that create them.
 - Implemented `Extend` + `FromStream` for `PathBuf`.
-- Added `Stream::sum` as "unstable"
-- Added `Stream::product` as "unstable"
-- Added `Stream::timeout` as "unstable"
 
 ## Changed
 - Fixed an issue with `block_on` so it works even when nested.
