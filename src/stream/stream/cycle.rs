@@ -22,6 +22,17 @@ enum CycleState {
     FromBuffer,
 }
 
+impl<T: Clone, S: Stream<Item = T>,> Cycle<S, T> {
+    pub fn new(source: S) -> Cycle<S, T> {
+        Cycle {
+            source,
+            index: 0,
+            buffer: Vec::new(),
+            state: CycleState::FromStream,
+        }
+    }
+}
+
 impl<S, T> Stream for Cycle<S, T>
 where
     S: Stream<Item = T>,
@@ -57,33 +68,3 @@ where
     }
 }
 
-/// Creats a stream that yields the provided values infinitely and in order.
-///
-/// # Examples
-///
-/// Basic usage:
-///
-/// ```
-/// # async_std::task::block_on(async {
-/// #
-/// use async_std::prelude::*;
-/// use async_std::stream;
-///
-/// let mut s = stream::cycle(stream::once(7));
-///
-/// assert_eq!(s.next().await, Some(7));
-/// assert_eq!(s.next().await, Some(7));
-/// assert_eq!(s.next().await, Some(7));
-/// assert_eq!(s.next().await, Some(7));
-/// assert_eq!(s.next().await, Some(7));
-/// #
-/// # })
-/// ```
-pub fn cycle<S: Stream<Item = T>, T: Clone>(source: S) -> impl Stream<Item = S::Item> {
-    Cycle {
-        source,
-        index: 0,
-        buffer: Vec::new(),
-        state: CycleState::FromStream,
-    }
-}

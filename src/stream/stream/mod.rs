@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod cycle;
 mod cmp;
 mod cycle;
 mod copied;
@@ -91,6 +92,7 @@ use partial_cmp::PartialCmpFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
+use cycle::Cycle;
 
 pub use chain::Chain;
 pub use copied::Copied;
@@ -409,6 +411,38 @@ extension_trait! {
             T : 'a + Copy,
         {
             Copied::new(self)
+        }
+
+        #[doc = r#"
+            Creats a stream that yields the provided values infinitely and in order.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let mut s = stream::once(7).cycle();
+
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            #
+            # })
+            ```
+        "#]
+        fn cycle(self) -> Cycle<Self, Self::Item>
+            where
+                Self: Sized,
+                Self::Item: Clone,
+        {
+            Cycle::new(self)
         }
 
         #[doc = r#"

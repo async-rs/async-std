@@ -300,7 +300,6 @@
 //! [`take`]: trait.Stream.html#method.take
 //! [`min`]: trait.Stream.html#method.min
 
-pub use cycle::{cycle, Cycle};
 pub use empty::{empty, Empty};
 pub use from_fn::{from_fn, FromFn};
 pub use from_iter::{from_iter, FromIter};
@@ -313,7 +312,6 @@ pub use stream::{
 
 pub(crate) mod stream;
 
-mod cycle;
 mod empty;
 mod from_fn;
 mod from_iter;
