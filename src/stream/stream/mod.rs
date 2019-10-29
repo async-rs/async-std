@@ -42,7 +42,11 @@ mod le;
 mod lt;
 mod map;
 mod max_by;
+<<<<<<< HEAD
 mod min;
+=======
+mod max_by_key;
+>>>>>>> add max_by_key
 mod min_by;
 mod min_by_key;
 mod ne;
@@ -76,7 +80,11 @@ use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use max_by::MaxByFuture;
+<<<<<<< HEAD
 use min::MinFuture;
+=======
+use max_by_key::MaxByKeyFuture;
+>>>>>>> add max_by_key
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
 use ne::NeFuture;
@@ -727,6 +735,43 @@ extension_trait! {
             K: FnMut(&Self::Item) -> Self::Item,
         {
             MinByKeyFuture::new(self, key_by)
+        }
+
+         #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified key function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<i32> = vec![-1, -2, -3].into_iter().collect();
+
+            let max = s.clone().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, Some(3));
+
+            let max = VecDeque::<isize>::new().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by_key<K>(
+            self,
+            key_by: K,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByKeyFuture<Self, Self::Item, K>]
+        where
+            Self: Sized,
+            Self::Item: Ord,
+            K: FnMut(&Self::Item) -> Self::Item,
+        {
+            MaxByKeyFuture::new(self, key_by)
         }
 
         #[doc = r#"
