@@ -3,8 +3,8 @@ use std::pin::Pin;
 use async_macros::MaybeDone;
 use pin_project_lite::pin_project;
 
-use std::future::Future;
 use crate::task::{Context, Poll};
+use std::future::Future;
 
 pin_project! {
     #[allow(missing_docs)]
@@ -52,12 +52,9 @@ where
         // Check if the right future is ready & successful. Return err if left
         // future also resolved to err. Continue if not.
         let mut right = this.right;
-        if Future::poll(Pin::new(&mut right), cx).is_ready() {
-            if right.as_ref().output().unwrap().is_ok() {
-                return Poll::Ready(right.take().unwrap());
-            } else if left_errored {
-                return Poll::Ready(right.take().unwrap());
-            }
+        let is_ready = Future::poll(Pin::new(&mut right), cx).is_ready();
+        if is_ready && (right.as_ref().output().unwrap().is_ok() || left_errored) {
+            return Poll::Ready(right.take().unwrap());
         }
 
         Poll::Pending
