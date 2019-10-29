@@ -30,8 +30,10 @@ where
 
     pub fn peek(mut self: Pin<&mut Self>) -> &Poll<Option<S::Item>> {
         match &self.peeked {
-            Some(peeked) => &Poll::Ready(None),
+            Some(peeked) => 
+                self.as_ref().peeked()
             None => {
+                // how to get the next element from here?
                 let next = self.stream.next();
                 *self.as_mut().peeked() = next;
                 &next
@@ -52,13 +54,9 @@ where
         match &self.peeked {
             Some(peeked) => {
                 let v = self.as_mut().peeked().take().unwrap();
-                //*self.as_mut().peeked() = Some(Poll::Ready(next));
                 *self.as_mut().peeked() = None;
-                //*peeked
 
                 v
-                //Poll::Ready() // wrong thing to return just a dummy to match types
-                
             }
             None => {
                 Poll::Ready(next)
