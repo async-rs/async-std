@@ -41,7 +41,7 @@ where
                 next = Some(val.clone())
             } else {
                 *this.state = CycleState::FromBuffer;
-                next = this.buffer.get(*this.index).map(|x| x.clone());
+                next = this.buffer.get(*this.index).cloned();
             }
         } else {
             let mut index = *this.index;
