@@ -40,6 +40,7 @@ mod last;
 mod le;
 mod lt;
 mod map;
+mod max_by;
 mod min_by;
 mod min_by_key;
 mod next;
@@ -69,6 +70,7 @@ use gt::GtFuture;
 use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
+use max_by::MaxByFuture;
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
 use next::NextFuture;
@@ -756,6 +758,45 @@ extension_trait! {
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
             MinByFuture::new(self, compare)
+        }
+
+         #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified comparison function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let max = s.clone().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, Some(3));
+
+            let max = s.max_by(|x, y| y.cmp(x)).await;
+            assert_eq!(max, Some(1));
+
+            let max = VecDeque::<usize>::new().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by<F>(
+            self,
+            compare: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MaxByFuture::new(self, compare)
         }
 
         #[doc = r#"
