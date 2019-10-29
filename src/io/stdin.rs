@@ -12,6 +12,12 @@ use crate::task::{blocking, Context, JoinHandle, Poll};
 ///
 /// [`std::io::stdin`]: https://doc.rust-lang.org/std/io/fn.stdin.html
 ///
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
+///
 /// # Examples
 ///
 /// ```no_run
@@ -36,12 +42,16 @@ pub fn stdin() -> Stdin {
 
 /// A handle to the standard input of the current process.
 ///
-/// Created by the [`stdin`] function.
+/// This reader is created by the [`stdin`] function. See its documentation for
+/// more.
 ///
-/// This type is an async version of [`std::io::Stdin`].
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
 ///
 /// [`stdin`]: fn.stdin.html
-/// [`std::io::Stdin`]: https://doc.rust-lang.org/std/io/struct.Stdin.html
 #[derive(Debug)]
 pub struct Stdin(Mutex<State>);
 

@@ -31,7 +31,7 @@ In general, this crate will be conservative with respect to the minimum supporte
 
 ## Security fixes
 
-Security fixes will be applied to _all_ minor branches of this library in all _supported_ major revisions. This policy might change in the future, in which case we give at least _3 month_ of ahead notice.
+Security fixes will be applied to _all_ minor branches of this library in all _supported_ major revisions. This policy might change in the future, in which case we give a notice at least _3 months_ ahead.
 
 ## Credits
 

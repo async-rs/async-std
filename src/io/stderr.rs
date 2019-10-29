@@ -12,6 +12,12 @@ use crate::task::{blocking, Context, JoinHandle, Poll};
 ///
 /// [`std::io::stderr`]: https://doc.rust-lang.org/std/io/fn.stderr.html
 ///
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
+///
 /// # Examples
 ///
 /// ```no_run
@@ -35,12 +41,16 @@ pub fn stderr() -> Stderr {
 
 /// A handle to the standard error of the current process.
 ///
-/// Created by the [`stderr`] function.
+/// This writer is created by the [`stderr`] function. See its documentation for
+/// more.
 ///
-/// This type is an async version of [`std::io::Stderr`].
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
 ///
 /// [`stderr`]: fn.stderr.html
-/// [`std::io::Stderr`]: https://doc.rust-lang.org/std/io/struct.Stderr.html
 #[derive(Debug)]
 pub struct Stderr(Mutex<State>);
 

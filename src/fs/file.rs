@@ -66,6 +66,23 @@ pub struct File {
 }
 
 impl File {
+    /// Creates an async file handle.
+    pub(crate) fn new(file: std::fs::File, is_flushed: bool) -> File {
+        let file = Arc::new(file);
+
+        File {
+            file: file.clone(),
+            lock: Lock::new(State {
+                file,
+                mode: Mode::Idle,
+                cache: Vec::new(),
+                is_flushed,
+                last_read_err: None,
+                last_write_err: None,
+            }),
+        }
+    }
+
     /// Opens a file in read-only mode.
     ///
     /// See the [`OpenOptions::open`] function for more options.
@@ -96,7 +113,7 @@ impl File {
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let file = blocking::spawn(move || std::fs::File::open(&path)).await?;
-        Ok(file.into())
+        Ok(File::new(file, true))
     }
 
     /// Opens a file in write-only mode.
@@ -131,7 +148,7 @@ impl File {
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let file = blocking::spawn(move || std::fs::File::create(&path)).await?;
-        Ok(file.into())
+        Ok(File::new(file, true))
     }
 
     /// Synchronizes OS-internal buffered contents and metadata to disk.
@@ -383,19 +400,7 @@ impl Seek for &File {
 
 impl From<std::fs::File> for File {
     fn from(file: std::fs::File) -> File {
-        let file = Arc::new(file);
-
-        File {
-            file: file.clone(),
-            lock: Lock::new(State {
-                file,
-                mode: Mode::Idle,
-                cache: Vec::new(),
-                is_flushed: false,
-                last_read_err: None,
-                last_write_err: None,
-            }),
-        }
+        File::new(file, false)
     }
 }
 

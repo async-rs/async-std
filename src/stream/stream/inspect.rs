@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that does something with each element of another stream.
+    ///
+    /// This `struct` is created by the [`inspect`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`inspect`]: trait.Stream.html#method.inspect
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct Inspect<S, F, T> {
         #[pin]

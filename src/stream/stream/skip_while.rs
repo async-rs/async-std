@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream to skip elements of another stream based on a predicate.
+    ///
+    /// This `struct` is created by the [`skip_while`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`skip_while`]: trait.Stream.html#method.skip_while
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct SkipWhile<S, P, T> {
         #[pin]

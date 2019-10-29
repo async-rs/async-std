@@ -1,3 +1,11 @@
+cfg_unstable! {
+    mod delay;
+
+    use std::time::Duration;
+
+    use delay::DelayFuture;
+}
+
 extension_trait! {
     use std::pin::Pin;
     use std::ops::{Deref, DerefMut};
@@ -99,6 +107,28 @@ extension_trait! {
     }
 
     pub trait FutureExt: std::future::Future {
+        /// Returns a Future that delays execution for a specified time.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// # async_std::task::block_on(async {
+        /// use async_std::prelude::*;
+        /// use async_std::future;
+        /// use std::time::Duration;
+        ///
+        /// let a = future::ready(1).delay(Duration::from_millis(2000));
+        /// dbg!(a.await);
+        /// # })
+        /// ```
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
+        where
+            Self: Future + Sized
+        {
+            DelayFuture::new(self, dur)
+        }
     }
 
     impl<F: Future + Unpin + ?Sized> Future for Box<F> {

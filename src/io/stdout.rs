@@ -12,6 +12,12 @@ use crate::task::{blocking, Context, JoinHandle, Poll};
 ///
 /// [`std::io::stdout`]: https://doc.rust-lang.org/std/io/fn.stdout.html
 ///
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
+///
 /// # Examples
 ///
 /// ```no_run
@@ -35,12 +41,16 @@ pub fn stdout() -> Stdout {
 
 /// A handle to the standard output of the current process.
 ///
-/// Created by the [`stdout`] function.
+/// This writer is created by the [`stdout`] function. See its documentation
+/// for more.
 ///
-/// This type is an async version of [`std::io::Stdout`].
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
 ///
 /// [`stdout`]: fn.stdout.html
-/// [`std::io::Stdout`]: https://doc.rust-lang.org/std/io/struct.Stdout.html
 #[derive(Debug)]
 pub struct Stdout(Mutex<State>);
 

@@ -6,6 +6,11 @@ use crate::task::{Context, Poll};
 
 /// Creates a stream that doesn't yield any items.
 ///
+/// This `struct` is created by the [`empty`] function. See its
+/// documentation for more.
+///
+/// [`empty`]: fn.empty.html
+///
 /// # Examples
 ///
 /// ```

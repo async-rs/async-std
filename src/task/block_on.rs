@@ -154,6 +154,7 @@ where
 
 fn vtable() -> &'static RawWakerVTable {
     unsafe fn clone_raw(ptr: *const ()) -> RawWaker {
+        #![allow(clippy::redundant_clone)]
         let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
         mem::forget(arc.clone());
         RawWaker::new(ptr, vtable())

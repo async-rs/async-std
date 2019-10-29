@@ -7,6 +7,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream to maintain state while polling another stream.
+    ///
+    /// This `struct` is created by the [`scan`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`scan`]: trait.Stream.html#method.scan
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct Scan<S, St, F> {
         #[pin]

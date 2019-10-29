@@ -10,7 +10,8 @@ use crate::task::{Context, Poll};
 pin_project! {
     /// A stream that repeats elements of type `T` endlessly by applying a provided closure.
     ///
-    /// This stream is constructed by the [`repeat_with`] function.
+    /// This stream is created by the [`repeat_with`] function. See its
+    /// documentation for more.
     ///
     /// [`repeat_with`]: fn.repeat_with.html
     #[derive(Debug)]
