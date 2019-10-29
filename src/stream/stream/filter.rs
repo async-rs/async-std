@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream to filter elements of another stream with a predicate.
+    ///
+    /// This `struct` is created by the [`filter`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`filter`]: trait.Stream.html#method.filter
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct Filter<S, P, T> {
         #[pin]

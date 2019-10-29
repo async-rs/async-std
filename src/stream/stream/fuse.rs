@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 pin_project! {
     /// A `Stream` that is permanently closed once a single call to `poll` results in
     /// `Poll::Ready(None)`, returning `Poll::Ready(None)` for all future calls to `poll`.
+    ///
+    /// This `struct` is created by the [`fuse`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`fuse`]: trait.Stream.html#method.fuse
+    /// [`Stream`]: trait.Stream.html
     #[derive(Clone, Debug)]
     pub struct Fuse<S> {
         #[pin]
