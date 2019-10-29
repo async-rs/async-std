@@ -8,8 +8,8 @@ use crate::future::Future;
 use crate::task::{Context, Poll};
 
 pin_project! {
-#[doc(hidden)]
-#[derive(Debug)]
+    #[doc(hidden)]
+    #[derive(Debug)]
     pub struct DelayFuture<F> {
         #[pin]
         future: F,
