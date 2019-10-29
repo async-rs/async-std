@@ -137,7 +137,8 @@ extension_trait! {
         #[doc = r#"
             Waits for one of two similarly-typed futures to complete.
 
-            Awaits multiple futures simultaneously, returning all results once complete.
+            Awaits multiple futures simultaneously, returning the output of the
+            first future that completes.
 
             This function will return a new future which awaits for either one of both
             futures to complete. If multiple futures are completed at the same time,
@@ -184,7 +185,10 @@ extension_trait! {
 
             `try_select` is similar to [`select`], but keeps going if a future
             resolved to an error until all futures have been resolved. In which case
-            the error of the `other` future will be returned.
+            an error is returned.
+
+            The ordering of which value is yielded when two futures resolve
+            simultaneously is intentionally left unspecified.
 
             # Examples
 

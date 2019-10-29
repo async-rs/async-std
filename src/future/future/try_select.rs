@@ -9,7 +9,11 @@ use std::future::Future;
 pin_project! {
     #[allow(missing_docs)]
     #[allow(missing_debug_implementations)]
-    pub struct TrySelect<L, R> where L: Future, R: Future<Output = L::Output> {
+    pub struct TrySelect<L, R>
+    where
+        L: Future,
+        R: Future<Output = L::Output>
+    {
         #[pin] left: MaybeDone<L>,
         #[pin] right: MaybeDone<R>,
     }

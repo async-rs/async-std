@@ -1,15 +1,19 @@
 use std::pin::Pin;
 
-use pin_project_lite::pin_project;
 use async_macros::MaybeDone;
+use pin_project_lite::pin_project;
 
-use std::future::Future;
 use crate::task::{Context, Poll};
+use std::future::Future;
 
 pin_project! {
     #[allow(missing_docs)]
     #[allow(missing_debug_implementations)]
-    pub struct Select<L, R> where L: Future, R: Future<Output = L::Output> {
+    pub struct Select<L, R>
+    where
+        L: Future,
+        R: Future<Output = L::Output>
+    {
         #[pin] left: MaybeDone<L>,
         #[pin] right: MaybeDone<R>,
     }
