@@ -96,13 +96,17 @@ cfg_unstable! {
     use std::time::Duration;
 
     use crate::future::Future;
-    use crate::stream::FromStream;
-    use crate::stream::{Product, Sum};
+    use crate::stream::into_stream::IntoStream;
+    use crate::stream::{FromStream, Product, Sum};
 
     pub use merge::Merge;
+    pub use flatten::Flatten;
+    pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
 
     mod merge;
+    mod flatten;
+    mod flat_map;
     mod timeout;
 }
 
@@ -561,6 +565,76 @@ extension_trait! {
             P: FnMut(&Self::Item) -> bool,
         {
             Filter::new(self, predicate)
+        }
+
+        #[doc= r#"
+            Creates an stream that works like map, but flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
+            use async_std::stream::IntoStream;
+
+            let inner1: VecDeque<u8> = vec![1,2,3].into_iter().collect();
+            let inner2: VecDeque<u8> = vec![4,5,6].into_iter().collect();
+
+            let s: VecDeque<_> = vec![inner1, inner2].into_iter().collect();
+
+            let v :Vec<_> = s.flat_map(|s| s.into_stream()).collect().await;
+
+            assert_eq!(v, vec![1,2,3,4,5,6]);
+
+            # });
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, Self::Item, F>
+            where
+                Self: Sized,
+                U: IntoStream,
+                F: FnMut(Self::Item) -> U,
+        {
+            FlatMap::new(self, f)
+        }
+
+        #[doc = r#"
+            Creates an stream that flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
+
+            let inner1: VecDeque<u8> = vec![1,2,3].into_iter().collect();
+            let inner2: VecDeque<u8> = vec![4,5,6].into_iter().collect();
+            let s: VecDeque<_> = vec![inner1, inner2].into_iter().collect();
+
+            let v: Vec<_> = s.flatten().collect().await;
+
+            assert_eq!(v, vec![1,2,3,4,5,6]);
+
+            # });
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn flatten(self) -> Flatten<Self, Self::Item>
+        where
+            Self: Sized,
+            Self::Item: IntoStream,
+        {
+            Flatten::new(self)
         }
 
         #[doc = r#"
