@@ -25,7 +25,8 @@ enum CycleState {
 impl<S, T> Stream for Cycle<S,T>
     where
         S: Stream<Item = T>,
-        T: Copy,
+        T: Clone,
+
 {
 
     type Item = S::Item;
@@ -34,21 +35,22 @@ impl<S, T> Stream for Cycle<S,T>
         let this = self.project();
 
         let mut next;
-        if CycleState::FromStream == *this.state {
+        if *this.state == CycleState::FromStream {
             next = futures_core::ready!(this.source.poll_next(cx));
 
             if let Some(val) = next {
-                this.buffer.push(val);
+                this.buffer.push(val.clone());
+                next = Some(val.clone())
             } else {
                 *this.state = CycleState::FromBuffer;
-                next = Some(this.buffer[*this.index]);
+                next = this.buffer.get(*this.index).map(|x| x.clone());
             }
         } else {
             let mut index = *this.index;
             if  index == this.buffer.len() {
                 index = 0
             }
-            next = Some(this.buffer[index]);
+            next = Some(this.buffer[index].clone());
 
             *this.index = index + 1;
         }
@@ -79,7 +81,7 @@ impl<S, T> Stream for Cycle<S,T>
 /// #
 /// # })
 /// ```
-pub fn cycle<S: Stream<Item = T>, T: Copy>(source: S) -> impl Stream<Item = S::Item> {
+pub fn cycle<S: Stream<Item = T>, T: Clone>(source: S) -> impl Stream<Item = S::Item> {
     Cycle {
         source,
         index: 0,
