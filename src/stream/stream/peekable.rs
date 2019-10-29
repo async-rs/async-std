@@ -11,22 +11,15 @@ where
     S: Sized,
 {
     stream: S,
-    peeked: Option<Option<S::Item>>,
+    peeked: Option<Poll<Option<S::Item>>>,
 }
-
-//pub struct PeekFuture<'a, T: Unpin + ?Sized> {
-//pub(crate) stream: &'a T,
-//}
-
-//impl<T: Stream + Unpin + ?Sized> Future for PeekFuture<'_, T> {
-//}
 
 impl<S> Peekable<S>
 where
     S: Stream,
 {
     pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(peeked: Option<Option<S::Item>>);
+    pin_utils::unsafe_unpinned!(peeked: Option<Poll<Option<S::Item>>>);
 
     pub(crate) fn new(stream: S) -> Self {
         Peekable {
@@ -35,8 +28,15 @@ where
         }
     }
 
-    pub fn peek(&mut self) -> impl Future<Output = Option<S::Item>> {
-        async { None }
+    pub fn peek(mut self: Pin<&mut Self>) -> &Poll<Option<S::Item>> {
+        match &self.peeked {
+            Some(peeked) => &Poll::Ready(None),
+            None => {
+                let next = self.stream.next();
+                *self.as_mut().peeked() = next;
+                &next
+            }
+        }
     }
 }
 
@@ -47,18 +47,21 @@ where
     type Item = S::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+
         match &self.peeked {
-            Some(_) => {
-                let v = Poll::Ready(self.as_mut().peeked().take().unwrap());
+            Some(peeked) => {
+                let v = self.as_mut().peeked().take().unwrap();
+                //*self.as_mut().peeked() = Some(Poll::Ready(next));
                 *self.as_mut().peeked() = None;
+                //*peeked
+
                 v
+                //Poll::Ready() // wrong thing to return just a dummy to match types
+                
             }
             None => {
-                let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
-                match next {
-                    Some(v) => Poll::Ready(Some(v)),
-                    None => Poll::Ready(None),
-                }
+                Poll::Ready(next)
             }
         }
     }
