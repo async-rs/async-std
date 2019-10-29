@@ -7,38 +7,40 @@ use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 
 pin_project! {
-    /// This `struct` is created by the [`flatten`] method on [`Stream`]. See its
+    /// This `struct` is created by the [`flat_map`] method on [`Stream`]. See its
     /// documentation for more.
     ///
-    /// [`flatten`]: trait.Stream.html#method.flatten
+    /// [`flat_map`]: trait.Stream.html#method.flat_map
     /// [`Stream`]: trait.Stream.html
     #[allow(missing_debug_implementations)]
-    pub struct Flatten<S, U> {
+    pub struct FlatMap<S, U, T, F> {
         #[pin]
-        stream: S,
+        stream: Map<S, F, T, U>,
         #[pin]
         inner_stream: Option<U>,
     }
 }
 
-impl<S> Flatten<S, S::Item>
+impl<S, U, F> FlatMap<S, U, S::Item, F>
 where
     S: Stream,
-    S::Item: IntoStream,
+    U: IntoStream,
+    F: FnMut(S::Item) -> U,
 {
-    pub(super) fn new(stream: S) -> Flatten<S, S::Item> {
-        Flatten {
-            stream,
+    pub(super) fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
+        FlatMap {
+            stream: stream.map(f),
             inner_stream: None,
         }
     }
 }
 
-impl<S, U> Stream for Flatten<S, <S::Item as IntoStream>::IntoStream>
+impl<S, U, F> Stream for FlatMap<S, U, S::Item, F>
 where
     S: Stream,
     S::Item: IntoStream<IntoStream = U, Item = U::Item>,
     U: Stream,
+    F: FnMut(S::Item) -> U,
 {
     type Item = U::Item;
 

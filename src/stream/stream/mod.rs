@@ -99,10 +99,12 @@ cfg_unstable! {
     use crate::stream::into_stream::IntoStream;
 
     pub use merge::Merge;
-    pub use flatten::{FlatMap, Flatten};
+    pub use flatten::Flatten;
+    pub use flat_map::FlatMap;
 
     mod merge;
     mod flatten;
+    mod flat_map;
 }
 
 extension_trait! {
