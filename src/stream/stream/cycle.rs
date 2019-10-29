@@ -22,7 +22,7 @@ enum CycleState {
     FromBuffer,
 }
 
-impl<T: Clone, S: Stream<Item = T>,> Cycle<S, T> {
+impl<T: Clone, S: Stream<Item = T>> Cycle<S, T> {
     pub fn new(source: S) -> Cycle<S, T> {
         Cycle {
             source,
@@ -67,4 +67,3 @@ where
         Poll::Ready(next)
     }
 }
-
