@@ -22,13 +22,11 @@ enum CycleState {
     FromBuffer,
 }
 
-impl<S, T> Stream for Cycle<S,T>
-    where
-        S: Stream<Item = T>,
-        T: Clone,
-
+impl<S, T> Stream for Cycle<S, T>
+where
+    S: Stream<Item = T>,
+    T: Clone,
 {
-
     type Item = S::Item;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -47,7 +45,7 @@ impl<S, T> Stream for Cycle<S,T>
             }
         } else {
             let mut index = *this.index;
-            if  index == this.buffer.len() {
+            if index == this.buffer.len() {
                 index = 0
             }
             next = Some(this.buffer[index].clone());
