@@ -41,6 +41,7 @@ mod le;
 mod lt;
 mod map;
 mod max_by;
+mod min;
 mod min_by;
 mod min_by_key;
 mod next;
@@ -71,6 +72,7 @@ use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use max_by::MaxByFuture;
+use min::MinFuture;
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
 use next::NextFuture;
@@ -744,6 +746,41 @@ extension_trait! {
             assert_eq!(min, Some(3));
 
             let min = VecDeque::<usize>::new().min_by(|x, y| x.cmp(y)).await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min_by<F>(
+            self,
+            compare: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MinByFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MinByFuture::new(self, compare)
+        }
+
+        #[doc = r#"
+            Returns the element that gives the minimum value. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let min = s.clone().min().await;
+            assert_eq!(min, Some(1));
+
+            let min = VecDeque::<usize>::new().min().await;
             assert_eq!(min, None);
             #
             # }) }
