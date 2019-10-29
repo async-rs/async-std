@@ -29,7 +29,8 @@ pub fn once<T>(t: T) -> Once<T> {
 pin_project! {
     /// A stream that yields a single item.
     ///
-    /// This stream is constructed by the [`once`] function.
+    /// This stream is created by the [`once`] function. See its
+    /// documentation for more.
     ///
     /// [`once`]: fn.once.html
     #[derive(Debug)]

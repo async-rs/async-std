@@ -7,6 +7,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that yields the first `n` items of another stream.
+    ///
+    /// This `struct` is created by the [`take`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`take`]: trait.Stream.html#method.take
+    /// [`Stream`]: trait.Stream.html
     #[derive(Clone, Debug)]
     pub struct Take<S> {
         #[pin]

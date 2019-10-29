@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// Chains two streams one after another.
+    ///
+    /// This `struct` is created by the [`chain`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`chain`]: trait.Stream.html#method.chain
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct Chain<S, U> {
         #[pin]

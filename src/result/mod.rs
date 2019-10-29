@@ -7,3 +7,8 @@ mod from_stream;
 
 #[doc(inline)]
 pub use std::result::Result;
+
+cfg_unstable! {
+    mod product;
+    mod sum;
+}

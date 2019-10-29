@@ -10,7 +10,8 @@ use crate::task::{Context, Poll};
 pin_project! {
     /// A stream that yields elements by calling a closure.
     ///
-    /// This stream is constructed by [`from_fn`] function.
+    /// This stream is created by the [`from_fn`] function. See its
+    /// documentation for more.
     ///
     /// [`from_fn`]: fn.from_fn.html
     #[derive(Debug)]

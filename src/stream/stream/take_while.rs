@@ -8,6 +8,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that yields elements based on a predicate.
+    ///
+    /// This `struct` is created by the [`take_while`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`take_while`]: trait.Stream.html#method.take_while
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct TakeWhile<S, P, T> {
         #[pin]
