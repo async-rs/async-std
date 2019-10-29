@@ -49,7 +49,7 @@ where
 
             if let Some(val) = next {
                 this.buffer.push(val.clone());
-                next = Some(val.clone())
+                next = Some(val)
             } else {
                 *this.state = CycleState::FromBuffer;
                 next = this.buffer.get(*this.index).cloned();
