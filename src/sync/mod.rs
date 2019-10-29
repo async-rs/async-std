@@ -6,6 +6,9 @@
 //!
 //! ## The need for synchronization
 //!
+//! async-std's sync primitives are scheduler-aware, making it possible to
+//! `.await` their operations - for example the locking of a [`Mutex`].
+//!
 //! Conceptually, a Rust program is a series of operations which will
 //! be executed on a computer. The timeline of events happening in the
 //! program is consistent with the order of the operations in the code.
