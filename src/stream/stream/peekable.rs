@@ -3,6 +3,7 @@ use std::pin::Pin;
 use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::stream::stream::StreamExt;
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
@@ -30,12 +31,11 @@ where
 
     pub fn peek(mut self: Pin<&mut Self>) -> &Poll<Option<S::Item>> {
         match &self.peeked {
-            Some(peeked) => 
-                self.as_ref().peeked()
+            Some(peeked) => &peeked,
             None => {
-                // how to get the next element from here?
+                // how to get the next `next` value? What about `Context`
                 let next = self.stream.next();
-                *self.as_mut().peeked() = next;
+                *self.as_mut().peeked() = Some(next);
                 &next
             }
         }
