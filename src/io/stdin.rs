@@ -55,6 +55,11 @@ pub fn stdin() -> Stdin {
 #[derive(Debug)]
 pub struct Stdin(Mutex<State>);
 
+/// A locked reference to the Stdin handle.
+/// This handle implements the [`Read`] traits, and is constructed via the [`Stdin::lock`] method.
+///
+/// [`Read`]: trait.Read.html
+/// [`Stdin::lock`]: struct.Stdin.html#method.lock
 #[derive(Debug)]
 pub struct StdinLock<'a>(std::io::StdinLock<'a>);
 
@@ -151,7 +156,7 @@ impl Stdin {
 
     /// Locks this handle to the standard input stream, returning a readable guard.
     ///
-    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Read and BufRead traits for accessing the underlying data.
+    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Read trait for accessing the underlying data.
     ///
     /// # Examples
     ///
@@ -251,10 +256,12 @@ cfg_windows! {
 
 impl Read for StdinLock<'_> {
     fn poll_read(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
-        _buf: &mut [u8],
+        buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        unimplemented!()
+        use std::io::Read as StdRead;
+
+        Poll::Ready(self.0.read(buf))
     }
 }

@@ -282,9 +282,9 @@ pub use read::Read;
 pub use repeat::{repeat, Repeat};
 pub use seek::Seek;
 pub use sink::{sink, Sink};
-pub use stderr::{stderr, Stderr};
-pub use stdin::{stdin, Stdin};
-pub use stdout::{stdout, Stdout};
+pub use stderr::{stderr, Stderr, StderrLock};
+pub use stdin::{stdin, Stdin, StdinLock};
+pub use stdout::{stdout, Stdout, StdoutLock};
 pub use timeout::timeout;
 pub use write::Write;
 

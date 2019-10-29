@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use std::io::Write as StdWrite;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -54,6 +55,11 @@ pub fn stderr() -> Stderr {
 #[derive(Debug)]
 pub struct Stderr(Mutex<State>);
 
+/// A locked reference to the Stderr handle.
+/// This handle implements the [`Write`] traits, and is constructed via the [`Stderr::lock`] method.
+///
+/// [`Write`]: trait.Read.html
+/// [`Stderr::lock`]: struct.Stderr.html#method.lock
 #[derive(Debug)]
 pub struct StderrLock<'a>(std::io::StderrLock<'a>);
 
@@ -104,12 +110,12 @@ impl Stderr {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::io;
-    /// use std::io::Write;
+    /// use async_std::prelude::*;
     ///
     /// let stderr = io::stderr();
     /// let mut handle = stderr.lock().await;
     ///
-    /// handle.write_all(b"hello world")?;
+    /// handle.write_all(b"hello world").await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -227,18 +233,18 @@ cfg_windows! {
 
 impl Write for StderrLock<'_> {
     fn poll_write(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
-        _buf: &[u8],
+        buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        unimplemented!()
+        Poll::Ready(self.0.write(buf))
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        unimplemented!()
+    fn poll_flush(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(self.0.flush())
     }
 
-    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        unimplemented!()
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_flush(cx)
     }
 }
