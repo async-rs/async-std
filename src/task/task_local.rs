@@ -210,10 +210,19 @@ impl fmt::Display for AccessError {
 
 impl Error for AccessError {}
 
+/// A key-value entry in a map of task-locals.
+struct Entry {
+    /// Key identifying the task-local variable.
+    key: u32,
+
+    /// Value stored in this entry.
+    value: Box<dyn Send>,
+}
+
 /// A map that holds task-locals.
 pub(crate) struct LocalsMap {
-    /// A list of `(key, value)` entries sorted by the key.
-    entries: UnsafeCell<Option<Vec<(u32, Box<dyn Send>)>>>,
+    /// A list of key-value entries sorted by the key.
+    entries: UnsafeCell<Option<Vec<Entry>>>,
 }
 
 impl LocalsMap {
@@ -230,14 +239,15 @@ impl LocalsMap {
         match unsafe { (*self.entries.get()).as_mut() } {
             None => panic!("can't access task-locals while the task is being dropped"),
             Some(entries) => {
-                let index = match entries.binary_search_by_key(&key, |e| e.0) {
+                let index = match entries.binary_search_by_key(&key, |e| e.key) {
                     Ok(i) => i,
                     Err(i) => {
-                        entries.insert(i, (key, init()));
+                        let value = init();
+                        entries.insert(i, Entry { key, value });
                         i
                     }
                 };
-                &*entries[index].1
+                &*entries[index].value
             }
         }
     }
