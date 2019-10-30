@@ -1,7 +1,7 @@
 //! A common utility for building synchronization primitives.
 //!
 //! When an async operation is blocked, it needs to register itself somewhere so that it can be
-//! notified later on. The `WakerMap` type helps with keeping track of such async operations and
+//! notified later on. The `WakerSet` type helps with keeping track of such async operations and
 //! notifying them when they may make progress.
 
 use std::cell::UnsafeCell;
@@ -22,13 +22,13 @@ const NOTIFY_ONE: usize = 1 << 1;
 /// Set when there are tasks for `notify_all()` to wake.
 const NOTIFY_ALL: usize = 1 << 2;
 
-/// Inner representation of `WakerMap`.
+/// Inner representation of `WakerSet`.
 struct Inner {
-    /// A list of entries in the map.
+    /// A list of entries in the set.
     ///
     /// Each entry has an optional waker associated with the task that is executing the operation.
     /// If the waker is set to `None`, that means the task has been woken up but hasn't removed
-    /// itself from the `WakerMap` yet.
+    /// itself from the `WakerSet` yet.
     ///
     /// The key of each entry is its index in the `Slab`.
     entries: Slab<Option<Waker>>,
@@ -37,20 +37,20 @@ struct Inner {
     none_count: usize,
 }
 
-/// A map holding wakers.
-pub struct WakerMap {
+/// A set holding wakers.
+pub struct WakerSet {
     /// Holds three bits: `LOCKED`, `NOTIFY_ONE`, and `NOTIFY_ALL`.
     flag: AtomicUsize,
 
-    /// A map holding wakers.
+    /// A set holding wakers.
     inner: UnsafeCell<Inner>,
 }
 
-impl WakerMap {
-    /// Creates a new `WakerMap`.
+impl WakerSet {
+    /// Creates a new `WakerSet`.
     #[inline]
-    pub fn new() -> WakerMap {
-        WakerMap {
+    pub fn new() -> WakerSet {
+        WakerSet {
             flag: AtomicUsize::new(0),
             inner: UnsafeCell::new(Inner {
                 entries: Slab::new(),
@@ -153,13 +153,13 @@ impl WakerMap {
         while self.flag.fetch_or(LOCKED, Ordering::Acquire) & LOCKED != 0 {
             backoff.snooze();
         }
-        Lock { waker_map: self }
+        Lock { waker_set: self }
     }
 }
 
-/// A guard holding a `WakerMap` locked.
+/// A guard holding a `WakerSet` locked.
 struct Lock<'a> {
-    waker_map: &'a WakerMap,
+    waker_set: &'a WakerSet,
 }
 
 impl Drop for Lock<'_> {
@@ -177,8 +177,8 @@ impl Drop for Lock<'_> {
             flag |= NOTIFY_ALL;
         }
 
-        // Use `SeqCst` ordering to synchronize with `WakerMap::lock_to_notify()`.
-        self.waker_map.flag.store(flag, Ordering::SeqCst);
+        // Use `SeqCst` ordering to synchronize with `WakerSet::lock_to_notify()`.
+        self.waker_set.flag.store(flag, Ordering::SeqCst);
     }
 }
 
@@ -187,13 +187,13 @@ impl Deref for Lock<'_> {
 
     #[inline]
     fn deref(&self) -> &Inner {
-        unsafe { &*self.waker_map.inner.get() }
+        unsafe { &*self.waker_set.inner.get() }
     }
 }
 
 impl DerefMut for Lock<'_> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Inner {
-        unsafe { &mut *self.waker_map.inner.get() }
+        unsafe { &mut *self.waker_set.inner.get() }
     }
 }

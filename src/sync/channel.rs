@@ -14,7 +14,7 @@ use std::task::{Context, Poll};
 use crossbeam_utils::{Backoff, CachePadded};
 
 use crate::stream::Stream;
-use crate::sync::WakerMap;
+use crate::sync::WakerSet;
 
 /// Creates a bounded multi-producer multi-consumer channel.
 ///
@@ -167,7 +167,7 @@ impl<T> Sender<T> {
                 };
 
                 if poll.is_ready() {
-                    // If the current task is in the map, remove it.
+                    // If the current task is in the set, remove it.
                     if let Some(key) = self.opt_key.take() {
                         self.channel.send_wakers.complete(key);
                     }
@@ -179,7 +179,7 @@ impl<T> Sender<T> {
 
         impl<T> Drop for SendFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task is still in the map, that means it is being cancelled now.
+                // If the current task is still in the set, that means it is being cancelled now.
                 // Wake up another task instead.
                 if let Some(key) = self.opt_key {
                     self.channel.send_wakers.cancel(key);
@@ -339,7 +339,7 @@ pub struct Receiver<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
 
-    /// The key for this receiver in the `channel.stream_wakers` map.
+    /// The key for this receiver in the `channel.stream_wakers` set.
     opt_key: Option<usize>,
 }
 
@@ -392,7 +392,7 @@ impl<T> Receiver<T> {
 
         impl<T> Drop for RecvFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task is still in the map, that means it is being cancelled now.
+                // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
                     self.channel.recv_wakers.cancel(key);
                 }
@@ -487,7 +487,7 @@ impl<T> Receiver<T> {
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        // If the current task is still in the stream map, that means it is being cancelled now.
+        // If the current task is still in the stream set, that means it is being cancelled now.
         if let Some(key) = self.opt_key {
             self.channel.stream_wakers.cancel(key);
         }
@@ -541,7 +541,7 @@ impl<T> fmt::Debug for Receiver<T> {
 /// associated key will then be stored in `opt_key`.
 fn poll_recv<T>(
     channel: &Channel<T>,
-    wakers: &WakerMap,
+    wakers: &WakerSet,
     opt_key: &mut Option<usize>,
     cx: &mut Context<'_>,
 ) -> Poll<Option<T>> {
@@ -566,7 +566,7 @@ fn poll_recv<T>(
     };
 
     if poll.is_ready() {
-        // If the current task is in the map, remove it.
+        // If the current task is in the set, remove it.
         if let Some(key) = opt_key.take() {
             wakers.complete(key);
         }
@@ -618,13 +618,13 @@ struct Channel<T> {
     mark_bit: usize,
 
     /// Send operations waiting while the channel is full.
-    send_wakers: WakerMap,
+    send_wakers: WakerSet,
 
     /// Receive operations waiting while the channel is empty and not disconnected.
-    recv_wakers: WakerMap,
+    recv_wakers: WakerSet,
 
     /// Streams waiting while the channel is empty and not disconnected.
-    stream_wakers: WakerMap,
+    stream_wakers: WakerSet,
 
     /// The number of currently active `Sender`s.
     sender_count: AtomicUsize,
@@ -678,9 +678,9 @@ impl<T> Channel<T> {
             mark_bit,
             head: CachePadded::new(AtomicUsize::new(head)),
             tail: CachePadded::new(AtomicUsize::new(tail)),
-            send_wakers: WakerMap::new(),
-            recv_wakers: WakerMap::new(),
-            stream_wakers: WakerMap::new(),
+            send_wakers: WakerSet::new(),
+            recv_wakers: WakerSet::new(),
+            stream_wakers: WakerSet::new(),
             sender_count: AtomicUsize::new(1),
             receiver_count: AtomicUsize::new(1),
             _marker: PhantomData,

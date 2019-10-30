@@ -5,7 +5,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::future::Future;
-use crate::sync::WakerMap;
+use crate::sync::WakerSet;
 use crate::task::{Context, Poll};
 
 /// A mutual exclusion primitive for protecting shared data.
@@ -43,7 +43,7 @@ use crate::task::{Context, Poll};
 /// ```
 pub struct Mutex<T> {
     locked: AtomicBool,
-    wakers: WakerMap,
+    wakers: WakerSet,
     value: UnsafeCell<T>,
 }
 
@@ -63,7 +63,7 @@ impl<T> Mutex<T> {
     pub fn new(t: T) -> Mutex<T> {
         Mutex {
             locked: AtomicBool::new(false),
-            wakers: WakerMap::new(),
+            wakers: WakerSet::new(),
             value: UnsafeCell::new(t),
         }
     }
@@ -114,7 +114,7 @@ impl<T> Mutex<T> {
                         }
 
                         // Try locking again because it's possible the mutex got unlocked just
-                        // before the current task was inserted into the waker map.
+                        // before the current task was inserted into the waker set.
                         match self.mutex.try_lock() {
                             Some(guard) => Poll::Ready(guard),
                             None => Poll::Pending,
@@ -123,7 +123,7 @@ impl<T> Mutex<T> {
                 };
 
                 if poll.is_ready() {
-                    // If the current task is in the map, remove it.
+                    // If the current task is in the set, remove it.
                     if let Some(key) = self.opt_key.take() {
                         self.mutex.wakers.complete(key);
                     }
@@ -135,7 +135,7 @@ impl<T> Mutex<T> {
 
         impl<T> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task is still in the map, that means it is being cancelled now.
+                // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
                     self.mutex.wakers.cancel(key);
                 }
@@ -265,7 +265,7 @@ impl<T> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
         // Use `AcqRel` to:
         // 1. Release changes made to the value inside the mutex.
-        // 2. Acquire changes made to the waker map.
+        // 2. Acquire changes made to the waker set.
         self.0.locked.swap(false, Ordering::AcqRel);
 
         // Notify one blocked `lock()` operation.
