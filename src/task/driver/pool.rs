@@ -112,7 +112,7 @@ fn find_runnable() -> Option<Runnable> {
         let local = unsafe { (*queue.get()).as_ref().unwrap() };
 
         // Pop a task from the local queue, if not empty.
-        let task = local.pop().or_else(|| {
+        local.pop().or_else(|| {
             // Otherwise, we need to look for a task elsewhere.
             iter::repeat_with(|| {
                 // Try stealing a batch of tasks from the global queue.
@@ -139,8 +139,6 @@ fn find_runnable() -> Option<Runnable> {
             .find(|s| !s.is_retry())
             // Extract the stolen task, if there is one.
             .and_then(|s| s.success())
-        });
-
-        task
+        })
     })
 }
