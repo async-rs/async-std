@@ -14,6 +14,7 @@ use slab::Slab;
 use crate::task::{Context, Waker};
 
 /// Set when the entry list is locked.
+#[allow(clippy::identity_op)]
 const LOCKED: usize = 1 << 0;
 
 /// Set when there are tasks for `notify_one()` to wake.
