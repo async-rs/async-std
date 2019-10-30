@@ -1,12 +1,13 @@
-use futures::select;
-use futures::FutureExt;
+use std::sync::Arc;
 
 use async_std::{
     io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
     prelude::*,
     task,
+    future::select,
 };
+
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -15,31 +16,28 @@ pub(crate) fn main() -> Result<()> {
 }
 
 async fn try_main(addr: impl ToSocketAddrs) -> Result<()> {
-    let stream = TcpStream::connect(addr).await?;
-    let (reader, mut writer) = (&stream, &stream);
-    let reader = BufReader::new(reader);
-    let mut lines_from_server = futures::StreamExt::fuse(reader.lines());
+    let stream = Arc::new(TcpStream::connect(addr).await?);
+    let (reader, writer) = (stream.clone(), stream.clone());
 
-    let stdin = BufReader::new(stdin());
-    let mut lines_from_stdin = futures::StreamExt::fuse(stdin.lines());
-    loop {
-        select! {
-            line = lines_from_server.next().fuse() => match line {
-                Some(line) => {
-                    let line = line?;
-                    println!("{}", line);
-                },
-                None => break,
-            },
-            line = lines_from_stdin.next().fuse() => match line {
-                Some(line) => {
-                    let line = line?;
-                    writer.write_all(line.as_bytes()).await?;
-                    writer.write_all(b"\n").await?;
-                }
-                None => break,
-            }
-        }
-    }
-    Ok(())
+    let incoming = task::spawn(async move {
+         let mut messages = BufReader::new(&*reader).lines();
+         while let Some(message) = messages.next().await {
+             let message = message?;
+             println!("{}", message);
+         }
+         Ok(())
+    });
+
+    let outgoing = task::spawn(async move {
+         let mut stdin = BufReader::new(stdin()).lines();
+
+         while let Some(line) = stdin.next().await {
+             let line = line?;
+             let message = format!("{}\n", line);
+             (&*writer).write_all(message.as_bytes()).await?;
+         }
+         Ok(())
+    });
+
+    select!(incoming, outgoing).await
 }
