@@ -10,6 +10,7 @@ use crate::future::Future;
 use crate::task::{Context, Poll, Waker};
 
 /// Set if a write lock is held.
+#[allow(clippy::identity_op)]
 const WRITE_LOCK: usize = 1 << 0;
 
 /// Set if there are read operations blocked on the lock.
