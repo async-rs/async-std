@@ -1583,7 +1583,7 @@ extension_trait! {
            predicate: P
         ) -> impl Future<Output = Option<usize>>  [PositionFuture<Self, P>]
         where
-            Self: Sized + Stream,
+            Self: Sized,
             P: FnMut(&Self::Item) -> bool,
         {
             PositionFuture::new(self, predicate)
