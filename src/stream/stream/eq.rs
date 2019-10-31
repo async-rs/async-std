@@ -34,10 +34,10 @@ where
 }
 
 impl<L: Stream, R: Stream> Future for EqFuture<L, R>
-    where
-        L: Stream + Sized,
-        R: Stream + Sized,
-        L::Item: PartialEq<R::Item>,
+where
+    L: Stream + Sized,
+    R: Stream + Sized,
+    L::Item: PartialEq<R::Item>,
 {
     type Output = bool;
 
@@ -53,8 +53,10 @@ impl<L: Stream, R: Stream> Future for EqFuture<L, R>
             }
 
             match (l_val, r_val) {
-                (Some(l), Some(r)) if l != r => {return Poll::Ready(false);},
-                _ => {},
+                (Some(l), Some(r)) if l != r => {
+                    return Poll::Ready(false);
+                }
+                _ => {}
             }
         }
     }
