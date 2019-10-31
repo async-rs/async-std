@@ -46,6 +46,7 @@ mod min_by_key;
 mod next;
 mod nth;
 mod partial_cmp;
+mod position;
 mod scan;
 mod skip;
 mod skip_while;
@@ -76,6 +77,7 @@ use min_by_key::MinByKeyFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
+use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
 
@@ -1546,6 +1548,45 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             PartialCmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Searches for an element in a Stream that satisfies a predicate, returning 
+            its index.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let res = s.clone().position(|x| *x == 1).await;
+            assert_eq!(res, Some(0));
+
+            let res = s.clone().position(|x| *x == 2).await;
+            assert_eq!(res, Some(1));
+
+            let res = s.clone().position(|x| *x == 3).await;
+            assert_eq!(res, Some(2));
+
+            let res = s.clone().position(|x| *x == 4).await;
+            assert_eq!(res, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn position<P>(
+           self,
+           predicate: P
+        ) -> impl Future<Output = Option<usize>>  [PositionFuture<Self, P>]
+        where
+            Self: Sized + Stream,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            PositionFuture::new(self, predicate)
         }
 
         #[doc = r#"
