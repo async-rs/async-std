@@ -183,7 +183,7 @@ impl<T> Mutex<T> {
     /// # })
     /// ```
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
-        if !self.locked.swap(true, Ordering::Acquire) {
+        if !self.locked.swap(true, Ordering::SeqCst) {
             Some(MutexGuard(self))
         } else {
             None
@@ -263,10 +263,8 @@ unsafe impl<T: Sync> Sync for MutexGuard<'_, T> {}
 
 impl<T> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
-        // Use `AcqRel` to:
-        // 1. Release changes made to the value inside the mutex.
-        // 2. Acquire changes made to the waker set.
-        self.0.locked.swap(false, Ordering::AcqRel);
+        // Use `SeqCst` ordering to synchronize with `WakerSet::insert()` and `WakerSet::update()`.
+        self.0.locked.store(false, Ordering::SeqCst);
 
         // Notify one blocked `lock()` operation.
         self.0.wakers.notify_one();
