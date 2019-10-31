@@ -44,6 +44,7 @@ mod map;
 mod max_by;
 mod min_by;
 mod min_by_key;
+mod ne;
 mod next;
 mod nth;
 mod partial_cmp;
@@ -75,6 +76,7 @@ use lt::LtFuture;
 use max_by::MaxByFuture;
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
+use ne::NeFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
@@ -1586,6 +1588,39 @@ extension_trait! {
             <Self as Stream>::Item: Ord
         {
             CmpFuture::new(self, other)
+        }
+
+           #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            not equal to those of another.
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_ne:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_ne:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().ne(single.clone()).await, false);
+            assert_eq!(single_ne.clone().ne(single.clone()).await, true);
+            assert_eq!(multi.clone().ne(single_ne.clone()).await, true);
+            assert_eq!(multi_ne.clone().ne(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ne<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [NeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            NeFuture::new(self, other)
         }
 
         #[doc = r#"
