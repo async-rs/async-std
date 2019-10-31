@@ -22,8 +22,8 @@ pin_project! {
 }
 
 impl<L: Stream, R: Stream> NeFuture<L, R>
-    where
-        L::Item: PartialEq<R::Item>,
+where
+    L::Item: PartialEq<R::Item>,
 {
     pub(super) fn new(l: L, r: R) -> Self {
         Self {
@@ -34,10 +34,10 @@ impl<L: Stream, R: Stream> NeFuture<L, R>
 }
 
 impl<L: Stream, R: Stream> Future for NeFuture<L, R>
-    where
-        L: Stream + Sized,
-        R: Stream + Sized,
-        L::Item: PartialEq<R::Item>,
+where
+    L: Stream + Sized,
+    R: Stream + Sized,
+    L::Item: PartialEq<R::Item>,
 {
     type Output = bool;
 
@@ -53,10 +53,13 @@ impl<L: Stream, R: Stream> Future for NeFuture<L, R>
             }
 
             match (l_val, r_val) {
-                (Some(l), Some(r)) if l == r => {continue;},
-                _ => { return Poll::Ready(true); },
+                (Some(l), Some(r)) if l == r => {
+                    continue;
+                }
+                _ => {
+                    return Poll::Ready(true);
+                }
             }
-
         }
     }
 }
