@@ -26,6 +26,7 @@ mod any;
 mod chain;
 mod cmp;
 mod enumerate;
+mod eq;
 mod filter;
 mod filter_map;
 mod find;
@@ -60,6 +61,7 @@ use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
 use enumerate::Enumerate;
+use eq::EqFuture;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
@@ -1620,6 +1622,42 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             GeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_eq:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_eq:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().eq(single.clone()).await, true);
+            assert_eq!(single_eq.clone().eq(single.clone()).await, false);
+            assert_eq!(multi.clone().eq(single_eq.clone()).await, false);
+            assert_eq!(multi_eq.clone().eq(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn eq<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [EqFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            EqFuture::new(self, other)
         }
 
         #[doc = r#"
