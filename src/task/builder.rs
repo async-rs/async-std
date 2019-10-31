@@ -44,8 +44,13 @@ impl Builder {
             });
         }
 
-        // Log completion on exit.
         let future = async move {
+            // Drop task-locals on exit.
+            defer! {
+                Task::get_current(|t| unsafe { t.drop_locals() });
+            }
+
+            // Log completion on exit.
             defer! {
                 if log_enabled!(log::Level::Trace) {
                     Task::get_current(|t| {
@@ -55,14 +60,7 @@ impl Builder {
                     });
                 }
             }
-            future.await
-        };
 
-        // Drop task-locals on exit.
-        let future = async move {
-            defer! {
-                Task::get_current(|t| unsafe { t.drop_locals() });
-            }
             future.await
         };
 
