@@ -46,6 +46,7 @@ mod min_by_key;
 mod next;
 mod nth;
 mod partial_cmp;
+mod peekable;
 mod scan;
 mod skip;
 mod skip_while;
@@ -84,6 +85,7 @@ pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
 pub use map::Map;
+pub use peekable::Peekable;
 pub use scan::Scan;
 pub use skip::Skip;
 pub use skip_while::SkipWhile;
@@ -1133,6 +1135,37 @@ extension_trait! {
                 f,
             }
         }
+
+        #[doc = r#"
+            ## Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s = s.peekable();
+
+            assert_eq!(s.next().await, Some(1));
+            assert_eq!(s.peek().await, Some(1));
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, Some(3));
+            assert_eq!(s.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        #[inline]
+        fn peekable(self) -> Peekable<Self>
+        where
+            Self: Sized,
+        {
+            Peekable::new(self)
+        }
+
 
         #[doc = r#"
             A stream adaptor similar to [`fold`] that holds internal state and produces a new
