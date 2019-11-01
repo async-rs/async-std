@@ -3,7 +3,7 @@ use log::log_enabled;
 
 use crate::future::Future;
 use crate::io;
-use crate::task::driver;
+use crate::task::executor;
 use crate::task::{JoinHandle, Task};
 use crate::utils::abort_on_panic;
 
@@ -64,7 +64,10 @@ impl Builder {
             future.await
         };
 
-        Ok(submit(task, future))
+        let schedule = move |t| executor::schedule(Runnable(t));
+        let (task, handle) = async_task::spawn(future, schedule, task);
+        task.schedule();
+        Ok(JoinHandle::new(handle))
     }
 }
 
@@ -78,16 +81,4 @@ impl Runnable {
             Task::set_current(self.0.tag(), || abort_on_panic(|| self.0.run()));
         }
     }
-}
-
-/// Submits a task for execution by the driver.
-pub(crate) fn submit<F, T>(task: Task, future: F) -> JoinHandle<T>
-where
-    F: Future<Output = T> + Send + 'static,
-    T: Send + 'static,
-{
-    let schedule = move |t| driver::schedule(Runnable(t));
-    let (task, handle) = async_task::spawn(future, schedule, task);
-    task.schedule();
-    JoinHandle::new(handle)
 }

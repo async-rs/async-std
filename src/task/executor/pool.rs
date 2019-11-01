@@ -6,7 +6,7 @@ use std::time::Duration;
 use crossbeam_deque::{Injector, Stealer, Worker};
 use once_cell::sync::Lazy;
 
-use crate::task::driver::Sleepers;
+use crate::task::executor::Sleepers;
 use crate::task::Runnable;
 use crate::utils::{abort_on_panic, random};
 
@@ -33,7 +33,7 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
         stealers.push(worker.stealer());
 
         thread::Builder::new()
-            .name("async-task-driver".to_string())
+            .name("async-std/executor".to_string())
             .spawn(|| abort_on_panic(|| main_loop(worker)))
             .expect("cannot start a thread driving tasks");
     }

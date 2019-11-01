@@ -145,7 +145,7 @@ use task_local::LocalsMap;
 mod block_on;
 mod builder;
 mod current;
-mod driver;
+mod executor;
 mod join_handle;
 mod sleep;
 mod spawn;

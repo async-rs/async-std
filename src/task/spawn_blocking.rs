@@ -61,7 +61,7 @@ struct Pool {
 static POOL: Lazy<Pool> = Lazy::new(|| {
     for _ in 0..2 {
         thread::Builder::new()
-            .name("async-blocking-driver".to_string())
+            .name("async-std/blocking".to_string())
             .spawn(|| {
                 abort_on_panic(|| {
                     for task in &POOL.receiver {
@@ -105,7 +105,7 @@ fn maybe_create_another_blocking_thread() {
     let rand_sleep_ms = u64::from(random(10_000));
 
     thread::Builder::new()
-        .name("async-blocking-driver-dynamic".to_string())
+        .name("async-std/blocking".to_string())
         .spawn(move || {
             let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
 
