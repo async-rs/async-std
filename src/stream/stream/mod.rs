@@ -85,7 +85,7 @@ use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
-use try_for_each::TryForEeachFuture;
+use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
 pub use filter::Filter;
@@ -1396,12 +1396,12 @@ extension_trait! {
         fn try_for_each<F, E>(
             self,
             f: F,
-        ) -> impl Future<Output = E> [TryForEeachFuture<Self, F, Self::Item, E>]
+        ) -> impl Future<Output = E> [TryForEachFuture<Self, F, Self::Item, E>]
         where
             Self: Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
         {
-            TryForEeachFuture::new(self, f)
+            TryForEachFuture::new(self, f)
         }
 
         #[doc = r#"
