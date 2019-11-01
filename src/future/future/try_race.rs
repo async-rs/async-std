@@ -9,7 +9,7 @@ use std::future::Future;
 pin_project! {
     #[allow(missing_docs)]
     #[allow(missing_debug_implementations)]
-    pub struct TrySelect<L, R>
+    pub struct TryRace<L, R>
     where
         L: Future,
         R: Future<Output = L::Output>
@@ -19,7 +19,7 @@ pin_project! {
     }
 }
 
-impl<L, R> TrySelect<L, R>
+impl<L, R> TryRace<L, R>
 where
     L: Future,
     R: Future<Output = L::Output>,
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<L, R, T, E> Future for TrySelect<L, R>
+impl<L, R, T, E> Future for TryRace<L, R>
 where
     L: Future<Output = Result<T, E>>,
     R: Future<Output = L::Output>,

@@ -1,13 +1,13 @@
 cfg_unstable! {
     mod delay;
-    mod select;
-    mod try_select;
+    mod race;
+    mod try_race;
 
     use std::time::Duration;
 
     use delay::DelayFuture;
-    use select::Select;
-    use try_select::TrySelect;
+    use race::Race;
+    use try_race::TryRace;
 }
 
 extension_trait! {
@@ -160,22 +160,22 @@ extension_trait! {
             let b = future::ready(1u8);
             let c = future::ready(2u8);
 
-            let f = a.select(b).select(c);
+            let f = a.race(b).race(c);
             assert_eq!(f.await, 1u8);
             # });
             ```
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn select<F>(
+        fn race<F>(
             self,
             other: F
-        ) -> impl Future<Output = <Self as std::future::Future>::Output> [Select<Self, F>]
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [Race<Self, F>]
         where
             Self: std::future::Future + Sized,
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
-            Select::new(self, other)
+            Race::new(self, other)
         }
 
         #[doc = r#"
@@ -183,7 +183,7 @@ extension_trait! {
 
             Awaits multiple futures simultaneously, returning all results once complete.
 
-            `try_select` is similar to [`select`], but keeps going if a future
+            `try_race` is similar to [`race`], but keeps going if a future
             resolved to an error until all futures have been resolved. In which case
             an error is returned.
 
@@ -203,7 +203,7 @@ extension_trait! {
             let b = future::ready(Err(Error::from(ErrorKind::Other)));
             let c = future::ready(Ok(1u8));
 
-            let f = a.try_select(b).try_select(c);
+            let f = a.try_race(b).try_race(c);
             assert_eq!(f.await?, 1u8);
             #
             # Ok(()) }) }
@@ -211,15 +211,15 @@ extension_trait! {
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn try_select<F: std::future::Future, T, E>(
+        fn try_race<F: std::future::Future, T, E>(
             self,
             other: F
-        ) -> impl Future<Output = <Self as std::future::Future>::Output> [TrySelect<Self, F>]
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [TryRace<Self, F>]
         where
             Self: std::future::Future<Output = Result<T, E>> + Sized,
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
-            TrySelect::new(self, other)
+            TryRace::new(self, other)
         }
     }
 
