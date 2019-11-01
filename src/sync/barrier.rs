@@ -10,7 +10,9 @@ use crate::sync::Mutex;
 /// ```
 /// # async_std::task::block_on(async {
 /// #
-/// use async_std::sync::{Arc, Barrier};
+/// use std::sync::Arc;
+///
+/// use async_std::sync::Barrier;
 /// use async_std::task;
 ///
 /// let mut handles = Vec::with_capacity(10);
@@ -121,7 +123,9 @@ impl Barrier {
     /// ```
     /// # async_std::task::block_on(async {
     /// #
-    /// use async_std::sync::{Arc, Barrier};
+    /// use std::sync::Arc;
+    ///
+    /// use async_std::sync::Barrier;
     /// use async_std::task;
     ///
     /// let mut handles = Vec::with_capacity(10);

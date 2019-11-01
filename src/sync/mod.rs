@@ -121,10 +121,6 @@
 //! The following is an overview of the available synchronization
 //! objects:
 //!
-//! - [`Arc`]: Atomically Reference-Counted pointer, which can be used
-//!   in multithreaded environments to prolong the lifetime of some
-//!   data until all the threads have finished using it.
-//!
 //! - [`Barrier`]: Ensures multiple threads will wait for each other
 //!   to reach a point in the program, before continuing execution all
 //!   together.
@@ -142,7 +138,6 @@
 //!   writer at a time. In some cases, this can be more efficient than
 //!   a mutex.
 //!
-//! [`Arc`]: crate::sync::Arc
 //! [`Barrier`]: crate::sync::Barrier
 //! [`Condvar`]: crate::sync::Condvar
 //! [`channel`]: fn.channel.html
@@ -175,6 +170,8 @@
 //! # })
 //! ```
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
 
