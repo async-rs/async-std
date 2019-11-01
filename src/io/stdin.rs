@@ -1,4 +1,4 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::pin::Pin;
 use std::sync::Mutex;
 
@@ -176,9 +176,7 @@ impl Stdin {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StdinLock<'static> {
-        lazy_static! {
-            static ref STDIN: std::io::Stdin = std::io::stdin();
-        }
+        static STDIN: Lazy<std::io::Stdin> = Lazy::new(|| std::io::stdin());
 
         blocking::spawn(move || StdinLock(STDIN.lock())).await
     }

@@ -1,4 +1,4 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::io::Write as StdWrite;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -120,9 +120,7 @@ impl Stderr {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StderrLock<'static> {
-        lazy_static! {
-            static ref STDERR: std::io::Stderr = std::io::stderr();
-        }
+        static STDERR: Lazy<std::io::Stderr> = Lazy::new(|| std::io::stderr());
 
         blocking::spawn(move || StderrLock(STDERR.lock())).await
     }

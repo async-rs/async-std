@@ -1,4 +1,4 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::io::Write as StdWrite;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -120,9 +120,7 @@ impl Stdout {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StdoutLock<'static> {
-        lazy_static! {
-            static ref STDOUT: std::io::Stdout = std::io::stdout();
-        }
+        static STDOUT: Lazy<std::io::Stdout> = Lazy::new(|| std::io::stdout());
 
         blocking::spawn(move || StdoutLock(STDOUT.lock())).await
     }
