@@ -95,27 +95,31 @@ fn maybe_create_another_blocking_thread() {
         return;
     }
 
-    // We want to avoid having all threads terminate at
-    // exactly the same time, causing thundering herd
-    // effects. We want to stagger their destruction over
-    // 10 seconds or so to make the costs fade into
-    // background noise.
-    //
-    // Generate a simple random number of milliseconds
-    let rand_sleep_ms = u64::from(random(10_000));
+    let n_to_spawn = std::cmp::min(2 + (workers / 10), 10);
 
-    thread::Builder::new()
-        .name("async-std/blocking".to_string())
-        .spawn(move || {
-            let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
+    for _ in 0..n_to_spawn {
+        // We want to avoid having all threads terminate at
+        // exactly the same time, causing thundering herd
+        // effects. We want to stagger their destruction over
+        // 10 seconds or so to make the costs fade into
+        // background noise.
+        //
+        // Generate a simple random number of milliseconds
+        let rand_sleep_ms = u64::from(random(10_000));
 
-            DYNAMIC_THREAD_COUNT.fetch_add(1, Ordering::Relaxed);
-            while let Ok(task) = POOL.receiver.recv_timeout(wait_limit) {
-                abort_on_panic(|| task.run());
-            }
-            DYNAMIC_THREAD_COUNT.fetch_sub(1, Ordering::Relaxed);
-        })
-        .expect("cannot start a dynamic thread driving blocking tasks");
+        thread::Builder::new()
+            .name("async-std/blocking".to_string())
+            .spawn(move || {
+                let wait_limit = Duration::from_millis(1000 + rand_sleep_ms);
+
+                DYNAMIC_THREAD_COUNT.fetch_add(1, Ordering::Relaxed);
+                while let Ok(task) = POOL.receiver.recv_timeout(wait_limit) {
+                    abort_on_panic(|| task.run());
+                }
+                DYNAMIC_THREAD_COUNT.fetch_sub(1, Ordering::Relaxed);
+            })
+            .expect("cannot start a dynamic thread driving blocking tasks");
+    }
 }
 
 // Enqueues work, attempting to send to the threadpool in a
