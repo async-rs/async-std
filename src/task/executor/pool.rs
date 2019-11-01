@@ -126,13 +126,9 @@ fn find_runnable() -> Option<Runnable> {
 
                         // Try stealing a batch of tasks from each local queue starting from the
                         // chosen point.
-                        pool.stealers
-                            .iter()
-                            .chain(pool.stealers.iter())
-                            .skip(start)
-                            .take(len)
-                            .map(|s| s.steal_batch_and_pop(&local))
-                            .collect()
+                        let (l, r) = pool.stealers.split_at(start);
+                        let rotated = r.iter().chain(l.iter());
+                        rotated.map(|s| s.steal_batch_and_pop(&local)).collect()
                     })
             })
             // Loop while no task was stolen and any steal operation needs to be retried.
