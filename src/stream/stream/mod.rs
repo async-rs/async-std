@@ -26,6 +26,7 @@ mod any;
 mod chain;
 mod cmp;
 mod enumerate;
+mod eq;
 mod filter;
 mod filter_map;
 mod find;
@@ -40,10 +41,15 @@ mod last;
 mod le;
 mod lt;
 mod map;
+mod max_by;
+mod min;
 mod min_by;
+mod min_by_key;
+mod ne;
 mod next;
 mod nth;
 mod partial_cmp;
+mod position;
 mod scan;
 mod skip;
 mod skip_while;
@@ -58,6 +64,7 @@ use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
 use enumerate::Enumerate;
+use eq::EqFuture;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
@@ -68,10 +75,15 @@ use gt::GtFuture;
 use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
+use max_by::MaxByFuture;
+use min::MinFuture;
 use min_by::MinByFuture;
+use min_by_key::MinByKeyFuture;
+use ne::NeFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
+use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEeachFuture;
 
@@ -505,9 +517,11 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Transforms this `Stream` into a "fused" `Stream` such that after the first time
-            `poll` returns `Poll::Ready(None)`, all future calls to `poll` will also return
-            `Poll::Ready(None)`.
+            Creates a stream which ends after the first `None`.
+
+            After a stream returns `None`, future calls may or may not yield `Some(T)` again.
+            `fuse()` adapts an iterator, ensuring that after a `None` is given, it will always
+            return `None` forever.
 
             # Examples
 
@@ -678,6 +692,43 @@ extension_trait! {
             FilterMap::new(self, f)
         }
 
+         #[doc = r#"
+            Returns the element that gives the minimum value with respect to the
+            specified key function. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<i32> = vec![1, 2, -3].into_iter().collect();
+
+            let min = s.clone().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, Some(1));
+
+            let min = VecDeque::<isize>::new().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min_by_key<K>(
+            self,
+            key_by: K,
+        ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, K>]
+        where
+            Self: Sized,
+            Self::Item: Ord,
+            K: FnMut(&Self::Item) -> Self::Item,
+        {
+            MinByKeyFuture::new(self, key_by)
+        }
+
         #[doc = r#"
             Returns the element that gives the minimum value with respect to the
             specified comparison function. If several elements are equally minimum,
@@ -715,6 +766,79 @@ extension_trait! {
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
             MinByFuture::new(self, compare)
+        }
+
+        #[doc = r#"
+            Returns the element that gives the minimum value. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let min = s.clone().min().await;
+            assert_eq!(min, Some(1));
+
+            let min = VecDeque::<usize>::new().min().await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min<F>(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [MinFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MinFuture::new(self)
+        }
+
+         #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified comparison function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+
+            let max = s.clone().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, Some(3));
+
+            let max = s.max_by(|x, y| y.cmp(x)).await;
+            assert_eq!(max, Some(1));
+
+            let max = VecDeque::<usize>::new().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by<F>(
+            self,
+            compare: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MaxByFuture::new(self, compare)
         }
 
         #[doc = r#"
@@ -1467,6 +1591,45 @@ extension_trait! {
         }
 
         #[doc = r#"
+            Searches for an element in a Stream that satisfies a predicate, returning 
+            its index.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let res = s.clone().position(|x| *x == 1).await;
+            assert_eq!(res, Some(0));
+
+            let res = s.clone().position(|x| *x == 2).await;
+            assert_eq!(res, Some(1));
+
+            let res = s.clone().position(|x| *x == 3).await;
+            assert_eq!(res, Some(2));
+
+            let res = s.clone().position(|x| *x == 4).await;
+            assert_eq!(res, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn position<P>(
+           self,
+           predicate: P
+        ) -> impl Future<Output = Option<usize>>  [PositionFuture<Self, P>]
+        where
+            Self: Sized,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            PositionFuture::new(self, predicate)
+        }
+
+        #[doc = r#"
             Lexicographically compares the elements of this `Stream` with those
             of another using 'Ord'.
 
@@ -1504,6 +1667,39 @@ extension_trait! {
             CmpFuture::new(self, other)
         }
 
+           #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            not equal to those of another.
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_ne:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_ne:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().ne(single.clone()).await, false);
+            assert_eq!(single_ne.clone().ne(single.clone()).await, true);
+            assert_eq!(multi.clone().ne(single_ne.clone()).await, true);
+            assert_eq!(multi_ne.clone().ne(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ne<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [NeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            NeFuture::new(self, other)
+        }
+
         #[doc = r#"
             Determines if the elements of this `Stream` are lexicographically
             greater than or equal to those of another.
@@ -1538,6 +1734,42 @@ extension_trait! {
             <Self as Stream>::Item: PartialOrd<S::Item>,
         {
             GeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let single:     VecDeque<isize> = vec![1].into_iter().collect();
+            let single_eq:  VecDeque<isize> = vec![10].into_iter().collect();
+            let multi:      VecDeque<isize> = vec![1,2].into_iter().collect();
+            let multi_eq:   VecDeque<isize> = vec![1,5].into_iter().collect();
+            assert_eq!(single.clone().eq(single.clone()).await, true);
+            assert_eq!(single_eq.clone().eq(single.clone()).await, false);
+            assert_eq!(multi.clone().eq(single_eq.clone()).await, false);
+            assert_eq!(multi_eq.clone().eq(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn eq<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [EqFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            EqFuture::new(self, other)
         }
 
         #[doc = r#"

@@ -5,7 +5,7 @@ use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use super::worker;
 use crate::utils::abort_on_panic;
@@ -174,9 +174,7 @@ impl<T: Send + 'static> LocalKey<T> {
     fn key(&self) -> usize {
         #[cold]
         fn init(key: &AtomicUsize) -> usize {
-            lazy_static! {
-                static ref COUNTER: Mutex<usize> = Mutex::new(1);
-            }
+            static COUNTER: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(1));
 
             let mut counter = COUNTER.lock().unwrap();
             let prev = key.compare_and_swap(0, *counter, Ordering::AcqRel);

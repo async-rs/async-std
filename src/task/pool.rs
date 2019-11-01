@@ -3,7 +3,7 @@ use std::thread;
 
 use crossbeam_deque::{Injector, Stealer, Worker};
 use kv_log_macro::trace;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use super::sleepers::Sleepers;
 use super::task;
@@ -111,28 +111,26 @@ impl Pool {
 
 #[inline]
 pub(crate) fn get() -> &'static Pool {
-    lazy_static! {
-        static ref POOL: Pool = {
-            let num_threads = num_cpus::get().max(1);
-            let mut stealers = Vec::new();
+    static POOL: Lazy<Pool> = Lazy::new(|| {
+        let num_threads = num_cpus::get().max(1);
+        let mut stealers = Vec::new();
 
-            // Spawn worker threads.
-            for _ in 0..num_threads {
-                let worker = Worker::new_fifo();
-                stealers.push(worker.stealer());
+        // Spawn worker threads.
+        for _ in 0..num_threads {
+            let worker = Worker::new_fifo();
+            stealers.push(worker.stealer());
 
-                thread::Builder::new()
-                    .name("async-task-driver".to_string())
-                    .spawn(|| abort_on_panic(|| worker::main_loop(worker)))
-                    .expect("cannot start a thread driving tasks");
-            }
+            thread::Builder::new()
+                .name("async-task-driver".to_string())
+                .spawn(|| abort_on_panic(|| worker::main_loop(worker)))
+                .expect("cannot start a thread driving tasks");
+        }
 
-            Pool {
-                injector: Injector::new(),
-                stealers,
-                sleepers: Sleepers::new(),
-            }
-        };
-    }
+        Pool {
+            injector: Injector::new(),
+            stealers,
+            sleepers: Sleepers::new(),
+        }
+    });
     &*POOL
 }

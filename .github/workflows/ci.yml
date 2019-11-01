@@ -59,8 +59,10 @@ jobs:
 
     - uses: actions-rs/toolchain@v1
       with:
+          profile: minimal
           toolchain: ${{ steps.component.outputs.toolchain }}
           override: true
+          components: rustfmt
 
     - name: setup
       run: |

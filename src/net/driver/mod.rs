@@ -1,8 +1,8 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use lazy_static::lazy_static;
 use mio::{self, Evented};
+use once_cell::sync::Lazy;
 use slab::Slab;
 
 use crate::io;
@@ -100,25 +100,23 @@ impl Reactor {
     // }
 }
 
-lazy_static! {
-    /// The state of the global networking driver.
-    static ref REACTOR: Reactor = {
-        // Spawn a thread that waits on the poller for new events and wakes up tasks blocked on I/O
-        // handles.
-        std::thread::Builder::new()
-            .name("async-net-driver".to_string())
-            .spawn(move || {
-                // If the driver thread panics, there's not much we can do. It is not a
-                // recoverable error and there is no place to propagate it into so we just abort.
-                abort_on_panic(|| {
-                    main_loop().expect("async networking thread has panicked");
-                })
+/// The state of the global networking driver.
+static REACTOR: Lazy<Reactor> = Lazy::new(|| {
+    // Spawn a thread that waits on the poller for new events and wakes up tasks blocked on I/O
+    // handles.
+    std::thread::Builder::new()
+        .name("async-net-driver".to_string())
+        .spawn(move || {
+            // If the driver thread panics, there's not much we can do. It is not a
+            // recoverable error and there is no place to propagate it into so we just abort.
+            abort_on_panic(|| {
+                main_loop().expect("async networking thread has panicked");
             })
-            .expect("cannot start a thread driving blocking tasks");
+        })
+        .expect("cannot start a thread driving blocking tasks");
 
-        Reactor::new().expect("cannot initialize reactor")
-    };
-}
+    Reactor::new().expect("cannot initialize reactor")
+});
 
 /// Waits on the poller for new events and wakes up tasks blocked on I/O handles.
 fn main_loop() -> io::Result<()> {
