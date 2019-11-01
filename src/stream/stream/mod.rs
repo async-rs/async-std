@@ -774,11 +774,10 @@ extension_trait! {
 
             # Examples
 
-            ```
+            ```ignore
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-
             use async_std::prelude::*;
 
             let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();

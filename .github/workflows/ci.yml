@@ -52,15 +52,10 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
-    - id: component
-      uses: actions-rs/components-nightly@v1
-      with:
-        component: rustfmt
-
     - uses: actions-rs/toolchain@v1
       with:
           profile: minimal
-          toolchain: ${{ steps.component.outputs.toolchain }}
+          toolchain: nightly
           override: true
           components: rustfmt
 
