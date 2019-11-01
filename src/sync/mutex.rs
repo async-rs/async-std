@@ -2,18 +2,11 @@ use std::cell::UnsafeCell;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-use slab::Slab;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::future::Future;
-use crate::task::{Context, Poll, Waker};
-
-/// Set if the mutex is locked.
-const LOCK: usize = 1;
-
-/// Set if there are tasks blocked on the mutex.
-const BLOCKED: usize = 1 << 1;
+use crate::sync::WakerSet;
+use crate::task::{Context, Poll};
 
 /// A mutual exclusion primitive for protecting shared data.
 ///
@@ -49,8 +42,8 @@ const BLOCKED: usize = 1 << 1;
 /// # })
 /// ```
 pub struct Mutex<T> {
-    state: AtomicUsize,
-    blocked: std::sync::Mutex<Slab<Option<Waker>>>,
+    locked: AtomicBool,
+    wakers: WakerSet,
     value: UnsafeCell<T>,
 }
 
@@ -69,8 +62,8 @@ impl<T> Mutex<T> {
     /// ```
     pub fn new(t: T) -> Mutex<T> {
         Mutex {
-            state: AtomicUsize::new(0),
-            blocked: std::sync::Mutex::new(Slab::new()),
+            locked: AtomicBool::new(false),
+            wakers: WakerSet::new(),
             value: UnsafeCell::new(t),
         }
     }
@@ -105,75 +98,46 @@ impl<T> Mutex<T> {
         pub struct LockFuture<'a, T> {
             mutex: &'a Mutex<T>,
             opt_key: Option<usize>,
-            acquired: bool,
         }
 
         impl<'a, T> Future for LockFuture<'a, T> {
             type Output = MutexGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                match self.mutex.try_lock() {
-                    Some(guard) => {
-                        self.acquired = true;
-                        Poll::Ready(guard)
-                    }
+                let poll = match self.mutex.try_lock() {
+                    Some(guard) => Poll::Ready(guard),
                     None => {
-                        let mut blocked = self.mutex.blocked.lock().unwrap();
-
-                        // Register the current task.
+                        // Insert this lock operation.
                         match self.opt_key {
-                            None => {
-                                // Insert a new entry into the list of blocked tasks.
-                                let w = cx.waker().clone();
-                                let key = blocked.insert(Some(w));
-                                self.opt_key = Some(key);
-
-                                if blocked.len() == 1 {
-                                    self.mutex.state.fetch_or(BLOCKED, Ordering::Relaxed);
-                                }
-                            }
-                            Some(key) => {
-                                // There is already an entry in the list of blocked tasks. Just
-                                // reset the waker if it was removed.
-                                if blocked[key].is_none() {
-                                    let w = cx.waker().clone();
-                                    blocked[key] = Some(w);
-                                }
-                            }
+                            None => self.opt_key = Some(self.mutex.wakers.insert(cx)),
+                            Some(key) => self.mutex.wakers.update(key, cx),
                         }
 
                         // Try locking again because it's possible the mutex got unlocked just
-                        // before the current task was registered as a blocked task.
+                        // before the current task was inserted into the waker set.
                         match self.mutex.try_lock() {
-                            Some(guard) => {
-                                self.acquired = true;
-                                Poll::Ready(guard)
-                            }
+                            Some(guard) => Poll::Ready(guard),
                             None => Poll::Pending,
                         }
                     }
+                };
+
+                if poll.is_ready() {
+                    // If the current task is in the set, remove it.
+                    if let Some(key) = self.opt_key.take() {
+                        self.mutex.wakers.complete(key);
+                    }
                 }
+
+                poll
             }
         }
 
         impl<T> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
+                // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
-                    let mut blocked = self.mutex.blocked.lock().unwrap();
-                    let opt_waker = blocked.remove(key);
-
-                    if opt_waker.is_none() && !self.acquired {
-                        // We were awoken but didn't acquire the lock. Wake up another task.
-                        if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-                            if let Some(w) = opt_waker.take() {
-                                w.wake();
-                            }
-                        }
-                    }
-
-                    if blocked.is_empty() {
-                        self.mutex.state.fetch_and(!BLOCKED, Ordering::Relaxed);
-                    }
+                    self.mutex.wakers.cancel(key);
                 }
             }
         }
@@ -181,7 +145,6 @@ impl<T> Mutex<T> {
         LockFuture {
             mutex: self,
             opt_key: None,
-            acquired: false,
         }
         .await
     }
@@ -220,7 +183,7 @@ impl<T> Mutex<T> {
     /// # })
     /// ```
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
-        if self.state.fetch_or(LOCK, Ordering::Acquire) & LOCK == 0 {
+        if !self.locked.swap(true, Ordering::SeqCst) {
             Some(MutexGuard(self))
         } else {
             None
@@ -266,18 +229,15 @@ impl<T> Mutex<T> {
 
 impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.try_lock() {
-            None => {
-                struct LockedPlaceholder;
-                impl fmt::Debug for LockedPlaceholder {
-                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                        f.write_str("<locked>")
-                    }
-                }
-                f.debug_struct("Mutex")
-                    .field("data", &LockedPlaceholder)
-                    .finish()
+        struct Locked;
+        impl fmt::Debug for Locked {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("<locked>")
             }
+        }
+
+        match self.try_lock() {
+            None => f.debug_struct("Mutex").field("data", &Locked).finish(),
             Some(guard) => f.debug_struct("Mutex").field("data", &&*guard).finish(),
         }
     }
@@ -303,19 +263,11 @@ unsafe impl<T: Sync> Sync for MutexGuard<'_, T> {}
 
 impl<T> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
-        let state = self.0.state.fetch_and(!LOCK, Ordering::AcqRel);
+        // Use `SeqCst` ordering to synchronize with `WakerSet::insert()` and `WakerSet::update()`.
+        self.0.locked.store(false, Ordering::SeqCst);
 
-        // If there are any blocked tasks, wake one of them up.
-        if state & BLOCKED != 0 {
-            let mut blocked = self.0.blocked.lock().unwrap();
-
-            if let Some((_, opt_waker)) = blocked.iter_mut().next() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
-            }
-        }
+        // Notify one blocked `lock()` operation.
+        self.0.wakers.notify_one();
     }
 }
 
