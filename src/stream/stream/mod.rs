@@ -24,11 +24,9 @@
 mod all;
 mod any;
 mod chain;
-mod cycle;
 mod cmp;
-mod cycle;
 mod copied;
-mod cmp;
+mod cycle;
 mod enumerate;
 mod eq;
 mod filter;
@@ -68,6 +66,7 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
+use cycle::Cycle;
 use enumerate::Enumerate;
 use eq::EqFuture;
 use filter_map::FilterMap;
@@ -92,7 +91,6 @@ use partial_cmp::PartialCmpFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
-use cycle::Cycle;
 
 pub use chain::Chain;
 pub use copied::Copied;
