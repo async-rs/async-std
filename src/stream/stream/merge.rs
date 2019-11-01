@@ -38,13 +38,14 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
-        if let Poll::Ready(Some(item)) = this.left.poll_next(cx) {
-            // The first stream made progress. The Merge needs to be polled
-            // again to check the progress of the second stream.
-            cx.waker().wake_by_ref();
-            Poll::Ready(Some(item))
-        } else {
-            this.right.poll_next(cx)
+        match this.left.poll_next(cx) {
+            Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+            Poll::Ready(None) => this.right.poll_next(cx),
+            Poll::Pending => match this.right.poll_next(cx) {
+                Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+                Poll::Ready(None) => Poll::Pending,
+                Poll::Pending => Poll::Pending,
+            }
         }
     }
 }
