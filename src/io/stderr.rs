@@ -120,7 +120,7 @@ impl Stderr {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StderrLock<'static> {
-        static STDERR: Lazy<std::io::Stderr> = Lazy::new(|| std::io::stderr());
+        static STDERR: Lazy<std::io::Stderr> = Lazy::new(std::io::stderr);
 
         blocking::spawn(move || StderrLock(STDERR.lock())).await
     }

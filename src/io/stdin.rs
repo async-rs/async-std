@@ -176,7 +176,7 @@ impl Stdin {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StdinLock<'static> {
-        static STDIN: Lazy<std::io::Stdin> = Lazy::new(|| std::io::stdin());
+        static STDIN: Lazy<std::io::Stdin> = Lazy::new(std::io::stdin);
 
         blocking::spawn(move || StdinLock(STDIN.lock())).await
     }

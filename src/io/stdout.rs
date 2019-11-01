@@ -120,7 +120,7 @@ impl Stdout {
     /// # Ok(()) }) }
     /// ```
     pub async fn lock(&self) -> StdoutLock<'static> {
-        static STDOUT: Lazy<std::io::Stdout> = Lazy::new(|| std::io::stdout());
+        static STDOUT: Lazy<std::io::Stdout> = Lazy::new(std::io::stdout);
 
         blocking::spawn(move || StdoutLock(STDOUT.lock())).await
     }
