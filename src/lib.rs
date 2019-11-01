@@ -49,33 +49,46 @@
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "2048"]
 
-#[macro_use]
-mod utils;
-
-pub mod fs;
-pub mod future;
-pub mod io;
-pub mod net;
-pub mod os;
-pub mod path;
-pub mod prelude;
-pub mod stream;
-pub mod sync;
-pub mod task;
-
-cfg_unstable! {
-    pub mod pin;
-    pub mod process;
-
-    mod unit;
-    mod vec;
-    mod result;
-    mod option;
-    mod string;
-    mod collections;
-
-    #[doc(inline)]
-    pub use std::{write, writeln};
+/// Declares stable items.
+#[doc(hidden)]
+macro_rules! cfg_stable {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "stable")]
+            $item
+        )*
+    }
 }
 
-mod macros;
+cfg_stable! {
+    #[macro_use]
+    mod utils;
+
+    pub mod fs;
+    pub mod future;
+    pub mod io;
+    pub mod net;
+    pub mod os;
+    pub mod path;
+    pub mod prelude;
+    pub mod stream;
+    pub mod sync;
+    pub mod task;
+
+    cfg_unstable! {
+        pub mod pin;
+        pub mod process;
+
+        mod unit;
+        mod vec;
+        mod result;
+        mod option;
+        mod string;
+        mod collections;
+
+        #[doc(inline)]
+        pub use std::{write, writeln};
+    }
+
+    mod macros;
+}

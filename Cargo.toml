@@ -21,8 +21,10 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
+default = ["stable"]
 docs = ["unstable"]
 unstable = ["broadcaster"]
+stable = []
 
 [dependencies]
 async-macros = "1.0.0"
