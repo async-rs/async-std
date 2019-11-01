@@ -1,5 +1,4 @@
 use std::mem;
-use std::process;
 
 /// Calls a function and aborts if it panics.
 ///
@@ -10,7 +9,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 
     impl Drop for Bomb {
         fn drop(&mut self) {
-            process::abort();
+            std::process::abort();
         }
     }
 
@@ -18,6 +17,53 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
     let t = f();
     mem::forget(bomb);
     t
+}
+
+/// Generates a random number in `0..n`.
+pub fn random(n: u32) -> u32 {
+    use std::cell::Cell;
+    use std::num::Wrapping;
+
+    thread_local! {
+        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
+    }
+
+    RNG.with(|rng| {
+        // This is the 32-bit variant of Xorshift.
+        //
+        // Source: https://en.wikipedia.org/wiki/Xorshift
+        let mut x = rng.get();
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        rng.set(x);
+
+        // This is a fast alternative to `x % n`.
+        //
+        // Author: Daniel Lemire
+        // Source: https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+        ((u64::from(x.0)).wrapping_mul(u64::from(n)) >> 32) as u32
+    })
+}
+
+/// Defers evaluation of a block of code until the end of the scope.
+#[doc(hidden)]
+macro_rules! defer {
+    ($($body:tt)*) => {
+        let _guard = {
+            pub struct Guard<F: FnOnce()>(Option<F>);
+
+            impl<F: FnOnce()> Drop for Guard<F> {
+                fn drop(&mut self) {
+                    (self.0).take().map(|f| f());
+                }
+            }
+
+            Guard(Some(|| {
+                let _ = { $($body)* };
+            }))
+        };
+    };
 }
 
 /// Declares unstable items.

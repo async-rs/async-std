@@ -1,6 +1,6 @@
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Creates a new directory.
 ///
@@ -34,5 +34,5 @@ use crate::task::blocking;
 /// ```
 pub async fn create_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(move || std::fs::create_dir(path)).await
+    spawn_blocking(move || std::fs::create_dir(path)).await
 }
