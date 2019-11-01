@@ -1,14 +1,9 @@
 use std::cell::UnsafeCell;
 use std::error::Error;
 use std::fmt;
-use std::future::Future;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 
-use once_cell::sync::Lazy;
-
-use super::worker;
-use crate::utils::abort_on_panic;
+use crate::task::Task;
 
 /// Declares task-local values.
 ///
@@ -50,7 +45,7 @@ macro_rules! task_local {
 
             $crate::task::LocalKey {
                 __init,
-                __key: ::std::sync::atomic::AtomicUsize::new(0),
+                __key: ::std::sync::atomic::AtomicU32::new(0),
             }
         };
     );
@@ -71,7 +66,7 @@ pub struct LocalKey<T: Send + 'static> {
     pub __init: fn() -> T,
 
     #[doc(hidden)]
-    pub __key: AtomicUsize,
+    pub __key: AtomicU32,
 }
 
 impl<T: Send + 'static> LocalKey<T> {
@@ -154,14 +149,13 @@ impl<T: Send + 'static> LocalKey<T> {
     where
         F: FnOnce(&T) -> R,
     {
-        worker::get_task(|task| unsafe {
+        Task::get_current(|task| unsafe {
             // Prepare the numeric key, initialization function, and the map of task-locals.
             let key = self.key();
             let init = || Box::new((self.__init)()) as Box<dyn Send>;
-            let map = &task.metadata().local_map;
 
             // Get the value in the map of task-locals, or initialize and insert one.
-            let value: *const dyn Send = map.get_or_insert(key, init);
+            let value: *const dyn Send = task.locals().get_or_insert(key, init);
 
             // Call the closure with the value passed as an argument.
             f(&*(value as *const T))
@@ -171,24 +165,26 @@ impl<T: Send + 'static> LocalKey<T> {
 
     /// Returns the numeric key associated with this task-local.
     #[inline]
-    fn key(&self) -> usize {
+    fn key(&self) -> u32 {
         #[cold]
-        fn init(key: &AtomicUsize) -> usize {
-            static COUNTER: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(1));
+        fn init(key: &AtomicU32) -> u32 {
+            static COUNTER: AtomicU32 = AtomicU32::new(1);
 
-            let mut counter = COUNTER.lock().unwrap();
-            let prev = key.compare_and_swap(0, *counter, Ordering::AcqRel);
+            let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+            if counter > u32::max_value() / 2 {
+                std::process::abort();
+            }
 
-            if prev == 0 {
-                *counter += 1;
-                *counter - 1
-            } else {
-                prev
+            match key.compare_and_swap(0, counter, Ordering::AcqRel) {
+                0 => counter,
+                k => k,
             }
         }
 
-        let key = self.__key.load(Ordering::Acquire);
-        if key == 0 { init(&self.__key) } else { key }
+        match self.__key.load(Ordering::Acquire) {
+            0 => init(&self.__key),
+            k => k,
+        }
     }
 }
 
@@ -214,51 +210,55 @@ impl fmt::Display for AccessError {
 
 impl Error for AccessError {}
 
-/// A map that holds task-locals.
-pub(crate) struct Map {
-    /// A list of `(key, value)` entries sorted by the key.
-    entries: UnsafeCell<Vec<(usize, Box<dyn Send>)>>,
+/// A key-value entry in a map of task-locals.
+struct Entry {
+    /// Key identifying the task-local variable.
+    key: u32,
+
+    /// Value stored in this entry.
+    value: Box<dyn Send>,
 }
 
-impl Map {
+/// A map that holds task-locals.
+pub(crate) struct LocalsMap {
+    /// A list of key-value entries sorted by the key.
+    entries: UnsafeCell<Option<Vec<Entry>>>,
+}
+
+impl LocalsMap {
     /// Creates an empty map of task-locals.
-    pub fn new() -> Map {
-        Map {
-            entries: UnsafeCell::new(Vec::new()),
+    pub fn new() -> LocalsMap {
+        LocalsMap {
+            entries: UnsafeCell::new(Some(Vec::new())),
         }
     }
 
-    /// Returns a thread-local value associated with `key` or inserts one constructed by `init`.
+    /// Returns a task-local value associated with `key` or inserts one constructed by `init`.
     #[inline]
-    pub fn get_or_insert(&self, key: usize, init: impl FnOnce() -> Box<dyn Send>) -> &dyn Send {
-        let entries = unsafe { &mut *self.entries.get() };
-
-        let index = match entries.binary_search_by_key(&key, |e| e.0) {
-            Ok(i) => i,
-            Err(i) => {
-                entries.insert(i, (key, init()));
-                i
+    pub fn get_or_insert(&self, key: u32, init: impl FnOnce() -> Box<dyn Send>) -> &dyn Send {
+        match unsafe { (*self.entries.get()).as_mut() } {
+            None => panic!("can't access task-locals while the task is being dropped"),
+            Some(entries) => {
+                let index = match entries.binary_search_by_key(&key, |e| e.key) {
+                    Ok(i) => i,
+                    Err(i) => {
+                        let value = init();
+                        entries.insert(i, Entry { key, value });
+                        i
+                    }
+                };
+                &*entries[index].value
             }
-        };
-
-        &*entries[index].1
+        }
     }
 
     /// Clears the map and drops all task-locals.
-    pub fn clear(&self) {
-        let entries = unsafe { &mut *self.entries.get() };
-        entries.clear();
-    }
-}
-
-// Wrap the future into one that drops task-local variables on exit.
-pub(crate) unsafe fn add_finalizer<T>(f: impl Future<Output = T>) -> impl Future<Output = T> {
-    async move {
-        let res = f.await;
-
-        // Abort on panic because thread-local variables behave the same way.
-        abort_on_panic(|| worker::get_task(|task| task.metadata().local_map.clear()));
-
-        res
+    ///
+    /// This method is only safe to call at the end of the task.
+    pub unsafe fn clear(&self) {
+        // Since destructors may attempt to access task-locals, we musnt't hold a mutable reference
+        // to the `Vec` while dropping them. Instead, we first take the `Vec` out and then drop it.
+        let entries = (*self.entries.get()).take();
+        drop(entries);
     }
 }

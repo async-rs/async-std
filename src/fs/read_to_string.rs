@@ -1,6 +1,6 @@
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Reads the entire contents of a file as a string.
 ///
@@ -37,5 +37,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(move || std::fs::read_to_string(path)).await
+    spawn_blocking(move || std::fs::read_to_string(path)).await
 }

@@ -12,7 +12,7 @@ use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
-use crate::task::{blocking, Context, Poll};
+use crate::task::{spawn_blocking, Context, Poll};
 
 /// A Unix stream socket.
 ///
@@ -58,7 +58,7 @@ impl UnixStream {
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         let path = path.as_ref().to_owned();
 
-        blocking::spawn(move || {
+        spawn_blocking(move || {
             let std_stream = std::os::unix::net::UnixStream::connect(path)?;
             let mio_stream = mio_uds::UnixStream::from_stream(std_stream)?;
             Ok(UnixStream {
