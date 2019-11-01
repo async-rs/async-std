@@ -6,6 +6,12 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
+    /// A stream that created from iterator
+    ///
+    /// This stream is created by the [`from_iter`] function.
+    /// See it documentation for more.
+    ///
+    /// [`from_iter`]: fn.from_iter.html
     #[derive(Debug)]
     pub struct FromIter<I> {
         iter: I,
