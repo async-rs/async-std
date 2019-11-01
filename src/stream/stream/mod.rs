@@ -774,19 +774,19 @@ extension_trait! {
 
             # Examples
 
-            ```
+            ```ignore
             # fn main() { async_std::task::block_on(async {
             #
-            // use std::collections::VecDeque;
-            // use async_std::prelude::*;
+            use std::collections::VecDeque;
+            use async_std::prelude::*;
 
-            // let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
 
-            // let min = s.clone().min().await;
-            // assert_eq!(min, Some(1));
+            let min = s.clone().min().await;
+            assert_eq!(min, Some(1));
 
-            // let min = VecDeque::<usize>::new().min().await;
-            // assert_eq!(min, None);
+            let min = VecDeque::<usize>::new().min().await;
+            assert_eq!(min, None);
             #
             # }) }
             ```

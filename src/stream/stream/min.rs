@@ -1,5 +1,5 @@
+use std::cmp::{Ord, Ordering};
 use std::marker::PhantomData;
-use std::cmp::{Ordering, Ord};
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
