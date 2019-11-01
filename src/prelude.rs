@@ -36,6 +36,8 @@ pub use crate::io::seek::SeekExt as _;
 pub use crate::io::write::WriteExt as _;
 #[doc(hidden)]
 pub use crate::stream::stream::StreamExt as _;
+#[doc(hidden)]
+pub use crate::task_local;
 
 cfg_unstable! {
     #[doc(no_inline)]
