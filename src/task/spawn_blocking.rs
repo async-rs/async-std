@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use once_cell::sync::Lazy;
 
 use crate::task::{JoinHandle, Task};
@@ -79,7 +79,7 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
     // before being acted on by a core. This helps keep
     // latency snappy in the overall async system by
     // reducing bufferbloat.
-    let (sender, receiver) = bounded(0);
+    let (sender, receiver) = unbounded();
     Pool { sender, receiver }
 });
 
