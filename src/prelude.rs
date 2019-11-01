@@ -23,6 +23,8 @@ pub use crate::io::Seek as _;
 pub use crate::io::Write as _;
 #[doc(no_inline)]
 pub use crate::stream::Stream;
+#[doc(no_inline)]
+pub use crate::task_local;
 
 #[doc(hidden)]
 pub use crate::future::future::FutureExt as _;
@@ -36,8 +38,6 @@ pub use crate::io::seek::SeekExt as _;
 pub use crate::io::write::WriteExt as _;
 #[doc(hidden)]
 pub use crate::stream::stream::StreamExt as _;
-#[doc(hidden)]
-pub use crate::task_local;
 
 cfg_unstable! {
     #[doc(no_inline)]
