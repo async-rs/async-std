@@ -302,6 +302,7 @@
 
 pub use empty::{empty, Empty};
 pub use from_fn::{from_fn, FromFn};
+pub use from_iter::{from_iter, FromIter};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
@@ -313,6 +314,7 @@ pub(crate) mod stream;
 
 mod empty;
 mod from_fn;
+mod from_iter;
 mod once;
 mod repeat;
 mod repeat_with;

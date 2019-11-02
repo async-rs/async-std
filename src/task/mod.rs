@@ -126,63 +126,35 @@ pub use async_macros::ready;
 
 pub use block_on::block_on;
 pub use builder::Builder;
-pub use pool::spawn;
+pub use current::current;
+pub use join_handle::JoinHandle;
 pub use sleep::sleep;
-pub use task::{JoinHandle, Task, TaskId};
+pub use spawn::spawn;
+pub use task::Task;
+pub use task_id::TaskId;
 pub use task_local::{AccessError, LocalKey};
-pub use worker::current;
+
+#[cfg(any(feature = "unstable", test))]
+pub use spawn_blocking::spawn_blocking;
+#[cfg(not(any(feature = "unstable", test)))]
+pub(crate) use spawn_blocking::spawn_blocking;
+
+use builder::Runnable;
+use task_local::LocalsMap;
 
 mod block_on;
 mod builder;
-mod pool;
+mod current;
+mod executor;
+mod join_handle;
 mod sleep;
-mod sleepers;
+mod spawn;
+mod spawn_blocking;
 mod task;
+mod task_id;
 mod task_local;
-mod worker;
-
-pub(crate) mod blocking;
 
 cfg_unstable! {
-    mod yield_now;
     pub use yield_now::yield_now;
-}
-
-/// Spawns a blocking task.
-///
-/// The task will be spawned onto a thread pool specifically dedicated to blocking tasks. This
-/// is useful to prevent long-running synchronous operations from blocking the main futures
-/// executor.
-///
-/// See also: [`task::block_on`], [`task::spawn`].
-///
-/// [`task::block_on`]: fn.block_on.html
-/// [`task::spawn`]: fn.spawn.html
-///
-/// # Examples
-///
-/// Basic usage:
-///
-/// ```
-/// # async_std::task::block_on(async {
-/// #
-/// use async_std::task;
-///
-/// task::spawn_blocking(|| {
-///     println!("long-running task here");
-/// }).await;
-/// #
-/// # })
-/// ```
-// Once this function stabilizes we should merge `blocking::spawn` into this so
-// all code in our crate uses `task::blocking` too.
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[inline]
-pub fn spawn_blocking<F, R>(f: F) -> task::JoinHandle<R>
-where
-    F: FnOnce() -> R + Send + 'static,
-    R: Send + 'static,
-{
-    blocking::spawn(f)
+    mod yield_now;
 }

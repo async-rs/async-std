@@ -1,7 +1,7 @@
+use std::pin::Pin;
+
 use crate::future::Future;
 use crate::task::{Context, Poll};
-
-use std::pin::Pin;
 
 /// Cooperatively gives up a timeslice to the task scheduler.
 ///

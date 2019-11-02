@@ -2,7 +2,7 @@ use std::future::Future;
 
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// A builder for creating directories with configurable options.
 ///
@@ -107,7 +107,7 @@ impl DirBuilder {
         }
 
         let path = path.as_ref().to_owned();
-        async move { blocking::spawn(move || builder.create(path)).await }
+        async move { spawn_blocking(move || builder.create(path)).await }
     }
 }
 

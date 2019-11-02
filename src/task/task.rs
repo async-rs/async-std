@@ -1,31 +1,74 @@
+use std::cell::Cell;
 use std::fmt;
-use std::future::Future;
-use std::i64;
-use std::mem;
-use std::num::NonZeroU64;
-use std::pin::Pin;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::mem::ManuallyDrop;
+use std::ptr;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::sync::Arc;
 
-use super::task_local;
-use crate::task::{Context, Poll};
+use crate::task::{LocalsMap, TaskId};
+use crate::utils::abort_on_panic;
+
+thread_local! {
+    /// A pointer to the currently running task.
+    static CURRENT: Cell<*const Task> = Cell::new(ptr::null_mut());
+}
+
+/// The inner representation of a task handle.
+struct Inner {
+    /// The task ID.
+    id: TaskId,
+
+    /// The optional task name.
+    name: Option<Box<str>>,
+
+    /// The map holding task-local values.
+    locals: LocalsMap,
+}
+
+impl Inner {
+    #[inline]
+    fn new(name: Option<String>) -> Inner {
+        Inner {
+            id: TaskId::generate(),
+            name: name.map(String::into_boxed_str),
+            locals: LocalsMap::new(),
+        }
+    }
+}
 
 /// A handle to a task.
-#[derive(Clone)]
-pub struct Task(Arc<Metadata>);
+pub struct Task {
+    /// The inner representation.
+    ///
+    /// This pointer is lazily initialized on first use. In most cases, the inner representation is
+    /// never touched and therefore we don't allocate it unless it's really needed.
+    inner: AtomicPtr<Inner>,
+}
 
 unsafe impl Send for Task {}
 unsafe impl Sync for Task {}
 
 impl Task {
-    /// Returns a reference to task metadata.
-    pub(crate) fn metadata(&self) -> &Metadata {
-        &self.0
+    /// Creates a new task handle.
+    ///
+    /// If the task is unnamed, the inner representation of the task will be lazily allocated on
+    /// demand.
+    #[inline]
+    pub(crate) fn new(name: Option<String>) -> Task {
+        let inner = match name {
+            None => AtomicPtr::default(),
+            Some(name) => {
+                let raw = Arc::into_raw(Arc::new(Inner::new(Some(name))));
+                AtomicPtr::new(raw as *mut Inner)
+            }
+        };
+        Task { inner }
     }
 
     /// Gets the task's unique identifier.
+    #[inline]
     pub fn id(&self) -> TaskId {
-        self.metadata().task_id
+        self.inner().id
     }
 
     /// Returns the name of this task.
@@ -34,178 +77,101 @@ impl Task {
     ///
     /// [`Builder::name`]: struct.Builder.html#method.name
     pub fn name(&self) -> Option<&str> {
-        self.metadata().name.as_ref().map(|s| s.as_str())
+        self.inner().name.as_ref().map(|s| &**s)
+    }
+
+    /// Returns the map holding task-local values.
+    pub(crate) fn locals(&self) -> &LocalsMap {
+        &self.inner().locals
+    }
+
+    /// Drops all task-local values.
+    ///
+    /// This method is only safe to call at the end of the task.
+    #[inline]
+    pub(crate) unsafe fn drop_locals(&self) {
+        let raw = self.inner.load(Ordering::Acquire);
+        if let Some(inner) = raw.as_mut() {
+            // Abort the process if dropping task-locals panics.
+            abort_on_panic(|| {
+                inner.locals.clear();
+            });
+        }
+    }
+
+    /// Returns the inner representation, initializing it on first use.
+    fn inner(&self) -> &Inner {
+        loop {
+            let raw = self.inner.load(Ordering::Acquire);
+            if !raw.is_null() {
+                return unsafe { &*raw };
+            }
+
+            let new = Arc::into_raw(Arc::new(Inner::new(None))) as *mut Inner;
+            if self.inner.compare_and_swap(raw, new, Ordering::AcqRel) != raw {
+                unsafe {
+                    drop(Arc::from_raw(new));
+                }
+            }
+        }
+    }
+
+    /// Set a reference to the current task.
+    pub(crate) unsafe fn set_current<F, R>(task: *const Task, f: F) -> R
+    where
+        F: FnOnce() -> R,
+    {
+        CURRENT.with(|current| {
+            let old_task = current.replace(task);
+            defer! {
+                current.set(old_task);
+            }
+            f()
+        })
+    }
+
+    /// Gets a reference to the current task.
+    pub(crate) fn get_current<F, R>(f: F) -> Option<R>
+    where
+        F: FnOnce(&Task) -> R,
+    {
+        let res = CURRENT.try_with(|current| unsafe { current.get().as_ref().map(f) });
+        match res {
+            Ok(Some(val)) => Some(val),
+            Ok(None) | Err(_) => None,
+        }
+    }
+}
+
+impl Drop for Task {
+    fn drop(&mut self) {
+        // Deallocate the inner representation if it was initialized.
+        let raw = *self.inner.get_mut();
+        if !raw.is_null() {
+            unsafe {
+                drop(Arc::from_raw(raw));
+            }
+        }
+    }
+}
+
+impl Clone for Task {
+    fn clone(&self) -> Task {
+        // We need to make sure the inner representation is initialized now so that this instance
+        // and the clone have raw pointers that point to the same `Arc<Inner>`.
+        let arc = unsafe { ManuallyDrop::new(Arc::from_raw(self.inner())) };
+        let raw = Arc::into_raw(Arc::clone(&arc));
+        Task {
+            inner: AtomicPtr::new(raw as *mut Inner),
+        }
     }
 }
 
 impl fmt::Debug for Task {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Task").field("name", &self.name()).finish()
-    }
-}
-
-/// A handle that awaits the result of a task.
-///
-/// Dropping a [`JoinHandle`] will detach the task, meaning that there is no longer
-/// a handle to the task and no way to `join` on it.
-///
-/// Created when a task is [spawned].
-///
-/// [spawned]: fn.spawn.html
-#[derive(Debug)]
-pub struct JoinHandle<T>(async_task::JoinHandle<T, Tag>);
-
-unsafe impl<T> Send for JoinHandle<T> {}
-unsafe impl<T> Sync for JoinHandle<T> {}
-
-impl<T> JoinHandle<T> {
-    pub(crate) fn new(inner: async_task::JoinHandle<T, Tag>) -> JoinHandle<T> {
-        JoinHandle(inner)
-    }
-
-    /// Returns a handle to the underlying task.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # async_std::task::block_on(async {
-    /// #
-    /// use async_std::task;
-    ///
-    /// let handle = task::spawn(async {
-    ///     1 + 2
-    /// });
-    /// println!("id = {}", handle.task().id());
-    /// #
-    /// # })
-    pub fn task(&self) -> &Task {
-        self.0.tag().task()
-    }
-}
-
-impl<T> Future for JoinHandle<T> {
-    type Output = T;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match Pin::new(&mut self.0).poll(cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(None) => panic!("task has panicked"),
-            Poll::Ready(Some(val)) => Poll::Ready(val),
-        }
-    }
-}
-
-/// A unique identifier for a task.
-///
-/// # Examples
-///
-/// ```
-/// #
-/// use async_std::task;
-///
-/// task::block_on(async {
-///     println!("id = {:?}", task::current().id());
-/// })
-/// ```
-#[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
-pub struct TaskId(NonZeroU64);
-
-impl TaskId {
-    pub(crate) fn new() -> TaskId {
-        static COUNTER: AtomicU64 = AtomicU64::new(1);
-
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-
-        if id > i64::MAX as u64 {
-            std::process::abort();
-        }
-        unsafe { TaskId(NonZeroU64::new_unchecked(id)) }
-    }
-
-    pub(crate) fn as_u64(self) -> u64 {
-        self.0.get()
-    }
-}
-
-impl fmt::Display for TaskId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-pub(crate) type Runnable = async_task::Task<Tag>;
-
-pub(crate) struct Metadata {
-    pub task_id: TaskId,
-    pub name: Option<String>,
-    pub local_map: task_local::Map,
-}
-
-pub(crate) struct Tag {
-    task_id: TaskId,
-    raw_metadata: AtomicUsize,
-}
-
-impl Tag {
-    pub fn new(name: Option<String>) -> Tag {
-        let task_id = TaskId::new();
-
-        let opt_task = name.map(|name| {
-            Task(Arc::new(Metadata {
-                task_id,
-                name: Some(name),
-                local_map: task_local::Map::new(),
-            }))
-        });
-
-        Tag {
-            task_id,
-            raw_metadata: AtomicUsize::new(unsafe {
-                mem::transmute::<Option<Task>, usize>(opt_task)
-            }),
-        }
-    }
-
-    pub fn task(&self) -> &Task {
-        #[allow(clippy::transmute_ptr_to_ptr)]
-        unsafe {
-            let raw = self.raw_metadata.load(Ordering::Acquire);
-
-            if mem::transmute::<&usize, &Option<Task>>(&raw).is_none() {
-                let new = Some(Task(Arc::new(Metadata {
-                    task_id: TaskId::new(),
-                    name: None,
-                    local_map: task_local::Map::new(),
-                })));
-
-                let new_raw = mem::transmute::<Option<Task>, usize>(new);
-
-                if self
-                    .raw_metadata
-                    .compare_exchange(raw, new_raw, Ordering::AcqRel, Ordering::Acquire)
-                    .is_err()
-                {
-                    let new = mem::transmute::<usize, Option<Task>>(new_raw);
-                    drop(new);
-                }
-            }
-
-            #[allow(clippy::transmute_ptr_to_ptr)]
-            mem::transmute::<&AtomicUsize, &Option<Task>>(&self.raw_metadata)
-                .as_ref()
-                .unwrap()
-        }
-    }
-
-    pub fn task_id(&self) -> TaskId {
-        self.task_id
-    }
-}
-
-impl Drop for Tag {
-    fn drop(&mut self) {
-        let raw = *self.raw_metadata.get_mut();
-        let opt_task = unsafe { mem::transmute::<usize, Option<Task>>(raw) };
-        drop(opt_task);
+        f.debug_struct("Task")
+            .field("id", &self.id())
+            .field("name", &self.name())
+            .finish()
     }
 }

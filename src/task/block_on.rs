@@ -1,21 +1,15 @@
-use std::cell::{Cell, UnsafeCell};
+use std::cell::Cell;
 use std::mem::{self, ManuallyDrop};
-use std::panic::{self, AssertUnwindSafe, UnwindSafe};
-use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
 use std::thread;
 
 use crossbeam_utils::sync::Parker;
-use pin_project_lite::pin_project;
-
-use super::task;
-use super::task_local;
-use super::worker;
-use crate::future::Future;
-use crate::task::{Context, Poll, Waker};
-
 use kv_log_macro::trace;
+use log::log_enabled;
+
+use crate::future::Future;
+use crate::task::{Context, Poll, Task, Waker};
 
 /// Spawns a task and blocks the current thread on its result.
 ///
@@ -42,81 +36,43 @@ pub fn block_on<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
-    unsafe {
-        // A place on the stack where the result will be stored.
-        let out = &mut UnsafeCell::new(None);
+    // Create a new task handle.
+    let task = Task::new(None);
 
-        // Wrap the future into one that stores the result into `out`.
-        let future = {
-            let out = out.get();
-
-            async move {
-                let future = CatchUnwindFuture {
-                    future: AssertUnwindSafe(future),
-                };
-                *out = Some(future.await);
-            }
-        };
-
-        // Create a tag for the task.
-        let tag = task::Tag::new(None);
-
-        // Log this `block_on` operation.
-        let child_id = tag.task_id().as_u64();
-        let parent_id = worker::get_task(|t| t.id().as_u64()).unwrap_or(0);
-
+    // Log this `block_on` operation.
+    if log_enabled!(log::Level::Trace) {
         trace!("block_on", {
-            parent_id: parent_id,
-            child_id: child_id,
+            task_id: task.id().0,
+            parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
         });
+    }
 
-        // Wrap the future into one that drops task-local variables on exit.
-        let future = task_local::add_finalizer(future);
-
-        let future = async move {
-            future.await;
-            trace!("block_on completed", {
-                parent_id: parent_id,
-                child_id: child_id,
-            });
-        };
-
-        // Pin the future onto the stack.
-        pin_utils::pin_mut!(future);
-
-        // Transmute the future into one that is futurestatic.
-        let future = mem::transmute::<
-            Pin<&'_ mut dyn Future<Output = ()>>,
-            Pin<&'static mut dyn Future<Output = ()>>,
-        >(future);
-
-        // Block on the future and and wait for it to complete.
-        worker::set_tag(&tag, || block(future));
-
-        // Take out the result.
-        match (*out.get()).take().unwrap() {
-            Ok(v) => v,
-            Err(err) => panic::resume_unwind(err),
+    let future = async move {
+        // Drop task-locals on exit.
+        defer! {
+            Task::get_current(|t| unsafe { t.drop_locals() });
         }
-    }
+
+        // Log completion on exit.
+        defer! {
+            if log_enabled!(log::Level::Trace) {
+                Task::get_current(|t| {
+                    trace!("completed", {
+                        task_id: t.id().0,
+                    });
+                });
+            }
+        }
+
+        future.await
+    };
+
+    // Run the future as a task.
+    unsafe { Task::set_current(&task, || run(future)) }
 }
 
-pin_project! {
-    struct CatchUnwindFuture<F> {
-        #[pin]
-        future: F,
-    }
-}
-
-impl<F: Future + UnwindSafe> Future for CatchUnwindFuture<F> {
-    type Output = thread::Result<F::Output>;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        panic::catch_unwind(AssertUnwindSafe(|| self.project().future.poll(cx)))?.map(Ok)
-    }
-}
-
-fn block<F, T>(f: F) -> T
+/// Blocks the current thread on a future's result.
+fn run<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
@@ -129,50 +85,59 @@ where
         static CACHE: Cell<Option<Arc<Parker>>> = Cell::new(None);
     }
 
-    pin_utils::pin_mut!(f);
+    // Virtual table for wakers based on `Arc<Parker>`.
+    static VTABLE: RawWakerVTable = {
+        unsafe fn clone_raw(ptr: *const ()) -> RawWaker {
+            let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
+            mem::forget(arc.clone());
+            RawWaker::new(ptr, &VTABLE)
+        }
+
+        unsafe fn wake_raw(ptr: *const ()) {
+            let arc = Arc::from_raw(ptr as *const Parker);
+            arc.unparker().unpark();
+        }
+
+        unsafe fn wake_by_ref_raw(ptr: *const ()) {
+            let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
+            arc.unparker().unpark();
+        }
+
+        unsafe fn drop_raw(ptr: *const ()) {
+            drop(Arc::from_raw(ptr as *const Parker))
+        }
+
+        RawWakerVTable::new(clone_raw, wake_raw, wake_by_ref_raw, drop_raw)
+    };
+
+    // Pin the future on the stack.
+    pin_utils::pin_mut!(future);
 
     CACHE.with(|cache| {
         // Reuse a cached parker or create a new one for this invocation of `block`.
         let arc_parker: Arc<Parker> = cache.take().unwrap_or_else(|| Arc::new(Parker::new()));
-
         let ptr = (&*arc_parker as *const Parker) as *const ();
-        let vt = vtable();
 
-        let waker = unsafe { ManuallyDrop::new(Waker::from_raw(RawWaker::new(ptr, vt))) };
+        // Create a waker and task context.
+        let waker = unsafe { ManuallyDrop::new(Waker::from_raw(RawWaker::new(ptr, &VTABLE))) };
         let cx = &mut Context::from_waker(&waker);
 
+        let mut step = 0;
         loop {
-            if let Poll::Ready(t) = f.as_mut().poll(cx) {
+            if let Poll::Ready(t) = future.as_mut().poll(cx) {
                 // Save the parker for the next invocation of `block`.
                 cache.set(Some(arc_parker));
                 return t;
             }
-            arc_parker.park();
+
+            // Yield a few times or park the current thread.
+            if step < 3 {
+                thread::yield_now();
+                step += 1;
+            } else {
+                arc_parker.park();
+                step = 0;
+            }
         }
     })
-}
-
-fn vtable() -> &'static RawWakerVTable {
-    unsafe fn clone_raw(ptr: *const ()) -> RawWaker {
-        #![allow(clippy::redundant_clone)]
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
-        mem::forget(arc.clone());
-        RawWaker::new(ptr, vtable())
-    }
-
-    unsafe fn wake_raw(ptr: *const ()) {
-        let arc = Arc::from_raw(ptr as *const Parker);
-        arc.unparker().unpark();
-    }
-
-    unsafe fn wake_by_ref_raw(ptr: *const ()) {
-        let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
-        arc.unparker().unpark();
-    }
-
-    unsafe fn drop_raw(ptr: *const ()) {
-        drop(Arc::from_raw(ptr as *const Parker))
-    }
-
-    &RawWakerVTable::new(clone_raw, wake_raw, wake_by_ref_raw, drop_raw)
 }

@@ -32,7 +32,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --all --bins --examples
+        args: --all --bins --tests
 
     - name: check unstable
       uses: actions-rs/cargo@v1
@@ -52,15 +52,12 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
-    - id: component
-      uses: actions-rs/components-nightly@v1
-      with:
-        component: rustfmt
-
     - uses: actions-rs/toolchain@v1
       with:
-          toolchain: ${{ steps.component.outputs.toolchain }}
+          profile: minimal
+          toolchain: nightly
           override: true
+          components: rustfmt
 
     - name: setup
       run: |

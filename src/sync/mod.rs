@@ -191,3 +191,6 @@ cfg_unstable! {
     mod barrier;
     mod channel;
 }
+
+pub(crate) mod waker_set;
+pub(crate) use waker_set::WakerSet;

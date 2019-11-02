@@ -10,7 +10,7 @@ use crate::task::{Context, Poll};
 pin_project! {
     #[doc(hidden)]
     #[allow(missing_debug_implementations)]
-    pub struct TryForEeachFuture<S, F, T, R> {
+    pub struct TryForEachFuture<S, F, T, R> {
         #[pin]
         stream: S,
         f: F,
@@ -19,9 +19,9 @@ pin_project! {
     }
 }
 
-impl<S, F, T, R> TryForEeachFuture<S, F, T, R> {
+impl<S, F, T, R> TryForEachFuture<S, F, T, R> {
     pub(crate) fn new(stream: S, f: F) -> Self {
-        TryForEeachFuture {
+        TryForEachFuture {
             stream,
             f,
             __from: PhantomData,
@@ -30,7 +30,7 @@ impl<S, F, T, R> TryForEeachFuture<S, F, T, R> {
     }
 }
 
-impl<S, F, E> Future for TryForEeachFuture<S, F, S::Item, E>
+impl<S, F, E> Future for TryForEachFuture<S, F, S::Item, E>
 where
     S: Stream,
     S::Item: std::fmt::Debug,

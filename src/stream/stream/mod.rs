@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod chain;
 mod cmp;
+mod copied;
 mod enumerate;
 mod eq;
 mod filter;
@@ -42,6 +43,7 @@ mod le;
 mod lt;
 mod map;
 mod max_by;
+mod max_by_key;
 mod min;
 mod min_by;
 mod min_by_key;
@@ -76,6 +78,7 @@ use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use max_by::MaxByFuture;
+use max_by_key::MaxByKeyFuture;
 use min::MinFuture;
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
@@ -85,9 +88,10 @@ use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
-use try_for_each::TryForEeachFuture;
+use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
+pub use copied::Copied;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -367,6 +371,42 @@ extension_trait! {
             U: Stream<Item = Self::Item> + Sized,
         {
             Chain::new(self, other)
+        }
+
+
+        #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let v: VecDeque<_> = vec![&1, &2, &3].into_iter().collect();
+            
+            let mut v_copied  = v.copied();
+
+            assert_eq!(v_copied.next().await, Some(1));
+            assert_eq!(v_copied.next().await, Some(2));
+            assert_eq!(v_copied.next().await, Some(3));
+            assert_eq!(v_copied.next().await, None);
+    
+
+            #
+            # }) }
+            ```
+        "#]
+        fn copied<'a,T>(self) -> Copied<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T : 'a + Copy,
+        {
+            Copied::new(self)
         }
 
         #[doc = r#"
@@ -729,6 +769,43 @@ extension_trait! {
             MinByKeyFuture::new(self, key_by)
         }
 
+         #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified key function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::collections::VecDeque;
+
+            use async_std::prelude::*;
+
+            let s: VecDeque<i32> = vec![-1, -2, -3].into_iter().collect();
+
+            let max = s.clone().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, Some(3));
+
+            let max = VecDeque::<isize>::new().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by_key<K>(
+            self,
+            key_by: K,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByKeyFuture<Self, Self::Item, K>]
+        where
+            Self: Sized,
+            Self::Item: Ord,
+            K: FnMut(&Self::Item) -> Self::Item,
+        {
+            MaxByKeyFuture::new(self, key_by)
+        }
+
         #[doc = r#"
             Returns the element that gives the minimum value with respect to the
             specified comparison function. If several elements are equally minimum,
@@ -774,11 +851,10 @@ extension_trait! {
 
             # Examples
 
-            ```
+            ```ignore
             # fn main() { async_std::task::block_on(async {
             #
             use std::collections::VecDeque;
-
             use async_std::prelude::*;
 
             let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
@@ -1397,12 +1473,12 @@ extension_trait! {
         fn try_for_each<F, E>(
             self,
             f: F,
-        ) -> impl Future<Output = E> [TryForEeachFuture<Self, F, Self::Item, E>]
+        ) -> impl Future<Output = E> [TryForEachFuture<Self, F, Self::Item, E>]
         where
             Self: Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
         {
-            TryForEeachFuture::new(self, f)
+            TryForEachFuture::new(self, f)
         }
 
         #[doc = r#"
