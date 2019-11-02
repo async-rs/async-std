@@ -7,6 +7,7 @@ use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
 cfg_unstable! {
     use once_cell::sync::Lazy;
+    use std::io::Read as _;
 }
 
 /// Constructs a new handle to the standard input of the current process.
@@ -59,13 +60,18 @@ pub fn stdin() -> Stdin {
 pub struct Stdin(Mutex<State>);
 
 /// A locked reference to the Stdin handle.
+///
 /// This handle implements the [`Read`] traits, and is constructed via the [`Stdin::lock`] method.
 ///
 /// [`Read`]: trait.Read.html
 /// [`Stdin::lock`]: struct.Stdin.html#method.lock
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
 #[derive(Debug)]
 pub struct StdinLock<'a>(std::io::StdinLock<'a>);
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 unsafe impl Send for StdinLock<'_> {}
 
 /// The state of the asynchronous stdin.
@@ -257,14 +263,14 @@ cfg_windows! {
     }
 }
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl Read for StdinLock<'_> {
     fn poll_read(
         mut self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        use std::io::Read as StdRead;
-
         Poll::Ready(self.0.read(buf))
     }
 }
