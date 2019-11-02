@@ -42,11 +42,8 @@ mod le;
 mod lt;
 mod map;
 mod max_by;
-<<<<<<< HEAD
 mod min;
-=======
 mod max_by_key;
->>>>>>> add max_by_key
 mod min_by;
 mod min_by_key;
 mod ne;
@@ -80,11 +77,8 @@ use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
 use max_by::MaxByFuture;
-<<<<<<< HEAD
 use min::MinFuture;
-=======
 use max_by_key::MaxByKeyFuture;
->>>>>>> add max_by_key
 use min_by::MinByFuture;
 use min_by_key::MinByKeyFuture;
 use ne::NeFuture;
