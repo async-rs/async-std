@@ -1,9 +1,13 @@
 cfg_unstable! {
     mod delay;
+    mod race;
+    mod try_race;
 
     use std::time::Duration;
 
     use delay::DelayFuture;
+    use race::Race;
+    use try_race::TryRace;
 }
 
 extension_trait! {
@@ -128,6 +132,94 @@ extension_trait! {
             Self: Future + Sized
         {
             DelayFuture::new(self, dur)
+        }
+
+        #[doc = r#"
+            Waits for one of two similarly-typed futures to complete.
+
+            Awaits multiple futures simultaneously, returning the output of the
+            first future that completes.
+
+            This function will return a new future which awaits for either one of both
+            futures to complete. If multiple futures are completed at the same time,
+            resolution will occur in the order that they have been passed.
+
+            Note that this macro consumes all futures passed, and once a future is
+            completed, all other futures are dropped.
+
+            This macro is only usable inside of async functions, closures, and blocks.
+
+            # Examples
+
+            ```
+            # async_std::task::block_on(async {
+            use async_std::prelude::*;
+            use async_std::future;
+
+            let a = future::pending();
+            let b = future::ready(1u8);
+            let c = future::ready(2u8);
+
+            let f = a.race(b).race(c);
+            assert_eq!(f.await, 1u8);
+            # });
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn race<F>(
+            self,
+            other: F
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [Race<Self, F>]
+        where
+            Self: std::future::Future + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+        {
+            Race::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for one of two similarly-typed fallible futures to complete.
+
+            Awaits multiple futures simultaneously, returning all results once complete.
+
+            `try_race` is similar to [`race`], but keeps going if a future
+            resolved to an error until all futures have been resolved. In which case
+            an error is returned.
+
+            The ordering of which value is yielded when two futures resolve
+            simultaneously is intentionally left unspecified.
+
+            # Examples
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::future;
+            use std::io::{Error, ErrorKind};
+
+            let a = future::pending::<Result<_, Error>>();
+            let b = future::ready(Err(Error::from(ErrorKind::Other)));
+            let c = future::ready(Ok(1u8));
+
+            let f = a.try_race(b).try_race(c);
+            assert_eq!(f.await?, 1u8);
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn try_race<F: std::future::Future, T, E>(
+            self,
+            other: F
+        ) -> impl Future<Output = <Self as std::future::Future>::Output> [TryRace<Self, F>]
+        where
+            Self: std::future::Future<Output = Result<T, E>> + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+        {
+            TryRace::new(self, other)
         }
     }
 
