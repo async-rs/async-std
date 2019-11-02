@@ -22,8 +22,12 @@ enum CycleState {
     FromBuffer,
 }
 
-impl<T: Clone, S: Stream<Item = T>> Cycle<S, T> {
-    pub fn new(source: S) -> Cycle<S, T> {
+impl<S> Cycle<S, S::Item>
+where
+    S: Stream,
+    S::Item: Clone,
+{
+    pub fn new(source: S) -> Cycle<S, S::Item> {
         Cycle {
             source,
             index: 0,
