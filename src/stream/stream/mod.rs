@@ -412,7 +412,7 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Creats a stream that yields the provided values infinitely and in order.
+            Creates a stream that yields the provided values infinitely and in order.
 
             # Examples
 
