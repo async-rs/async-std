@@ -56,3 +56,11 @@ futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
 # These are used by the book for examples
 futures-channel-preview = "=0.3.0-alpha.19"
 futures-util-preview = "=0.3.0-alpha.19"
+
+[[test]]
+name = "stream"
+required-features = ["unstable"]
+
+[[example]]
+name = "tcp-ipv4-and-6-echo"
+required-features = ["unstable"]
