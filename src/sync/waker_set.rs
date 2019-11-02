@@ -95,8 +95,11 @@ impl WakerSet {
     }
 
     /// Removes the waker of a cancelled operation.
-    pub fn cancel(&self, key: usize) {
+    ///
+    /// Returns `true` if another blocked operation from the set was notified.
+    pub fn cancel(&self, key: usize) -> bool {
         let mut inner = self.lock();
+
         if inner.entries.remove(key).is_none() {
             inner.none_count -= 1;
 
@@ -107,33 +110,45 @@ impl WakerSet {
                     w.wake();
                     inner.none_count += 1;
                 }
+                return true;
             }
         }
+
+        false
     }
 
     /// Notifies one blocked operation.
+    ///
+    /// Returns `true` if an operation was notified.
     #[inline]
-    pub fn notify_one(&self) {
+    pub fn notify_one(&self) -> bool {
         // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
         if self.flag.load(Ordering::SeqCst) & NOTIFY_ONE != 0 {
-            self.notify(false);
+            self.notify(false)
+        } else {
+            false
         }
     }
 
     /// Notifies all blocked operations.
-    // TODO: Delete this attribute when `crate::sync::channel()` is stabilized.
-    #[cfg(feature = "unstable")]
+    ///
+    /// Returns `true` if at least one operation was notified.
     #[inline]
-    pub fn notify_all(&self) {
+    pub fn notify_all(&self) -> bool {
         // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
         if self.flag.load(Ordering::SeqCst) & NOTIFY_ALL != 0 {
-            self.notify(true);
+            self.notify(true)
+        } else {
+            false
         }
     }
 
     /// Notifies blocked operations, either one or all of them.
-    fn notify(&self, all: bool) {
+    ///
+    /// Returns `true` if at least one operation was notified.
+    fn notify(&self, all: bool) -> bool {
         let mut inner = &mut *self.lock();
+        let mut notified = false;
 
         for (_, opt_waker) in inner.entries.iter_mut() {
             // If there is no waker in this entry, that means it was already woken.
@@ -141,10 +156,15 @@ impl WakerSet {
                 w.wake();
                 inner.none_count += 1;
             }
+
+            notified = true;
+
             if !all {
                 break;
             }
         }
+
+        notified
     }
 
     /// Locks the list of entries.
