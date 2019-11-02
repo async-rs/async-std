@@ -1,9 +1,14 @@
+use std::io::Write as StdWrite;
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use crate::future::Future;
 use crate::io::{self, Write};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+
+cfg_unstable! {
+    use once_cell::sync::Lazy;
+}
 
 /// Constructs a new handle to the standard error of the current process.
 ///
@@ -53,6 +58,16 @@ pub fn stderr() -> Stderr {
 #[derive(Debug)]
 pub struct Stderr(Mutex<State>);
 
+/// A locked reference to the Stderr handle.
+/// This handle implements the [`Write`] traits, and is constructed via the [`Stderr::lock`] method.
+///
+/// [`Write`]: trait.Read.html
+/// [`Stderr::lock`]: struct.Stderr.html#method.lock
+#[derive(Debug)]
+pub struct StderrLock<'a>(std::io::StderrLock<'a>);
+
+unsafe impl Send for StderrLock<'_> {}
+
 /// The state of the asynchronous stderr.
 ///
 /// The stderr can be either idle or busy performing an asynchronous operation.
@@ -85,6 +100,35 @@ struct Inner {
 enum Operation {
     Write(io::Result<usize>),
     Flush(io::Result<()>),
+}
+
+impl Stderr {
+    /// Locks this handle to the standard error stream, returning a writable guard.
+    ///
+    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Write trait for writing data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io;
+    /// use async_std::prelude::*;
+    ///
+    /// let stderr = io::stderr();
+    /// let mut handle = stderr.lock().await;
+    ///
+    /// handle.write_all(b"hello world").await?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
+    pub async fn lock(&self) -> StderrLock<'static> {
+        static STDERR: Lazy<std::io::Stderr> = Lazy::new(std::io::stderr);
+
+        spawn_blocking(move || StderrLock(STDERR.lock())).await
+    }
 }
 
 impl Write for Stderr {
@@ -187,5 +231,23 @@ cfg_windows! {
         fn as_raw_handle(&self) -> RawHandle {
             std::io::stderr().as_raw_handle()
         }
+    }
+}
+
+impl Write for StderrLock<'_> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        Poll::Ready(self.0.write(buf))
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(self.0.flush())
+    }
+
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_flush(cx)
     }
 }
