@@ -37,10 +37,10 @@ where
     }
 }
 
-impl<S, T> Stream for Cycle<S, T>
+impl<S> Stream for Cycle<S, S::Item>
 where
-    S: Stream<Item = T>,
-    T: Clone,
+    S: Stream,
+    S::Item: Clone,
 {
     type Item = S::Item;
 
