@@ -1,10 +1,13 @@
-use once_cell::sync::Lazy;
 use std::pin::Pin;
 use std::sync::Mutex;
 
 use crate::future::{self, Future};
 use crate::io::{self, Read};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+
+cfg_unstable! {
+    use once_cell::sync::Lazy;
+}
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -175,6 +178,8 @@ impl Stdin {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
     pub async fn lock(&self) -> StdinLock<'static> {
         static STDIN: Lazy<std::io::Stdin> = Lazy::new(std::io::stdin);
 

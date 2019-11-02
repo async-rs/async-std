@@ -1,4 +1,3 @@
-use once_cell::sync::Lazy;
 use std::io::Write as StdWrite;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -6,6 +5,10 @@ use std::sync::Mutex;
 use crate::future::Future;
 use crate::io::{self, Write};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+
+cfg_unstable! {
+    use once_cell::sync::Lazy;
+}
 
 /// Constructs a new handle to the standard output of the current process.
 ///
@@ -119,6 +122,8 @@ impl Stdout {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
     pub async fn lock(&self) -> StdoutLock<'static> {
         static STDOUT: Lazy<std::io::Stdout> = Lazy::new(std::io::stdout);
 
