@@ -4,6 +4,9 @@ use std::task::{Context, Poll};
 use futures_core::Stream;
 use pin_project_lite::pin_project;
 
+use crate::prelude::*;
+use crate::stream::Fuse;
+
 pin_project! {
     /// A stream that merges two other streams into a single stream.
     ///
@@ -17,15 +20,15 @@ pin_project! {
     #[derive(Debug)]
     pub struct Merge<L, R> {
         #[pin]
-        left: L,
+        left: Fuse<L>,
         #[pin]
-        right: R,
+        right: Fuse<R>,
     }
 }
 
-impl<L, R> Merge<L, R> {
+impl<L: Stream, R: Stream> Merge<L, R> {
     pub(crate) fn new(left: L, right: R) -> Self {
-        Self { left, right }
+        Self { left: left.fuse(), right: right.fuse() }
     }
 }
 

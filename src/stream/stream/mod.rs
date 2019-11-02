@@ -1590,7 +1590,7 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Searches for an element in a Stream that satisfies a predicate, returning 
+            Searches for an element in a Stream that satisfies a predicate, returning
             its index.
 
             # Examples
