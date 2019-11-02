@@ -435,7 +435,7 @@ extension_trait! {
             # })
             ```
         "#]
-        fn cycle(self) -> Cycle<Self>
+        fn cycle(self) -> Cycle<Self, Self::Item>
             where
                 Self: Sized,
                 Self::Item: Clone,

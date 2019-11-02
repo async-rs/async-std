@@ -7,15 +7,11 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that will repeatedly yield the same list of elements
-    pub struct Cycle<S>
-where
-    S: Stream,
-    S::Item: Clone,
-    {
+    pub struct Cycle<S, T> {
         #[pin]
         source: S,
         index: usize,
-        buffer: Vec<S::Item>,
+        buffer: Vec<T>,
         state: CycleState,
     }
 }
@@ -26,12 +22,12 @@ enum CycleState {
     FromBuffer,
 }
 
-impl<S> Cycle<S>
+impl<S> Cycle<S, S::Item>
 where
     S: Stream,
     S::Item: Clone,
 {
-    pub fn new(source: S) -> Cycle<S> {
+    pub fn new(source: S) -> Cycle<S, S::Item> {
         Cycle {
             source,
             index: 0,
@@ -41,10 +37,10 @@ where
     }
 }
 
-impl<S> Stream for Cycle<S>
+impl<S, T> Stream for Cycle<S, T>
 where
-    S: Stream,
-    S::Item: Clone,
+    S: Stream<Item = T>,
+    T: Clone,
 {
     type Item = S::Item;
 
