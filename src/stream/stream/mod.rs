@@ -25,6 +25,7 @@ mod all;
 mod any;
 mod chain;
 mod cmp;
+mod copied;
 mod enumerate;
 mod eq;
 mod filter;
@@ -88,6 +89,7 @@ use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
+pub use copied::Copied;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -367,6 +369,42 @@ extension_trait! {
             U: Stream<Item = Self::Item> + Sized,
         {
             Chain::new(self, other)
+        }
+
+
+        #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use std::collections::VecDeque;
+
+            let v: VecDeque<_> = vec![&1, &2, &3].into_iter().collect();
+            
+            let mut v_copied  = v.copied();
+
+            assert_eq!(v_copied.next().await, Some(1));
+            assert_eq!(v_copied.next().await, Some(2));
+            assert_eq!(v_copied.next().await, Some(3));
+            assert_eq!(v_copied.next().await, None);
+    
+
+            #
+            # }) }
+            ```
+        "#]
+        fn copied<'a,T>(self) -> Copied<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T : 'a + Copy,
+        {
+            Copied::new(self)
         }
 
         #[doc = r#"
