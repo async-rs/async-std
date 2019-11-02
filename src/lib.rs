@@ -41,6 +41,7 @@
 //! features = ["unstable"]
 //! ```
 
+#![cfg(feature = "default")]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]

@@ -21,6 +21,7 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
+default = []
 docs = ["unstable"]
 unstable = ["broadcaster"]
 
