@@ -20,12 +20,10 @@ where
         ```
         # fn main() { async_std::task::block_on(async {
         #
-        use std::collections::VecDeque;
         use async_std::prelude::*;
+        use async_std::stream;
 
-        let words: VecDeque<_> = vec!["have", "a", "great", "day"]
-            .into_iter()
-            .collect();
+        let words = stream::from_iter(vec!["have", "a", "great", "day"]);
         let total: Option<usize> = words.map(|w| w.find('a')).sum().await;
         assert_eq!(total, Some(5));
         #

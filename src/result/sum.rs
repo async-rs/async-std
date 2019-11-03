@@ -20,10 +20,10 @@ where
         ```
         # fn main() { async_std::task::block_on(async {
         #
-        use std::collections::VecDeque;
         use async_std::prelude::*;
+        use async_std::stream;
 
-        let v: VecDeque<_> = vec![1, 2].into_iter().collect();
+        let v = stream::from_iter(vec![1, 2]);
         let res: Result<i32, &'static str> = v.map(|x|
             if x < 0 {
                 Err("Negative element found")
