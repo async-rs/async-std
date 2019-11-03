@@ -22,7 +22,7 @@ use crate::sync::WakerSet;
 ///
 /// Senders and receivers can be cloned. When all senders associated with a channel get dropped, it
 /// becomes closed. Receive operations on a closed and empty channel return `None` instead of
-/// blocking.
+/// trying to await a message.
 ///
 /// # Panics
 ///
@@ -44,7 +44,7 @@ use crate::sync::WakerSet;
 /// s.send(1).await;
 ///
 /// task::spawn(async move {
-///     // This call blocks the current task because the channel is full.
+///     // This call will have to wait because the channel is full.
 ///     // It will be able to complete only after the first message is received.
 ///     s.send(2).await;
 /// });
@@ -102,8 +102,7 @@ pub struct Sender<T> {
 impl<T> Sender<T> {
     /// Sends a message into the channel.
     ///
-    /// If the channel is full, this method will block the current task until the send operation
-    /// can proceed.
+    /// If the channel is full, this method will wait until there is space in the channel.
     ///
     /// # Examples
     ///
@@ -346,9 +345,8 @@ pub struct Receiver<T> {
 impl<T> Receiver<T> {
     /// Receives a message from the channel.
     ///
-    /// If the channel is empty and it still has senders, this method will block the current task
-    /// until the receive operation can proceed. If the channel is empty and there are no more
-    /// senders, this method returns `None`.
+    /// If the channel is empty and still has senders, this method will wait until a message is
+    /// sent into the channel or until all senders get dropped.
     ///
     /// # Examples
     ///
