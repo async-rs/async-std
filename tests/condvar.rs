@@ -4,6 +4,7 @@ use std::time::Duration;
 use async_std::sync::{Condvar, Mutex};
 use async_std::task::{self, JoinHandle};
 
+#[cfg(feature = "unstable")]
 #[test]
 fn wait_timeout() {
     task::block_on(async {
@@ -20,6 +21,21 @@ fn wait_timeout() {
         let (m, c) = &*pair;
         let (_, wait_result) = c
             .wait_timeout(m.lock().await, Duration::from_millis(10))
+            .await;
+        assert!(wait_result.timed_out());
+    })
+}
+
+#[test]
+fn wait_timeout_until_timed_out() {
+    task::block_on(async {
+        let m = Mutex::new(false);
+        let c = Condvar::new();
+
+        let (_, wait_result) = c
+            .wait_timeout_until(m.lock().await, Duration::from_millis(10), |&mut started| {
+                started
+            })
             .await;
         assert!(wait_result.timed_out());
     })

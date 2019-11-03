@@ -1,11 +1,10 @@
 use std::pin::Pin;
 use std::time::Duration;
 
-use futures_timer::Delay;
 use slab::Slab;
 
 use super::mutex::{guard_lock, MutexGuard};
-use crate::future::Future;
+use crate::future::{timeout, Future};
 use crate::task::{Context, Poll, Waker};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -29,7 +28,7 @@ impl WaitTimeoutResult {
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use std::sync::Arc;
 ///
@@ -55,7 +54,7 @@ impl WaitTimeoutResult {
 ///     started = cvar.wait(started).await;
 /// }
 ///
-/// # }) }
+/// # })
 /// ```
 #[derive(Debug)]
 pub struct Condvar {
@@ -89,10 +88,16 @@ impl Condvar {
     /// Unlike the std equivalent, this does not check that a single mutex is used at runtime.
     /// However, as a best practice avoid using with multiple mutexes.
     ///
+    /// # Warning
+    /// Any attempt to poll this future before the notification is received will result in a
+    /// spurious wakeup. This allows the implementation to be efficient, and is technically valid
+    /// semantics for a condition variable. However, this may result in unexpected behaviour when this future is
+    /// used with future combinators. In most cases `Condvar::wait_until` is easier to use correctly.
+    ///
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// use std::sync::Arc;
     ///
     /// use async_std::sync::{Mutex, Condvar};
@@ -115,7 +120,7 @@ impl Condvar {
     /// while !*started {
     ///     started = cvar.wait(started).await;
     /// }
-    /// # }) }
+    /// # })
     /// ```
     #[allow(clippy::needless_lifetimes)]
     pub async fn wait<'a, T>(&self, guard: MutexGuard<'a, T>) -> MutexGuard<'a, T> {
@@ -142,7 +147,7 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
     ///
@@ -165,9 +170,8 @@ impl Condvar {
     /// // As long as the value inside the `Mutex<bool>` is `false`, we wait.
     /// let _guard = cvar.wait_until(lock.lock().await, |started| { *started }).await;
     /// #
-    /// # }) }
+    /// # })
     /// ```
-    #[cfg(feature = "unstable")]
     #[allow(clippy::needless_lifetimes)]
     pub async fn wait_until<'a, T, F>(
         &self,
@@ -185,10 +189,19 @@ impl Condvar {
 
     /// Waits on this condition variable for a notification, timing out after a specified duration.
     ///
+    /// # Warning
+    /// This has similar limitations to  `Condvar::wait`, where polling before a notify is sent can
+    /// result in a spurious wakeup. In addition, the timeout may itself trigger a spurious wakeup,
+    /// if no other task is holding the mutex when the future is polled. Thus the
+    /// `WaitTimeoutResult` should not be trusted to determine if the condition variable was
+    /// actually notified.
+    ///
+    /// For these reasons `Condvar::wait_timeout_until` is recommended in most cases.
+    ///
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use std::sync::Arc;
     /// use std::time::Duration;
@@ -219,8 +232,9 @@ impl Condvar {
     ///   }
     /// }
     /// #
-    /// # }) }
+    /// # })
     /// ```
+    #[cfg(feature = "unstable")]
     #[allow(clippy::needless_lifetimes)]
     pub async fn wait_timeout<'a, T>(
         &self,
@@ -228,13 +242,63 @@ impl Condvar {
         dur: Duration,
     ) -> (MutexGuard<'a, T>, WaitTimeoutResult) {
         let mutex = guard_lock(&guard);
-        let timeout_result = TimeoutWaitFuture {
-            await_notify: self.await_notify(guard),
-            delay: Delay::new(dur),
+        match timeout(dur, self.wait(guard)).await {
+            Ok(guard) => (guard, WaitTimeoutResult(false)),
+            Err(_) => (mutex.lock().await, WaitTimeoutResult(true)),
         }
-        .await;
+    }
 
-        (mutex.lock().await, timeout_result)
+    /// Waits on this condition variable for a notification, timing out after a specified duration.
+    /// Spurious wakes will not cause this function to return.
+    ///
+    /// # Examples
+    /// ```
+    /// # async_std::task::block_on(async {
+    /// use std::sync::Arc;
+    /// use std::time::Duration;
+    ///
+    /// use async_std::sync::{Mutex, Condvar};
+    /// use async_std::task;
+    ///
+    /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
+    /// let pair2 = pair.clone();
+    ///
+    /// task::spawn(async move {
+    ///     let (lock, cvar) = &*pair2;
+    ///     let mut started = lock.lock().await;
+    ///     *started = true;
+    ///     // We notify the condvar that the value has changed.
+    ///     cvar.notify_one();
+    /// });
+    ///
+    /// // wait for the thread to start up
+    /// let (lock, cvar) = &*pair;
+    /// let result = cvar.wait_timeout_until(
+    ///     lock.lock().await,
+    ///     Duration::from_millis(100),
+    ///     |&mut started| started,
+    /// ).await;
+    /// if result.1.timed_out() {
+    ///     // timed-out without the condition ever evaluating to true.
+    /// }
+    /// // access the locked mutex via result.0
+    /// # });
+    /// ```
+    #[allow(clippy::needless_lifetimes)]
+    pub async fn wait_timeout_until<'a, T, F>(
+        &self,
+        guard: MutexGuard<'a, T>,
+        dur: Duration,
+        condition: F,
+    ) -> (MutexGuard<'a, T>, WaitTimeoutResult)
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        let mutex = guard_lock(&guard);
+        match timeout(dur, self.wait_until(guard, condition)).await {
+            Ok(guard) => (guard, WaitTimeoutResult(false)),
+            Err(_) => (mutex.lock().await, WaitTimeoutResult(true)),
+        }
     }
 
     /// Wakes up one blocked task on this condvar.
@@ -362,30 +426,6 @@ impl<'a, 'b, T> Drop for AwaitNotify<'a, 'b, T> {
                 // This may result in a spurious wake-up, but that's ok.
                 notify(blocked, false);
             }
-        }
-    }
-}
-
-struct TimeoutWaitFuture<'a, 'b, T> {
-    await_notify: AwaitNotify<'a, 'b, T>,
-    delay: Delay,
-}
-
-impl<'a, 'b, T> TimeoutWaitFuture<'a, 'b, T> {
-    pin_utils::unsafe_pinned!(await_notify: AwaitNotify<'a, 'b, T>);
-    pin_utils::unsafe_pinned!(delay: Delay);
-}
-
-impl<'a, 'b, T> Future for TimeoutWaitFuture<'a, 'b, T> {
-    type Output = WaitTimeoutResult;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.as_mut().delay().poll(cx) {
-            Poll::Pending => match self.await_notify().poll(cx) {
-                Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(false)),
-                Poll::Pending => Poll::Pending,
-            },
-            Poll::Ready(_) => Poll::Ready(WaitTimeoutResult(true)),
         }
     }
 }
