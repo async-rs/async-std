@@ -4,7 +4,6 @@ use pin_project_lite::pin_project;
 use std::pin::Pin;
 
 pin_project! {
-    #[doc(hidden)]
     #[allow(missing_debug_implementations)]
     pub struct Cloned<S> {
         #[pin]
