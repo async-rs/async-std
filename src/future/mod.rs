@@ -50,9 +50,9 @@
 pub use async_macros::{join, try_join};
 
 pub use future::Future;
-pub use pending::pending;
+pub use pending::{pending, Pending};
 pub use poll_fn::poll_fn;
-pub use ready::ready;
+pub use ready::{ready, Ready};
 pub use timeout::{timeout, TimeoutError};
 
 pub(crate) mod future;

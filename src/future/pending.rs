@@ -4,6 +4,17 @@ use std::pin::Pin;
 use crate::future::Future;
 use crate::task::{Context, Poll};
 
+/// A future that never resolves.
+///
+/// This `struct` is created by the [`pending`] function. See its
+/// documentation for more.
+///
+/// [`pending`]: fn.pending.html
+#[derive(Debug, Clone)]
+pub struct Pending<T> {
+    _marker: PhantomData<T>,
+}
+
 /// Never resolves to a value.
 ///
 /// # Examples
@@ -29,10 +40,6 @@ pub async fn pending<T>() -> T {
         _marker: PhantomData,
     };
     fut.await
-}
-
-struct Pending<T> {
-    _marker: PhantomData<T>,
 }
 
 impl<T> Future for Pending<T> {
