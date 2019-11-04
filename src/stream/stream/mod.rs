@@ -2012,10 +2012,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             async fn factorial(n: u32) -> u32 {
-                use std::collections::VecDeque;
                 use async_std::prelude::*;
+                use async_std::stream;
 
-                let s: VecDeque<_> = (1..=n).collect();
+                let s = stream::from_iter(1..=n);
                 s.product().await
             }
 
