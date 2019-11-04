@@ -1,10 +1,10 @@
+#![cfg(feature = "unstable")]
 use std::sync::Arc;
 use std::time::Duration;
 
 use async_std::sync::{Condvar, Mutex};
 use async_std::task::{self, JoinHandle};
 
-#[cfg(feature = "unstable")]
 #[test]
 fn wait_timeout() {
     task::block_on(async {

@@ -288,6 +288,7 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
     }
 }
 
+#[cfg(feature = "unstable")]
 pub fn guard_lock<'a, T>(guard: &MutexGuard<'a, T>) -> &'a Mutex<T> {
     guard.0
 }

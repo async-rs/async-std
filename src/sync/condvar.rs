@@ -1,11 +1,11 @@
+use std::fmt;
 use std::pin::Pin;
 use std::time::Duration;
 
-use slab::Slab;
-
 use super::mutex::{guard_lock, MutexGuard};
 use crate::future::{timeout, Future};
-use crate::task::{Context, Poll, Waker};
+use crate::sync::WakerSet;
+use crate::task::{Context, Poll};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub struct WaitTimeoutResult(bool);
@@ -56,10 +56,12 @@ impl WaitTimeoutResult {
 ///
 /// # })
 /// ```
-#[derive(Debug)]
 pub struct Condvar {
-    blocked: std::sync::Mutex<Slab<Option<Waker>>>,
+    wakers: WakerSet,
 }
+
+unsafe impl Send for Condvar {}
+unsafe impl Sync for Condvar {}
 
 impl Default for Condvar {
     fn default() -> Self {
@@ -79,7 +81,7 @@ impl Condvar {
     /// ```
     pub fn new() -> Self {
         Condvar {
-            blocked: std::sync::Mutex::new(Slab::new()),
+            wakers: WakerSet::new(),
         }
     }
 
@@ -87,12 +89,6 @@ impl Condvar {
     ///
     /// Unlike the std equivalent, this does not check that a single mutex is used at runtime.
     /// However, as a best practice avoid using with multiple mutexes.
-    ///
-    /// # Warning
-    /// Any attempt to poll this future before the notification is received will result in a
-    /// spurious wakeup. This allows the implementation to be efficient, and is technically valid
-    /// semantics for a condition variable. However, this may result in unexpected behaviour when this future is
-    /// used with future combinators. In most cases `Condvar::wait_until` is easier to use correctly.
     ///
     /// # Examples
     ///
@@ -136,7 +132,6 @@ impl Condvar {
             cond: self,
             guard: Some(guard),
             key: None,
-            notified: false,
         }
     }
 
@@ -189,13 +184,6 @@ impl Condvar {
 
     /// Waits on this condition variable for a notification, timing out after a specified duration.
     ///
-    /// # Warning
-    /// This has similar limitations to  `Condvar::wait`, where polling before a notify is sent can
-    /// result in a spurious wakeup. In addition, the timeout may itself trigger a spurious wakeup,
-    /// if no other task is holding the mutex when the future is polled. Thus the
-    /// `WaitTimeoutResult` should not be trusted to determine if the condition variable was
-    /// actually notified.
-    ///
     /// For these reasons `Condvar::wait_timeout_until` is recommended in most cases.
     ///
     /// # Examples
@@ -234,7 +222,6 @@ impl Condvar {
     /// #
     /// # })
     /// ```
-    #[cfg(feature = "unstable")]
     #[allow(clippy::needless_lifetimes)]
     pub async fn wait_timeout<'a, T>(
         &self,
@@ -332,8 +319,7 @@ impl Condvar {
     /// # }) }
     /// ```
     pub fn notify_one(&self) {
-        let blocked = self.blocked.lock().unwrap();
-        notify(blocked, false);
+        self.wakers.notify_one();
     }
 
     /// Wakes up all blocked tasks on this condvar.
@@ -369,20 +355,14 @@ impl Condvar {
     /// # }) }
     /// ```
     pub fn notify_all(&self) {
-        let blocked = self.blocked.lock().unwrap();
-        notify(blocked, true);
+        self.wakers.notify_all();
     }
 }
 
-#[inline]
-fn notify(mut blocked: std::sync::MutexGuard<'_, Slab<Option<Waker>>>, all: bool) {
-    for (_, entry) in blocked.iter_mut() {
-        if let Some(w) = entry.take() {
-            w.wake();
-            if !all {
-                return;
-            }
-        }
+impl fmt::Debug for Condvar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        //f.debug_struct("Condvar").finish()
+        f.pad("Condvar { .. }")
     }
 }
 
@@ -390,7 +370,6 @@ struct AwaitNotify<'a, 'b, T> {
     cond: &'a Condvar,
     guard: Option<MutexGuard<'b, T>>,
     key: Option<usize>,
-    notified: bool,
 }
 
 impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
@@ -399,16 +378,22 @@ impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.guard.take() {
             Some(_) => {
-                let mut blocked = self.cond.blocked.lock().unwrap();
-                let w = cx.waker().clone();
-                self.key = Some(blocked.insert(Some(w)));
-
+                self.key = Some(self.cond.wakers.insert(cx));
                 // the guard is dropped when we return, which frees the lock
                 Poll::Pending
             }
             None => {
-                self.notified = true;
-                Poll::Ready(())
+                if let Some(key) = self.key {
+                    if self.cond.wakers.complete_if_notified(key, cx) {
+                        self.key = None;
+                        Poll::Ready(())
+                    } else {
+                        Poll::Pending
+                    }
+                } else {
+                    // This should only happen if it is polled twice after receiving a notification
+                    Poll::Ready(())
+                }
             }
         }
     }
@@ -417,15 +402,7 @@ impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
 impl<'a, 'b, T> Drop for AwaitNotify<'a, 'b, T> {
     fn drop(&mut self) {
         if let Some(key) = self.key {
-            let mut blocked = self.cond.blocked.lock().unwrap();
-            let opt_waker = blocked.remove(key);
-
-            if opt_waker.is_none() && !self.notified {
-                // wake up the next task, because this task was notified, but
-                // we are dropping it before it can finished.
-                // This may result in a spurious wake-up, but that's ok.
-                notify(blocked, false);
-            }
+            self.cond.wakers.cancel(key);
         }
     }
 }

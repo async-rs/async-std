@@ -176,19 +176,19 @@
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
 
-pub use condvar::Condvar;
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-mod condvar;
 mod mutex;
 mod rwlock;
 
 cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};
     pub use channel::{channel, Sender, Receiver, RecvError, TryRecvError, TrySendError};
+    pub use condvar::Condvar;
 
     mod barrier;
+    mod condvar;
     mod channel;
 }
 
