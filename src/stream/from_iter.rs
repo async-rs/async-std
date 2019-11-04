@@ -12,7 +12,7 @@ pin_project! {
     /// See it documentation for more.
     ///
     /// [`from_iter`]: fn.from_iter.html
-    #[derive(Debug)]
+    #[derive(Clone, Debug)]
     pub struct FromIter<I> {
         iter: I,
     }

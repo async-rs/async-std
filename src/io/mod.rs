@@ -282,9 +282,9 @@ pub use read::Read;
 pub use repeat::{repeat, Repeat};
 pub use seek::Seek;
 pub use sink::{sink, Sink};
-pub use stderr::{stderr, Stderr, StderrLock};
-pub use stdin::{stdin, Stdin, StdinLock};
-pub use stdout::{stdout, Stdout, StdoutLock};
+pub use stderr::{stderr, Stderr};
+pub use stdin::{stdin, Stdin};
+pub use stdout::{stdout, Stdout};
 pub use timeout::timeout;
 pub use write::Write;
 
@@ -311,3 +311,9 @@ mod stdin;
 mod stdio;
 mod stdout;
 mod timeout;
+
+cfg_unstable! {
+    pub use stderr::StderrLock;
+    pub use stdin::StdinLock;
+    pub use stdout::StdoutLock;
+}
