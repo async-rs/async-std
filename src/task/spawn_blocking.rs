@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -49,9 +49,9 @@ where
     JoinHandle::new(handle)
 }
 
-const MAX_THREADS: u64 = 10_000;
+const MAX_THREADS: usize = 10_000;
 
-static DYNAMIC_THREAD_COUNT: AtomicU64 = AtomicU64::new(0);
+static DYNAMIC_THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 struct Pool {
     sender: Sender<Runnable>,
