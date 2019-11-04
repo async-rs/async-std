@@ -384,7 +384,7 @@ impl<'a, 'b, T> Future for AwaitNotify<'a, 'b, T> {
             }
             None => {
                 if let Some(key) = self.key {
-                    if self.cond.wakers.complete_if_notified(key, cx) {
+                    if self.cond.wakers.remove_if_notified(key, cx) {
                         self.key = None;
                         Poll::Ready(())
                     } else {

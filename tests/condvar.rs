@@ -6,7 +6,7 @@ use async_std::sync::{Condvar, Mutex};
 use async_std::task::{self, JoinHandle};
 
 #[test]
-fn wait_timeout() {
+fn wait_timeout_with_lock() {
     task::block_on(async {
         let pair = Arc::new((Mutex::new(false), Condvar::new()));
         let pair2 = pair.clone();
@@ -19,6 +19,19 @@ fn wait_timeout() {
         });
 
         let (m, c) = &*pair;
+        let (_, wait_result) = c
+            .wait_timeout(m.lock().await, Duration::from_millis(10))
+            .await;
+        assert!(wait_result.timed_out());
+    })
+}
+
+#[test]
+fn wait_timeout_without_lock() {
+    task::block_on(async {
+        let m = Mutex::new(false);
+        let c = Condvar::new();
+
         let (_, wait_result) = c
             .wait_timeout(m.lock().await, Duration::from_millis(10))
             .await;

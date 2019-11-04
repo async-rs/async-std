@@ -84,13 +84,12 @@ impl WakerSet {
     /// the waker for the entry, and return false. If the waker has been notified,
     /// treat the entry as completed and return true.
     #[cfg(feature = "unstable")]
-    pub fn complete_if_notified(&self, key: usize, cx: &Context<'_>) -> bool {
+    pub fn remove_if_notified(&self, key: usize, cx: &Context<'_>) -> bool {
         let mut inner = self.lock();
 
         match &mut inner.entries[key] {
             None => {
                 inner.entries.remove(key);
-                inner.none_count -= 1;
                 true
             }
             Some(w) => {
