@@ -5,9 +5,13 @@ use crate::future::Future;
 use crate::future::IntoFuture;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
 #[derive(Debug)]
-pub enum FlattenFuture<Fut1, Fut2> {
+pub struct FlattenFuture<Fut1, Fut2> {
+    state: State<Fut1, Fut2>,
+}
+
+#[derive(Debug)]
+enum State<Fut1, Fut2> {
     First(Fut1),
     Second(Fut2),
     Empty,
@@ -15,7 +19,9 @@ pub enum FlattenFuture<Fut1, Fut2> {
 
 impl<Fut1, Fut2> FlattenFuture<Fut1, Fut2> {
     pub fn new(future: Fut1) -> FlattenFuture<Fut1, Fut2> {
-        FlattenFuture::First(future)
+        FlattenFuture {
+            state: State::First(future),
+        }
     }
 }
 
@@ -27,19 +33,19 @@ where
     type Output = <Fut1::Output as IntoFuture>::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = unsafe { self.get_unchecked_mut() };
+        let Self { state } = unsafe { self.get_unchecked_mut() };
         loop {
-            match this {
-                FlattenFuture::First(fut1) => {
+            match state {
+                State::First(fut1) => {
                     let fut2 = ready!(unsafe { Pin::new_unchecked(fut1) }.poll(cx)).into_future();
-                    *this = FlattenFuture::Second(fut2);
+                    *state = State::Second(fut2);
                 }
-                FlattenFuture::Second(fut2) => {
+                State::Second(fut2) => {
                     let v = ready!(unsafe { Pin::new_unchecked(fut2) }.poll(cx));
-                    *this = FlattenFuture::Empty;
+                    *state = State::Empty;
                     return Poll::Ready(v);
                 }
-                FlattenFuture::Empty => unreachable!(),
+                State::Empty => panic!("polled a completed future"),
             }
         }
     }
