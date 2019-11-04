@@ -4,7 +4,7 @@ use pin_project_lite::pin_project;
 use std::pin::Pin;
 
 pin_project! {
-    #[allow(missing_debug_implementations)]
+    #[derive(Debug)]
     pub struct Cloned<S> {
         #[pin]
         stream: S,
