@@ -153,10 +153,10 @@ extension_trait! {
         /// ```
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         #[cfg(any(feature = "unstable", feature = "docs"))]
-        fn flatten(self) -> FlattenFuture<Self, <Self::Output as IntoFuture>::Future>
+        fn flatten(self) -> impl Future<Output = <<Self as Future>::Output as IntoFuture>::Output> [FlattenFuture<Self, <<Self as Future>::Output as IntoFuture>::Future>]
         where
             Self: Future + Sized,
-            Self::Output: IntoFuture
+            <Self as Future>::Output: IntoFuture
         {
            FlattenFuture::new(self)
         }
