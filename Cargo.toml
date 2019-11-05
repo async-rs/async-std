@@ -32,8 +32,10 @@ broadcaster = { version = "0.2.6", optional = true, default-features = false, fe
 crossbeam-channel = "0.3.9"
 crossbeam-deque = "0.7.1"
 crossbeam-utils = "0.6.6"
-futures-core-preview = "=0.3.0-alpha.19"
-futures-io-preview = "=0.3.0-alpha.19"
+futures-core-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git" }
+futures-io-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git" }
+# futures-core-preview = "=0.3.0-alpha.19"
+# futures-io-preview = "=0.3.0-alpha.19"
 futures-timer = "1.0.2"
 kv-log-macro = "1.0.4"
 log = { version = "0.4.8", features = ["kv_unstable"] }
