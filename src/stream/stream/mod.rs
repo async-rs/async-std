@@ -387,10 +387,10 @@ extension_trait! {
             use async_std::prelude::*;
             use std::collections::VecDeque;
 
-            let v: VecDeque<_> = vec![&1, &2, &3].into_iter().collect();
-
+            let v = stream::from_iter(vec![&1, &2, &3]);
+                
             let mut v_cloned = v.cloned();
-
+            
             assert_eq!(v_cloned.next().await, Some(1));
             assert_eq!(v_cloned.next().await, Some(2));
             assert_eq!(v_cloned.next().await, Some(3));
