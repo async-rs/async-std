@@ -138,41 +138,34 @@ impl<T> Sender<T> {
             type Output = ();
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let msg = self.msg.take().unwrap();
+                loop {
+                    let msg = self.msg.take().unwrap();
 
-                // Try sending the message.
-                let poll = match self.channel.try_send(msg) {
-                    Ok(()) => Poll::Ready(()),
-                    Err(TrySendError::Disconnected(msg)) => {
-                        self.msg = Some(msg);
-                        Poll::Pending
+                    // If the current task is in the set, remove it.
+                    if let Some(key) = self.opt_key.take() {
+                        self.channel.send_wakers.remove(key);
                     }
-                    Err(TrySendError::Full(msg)) => {
-                        // Insert this send operation.
-                        match self.opt_key {
-                            None => self.opt_key = Some(self.channel.send_wakers.insert(cx)),
-                            Some(key) => self.channel.send_wakers.update(key, cx),
-                        }
 
-                        // Try sending the message again.
-                        match self.channel.try_send(msg) {
-                            Ok(()) => Poll::Ready(()),
-                            Err(TrySendError::Disconnected(msg)) | Err(TrySendError::Full(msg)) => {
-                                self.msg = Some(msg);
-                                Poll::Pending
+                    // Try sending the message.
+                    match self.channel.try_send(msg) {
+                        Ok(()) => return Poll::Ready(()),
+                        Err(TrySendError::Disconnected(msg)) => {
+                            self.msg = Some(msg);
+                            return Poll::Pending;
+                        }
+                        Err(TrySendError::Full(msg)) => {
+                            self.msg = Some(msg);
+
+                            // Insert this send operation.
+                            self.opt_key = Some(self.channel.send_wakers.insert(cx));
+
+                            // If the channel is still full and not disconnected, return.
+                            if self.channel.is_full() && !self.channel.is_disconnected() {
+                                return Poll::Pending;
                             }
                         }
                     }
-                };
-
-                if poll.is_ready() {
-                    // If the current task is in the set, remove it.
-                    if let Some(key) = self.opt_key.take() {
-                        self.channel.send_wakers.complete(key);
-                    }
                 }
-
-                poll
             }
         }
 
@@ -543,34 +536,27 @@ fn poll_recv<T>(
     opt_key: &mut Option<usize>,
     cx: &mut Context<'_>,
 ) -> Poll<Option<T>> {
-    // Try receiving a message.
-    let poll = match channel.try_recv() {
-        Ok(msg) => Poll::Ready(Some(msg)),
-        Err(TryRecvError::Disconnected) => Poll::Ready(None),
-        Err(TryRecvError::Empty) => {
-            // Insert this receive operation.
-            match *opt_key {
-                None => *opt_key = Some(wakers.insert(cx)),
-                Some(key) => wakers.update(key, cx),
-            }
-
-            // Try receiving a message again.
-            match channel.try_recv() {
-                Ok(msg) => Poll::Ready(Some(msg)),
-                Err(TryRecvError::Disconnected) => Poll::Ready(None),
-                Err(TryRecvError::Empty) => Poll::Pending,
-            }
-        }
-    };
-
-    if poll.is_ready() {
+    loop {
         // If the current task is in the set, remove it.
         if let Some(key) = opt_key.take() {
-            wakers.complete(key);
+            wakers.remove(key);
+        }
+
+        // Try receiving a message.
+        match channel.try_recv() {
+            Ok(msg) => return Poll::Ready(Some(msg)),
+            Err(TryRecvError::Disconnected) => return Poll::Ready(None),
+            Err(TryRecvError::Empty) => {
+                // Insert this receive operation.
+                *opt_key = Some(wakers.insert(cx));
+
+                // If the channel is still empty and not disconnected, return.
+                if channel.is_empty() && !channel.is_disconnected() {
+                    return Poll::Pending;
+                }
+            }
         }
     }
-
-    poll
 }
 
 /// A slot in a channel.
@@ -860,6 +846,11 @@ impl<T> Channel<T> {
                 };
             }
         }
+    }
+
+    /// Returns `true` if the channel is disconnected.
+    pub fn is_disconnected(&self) -> bool {
+        self.tail.load(Ordering::SeqCst) & self.mark_bit != 0
     }
 
     /// Returns `true` if the channel is empty.
