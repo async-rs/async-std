@@ -385,7 +385,7 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
             let v = stream::from_iter(vec![&1, &2, &3]);
                 
