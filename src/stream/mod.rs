@@ -178,7 +178,7 @@
 //! produce a stream. What gives?
 //!
 //! There's a trait in the standard library for converting something into an
-//! stream: [`IntoStream`]. This trait has one method, [`into_stream],
+//! stream: [`IntoStream`]. This trait has one method, [`into_stream`],
 //! which converts the thing implementing [`IntoStream`] into a stream.
 //!
 //! Unlike `std::iter::IntoIterator`, `IntoStream` does not have compiler
