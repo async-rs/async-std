@@ -74,7 +74,7 @@ impl WakerSet {
     pub fn remove(&self, key: usize) {
         let mut inner = self.lock();
 
-        if let Some(_) = inner.entries.remove(key) {
+        if inner.entries.remove(key).is_some() {
             inner.notifiable -= 1;
         }
     }
