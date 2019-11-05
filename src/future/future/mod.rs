@@ -190,6 +190,8 @@ extension_trait! {
             The ordering of which value is yielded when two futures resolve
             simultaneously is intentionally left unspecified.
 
+            [`race`]: #method.race
+
             # Examples
 
             ```

@@ -267,7 +267,7 @@ extension_trait! {
             This function returns a new instance of `Read` which will read at most
             `limit` bytes, after which it will always return EOF ([`Ok(0)`]). Any
             read errors will not count towards the number of bytes read and future
-            calls to [`read()`] may succeed.
+            calls to [`read`] may succeed.
 
             # Examples
 
@@ -275,7 +275,7 @@ extension_trait! {
 
             [`File`]: ../fs/struct.File.html
             [`Ok(0)`]: ../../std/result/enum.Result.html#variant.Ok
-            [`read()`]: tymethod.read
+            [`read`]: tymethod.read
 
             ```no_run
             # fn main() -> std::io::Result<()> { async_std::task::block_on(async {

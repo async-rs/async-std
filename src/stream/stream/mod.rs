@@ -1520,7 +1520,7 @@ extension_trait! {
             standard library, used in a variety of contexts.
 
             The most basic pattern in which `collect()` is used is to turn one
-            collection into another. You take a collection, call [`stream`] on it,
+            collection into another. You take a collection, call [`into_stream`] on it,
             do a bunch of transformations, and then `collect()` at the end.
 
             Because `collect()` is so general, it can cause problems with type
@@ -1561,7 +1561,7 @@ extension_trait! {
             # }) }
             ```
 
-            [`stream`]: trait.Stream.html#tymethod.next
+            [`into_stream`]: trait.IntoStream.html#tymethod.into_stream
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
