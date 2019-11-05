@@ -53,11 +53,14 @@ femme = "1.2.0"
 rand = "0.7.2"
 # surf = "1.0.2"
 tempdir = "0.3.7"
-futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
+# futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
+futures-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git", features = ["async-await"]}
 
 # These are used by the book for examples
-futures-channel-preview = "=0.3.0-alpha.19"
-futures-util-preview = "=0.3.0-alpha.19"
+futures-channel-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git" }
+futures-util-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git" }
+# futures-channel-preview = "=0.3.0-alpha.19"
+# futures-util-preview = "=0.3.0-alpha.19"
 
 [[test]]
 name = "stream"
