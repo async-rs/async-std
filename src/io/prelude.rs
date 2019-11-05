@@ -1,4 +1,4 @@
-//! The async I/O Prelude
+//! The async I/O prelude.
 //!
 //! The purpose of this module is to alleviate imports of many common I/O traits
 //! by adding a glob import to the top of I/O heavy modules:
@@ -17,11 +17,11 @@ pub use crate::io::Seek;
 #[doc(no_inline)]
 pub use crate::io::Write;
 
-#[doc(hidden)]
-pub use crate::io::buf_read::BufReadExt as _;
-#[doc(hidden)]
-pub use crate::io::read::ReadExt as _;
-#[doc(hidden)]
-pub use crate::io::seek::SeekExt as _;
-#[doc(hidden)]
-pub use crate::io::write::WriteExt as _;
+#[doc(inline)]
+pub use crate::io::buf_read::BufReadExt;
+#[doc(inline)]
+pub use crate::io::read::ReadExt;
+#[doc(inline)]
+pub use crate::io::seek::SeekExt;
+#[doc(inline)]
+pub use crate::io::write::WriteExt;

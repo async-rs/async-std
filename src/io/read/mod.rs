@@ -31,7 +31,7 @@ extension_trait! {
         [`std::io::Read`].
 
         Methods other than [`poll_read`] and [`poll_read_vectored`] do not really exist in the
-        trait itself, but they become available when the prelude is imported:
+        trait itself, but they become available when [`ReadExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -43,6 +43,8 @@ extension_trait! {
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
         [`poll_read`]: #tymethod.poll_read
         [`poll_read_vectored`]: #method.poll_read_vectored
+        [`ReadExt`]: ../io/prelude/trait.ReadExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Read {
         #[doc = r#"
@@ -66,6 +68,11 @@ extension_trait! {
         }
     }
 
+    #[doc = r#"
+        Extension methods for [`Read`].
+
+        [`Read`]: ../trait.Read.html
+    "#]
     pub trait ReadExt: futures_io::AsyncRead {
         #[doc = r#"
             Reads some bytes from the byte stream.
