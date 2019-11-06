@@ -18,7 +18,7 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 #     prelude::*,
 #     task,
 # };
-# use futures::channelmpsc;
+# use futures::channel::mpsc;
 # use futures::sink::SinkExt;
 # use std::sync::Arc;
 #

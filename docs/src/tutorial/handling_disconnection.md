@@ -21,7 +21,7 @@ First, let's add a shutdown channel to the `connection_loop`:
 # extern crate async_std;
 # extern crate futures;
 # use async_std::net::TcpStream;
-# use futures::channelmpsc;
+# use futures::channel::mpsc;
 # use futures::SinkExt;
 # use std::sync::Arc;
 #
@@ -71,7 +71,7 @@ We use the `select` macro for this purpose:
 # extern crate async_std;
 # extern crate futures;
 # use async_std::{net::TcpStream, prelude::*};
-use futures::channelmpsc;
+use futures::channel::mpsc;
 use futures::{select, FutureExt};
 # use std::sync::Arc;
 
@@ -127,7 +127,7 @@ use async_std::{
     prelude::*,
     task,
 };
-use futures::channelmpsc;
+use futures::channel::mpsc;
 use futures::{select, FutureExt, SinkExt};
 use std::{
     collections::hash_map::{Entry, HashMap},

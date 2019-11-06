@@ -29,7 +29,7 @@ Let's add waiting to the server:
 #     prelude::*,
 #     task,
 # };
-# use futures::channelmpsc;
+# use futures::channel::mpsc;
 # use futures::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
@@ -162,7 +162,7 @@ And to the broker:
 #     prelude::*,
 #     task,
 # };
-# use futures::channelmpsc;
+# use futures::channel::mpsc;
 # use futures::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
