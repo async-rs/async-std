@@ -32,8 +32,8 @@ broadcaster = { version = "0.2.6", optional = true, default-features = false, fe
 crossbeam-channel = "0.3.9"
 crossbeam-deque = "0.7.1"
 crossbeam-utils = "0.6.6"
-futures-core-preview = "=0.3.0-alpha.19"
-futures-io-preview = "=0.3.0-alpha.19"
+futures-core = "0.3.0"
+futures-io = "0.3.0"
 futures-timer = "1.0.2"
 kv-log-macro = "1.0.4"
 log = { version = "0.4.8", features = ["kv_unstable"] }
@@ -51,11 +51,7 @@ femme = "1.2.0"
 rand = "0.7.2"
 # surf = "1.0.2"
 tempdir = "0.3.7"
-futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
-
-# These are used by the book for examples
-futures-channel-preview = "=0.3.0-alpha.19"
-futures-util-preview = "=0.3.0-alpha.19"
+futures = "0.3.0"
 
 [[test]]
 name = "stream"

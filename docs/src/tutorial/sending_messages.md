@@ -13,14 +13,13 @@ if Alice and Charley send two messages to Bob at the same time, Bob will see the
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::{
 #     net::TcpStream,
 #     prelude::*,
 # };
-use futures_channel::mpsc; // 1
-use futures_util::sink::SinkExt;
+use futures::channelmpsc; // 1
+use futures::sink::SinkExt;
 use std::sync::Arc;
 
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

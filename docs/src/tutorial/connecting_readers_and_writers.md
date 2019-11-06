@@ -12,15 +12,14 @@ The order of events "Bob sends message to Alice" and "Alice joins" is determined
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::{
 #     net::TcpStream,
 #     prelude::*,
 #     task,
 # };
-# use futures_channel::mpsc;
-# use futures_util::sink::SinkExt;
+# use futures::channelmpsc;
+# use futures::sink::SinkExt;
 # use std::sync::Arc;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

@@ -615,9 +615,9 @@ impl Path {
     /// ```no_run
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    /// use async_std::path::Path;
     /// use async_std::fs;
-    /// use futures_util::stream::StreamExt;
+    /// use async_std::path::Path;
+    /// use async_std::prelude::*;
     ///
     /// let path = Path::new("/laputa");
     /// let mut dir = fs::read_dir(&path).await.expect("read_dir call failed");
