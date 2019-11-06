@@ -205,8 +205,8 @@ impl BarrierWaitResult {
 #[cfg(test)]
 mod test {
     use futures::channelmpsc::unbounded;
-    use futures_util::sink::SinkExt;
-    use futures_util::stream::StreamExt;
+    use futures::sink::SinkExt;
+    use futures::stream::StreamExt;
 
     use crate::sync::{Arc, Barrier};
     use crate::task;
