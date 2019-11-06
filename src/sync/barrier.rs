@@ -204,7 +204,7 @@ impl BarrierWaitResult {
 
 #[cfg(test)]
 mod test {
-    use futures::channelmpsc::unbounded;
+    use futures::channel::mpsc::unbounded;
     use futures::sink::SinkExt;
     use futures::stream::StreamExt;
 
