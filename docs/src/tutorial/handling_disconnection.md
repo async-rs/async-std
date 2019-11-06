@@ -19,11 +19,10 @@ First, let's add a shutdown channel to the `connection_loop`:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::net::TcpStream;
-# use futures_channel::mpsc;
-# use futures_util::SinkExt;
+# use futures::channel::mpsc;
+# use futures::SinkExt;
 # use std::sync::Arc;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -70,11 +69,10 @@ We use the `select` macro for this purpose:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::{net::TcpStream, prelude::*};
-use futures_channel::mpsc;
-use futures_util::{select, FutureExt};
+use futures::channel::mpsc;
+use futures::{select, FutureExt};
 # use std::sync::Arc;
 
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
@@ -122,16 +120,15 @@ The final code looks like this:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 use async_std::{
     io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
-use futures_channel::mpsc;
-use futures_util::{select, FutureExt, SinkExt};
+use futures::channel::mpsc;
+use futures::{select, FutureExt, SinkExt};
 use std::{
     collections::hash_map::{Entry, HashMap},
     future::Future,
