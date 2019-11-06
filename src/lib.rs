@@ -68,7 +68,7 @@
 //! typically includes an overview of the module along with examples, and are
 //! a smart place to start familiarizing yourself with the library.
 //!
-//! Third, `async-std` defines [The Async Prelude], a small collection
+//! Second, `async-std` defines [The Async Prelude], a small collection
 //! of items - mostly traits - that should be imported into every module of
 //! every async crate. The traits in the prelude are pervasive, making the
 //! prelude documentation a good entry point to learning about the library.
@@ -82,16 +82,16 @@
 //!
 //! # Contributing changes to the documentation
 //!
-//! Check out the rust contribution guidelines [here](https://async.rs/contribute).
-//! The source for this documentation can be found on [Github](https://github.com/async-rs).
+//! Check out the Rust contribution guidelines [here](https://async.rs/contribute).
+//! The source for this documentation can be found on [GitHub](https://github.com/async-rs).
 //! To contribute changes, make sure you read the guidelines first, then submit
-//! pull-requests for your suggested changes.
+//! pull requests for your suggested changes.
 //!
 //! Contributions are appreciated! If you see a part of the docs that can be
 //! improved, submit a PR, or chat with us first on
 //! [Discord](https://discord.gg/JvZeVNe).
 //!
-//! # A Tour of `async-std`
+//! # A tour of `async-std`
 //!
 //! The rest of this crate documentation is dedicated to pointing out notable
 //! features of `async-std`.
