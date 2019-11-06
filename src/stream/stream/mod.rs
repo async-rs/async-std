@@ -2067,14 +2067,6 @@ extension_trait! {
         }
     }
 
-    impl<T: Unpin> Stream for std::collections::VecDeque<T> {
-        type Item = T;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
     impl<S: Stream> Stream for std::panic::AssertUnwindSafe<S> {
         type Item = S::Item;
 
