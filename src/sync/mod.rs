@@ -15,7 +15,7 @@
 //!
 //! Consider the following code, operating on some global static variables:
 //!
-//! ```rust
+//! ```
 //! static mut A: u32 = 0;
 //! static mut B: u32 = 0;
 //! static mut C: u32 = 0;
@@ -174,6 +174,8 @@
 //! #
 //! # })
 //! ```
+
+#![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
