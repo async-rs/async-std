@@ -1,7 +1,7 @@
 use std::collections::BinaryHeap;
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<T: Ord> FromStream<T> for BinaryHeap<T> {
     #[inline]
@@ -17,7 +17,7 @@ impl<T: Ord> FromStream<T> for BinaryHeap<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = BinaryHeap::new();
-            out.stream_extend(stream).await;
+            stream::Extend::extend(&mut out, stream).await;
             out
         })
     }

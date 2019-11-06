@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<K: Ord, V> FromStream<(K, V)> for BTreeMap<K, V> {
     #[inline]
@@ -17,7 +17,7 @@ impl<K: Ord, V> FromStream<(K, V)> for BTreeMap<K, V> {
             pin_utils::pin_mut!(stream);
 
             let mut out = BTreeMap::new();
-            out.stream_extend(stream).await;
+            stream::Extend::extend(&mut out, stream).await;
             out
         })
     }

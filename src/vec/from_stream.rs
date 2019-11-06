@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<T> FromStream<T> for Vec<T> {
     #[inline]
@@ -19,7 +19,7 @@ impl<T> FromStream<T> for Vec<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = vec![];
-            out.stream_extend(stream).await;
+            stream::Extend::extend(&mut out, stream).await;
             out
         })
     }

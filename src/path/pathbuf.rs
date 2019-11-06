@@ -6,7 +6,7 @@ use crate::path::Path;
 #[cfg(feature = "unstable")]
 use crate::prelude::*;
 #[cfg(feature = "unstable")]
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
@@ -241,8 +241,8 @@ impl AsRef<std::path::Path> for PathBuf {
 }
 
 #[cfg(feature = "unstable")]
-impl<P: AsRef<Path>> Extend<P> for PathBuf {
-    fn stream_extend<'a, S: IntoStream<Item = P>>(
+impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
+    fn extend<'a, S: IntoStream<Item = P>>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
@@ -275,7 +275,7 @@ impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
             pin_utils::pin_mut!(stream);
 
             let mut out = Self::new();
-            out.stream_extend(stream).await;
+            stream::Extend::extend(&mut out, stream).await;
             out
         })
     }

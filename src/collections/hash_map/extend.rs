@@ -3,14 +3,14 @@ use std::hash::{BuildHasher, Hash};
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Extend, IntoStream};
+use crate::stream::{self, IntoStream};
 
-impl<K, V, H> Extend<(K, V)> for HashMap<K, V, H>
+impl<K, V, H> stream::Extend<(K, V)> for HashMap<K, V, H>
 where
     K: Eq + Hash,
     H: BuildHasher + Default,
 {
-    fn stream_extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
+    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {

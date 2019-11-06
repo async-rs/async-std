@@ -17,11 +17,11 @@ use crate::stream::IntoStream;
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
-/// use async_std::stream::{self, Extend};
+/// use async_std::stream;
 ///
 /// let mut v: Vec<usize> = vec![1, 2];
 /// let s = stream::repeat(3usize).take(3);
-/// v.stream_extend(s).await;
+/// stream::Extend::extend(&mut v, s).await;
 ///
 /// assert_eq!(v, vec![1, 2, 3, 3, 3]);
 /// #
@@ -31,7 +31,7 @@ use crate::stream::IntoStream;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Extend<A> {
     /// Extends a collection with the contents of a stream.
-    fn stream_extend<'a, T: IntoStream<Item = A> + 'a>(
+    fn extend<'a, T: IntoStream<Item = A> + 'a>(
         &'a mut self,
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
@@ -40,7 +40,7 @@ pub trait Extend<A> {
 }
 
 impl Extend<()> for () {
-    fn stream_extend<'a, T: IntoStream<Item = ()> + 'a>(
+    fn extend<'a, T: IntoStream<Item = ()> + 'a>(
         &'a mut self,
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
