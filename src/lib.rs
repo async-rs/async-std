@@ -82,7 +82,7 @@
 //!
 //! # Contributing changes to the documentation
 //!
-//! Check out the Rust contribution guidelines [here](https://async.rs/contribute).
+//! Check out `async-std`'s contribution guidelines [here](https://async.rs/contribute).
 //! The source for this documentation can be found on [GitHub](https://github.com/async-rs).
 //! To contribute changes, make sure you read the guidelines first, then submit
 //! pull requests for your suggested changes.
