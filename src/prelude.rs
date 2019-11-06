@@ -33,7 +33,7 @@ pub use crate::io::Seek as _;
 pub use crate::io::Write as _;
 
 #[doc(no_inline)]
-pub use crate::io::buf_read::BufReadExt as _;
+pub use crate::io::prelude::BufReadExt as _;
 #[doc(no_inline)]
 pub use crate::io::prelude::ReadExt as _;
 #[doc(no_inline)]
