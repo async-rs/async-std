@@ -1,5 +1,6 @@
 use std::fmt;
-use std::sync::atomic::{AtomicUsize, Ordering};
+
+use crossbeam_utils::atomic::AtomicCell;
 
 /// A unique identifier for a task.
 ///
@@ -13,15 +14,15 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// })
 /// ```
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
-pub struct TaskId(pub(crate) usize);
+pub struct TaskId(pub(crate) u64);
 
 impl TaskId {
     /// Generates a new `TaskId`.
     pub(crate) fn generate() -> TaskId {
-        static COUNTER: AtomicUsize = AtomicUsize::new(1);
+        static COUNTER: AtomicCell<u64> = AtomicCell::new(1u64);
 
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        if id > usize::max_value() / 2 {
+        let id = COUNTER.fetch_add(1);
+        if id > u64::max_value() / 2 {
             std::process::abort();
         }
         TaskId(id)
