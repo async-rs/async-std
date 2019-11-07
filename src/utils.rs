@@ -25,7 +25,13 @@ pub fn random(n: u32) -> u32 {
     use std::num::Wrapping;
 
     thread_local! {
-        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
+        static RNG: Cell<Wrapping<u32>> = {
+            // Take the address of a local value as seed.
+            let mut x = 0i32;
+            let r = &mut x;
+            let addr = r as *mut i32 as usize;
+            Cell::new(Wrapping(addr as u32))
+        }
     }
 
     RNG.with(|rng| {
