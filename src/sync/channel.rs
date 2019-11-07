@@ -677,6 +677,14 @@ impl<T> Channel<T> {
         let mut tail = self.tail.load(Ordering::Relaxed);
 
         loop {
+            // Extract mark bit from the tail and unset it.
+            //
+            // If the mark bit was set (which means all receivers have been dropped), we will still
+            // send the message into the channel if there is enough capacity. The message will get
+            // dropped when the channel is dropped (which means when all senders are also dropped).
+            let mark_bit = tail & self.mark_bit;
+            tail ^= mark_bit;
+
             // Deconstruct the tail.
             let index = tail & (self.mark_bit - 1);
             let lap = tail & !(self.one_lap - 1);
@@ -699,8 +707,8 @@ impl<T> Channel<T> {
 
                 // Try moving the tail.
                 match self.tail.compare_exchange_weak(
-                    tail,
-                    new_tail,
+                    tail | mark_bit,
+                    new_tail | mark_bit,
                     Ordering::SeqCst,
                     Ordering::Relaxed,
                 ) {
@@ -732,7 +740,7 @@ impl<T> Channel<T> {
                     // ...then the channel is full.
 
                     // Check if the channel is disconnected.
-                    if tail & self.mark_bit != 0 {
+                    if mark_bit != 0 {
                         return Err(TrySendError::Disconnected(msg));
                     } else {
                         return Err(TrySendError::Full(msg));

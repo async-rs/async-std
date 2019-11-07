@@ -25,7 +25,13 @@ fn smoke() {
 
         drop(s);
         assert_eq!(r.recv().await, None);
-    })
+    });
+
+    task::block_on(async {
+        let (s, r) = channel(10);
+        drop(r);
+        s.send(1).await;
+    });
 }
 
 #[test]
