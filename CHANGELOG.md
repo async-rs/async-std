@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [0.99.12] - 2019-11-07
+
+[API Documentation](https://docs.rs/async-std/0.99.12/async-std)
+
+This patch upgrades us to `futures` 0.3, support for `async/await` on Rust
+Stable, performance improvements, and brand new module-level documentation.
+
+## Added
+
+- Added `Future::flatten` as "unstable".
+- Added `Future::race` as "unstable" (replaces `future::select!`).
+- Added `Future::try_race` as "unstable" (replaces `future::try_select!`).
+- Added `Stderr::lock` as "unstable".
+- Added `Stdin::lock` as "unstable".
+- Added `Stdout::lock` as "unstable".
+- Added `Stream::copied` as "unstable".
+- Added `Stream::eq` as "unstable".
+- Added `Stream::max_by_key` as "unstable".
+- Added `Stream::min` as "unstable".
+- Added `Stream::ne` as "unstable".
+- Added `Stream::position` as "unstable".
+- Added `StreamExt` and `FutureExt` as enumerable in the `prelude`.
+- Added `TcpListener` and `TcpStream` integration tests.
+- Added `stream::from_iter`.
+- Added `sync::WakerSet` for internal use.
+- Added an example to handle both `IP v4` and `IP v6` connections.
+- Added the `"runtime"` Cargo feature.
+
+## Changed
+
+- Changed the threadpool scheduling algorithm; it now spawns multiple threads if
+  it fails to enqueue work.
+- Fixed a bug with `Stream::merge` where sometimes it ended too soon.
+- Fixed a bug with our GitHub actions setup.
+- Fixed an issue where our channels could spuriously deadlock.
+- Refactored the `task` module.
+- Removed a deprecated GitHub action.
+- Replaced `futures-preview` with `futures`.
+- Replaced `lazy_static` with `once_cell`.
+- Replaced all uses of `VecDequeue` in the examples with `stream::from_iter`.
+- Simplified `sync::RwLock` using the internal `sync::WakerSet` type.
+- Updated the `path` submodule documentation to match std.
+- Updated the mod-level documentation to match std.
+
+## Removed
+
+- Removed `future::select!` (replaced by `Future::race`).
+- Removed `future::try_select!` (replaced by `Future::try_race`).
+
 # [0.99.11] - 2019-10-29
 
 This patch introduces `async_std::sync::channel`, a novel asynchronous port of
