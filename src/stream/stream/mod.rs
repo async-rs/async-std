@@ -138,7 +138,7 @@ extension_trait! {
         [`std::iter::Iterator`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`StreamExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -149,6 +149,8 @@ extension_trait! {
         [`futures::stream::Stream`]:
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
+        [`StreamExt`]: ../prelude/trait.StreamExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Stream {
         #[doc = r#"
@@ -210,6 +212,11 @@ extension_trait! {
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Stream`].
+
+        [`Stream`]: ../stream/trait.Stream.html
+    "#]
     pub trait StreamExt: futures_core::stream::Stream {
         #[doc = r#"
             Advances the stream and returns the next value.

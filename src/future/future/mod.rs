@@ -23,6 +23,14 @@ extension_trait! {
         "asynchronous value" makes it possible for a thread to continue doing useful
         work while it waits for the value to become available.
 
+        The [provided methods] do not really exist in the trait itself, but they become
+        available when [`FutureExt`] from the [prelude] is imported:
+
+        ```
+        # #[allow(unused_imports)]
+        use async_std::prelude::*;
+        ```
+
         # The `poll` method
 
         The core method of future, `poll`, *attempts* to resolve the future into a
@@ -36,6 +44,9 @@ extension_trait! {
         `.await` the value.
 
         [`Waker`]: ../task/struct.Waker.html
+        [provided methods]: #provided-methods
+        [`FutureExt`]: ../prelude/trait.FutureExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Future {
         #[doc = r#"
@@ -110,6 +121,11 @@ extension_trait! {
         fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Future`].
+
+        [`Future`]: ../future/trait.Future.html
+    "#]
     pub trait FutureExt: std::future::Future {
         /// Returns a Future that delays execution for a specified time.
         ///

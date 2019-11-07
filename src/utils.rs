@@ -144,6 +144,7 @@ macro_rules! extension_trait {
             $($body_base:tt)*
         }
 
+        #[doc = $doc_ext:tt]
         pub trait $ext:ident: $base:path {
             $($body_ext:tt)*
         }
@@ -177,13 +178,13 @@ macro_rules! extension_trait {
         pub use $base as $name;
 
         // The extension trait that adds methods to any type implementing the base trait.
-        /// Extension trait.
-        pub trait $ext: $base {
+        #[doc = $doc_ext]
+        pub trait $ext: $name {
             extension_trait!(@ext () $($body_ext)*);
         }
 
         // Blanket implementation of the extension trait for any type implementing the base trait.
-        impl<T: $base + ?Sized> $ext for T {}
+        impl<T: $name + ?Sized> $ext for T {}
 
         // Shim trait impls that only appear in docs.
         $(#[cfg(feature = "docs")] $imp)*
