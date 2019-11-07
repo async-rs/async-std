@@ -138,7 +138,7 @@ extension_trait! {
         [`std::iter::Iterator`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`StreamExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -149,6 +149,8 @@ extension_trait! {
         [`futures::stream::Stream`]:
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
+        [`StreamExt`]: ../prelude/trait.StreamExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Stream {
         #[doc = r#"
@@ -210,6 +212,11 @@ extension_trait! {
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Stream`].
+
+        [`Stream`]: ../stream/trait.Stream.html
+    "#]
     pub trait StreamExt: futures_core::stream::Stream {
         #[doc = r#"
             Advances the stream and returns the next value.
@@ -1520,7 +1527,7 @@ extension_trait! {
             standard library, used in a variety of contexts.
 
             The most basic pattern in which `collect()` is used is to turn one
-            collection into another. You take a collection, call [`stream`] on it,
+            collection into another. You take a collection, call [`into_stream`] on it,
             do a bunch of transformations, and then `collect()` at the end.
 
             Because `collect()` is so general, it can cause problems with type
@@ -1561,7 +1568,7 @@ extension_trait! {
             # }) }
             ```
 
-            [`stream`]: trait.Stream.html#tymethod.next
+            [`into_stream`]: trait.IntoStream.html#tymethod.into_stream
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -2012,10 +2019,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             async fn factorial(n: u32) -> u32 {
-                use std::collections::VecDeque;
                 use async_std::prelude::*;
+                use async_std::stream;
 
-                let s: VecDeque<_> = (1..=n).collect();
+                let s = stream::from_iter(1..=n);
                 s.product().await
             }
 
@@ -2061,14 +2068,6 @@ extension_trait! {
         <P as Deref>::Target: Stream,
     {
         type Item = <<P as Deref>::Target as Stream>::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: Unpin> Stream for std::collections::VecDeque<T> {
-        type Item = T;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
             unreachable!("this impl only appears in the rendered docs")

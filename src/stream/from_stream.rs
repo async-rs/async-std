@@ -15,9 +15,8 @@ use std::pin::Pin;
 ///
 /// ```
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-///  use crate::async_std::stream::FromStream;
 ///  use async_std::prelude::*;
-///  use async_std::stream;
+///  use async_std::stream::{self, FromStream};
 ///
 ///  let five_fives = stream::repeat(5).take(5);
 ///
@@ -117,9 +116,8 @@ pub trait FromStream<T> {
     ///
     /// ```
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    ///  use crate::async_std::stream::FromStream;
     ///  use async_std::prelude::*;
-    ///  use async_std::stream;
+    ///  use async_std::stream::{self, FromStream};
     ///
     ///  let five_fives = stream::repeat(5).take(5);
     ///

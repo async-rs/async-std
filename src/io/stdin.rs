@@ -173,7 +173,7 @@ impl Stdin {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::io;
-    /// use crate::async_std::prelude::*;
+    /// use async_std::prelude::*;
     ///
     /// let mut buffer = String::new();
     ///

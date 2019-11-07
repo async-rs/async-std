@@ -104,32 +104,26 @@ impl<T> Mutex<T> {
             type Output = MutexGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let poll = match self.mutex.try_lock() {
-                    Some(guard) => Poll::Ready(guard),
-                    None => {
-                        // Insert this lock operation.
-                        match self.opt_key {
-                            None => self.opt_key = Some(self.mutex.wakers.insert(cx)),
-                            Some(key) => self.mutex.wakers.update(key, cx),
-                        }
-
-                        // Try locking again because it's possible the mutex got unlocked just
-                        // before the current task was inserted into the waker set.
-                        match self.mutex.try_lock() {
-                            Some(guard) => Poll::Ready(guard),
-                            None => Poll::Pending,
-                        }
-                    }
-                };
-
-                if poll.is_ready() {
+                loop {
                     // If the current task is in the set, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.mutex.wakers.complete(key);
+                        self.mutex.wakers.remove(key);
+                    }
+
+                    // Try acquiring the lock.
+                    match self.mutex.try_lock() {
+                        Some(guard) => return Poll::Ready(guard),
+                        None => {
+                            // Insert this lock operation.
+                            self.opt_key = Some(self.mutex.wakers.insert(cx));
+
+                            // If the mutex is still locked, return.
+                            if self.mutex.locked.load(Ordering::SeqCst) {
+                                return Poll::Pending;
+                            }
+                        }
                     }
                 }
-
-                poll
             }
         }
 
@@ -266,8 +260,8 @@ impl<T> Drop for MutexGuard<'_, T> {
         // Use `SeqCst` ordering to synchronize with `WakerSet::insert()` and `WakerSet::update()`.
         self.0.locked.store(false, Ordering::SeqCst);
 
-        // Notify one blocked `lock()` operation.
-        self.0.wakers.notify_one();
+        // Notify a blocked `lock()` operation if none were notified already.
+        self.0.wakers.notify_any();
     }
 }
 

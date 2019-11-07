@@ -26,7 +26,7 @@ extension_trait! {
 
         Methods other than [`poll_write`], [`poll_write_vectored`], [`poll_flush`], and
         [`poll_close`] do not really exist in the trait itself, but they become available when
-        the prelude is imported:
+        [`WriteExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -40,6 +40,8 @@ extension_trait! {
         [`poll_write_vectored`]: #method.poll_write_vectored
         [`poll_flush`]: #tymethod.poll_flush
         [`poll_close`]: #tymethod.poll_close
+        [`WriteExt`]: ../io/prelude/trait.WriteExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Write {
         #[doc = r#"
@@ -74,6 +76,11 @@ extension_trait! {
         fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Write`].
+
+        [`Write`]: ../trait.Write.html
+    "#]
     pub trait WriteExt: futures_io::AsyncWrite {
         #[doc = r#"
             Writes some bytes into the byte stream.
