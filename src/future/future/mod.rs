@@ -187,10 +187,8 @@ extension_trait! {
             futures to complete. If multiple futures are completed at the same time,
             resolution will occur in the order that they have been passed.
 
-            Note that this macro consumes all futures passed, and once a future is
+            Note that this function consumes all futures passed, and once a future is
             completed, all other futures are dropped.
-
-            This macro is only usable inside of async functions, closures, and blocks.
 
             # Examples
 
