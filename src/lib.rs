@@ -197,6 +197,9 @@ mod utils;
 #[doc(inline)]
 pub use async_attributes::{main, test};
 
+#[cfg(feature = "std")]
+mod macros;
+
 cfg_std! {
     pub mod future;
     pub mod io;
@@ -205,7 +208,6 @@ cfg_std! {
     pub mod stream;
     pub mod sync;
     pub mod task;
-    mod macros;
 }
 
 cfg_default! {
