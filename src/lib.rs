@@ -157,6 +157,19 @@
 //! version = "0.99"
 //! features = ["unstable"]
 //! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>attributes</code></span>
+//! are available only when the `attributes` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "0.99"
+//! features = ["attributes"]
+//! ```
 
 #![cfg(feature = "default")]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
@@ -169,6 +182,11 @@
 
 #[macro_use]
 mod utils;
+
+#[cfg(feature = "attributes")]
+#[cfg_attr(feature = "docs", doc(cfg(attributes)))]
+#[doc(inline)]
+pub use async_attributes::{main, test};
 
 pub mod fs;
 pub mod future;
