@@ -1,11 +1,14 @@
 cfg_unstable! {
     mod delay;
+    mod flatten;
     mod race;
     mod try_race;
 
     use std::time::Duration;
 
     use delay::DelayFuture;
+    use flatten::FlattenFuture;
+    use crate::future::IntoFuture;
     use race::Race;
     use try_race::TryRace;
 }
@@ -148,6 +151,30 @@ extension_trait! {
             Self: Future + Sized
         {
             DelayFuture::new(self, dur)
+        }
+
+        /// Flatten out the execution of this future when the result itself
+        /// can be converted into another future.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// # async_std::task::block_on(async {
+        /// use async_std::prelude::*;
+        ///
+        /// let nested_future = async { async { 1 } };
+        /// let future = nested_future.flatten();
+        /// assert_eq!(future.await, 1);
+        /// # })
+        /// ```
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        fn flatten(self) -> impl Future<Output = <<Self as Future>::Output as IntoFuture>::Output> [FlattenFuture<Self, <<Self as Future>::Output as IntoFuture>::Future>]
+        where
+            Self: Future + Sized,
+            <Self as Future>::Output: IntoFuture
+        {
+           FlattenFuture::new(self)
         }
 
         #[doc = r#"
