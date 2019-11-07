@@ -130,7 +130,7 @@ where
 /// #
 /// # Ok(()) }) }
 /// ```
-#[cfg(feature = "unstable")]
+#[cfg(all(feature = "unstable", not(feature = "docs")))]
 pub async fn copy<R, W>(reader: R, writer: W) -> io::Result<u64>
 where
     R: Read + Unpin,
