@@ -81,7 +81,7 @@ fn start_thread() {
                     Ok(task) => task,
                     Err(_) => {
                         // Check whether this is the last sleeping thread.
-                        if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 0 {
+                        if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 1 {
                             // If so, then restart the thread to make sure there is always at least
                             // one sleeping thread.
                             if SLEEPING.compare_and_swap(0, 1, Ordering::SeqCst) == 0 {
@@ -96,7 +96,7 @@ fn start_thread() {
 
                 // If there are no sleeping threads, then start one to make sure there is always at
                 // least one sleeping thread.
-                if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 0 {
+                if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 1 {
                     start_thread();
                 }
 
