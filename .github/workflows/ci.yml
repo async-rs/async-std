@@ -40,6 +40,12 @@ jobs:
         command:  check
         args: --features unstable --all --benches --bins --examples --tests
 
+    - name: check std only
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --no-default-features --features std
+
     - name: tests
       uses: actions-rs/cargo@v1
       with:
