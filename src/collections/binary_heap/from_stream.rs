@@ -17,7 +17,7 @@ impl<T: Ord> FromStream<T> for BinaryHeap<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = BinaryHeap::new();
-            stream::Extend::extend(&mut out, stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

@@ -22,7 +22,7 @@ where
             pin_utils::pin_mut!(stream);
 
             let mut out = HashMap::with_hasher(Default::default());
-            stream::Extend::extend(&mut out, stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

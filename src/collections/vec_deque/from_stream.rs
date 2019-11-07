@@ -17,7 +17,7 @@ impl<T> FromStream<T> for VecDeque<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = VecDeque::new();
-            stream::Extend::extend(&mut out, stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

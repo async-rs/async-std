@@ -17,7 +17,7 @@ impl<K: Ord, V> FromStream<(K, V)> for BTreeMap<K, V> {
             pin_utils::pin_mut!(stream);
 
             let mut out = BTreeMap::new();
-            stream::Extend::extend(&mut out, stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

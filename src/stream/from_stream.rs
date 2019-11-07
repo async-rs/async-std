@@ -76,7 +76,7 @@ use std::pin::Pin;
 ///             let mut c = MyCollection::new();
 ///
 ///             let mut v = vec![];
-///             stream::Extend::extend(&mut v, stream).await;
+///             stream::extend(&mut v, stream).await;
 ///
 ///             for i in v {
 ///                 c.add(i);

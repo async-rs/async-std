@@ -19,7 +19,7 @@ impl<T> FromStream<T> for Vec<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = vec![];
-            stream::Extend::extend(&mut out, stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
