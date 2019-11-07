@@ -108,32 +108,26 @@ impl<T> RwLock<T> {
             type Output = RwLockReadGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let poll = match self.lock.try_read() {
-                    Some(guard) => Poll::Ready(guard),
-                    None => {
-                        // Insert this lock operation.
-                        match self.opt_key {
-                            None => self.opt_key = Some(self.lock.read_wakers.insert(cx)),
-                            Some(key) => self.lock.read_wakers.update(key, cx),
-                        }
-
-                        // Try locking again because it's possible the lock got unlocked just
-                        // before the current task was inserted into the waker set.
-                        match self.lock.try_read() {
-                            Some(guard) => Poll::Ready(guard),
-                            None => Poll::Pending,
-                        }
-                    }
-                };
-
-                if poll.is_ready() {
+                loop {
                     // If the current task is in the set, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.lock.read_wakers.complete(key);
+                        self.lock.read_wakers.remove(key);
+                    }
+
+                    // Try acquiring a read lock.
+                    match self.lock.try_read() {
+                        Some(guard) => return Poll::Ready(guard),
+                        None => {
+                            // Insert this lock operation.
+                            self.opt_key = Some(self.lock.read_wakers.insert(cx));
+
+                            // If the lock is still acquired for writing, return.
+                            if self.lock.state.load(Ordering::SeqCst) & WRITE_LOCK != 0 {
+                                return Poll::Pending;
+                            }
+                        }
                     }
                 }
-
-                poll
             }
         }
 
@@ -143,9 +137,10 @@ impl<T> RwLock<T> {
                 if let Some(key) = self.opt_key {
                     self.lock.read_wakers.cancel(key);
 
-                    // If there are no active readers, wake one of the writers.
+                    // If there are no active readers, notify a blocked writer if none were
+                    // notified already.
                     if self.lock.state.load(Ordering::SeqCst) & READ_COUNT_MASK == 0 {
-                        self.lock.write_wakers.notify_one();
+                        self.lock.write_wakers.notify_any();
                     }
                 }
             }
@@ -238,32 +233,26 @@ impl<T> RwLock<T> {
             type Output = RwLockWriteGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let poll = match self.lock.try_write() {
-                    Some(guard) => Poll::Ready(guard),
-                    None => {
-                        // Insert this lock operation.
-                        match self.opt_key {
-                            None => self.opt_key = Some(self.lock.write_wakers.insert(cx)),
-                            Some(key) => self.lock.write_wakers.update(key, cx),
-                        }
-
-                        // Try locking again because it's possible the lock got unlocked just
-                        // before the current task was inserted into the waker set.
-                        match self.lock.try_write() {
-                            Some(guard) => Poll::Ready(guard),
-                            None => Poll::Pending,
-                        }
-                    }
-                };
-
-                if poll.is_ready() {
+                loop {
                     // If the current task is in the set, remove it.
                     if let Some(key) = self.opt_key.take() {
-                        self.lock.write_wakers.complete(key);
+                        self.lock.write_wakers.remove(key);
+                    }
+
+                    // Try acquiring a write lock.
+                    match self.lock.try_write() {
+                        Some(guard) => return Poll::Ready(guard),
+                        None => {
+                            // Insert this lock operation.
+                            self.opt_key = Some(self.lock.write_wakers.insert(cx));
+
+                            // If the lock is still acquired for reading or writing, return.
+                            if self.lock.state.load(Ordering::SeqCst) != 0 {
+                                return Poll::Pending;
+                            }
+                        }
                     }
                 }
-
-                poll
             }
         }
 
@@ -392,9 +381,9 @@ impl<T> Drop for RwLockReadGuard<'_, T> {
     fn drop(&mut self) {
         let state = self.0.state.fetch_sub(ONE_READ, Ordering::SeqCst);
 
-        // If this was the last read, wake one of the writers.
+        // If this was the last reader, notify a blocked writer if none were notified already.
         if state & READ_COUNT_MASK == ONE_READ {
-            self.0.write_wakers.notify_one();
+            self.0.write_wakers.notify_any();
         }
     }
 }
@@ -431,8 +420,9 @@ impl<T> Drop for RwLockWriteGuard<'_, T> {
 
         // Notify all blocked readers.
         if !self.0.read_wakers.notify_all() {
-            // If there were no blocked readers, notify a blocked writer.
-            self.0.write_wakers.notify_one();
+            // If there were no blocked readers, notify a blocked writer if none were notified
+            // already.
+            self.0.write_wakers.notify_any();
         }
     }
 }

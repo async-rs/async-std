@@ -89,6 +89,7 @@ where
     static VTABLE: RawWakerVTable = {
         unsafe fn clone_raw(ptr: *const ()) -> RawWaker {
             let arc = ManuallyDrop::new(Arc::from_raw(ptr as *const Parker));
+            #[allow(clippy::redundant_clone)]
             mem::forget(arc.clone());
             RawWaker::new(ptr, &VTABLE)
         }

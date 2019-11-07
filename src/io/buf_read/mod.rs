@@ -25,7 +25,7 @@ extension_trait! {
         [`std::io::BufRead`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`BufReadExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -36,6 +36,8 @@ extension_trait! {
         [`futures::io::AsyncBufRead`]:
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
         [provided methods]: #provided-methods
+        [`BufReadExt`]: ../io/prelude/trait.BufReadExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait BufRead {
         #[doc = r#"
@@ -62,6 +64,11 @@ extension_trait! {
         fn consume(self: Pin<&mut Self>, amt: usize);
     }
 
+    #[doc = r#"
+        Extension methods for [`BufRead`].
+
+        [`BufRead`]: ../trait.BufRead.html
+    "#]
     pub trait BufReadExt: futures_io::AsyncBufRead {
         #[doc = r#"
             Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.

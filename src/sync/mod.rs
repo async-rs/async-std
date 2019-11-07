@@ -15,7 +15,7 @@
 //!
 //! Consider the following code, operating on some global static variables:
 //!
-//! ```rust
+//! ```
 //! static mut A: u32 = 0;
 //! static mut B: u32 = 0;
 //! static mut C: u32 = 0;
@@ -134,7 +134,7 @@
 //!   inter-task synchronisation mechanism, at the cost of some
 //!   extra memory.
 //!
-//! - [`Mutex`]: Mutual Exclusion mechanism, which ensures that at
+//! - [`Mutex`]: Mutual exclusion mechanism, which ensures that at
 //!   most one task at a time is able to access some data.
 //!
 //! - [`RwLock`]: Provides a mutual exclusion mechanism which allows
@@ -142,13 +142,11 @@
 //!   writer at a time. In some cases, this can be more efficient than
 //!   a mutex.
 //!
-//! [`Arc`]: crate::sync::Arc
-//! [`Barrier`]: crate::sync::Barrier
-//! [`Condvar`]: crate::sync::Condvar
+//! [`Arc`]: struct.Arc.html
+//! [`Barrier`]: struct.Barrier.html
 //! [`channel`]: fn.channel.html
-//! [`Mutex`]: crate::sync::Mutex
-//! [`Once`]: crate::sync::Once
-//! [`RwLock`]: crate::sync::RwLock
+//! [`Mutex`]: struct.Mutex.html
+//! [`RwLock`]: struct.RwLock.html
 //!
 //! # Examples
 //!
@@ -174,6 +172,8 @@
 //! #
 //! # })
 //! ```
+
+#![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};

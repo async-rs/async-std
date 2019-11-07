@@ -1,11 +1,14 @@
 cfg_unstable! {
     mod delay;
+    mod flatten;
     mod race;
     mod try_race;
 
     use std::time::Duration;
 
     use delay::DelayFuture;
+    use flatten::FlattenFuture;
+    use crate::future::IntoFuture;
     use race::Race;
     use try_race::TryRace;
 }
@@ -23,6 +26,14 @@ extension_trait! {
         "asynchronous value" makes it possible for a thread to continue doing useful
         work while it waits for the value to become available.
 
+        The [provided methods] do not really exist in the trait itself, but they become
+        available when [`FutureExt`] from the [prelude] is imported:
+
+        ```
+        # #[allow(unused_imports)]
+        use async_std::prelude::*;
+        ```
+
         # The `poll` method
 
         The core method of future, `poll`, *attempts* to resolve the future into a
@@ -36,6 +47,9 @@ extension_trait! {
         `.await` the value.
 
         [`Waker`]: ../task/struct.Waker.html
+        [provided methods]: #provided-methods
+        [`FutureExt`]: ../prelude/trait.FutureExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Future {
         #[doc = r#"
@@ -110,6 +124,11 @@ extension_trait! {
         fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Future`].
+
+        [`Future`]: ../future/trait.Future.html
+    "#]
     pub trait FutureExt: std::future::Future {
         /// Returns a Future that delays execution for a specified time.
         ///
@@ -132,6 +151,30 @@ extension_trait! {
             Self: Future + Sized
         {
             DelayFuture::new(self, dur)
+        }
+
+        /// Flatten out the execution of this future when the result itself
+        /// can be converted into another future.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// # async_std::task::block_on(async {
+        /// use async_std::prelude::*;
+        ///
+        /// let nested_future = async { async { 1 } };
+        /// let future = nested_future.flatten();
+        /// assert_eq!(future.await, 1);
+        /// # })
+        /// ```
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        fn flatten(self) -> impl Future<Output = <<Self as Future>::Output as IntoFuture>::Output> [FlattenFuture<Self, <<Self as Future>::Output as IntoFuture>::Future>]
+        where
+            Self: Future + Sized,
+            <Self as Future>::Output: IntoFuture
+        {
+           FlattenFuture::new(self)
         }
 
         #[doc = r#"
@@ -189,6 +232,8 @@ extension_trait! {
 
             The ordering of which value is yielded when two futures resolve
             simultaneously is intentionally left unspecified.
+
+            [`race`]: #method.race
 
             # Examples
 

@@ -18,7 +18,7 @@ extension_trait! {
         [`std::io::Seek`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`SeekExt`] the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -29,6 +29,8 @@ extension_trait! {
         [`futures::io::AsyncSeek`]:
         https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
         [provided methods]: #provided-methods
+        [`SeekExt`]: ../io/prelude/trait.SeekExt.html
+        [prelude]: ../prelude/index.html
     "#]
     pub trait Seek {
         #[doc = r#"
@@ -41,6 +43,11 @@ extension_trait! {
         ) -> Poll<io::Result<u64>>;
     }
 
+    #[doc = r#"
+        Extension methods for [`Seek`].
+
+        [`Seek`]: ../trait.Seek.html
+    "#]
     pub trait SeekExt: futures_io::AsyncSeek {
         #[doc = r#"
             Seeks to a new position in a byte stream.

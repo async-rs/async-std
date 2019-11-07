@@ -17,11 +17,11 @@ use crate::task::{Context, Waker};
 #[allow(clippy::identity_op)]
 const LOCKED: usize = 1 << 0;
 
-/// Set when there are tasks for `notify_one()` to wake.
-const NOTIFY_ONE: usize = 1 << 1;
+/// Set when there is at least one entry that has already been notified.
+const NOTIFIED: usize = 1 << 1;
 
-/// Set when there are tasks for `notify_all()` to wake.
-const NOTIFY_ALL: usize = 1 << 2;
+/// Set when there is at least one notifiable entry.
+const NOTIFIABLE: usize = 1 << 2;
 
 /// Inner representation of `WakerSet`.
 struct Inner {
@@ -34,8 +34,8 @@ struct Inner {
     /// The key of each entry is its index in the `Slab`.
     entries: Slab<Option<Waker>>,
 
-    /// The number of entries that have the waker set to `None`.
-    none_count: usize,
+    /// The number of notifiable entries.
+    notifiable: usize,
 }
 
 /// A set holding wakers.
@@ -55,7 +55,7 @@ impl WakerSet {
             flag: AtomicUsize::new(0),
             inner: UnsafeCell::new(Inner {
                 entries: Slab::new(),
-                none_count: 0,
+                notifiable: 0,
             }),
         }
     }
@@ -63,34 +63,19 @@ impl WakerSet {
     /// Inserts a waker for a blocked operation and returns a key associated with it.
     pub fn insert(&self, cx: &Context<'_>) -> usize {
         let w = cx.waker().clone();
-        self.lock().entries.insert(Some(w))
-    }
-
-    /// Updates the waker of a previously inserted entry.
-    pub fn update(&self, key: usize, cx: &Context<'_>) {
         let mut inner = self.lock();
 
-        match &mut inner.entries[key] {
-            None => {
-                // Fill in the waker.
-                let w = cx.waker().clone();
-                inner.entries[key] = Some(w);
-                inner.none_count -= 1;
-            }
-            Some(w) => {
-                // Replace the waker if the existing one is different.
-                if !w.will_wake(cx.waker()) {
-                    *w = cx.waker().clone();
-                }
-            }
-        }
+        let key = inner.entries.insert(Some(w));
+        inner.notifiable += 1;
+        key
     }
 
-    /// Removes the waker of a completed operation.
-    pub fn complete(&self, key: usize) {
+    /// Removes the waker of an operation.
+    pub fn remove(&self, key: usize) {
         let mut inner = self.lock();
-        if inner.entries.remove(key).is_none() {
-            inner.none_count -= 1;
+
+        if inner.entries.remove(key).is_some() {
+            inner.notifiable -= 1;
         }
     }
 
@@ -100,31 +85,48 @@ impl WakerSet {
     pub fn cancel(&self, key: usize) -> bool {
         let mut inner = self.lock();
 
-        if inner.entries.remove(key).is_none() {
-            inner.none_count -= 1;
-
-            // The operation was cancelled and notified so notify another operation instead.
-            if let Some((_, opt_waker)) = inner.entries.iter_mut().next() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                    inner.none_count += 1;
+        match inner.entries.remove(key) {
+            Some(_) => inner.notifiable -= 1,
+            None => {
+                // The operation was cancelled and notified so notify another operation instead.
+                for (_, opt_waker) in inner.entries.iter_mut() {
+                    // If there is no waker in this entry, that means it was already woken.
+                    if let Some(w) = opt_waker.take() {
+                        w.wake();
+                        inner.notifiable -= 1;
+                        return true;
+                    }
                 }
-                return true;
             }
         }
 
         false
     }
 
-    /// Notifies one blocked operation.
+    /// Notifies a blocked operation if none have been notified already.
     ///
     /// Returns `true` if an operation was notified.
     #[inline]
+    pub fn notify_any(&self) -> bool {
+        // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
+        let flag = self.flag.load(Ordering::SeqCst);
+
+        if flag & NOTIFIED == 0 && flag & NOTIFIABLE != 0 {
+            self.notify(Notify::Any)
+        } else {
+            false
+        }
+    }
+
+    /// Notifies one additional blocked operation.
+    ///
+    /// Returns `true` if an operation was notified.
+    #[inline]
+    #[cfg(feature = "unstable")]
     pub fn notify_one(&self) -> bool {
         // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
-        if self.flag.load(Ordering::SeqCst) & NOTIFY_ONE != 0 {
-            self.notify(false)
+        if self.flag.load(Ordering::SeqCst) & NOTIFIABLE != 0 {
+            self.notify(Notify::One)
         } else {
             false
         }
@@ -136,8 +138,8 @@ impl WakerSet {
     #[inline]
     pub fn notify_all(&self) -> bool {
         // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
-        if self.flag.load(Ordering::SeqCst) & NOTIFY_ALL != 0 {
-            self.notify(true)
+        if self.flag.load(Ordering::SeqCst) & NOTIFIABLE != 0 {
+            self.notify(Notify::All)
         } else {
             false
         }
@@ -146,7 +148,7 @@ impl WakerSet {
     /// Notifies blocked operations, either one or all of them.
     ///
     /// Returns `true` if at least one operation was notified.
-    fn notify(&self, all: bool) -> bool {
+    fn notify(&self, n: Notify) -> bool {
         let mut inner = &mut *self.lock();
         let mut notified = false;
 
@@ -154,12 +156,15 @@ impl WakerSet {
             // If there is no waker in this entry, that means it was already woken.
             if let Some(w) = opt_waker.take() {
                 w.wake();
-                inner.none_count += 1;
+                inner.notifiable -= 1;
+                notified = true;
+
+                if n == Notify::One {
+                    break;
+                }
             }
 
-            notified = true;
-
-            if !all {
+            if n == Notify::Any {
                 break;
             }
         }
@@ -188,14 +193,14 @@ impl Drop for Lock<'_> {
     fn drop(&mut self) {
         let mut flag = 0;
 
-        // If there is at least one entry and all are `Some`, then `notify_one()` has work to do.
-        if !self.entries.is_empty() && self.none_count == 0 {
-            flag |= NOTIFY_ONE;
+        // Set the `NOTIFIED` flag if there is at least one notified entry.
+        if self.entries.len() - self.notifiable > 0 {
+            flag |= NOTIFIED;
         }
 
-        // If there is at least one `Some` entry, then `notify_all()` has work to do.
-        if self.entries.len() - self.none_count > 0 {
-            flag |= NOTIFY_ALL;
+        // Set the `NOTIFIABLE` flag if there is at least one notifiable entry.
+        if self.notifiable > 0 {
+            flag |= NOTIFIABLE;
         }
 
         // Use `SeqCst` ordering to synchronize with `WakerSet::lock_to_notify()`.
@@ -217,4 +222,15 @@ impl DerefMut for Lock<'_> {
     fn deref_mut(&mut self) -> &mut Inner {
         unsafe { &mut *self.waker_set.inner.get() }
     }
+}
+
+/// Notification strategy.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum Notify {
+    /// Make sure at least one entry is notified.
+    Any,
+    /// Notify one additional entry.
+    One,
+    /// Notify all entries.
+    All,
 }
