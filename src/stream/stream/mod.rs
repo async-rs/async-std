@@ -27,6 +27,7 @@ mod chain;
 mod cloned;
 mod cmp;
 mod copied;
+mod cycle;
 mod enumerate;
 mod eq;
 mod filter;
@@ -66,6 +67,7 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
+use cycle::Cycle;
 use enumerate::Enumerate;
 use eq::EqFuture;
 use filter_map::FilterMap;
@@ -446,6 +448,38 @@ extension_trait! {
             T : 'a + Copy,
         {
             Copied::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream that yields the provided values infinitely and in order.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let mut s = stream::once(7).cycle();
+
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            #
+            # })
+            ```
+        "#]
+        fn cycle(self) -> Cycle<Self, Self::Item>
+            where
+                Self: Sized,
+                Self::Item: Clone,
+        {
+            Cycle::new(self)
         }
 
         #[doc = r#"
