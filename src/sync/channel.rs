@@ -678,6 +678,10 @@ impl<T> Channel<T> {
 
         loop {
             // Extract mark bit from the tail and unset it.
+            //
+            // If the mark bit was set (which means all receivers have been dropped), we will still
+            // send the message into the channel if there is enough capacity. The message will get
+            // dropped when the channel is dropped (which means when all senders are also dropped).
             let mark_bit = tail & self.mark_bit;
             tail ^= mark_bit;
 
