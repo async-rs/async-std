@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl FromStream<char> for String {
     #[inline]
@@ -17,7 +17,7 @@ impl FromStream<char> for String {
             pin_utils::pin_mut!(stream);
 
             let mut out = String::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
@@ -37,7 +37,7 @@ impl<'b> FromStream<&'b char> for String {
             pin_utils::pin_mut!(stream);
 
             let mut out = String::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
@@ -57,7 +57,7 @@ impl<'b> FromStream<&'b str> for String {
             pin_utils::pin_mut!(stream);
 
             let mut out = String::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
@@ -77,7 +77,7 @@ impl FromStream<String> for String {
             pin_utils::pin_mut!(stream);
 
             let mut out = String::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
@@ -97,7 +97,7 @@ impl<'b> FromStream<Cow<'b, str>> for String {
             pin_utils::pin_mut!(stream);
 
             let mut out = String::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

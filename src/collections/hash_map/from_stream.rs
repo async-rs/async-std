@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash};
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<K, V, H> FromStream<(K, V)> for HashMap<K, V, H>
 where
@@ -22,7 +22,7 @@ where
             pin_utils::pin_mut!(stream);
 
             let mut out = HashMap::with_hasher(Default::default());
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

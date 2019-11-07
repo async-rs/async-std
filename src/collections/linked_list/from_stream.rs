@@ -1,7 +1,7 @@
 use std::collections::LinkedList;
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<T> FromStream<T> for LinkedList<T> {
     #[inline]
@@ -17,7 +17,7 @@ impl<T> FromStream<T> for LinkedList<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = LinkedList::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

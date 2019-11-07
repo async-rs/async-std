@@ -45,8 +45,7 @@ use std::pin::Pin;
 ///
 /// ```
 /// use async_std::prelude::*;
-/// use async_std::stream::{Extend, FromStream, IntoStream};
-/// use async_std::stream;
+/// use async_std::stream::{self, FromStream, IntoStream};
 /// use std::pin::Pin;
 ///
 /// // A sample collection, that's just a wrapper over Vec<T>
@@ -76,7 +75,7 @@ use std::pin::Pin;
 ///             let mut c = MyCollection::new();
 ///
 ///             let mut v = vec![];
-///             v.stream_extend(stream).await;
+///             stream::extend(&mut v, stream).await;
 ///
 ///             for i in v {
 ///                 c.add(i);

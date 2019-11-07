@@ -2,10 +2,10 @@ use std::borrow::Cow;
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Extend, IntoStream};
+use crate::stream::{self, IntoStream};
 
-impl Extend<char> for String {
-    fn stream_extend<'a, S: IntoStream<Item = char> + 'a>(
+impl stream::Extend<char> for String {
+    fn extend<'a, S: IntoStream<Item = char> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
@@ -17,8 +17,8 @@ impl Extend<char> for String {
     }
 }
 
-impl<'b> Extend<&'b char> for String {
-    fn stream_extend<'a, S: IntoStream<Item = &'b char> + 'a>(
+impl<'b> stream::Extend<&'b char> for String {
+    fn extend<'a, S: IntoStream<Item = &'b char> + 'a>(
         &'a mut self,
         //TODO: Remove the underscore when uncommenting the body of this impl
         _stream: S,
@@ -32,8 +32,8 @@ impl<'b> Extend<&'b char> for String {
     }
 }
 
-impl<'b> Extend<&'b str> for String {
-    fn stream_extend<'a, S: IntoStream<Item = &'b str> + 'a>(
+impl<'b> stream::Extend<&'b str> for String {
+    fn extend<'a, S: IntoStream<Item = &'b str> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
@@ -44,8 +44,8 @@ impl<'b> Extend<&'b str> for String {
     }
 }
 
-impl Extend<String> for String {
-    fn stream_extend<'a, S: IntoStream<Item = String> + 'a>(
+impl stream::Extend<String> for String {
+    fn extend<'a, S: IntoStream<Item = String> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
@@ -53,8 +53,8 @@ impl Extend<String> for String {
     }
 }
 
-impl<'b> Extend<Cow<'b, str>> for String {
-    fn stream_extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
+impl<'b> stream::Extend<Cow<'b, str>> for String {
+    fn extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>>

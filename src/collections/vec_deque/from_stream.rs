@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<T> FromStream<T> for VecDeque<T> {
     #[inline]
@@ -17,7 +17,7 @@ impl<T> FromStream<T> for VecDeque<T> {
             pin_utils::pin_mut!(stream);
 
             let mut out = VecDeque::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }
