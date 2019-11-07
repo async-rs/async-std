@@ -11,35 +11,39 @@
 //! use async_std::prelude::*;
 //! ```
 
-#[doc(no_inline)]
-pub use crate::future::Future;
-#[doc(no_inline)]
-pub use crate::stream::Stream;
-#[doc(no_inline)]
-pub use crate::task_local;
+cfg_std! {
+    #[doc(no_inline)]
+    pub use crate::future::Future;
+    #[doc(no_inline)]
+    pub use crate::stream::Stream;
 
-#[doc(inline)]
-pub use crate::future::future::FutureExt;
-#[doc(inline)]
-pub use crate::stream::stream::StreamExt;
+    #[doc(inline)]
+    pub use crate::future::future::FutureExt;
+    #[doc(inline)]
+    pub use crate::stream::stream::StreamExt;
+    #[doc(no_inline)]
+    pub use crate::io::BufRead as _;
+    #[doc(no_inline)]
+    pub use crate::io::Read as _;
+    #[doc(no_inline)]
+    pub use crate::io::Seek as _;
+    #[doc(no_inline)]
+    pub use crate::io::Write as _;
 
-#[doc(no_inline)]
-pub use crate::io::BufRead as _;
-#[doc(no_inline)]
-pub use crate::io::Read as _;
-#[doc(no_inline)]
-pub use crate::io::Seek as _;
-#[doc(no_inline)]
-pub use crate::io::Write as _;
+    #[doc(no_inline)]
+    pub use crate::io::prelude::BufReadExt as _;
+    #[doc(no_inline)]
+    pub use crate::io::prelude::ReadExt as _;
+    #[doc(no_inline)]
+    pub use crate::io::prelude::SeekExt as _;
+    #[doc(no_inline)]
+    pub use crate::io::prelude::WriteExt as _;
+}
 
-#[doc(no_inline)]
-pub use crate::io::prelude::BufReadExt as _;
-#[doc(no_inline)]
-pub use crate::io::prelude::ReadExt as _;
-#[doc(no_inline)]
-pub use crate::io::prelude::SeekExt as _;
-#[doc(no_inline)]
-pub use crate::io::prelude::WriteExt as _;
+// cfg_default! {
+//     #[doc(no_inline)]
+//     pub use crate::task_local;
+// }
 
 cfg_unstable! {
     #[doc(no_inline)]

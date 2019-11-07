@@ -1,3 +1,5 @@
 //! Platform-specific extensions for Windows.
 
-pub mod io;
+cfg_std! {
+    pub mod io;
+}

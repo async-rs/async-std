@@ -124,6 +124,30 @@ macro_rules! cfg_not_docs {
     }
 }
 
+/// Declares std items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_std {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "std")]
+            $item
+        )*
+    }
+}
+
+/// Declares default items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_default {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "default")]
+            $item
+        )*
+    }
+}
+
 /// Defines an extension trait for a base trait.
 ///
 /// In generated docs, the base trait will contain methods from the extension trait. In actual

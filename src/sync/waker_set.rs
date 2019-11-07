@@ -8,10 +8,10 @@ use std::cell::UnsafeCell;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use std::task::{Context, Waker};
+
 use crossbeam_utils::Backoff;
 use slab::Slab;
-
-use crate::task::{Context, Waker};
 
 /// Set when the entry list is locked.
 #[allow(clippy::identity_op)]
