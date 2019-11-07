@@ -24,6 +24,7 @@
 mod all;
 mod any;
 mod chain;
+mod cloned;
 mod cmp;
 mod copied;
 mod enumerate;
@@ -91,6 +92,7 @@ use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
+pub use cloned::Cloned;
 pub use copied::Copied;
 pub use filter::Filter;
 pub use fuse::Fuse;
@@ -379,6 +381,40 @@ extension_trait! {
             Chain::new(self, other)
         }
 
+            #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let v = stream::from_iter(vec![&1, &2, &3]);
+                
+            let mut v_cloned = v.cloned();
+            
+            assert_eq!(v_cloned.next().await, Some(1));
+            assert_eq!(v_cloned.next().await, Some(2));
+            assert_eq!(v_cloned.next().await, Some(3));
+            assert_eq!(v_cloned.next().await, None);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn cloned<'a,T>(self) -> Cloned<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T : 'a + Clone,
+        {
+            Cloned::new(self)
+        }
+
 
         #[doc = r#"
             Creates an stream which copies all of its elements.
@@ -394,8 +430,6 @@ extension_trait! {
             use async_std::stream;
 
             let s = stream::from_iter(vec![&1, &2, &3]);
-            let second = stream::from_iter(vec![2, 3]);
-
             let mut s_copied  = s.copied();
 
             assert_eq!(s_copied.next().await, Some(1));
