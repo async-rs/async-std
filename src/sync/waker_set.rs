@@ -7,7 +7,6 @@
 use std::cell::UnsafeCell;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicUsize, Ordering};
-
 use std::task::{Context, Waker};
 
 use crossbeam_utils::Backoff;

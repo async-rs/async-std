@@ -24,6 +24,7 @@ rustdoc-args = ["--cfg", "feature=\"docs\""]
 default = [
   "std",
   "async-task",
+  "crossbeam-channel",
   "crossbeam-deque",
   "futures-timer",
   "kv-log-macro",
@@ -37,11 +38,9 @@ docs = ["unstable"]
 unstable = ["default", "broadcaster"]
 std = [
   "async-macros",
-  "crossbeam-channel",
   "crossbeam-utils",
   "futures-core",
   "futures-io",
-  "futures-timer",
   "memchr",
   "once_cell",
   "pin-project-lite",
