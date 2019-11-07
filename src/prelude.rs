@@ -44,6 +44,4 @@ cfg_unstable! {
     pub use crate::stream::DoubleEndedStream;
     #[doc(no_inline)]
     pub use crate::stream::ExactSizeStream;
-    #[doc(no_inline)]
-    pub use crate::stream::Extend;
 }
