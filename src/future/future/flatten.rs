@@ -18,7 +18,7 @@ enum State<Fut1, Fut2> {
 }
 
 impl<Fut1, Fut2> FlattenFuture<Fut1, Fut2> {
-    pub fn new(future: Fut1) -> FlattenFuture<Fut1, Fut2> {
+    pub(crate) fn new(future: Fut1) -> FlattenFuture<Fut1, Fut2> {
         FlattenFuture {
             state: State::First(future),
         }
