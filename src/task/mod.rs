@@ -151,12 +151,12 @@ cfg_default! {
     mod task;
     mod task_id;
     mod task_local;
-}
 
-#[cfg(any(feature = "unstable", test))]
-pub use spawn_blocking::spawn_blocking;
-#[cfg(any(feature = "default", test))]
-pub(crate) use spawn_blocking::spawn_blocking;
+    #[cfg(any(feature = "unstable", test))]
+    pub use spawn_blocking::spawn_blocking;
+    #[cfg(not(any(feature = "unstable", test)))]
+    pub(crate) use spawn_blocking::spawn_blocking;
+}
 
 cfg_unstable! {
     pub use yield_now::yield_now;
