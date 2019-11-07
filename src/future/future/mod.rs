@@ -144,8 +144,8 @@ extension_trait! {
         /// dbg!(a.await);
         /// # })
         /// ```
+        #[cfg(all(feature = "default", feature = "unstable"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
         fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
         where
             Self: Future + Sized
@@ -167,8 +167,8 @@ extension_trait! {
         /// assert_eq!(future.await, 1);
         /// # })
         /// ```
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
         fn flatten(self) -> impl Future<Output = <<Self as Future>::Output as IntoFuture>::Output> [FlattenFuture<Self, <<Self as Future>::Output as IntoFuture>::Future>]
         where
             Self: Future + Sized,
@@ -206,7 +206,7 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn race<F>(
             self,
@@ -252,7 +252,7 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn try_race<F: std::future::Future, T, E>(
             self,

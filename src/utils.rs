@@ -1,8 +1,7 @@
-use std::mem;
-
 /// Calls a function and aborts if it panics.
 ///
 /// This is useful in unsafe code where we can't recover from panics.
+#[cfg(feature = "default")]
 #[inline]
 pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
     struct Bomb;
@@ -15,11 +14,12 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 
     let bomb = Bomb;
     let t = f();
-    mem::forget(bomb);
+    std::mem::forget(bomb);
     t
 }
 
 /// Generates a random number in `0..n`.
+#[cfg(feature = "default")]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
@@ -53,6 +53,7 @@ pub fn random(n: u32) -> u32 {
 }
 
 /// Defers evaluation of a block of code until the end of the scope.
+#[cfg(feature = "default")]
 #[doc(hidden)]
 macro_rules! defer {
     ($($body:tt)*) => {
@@ -125,6 +126,30 @@ macro_rules! cfg_not_docs {
     ($($item:item)*) => {
         $(
             #[cfg(not(feature = "docs"))]
+            $item
+        )*
+    }
+}
+
+/// Declares std items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_std {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "std")]
+            $item
+        )*
+    }
+}
+
+/// Declares default items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_default {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "default")]
             $item
         )*
     }

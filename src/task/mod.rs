@@ -118,41 +118,45 @@
 //! [`task_local!`]: ../macro.task_local.html
 //! [`with`]: struct.LocalKey.html#method.with
 
-#[doc(inline)]
-pub use std::task::{Context, Poll, Waker};
+cfg_std! {
+    #[doc(inline)]
+    pub use std::task::{Context, Poll, Waker};
 
-#[doc(inline)]
-pub use async_macros::ready;
+    #[doc(inline)]
+    pub use async_macros::ready;
+}
 
-pub use block_on::block_on;
-pub use builder::Builder;
-pub use current::current;
-pub use join_handle::JoinHandle;
-pub use sleep::sleep;
-pub use spawn::spawn;
-pub use task::Task;
-pub use task_id::TaskId;
-pub use task_local::{AccessError, LocalKey};
+cfg_default! {
+    pub use block_on::block_on;
+    pub use builder::Builder;
+    pub use current::current;
+    pub use task::Task;
+    pub use task_id::TaskId;
+    pub use join_handle::JoinHandle;
+    pub use sleep::sleep;
+    pub use spawn::spawn;
+    pub use task_local::{AccessError, LocalKey};
 
-#[cfg(any(feature = "unstable", test))]
-pub use spawn_blocking::spawn_blocking;
-#[cfg(not(any(feature = "unstable", test)))]
-pub(crate) use spawn_blocking::spawn_blocking;
+    use builder::Runnable;
+    use task_local::LocalsMap;
 
-use builder::Runnable;
-use task_local::LocalsMap;
+    mod block_on;
+    mod builder;
+    mod current;
+    mod executor;
+    mod join_handle;
+    mod sleep;
+    mod spawn;
+    mod spawn_blocking;
+    mod task;
+    mod task_id;
+    mod task_local;
 
-mod block_on;
-mod builder;
-mod current;
-mod executor;
-mod join_handle;
-mod sleep;
-mod spawn;
-mod spawn_blocking;
-mod task;
-mod task_id;
-mod task_local;
+    #[cfg(any(feature = "unstable", test))]
+    pub use spawn_blocking::spawn_blocking;
+    #[cfg(not(any(feature = "unstable", test)))]
+    pub(crate) use spawn_blocking::spawn_blocking;
+}
 
 cfg_unstable! {
     pub use yield_now::yield_now;
