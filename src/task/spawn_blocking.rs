@@ -80,22 +80,23 @@ fn start_thread() {
                 let task = match POOL.receiver.recv_timeout(timeout) {
                     Ok(task) => task,
                     Err(_) => {
-                        // Check whether this is the last sleeping task.
+                        // Check whether this is the last sleeping thread.
                         if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 0 {
                             // If so, then restart the thread to make sure there is always at least
                             // one sleeping thread.
-                            SLEEPING.fetch_add(1, Ordering::SeqCst);
-                            continue;
-                        } else {
-                            // Otherwise, stop the thread.
-                            return;
+                            if SLEEPING.compare_and_swap(0, 1, Ordering::SeqCst) == 0 {
+                                continue;
+                            }
                         }
+
+                        // Stop the thread.
+                        return;
                     }
                 };
 
                 // If there are no sleeping threads, then start one to make sure there is always at
                 // least one sleeping thread.
-                if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 0 && !POOL.receiver.is_empty() {
+                if SLEEPING.fetch_sub(1, Ordering::SeqCst) == 0 {
                     start_thread();
                 }
 
