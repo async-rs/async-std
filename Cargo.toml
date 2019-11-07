@@ -21,10 +21,11 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
-default = []
+default = ["core"]
 docs = ["unstable", "attributes"]
 unstable = ["broadcaster"]
 attributes = ["async-attributes"]
+core = []
 
 [dependencies]
 async-attributes = { version = "1.1.0", optional = true }

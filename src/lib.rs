@@ -158,6 +158,7 @@
 //! features = ["unstable"]
 //! ```
 //!
+<<<<<<< HEAD
 //! Items marked with
 //! <span
 //!   class="module-item stab portability"
@@ -169,6 +170,16 @@
 //! [dependencies.async-std]
 //! version = "0.99"
 //! features = ["attributes"]
+//! ```
+//!
+//! Additionally it's possible to only use the core traits and combinators by
+//! only enabling the `core` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "0.99"
+//! default-features = false
+//! features = ["core"]
 //! ```
 
 #![cfg(feature = "default")]
