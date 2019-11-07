@@ -180,6 +180,7 @@ pub mod prelude;
 pub mod stream;
 pub mod sync;
 pub mod task;
+pub mod process;
 
 cfg_unstable! {
     pub mod pin;
