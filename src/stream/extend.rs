@@ -65,6 +65,8 @@ pub trait Extend<A> {
 /// #
 /// # })
 /// ```
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub async fn extend<'a, C, A, T>(collection: &mut C, stream: T)
 where
     C: Extend<A>,
