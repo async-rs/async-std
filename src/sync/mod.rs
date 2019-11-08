@@ -182,6 +182,10 @@ pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 mod mutex;
 mod rwlock;
 
+cfg_default! {
+    pub(crate) mod atomic;
+}
+
 cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};
     pub use channel::{channel, Sender, Receiver};

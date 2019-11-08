@@ -1,5 +1,7 @@
 use std::fmt;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::Ordering;
+
+use crate::sync::atomic::AtomicU64;
 
 /// A unique identifier for a task.
 ///
