@@ -57,7 +57,7 @@ pub struct RwLock<T> {
 }
 
 unsafe impl<T: Send> Send for RwLock<T> {}
-unsafe impl<T: Send> Sync for RwLock<T> {}
+unsafe impl<T: Send + Sync> Sync for RwLock<T> {}
 
 impl<T> RwLock<T> {
     /// Creates a new reader-writer lock.
