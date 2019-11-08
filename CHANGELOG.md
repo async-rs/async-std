@@ -33,12 +33,13 @@ Stable, performance improvements, and brand new module-level documentation.
 - Added `stream::from_iter`.
 - Added `sync::WakerSet` for internal use.
 - Added an example to handle both `IP v4` and `IP v6` connections.
-- Added the `"runtime"` Cargo feature.
+- Added the `default` Cargo feature.
+- Added the `attributes` Cargo feature.
+- Added the `std` Cargo feature.
 
 ## Changed
 
-- Changed the threadpool scheduling algorithm; it now spawns multiple threads if
-  it fails to enqueue work.
+- Fixed a bug in the blocking threadpool where it didn't spawn more than one thread.
 - Fixed a bug with `Stream::merge` where sometimes it ended too soon.
 - Fixed a bug with our GitHub actions setup.
 - Fixed an issue where our channels could spuriously deadlock.
