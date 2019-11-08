@@ -3,6 +3,8 @@ cfg_unstable! {
     mod flatten;
     mod race;
     mod try_race;
+    mod join;
+    mod try_join;
 
     use std::time::Duration;
 
@@ -11,6 +13,8 @@ cfg_unstable! {
     use crate::future::IntoFuture;
     use race::Race;
     use try_race::TryRace;
+    use join::Join;
+    use try_join::TryJoin;
 }
 
 extension_trait! {
@@ -263,6 +267,90 @@ extension_trait! {
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
             TryRace::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for two similarly-typed futures to complete.
+
+            Awaits multiple futures simultaneously, returning the output of the
+            futures once both complete.
+
+            This function returns a new future which polls both futures
+            concurrently.
+
+            # Examples
+
+            ```
+            # async_std::task::block_on(async {
+            use async_std::prelude::*;
+            use async_std::future;
+
+            let a = future::ready(1u8);
+            let b = future::ready(2u8);
+
+            let f = a.join(b);
+            assert_eq!(f.await, (1u8, 2u8));
+            # });
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn join<F>(
+            self,
+            other: F
+        ) -> impl Future<Output = (<Self as std::future::Future>::Output, <F as std::future::Future>::Output)> [Join<Self, F>]
+        where
+            Self: std::future::Future + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+        {
+            Join::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for two similarly-typed fallible futures to complete.
+
+            Awaits multiple futures simultaneously, returning all results once
+            complete.
+
+            `try_join` is similar to [`join`], but returns an error immediately
+            if a future resolves to an error.
+
+            [`join`]: #method.join
+
+            # Examples
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::future;
+
+            let a = future::ready(Err("Error"));
+            let b = future::ready(Ok(1u8));
+
+            let f = a.try_join(b);
+            assert_eq!(f.await, Err("Error"));
+
+            let a = future::ready(Ok::<u8, String>(1u8));
+            let b = future::ready(Ok::<u8, String>(2u8));
+
+            let f = a.try_join(b);
+            assert_eq!(f.await, Ok((1u8, 2u8)));
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn try_join<F, T, E>(
+            self,
+            other: F
+        ) -> impl Future<Output = Result<(T, T), E>> [TryJoin<Self, F>]
+        where
+            Self: std::future::Future<Output = Result<T, E>> + Sized,
+            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+        {
+            TryJoin::new(self, other)
         }
     }
 
