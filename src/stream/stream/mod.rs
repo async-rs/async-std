@@ -303,6 +303,7 @@ extension_trait! {
 
             #
             # }) }
+            ```
         "#]
         fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
         where
@@ -397,9 +398,9 @@ extension_trait! {
             use async_std::stream;
 
             let v = stream::from_iter(vec![&1, &2, &3]);
-                
+
             let mut v_cloned = v.cloned();
-            
+
             assert_eq!(v_cloned.next().await, Some(1));
             assert_eq!(v_cloned.next().await, Some(2));
             assert_eq!(v_cloned.next().await, Some(3));

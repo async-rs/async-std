@@ -45,10 +45,12 @@ where
         let next = futures_core::ready!(this.stream.poll_next(cx));
 
         match next {
-            Some(v) if (this.predicate)(&v) => Poll::Ready(Some(v)),
-            Some(_) => {
-                cx.waker().wake_by_ref();
-                Poll::Pending
+            Some(v) => {
+                if (this.predicate)(&v) {
+                    Poll::Ready(Some(v))
+                } else {
+                    Poll::Ready(None)
+                }
             }
             None => Poll::Ready(None),
         }
