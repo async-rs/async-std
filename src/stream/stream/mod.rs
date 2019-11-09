@@ -112,10 +112,10 @@ use std::cmp::Ordering;
 use std::marker::PhantomData;
 
 cfg_unstable! {
+    use std::future::Future;
     use std::pin::Pin;
     use std::time::Duration;
 
-    use crate::future::Future;
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
 

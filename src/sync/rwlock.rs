@@ -4,9 +4,9 @@ use std::isize;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::process;
+use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::future::Future;
 use crate::sync::WakerSet;
 use crate::task::{Context, Poll};
 

@@ -1,7 +1,7 @@
 use std::mem;
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io::{self, Read};
 use crate::task::{Context, Poll};
 

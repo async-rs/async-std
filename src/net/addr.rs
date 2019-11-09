@@ -2,8 +2,8 @@ use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io;
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 

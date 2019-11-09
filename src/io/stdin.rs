@@ -1,7 +1,8 @@
 use std::pin::Pin;
 use std::sync::Mutex;
+use std::future::Future;
 
-use crate::future::{self, Future};
+use crate::future;
 use crate::io::{self, Read};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 

@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use std::pin::Pin;
+use std::future::Future;
 
 use pin_project_lite::pin_project;
 
 use super::partial_cmp::PartialCmpFuture;
-use crate::future::Future;
 use crate::prelude::*;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
