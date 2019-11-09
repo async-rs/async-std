@@ -11,7 +11,7 @@ use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use crossbeam_utils::{Backoff, CachePadded};
+use crossbeam_utils::Backoff;
 
 use crate::stream::Stream;
 use crate::sync::WakerSet;
@@ -577,7 +577,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit in the head is always zero.
     ///
     /// Messages are popped from the head of the channel.
-    head: CachePadded<AtomicUsize>,
+    head: AtomicUsize,
 
     /// The tail of the channel.
     ///
@@ -586,7 +586,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit indicates that the channel is disconnected.
     ///
     /// Messages are pushed into the tail of the channel.
-    tail: CachePadded<AtomicUsize>,
+    tail: AtomicUsize,
 
     /// The buffer holding slots.
     buffer: *mut Slot<T>,
@@ -660,8 +660,8 @@ impl<T> Channel<T> {
             cap,
             one_lap,
             mark_bit,
-            head: CachePadded::new(AtomicUsize::new(head)),
-            tail: CachePadded::new(AtomicUsize::new(tail)),
+            head: AtomicUsize::new(head),
+            tail: AtomicUsize::new(tail),
             send_wakers: WakerSet::new(),
             recv_wakers: WakerSet::new(),
             stream_wakers: WakerSet::new(),
