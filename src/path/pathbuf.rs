@@ -283,3 +283,17 @@ impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
         })
     }
 }
+
+impl<P: AsRef<Path>> std::iter::FromIterator<P> for PathBuf {
+    fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> PathBuf {
+        let mut buf = PathBuf::new();
+        buf.extend(iter);
+        buf
+    }
+}
+
+impl<P: AsRef<Path>> std::iter::Extend<P> for PathBuf {
+    fn extend<I: IntoIterator<Item = P>>(&mut self, iter: I) {
+        iter.into_iter().for_each(move |p| self.push(p.as_ref()));
+    }
+}

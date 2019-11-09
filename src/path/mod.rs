@@ -52,6 +52,10 @@
 //! path.push("system32");
 //!
 //! path.set_extension("dll");
+//!
+//! // ... but push is best used if you don't know everything up
+//! // front. If you do, this way is better:
+//! let path: PathBuf = ["c:\\", "windows", "system32.dll"].iter().collect();
 //! ```
 //!
 //! [`Component`]: enum.Component.html
