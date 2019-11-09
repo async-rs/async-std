@@ -1,6 +1,7 @@
 use std::ffi::{OsStr, OsString};
 #[cfg(feature = "unstable")]
 use std::pin::Pin;
+use std::str::FromStr;
 
 use crate::path::Path;
 #[cfg(feature = "unstable")]
@@ -225,6 +226,14 @@ impl From<OsString> for PathBuf {
 impl From<&str> for PathBuf {
     fn from(path: &str) -> PathBuf {
         std::path::PathBuf::from(path).into()
+    }
+}
+
+impl FromStr for PathBuf {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(std::path::PathBuf::from(s).into())
     }
 }
 
