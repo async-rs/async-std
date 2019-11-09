@@ -1656,7 +1656,7 @@ extension_trait! {
             Combines multiple streams into a single stream of all their outputs.
 
             Items are yielded as soon as they're received, and the stream continues yield until
-            both streams have been exhausted. The output ordering between stream is not guaranteed.
+            both streams have been exhausted. The output ordering between streams is not guaranteed.
 
             # Examples
 
