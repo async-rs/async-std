@@ -34,8 +34,9 @@ default = [
   "num_cpus",
   "pin-project-lite",
 ]
-docs = ["unstable"]
+docs = ["attributes", "unstable"]
 unstable = ["default", "broadcaster"]
+attributes = ["async-attributes"]
 std = [
   "async-macros",
   "crossbeam-utils",
