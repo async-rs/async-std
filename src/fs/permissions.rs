@@ -29,7 +29,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn readonly(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Configures the read-only flag.
@@ -50,7 +50,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn set_readonly(&mut self, readonly: bool) {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

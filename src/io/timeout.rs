@@ -1,11 +1,11 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
+use std::future::Future;
 
 use futures_timer::Delay;
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::io;
 
 /// Awaits an I/O future or times out after a duration of time.

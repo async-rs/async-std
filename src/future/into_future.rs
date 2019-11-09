@@ -1,4 +1,4 @@
-use crate::future::Future;
+use std::future::Future;
 
 /// Convert a type into a `Future`.
 ///

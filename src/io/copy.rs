@@ -1,8 +1,8 @@
 use std::pin::Pin;
+use std::future::Future;
 
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::io::{self, BufRead, BufReader, Read, Write};
 use crate::task::{Context, Poll};
 

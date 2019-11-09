@@ -1,4 +1,5 @@
-use crate::future::Future;
+use std::future::Future;
+
 use crate::task::{Builder, JoinHandle};
 
 /// Spawns a task.

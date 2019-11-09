@@ -13,7 +13,7 @@
 
 cfg_std! {
     #[doc(no_inline)]
-    pub use crate::future::Future;
+    pub use std::future::Future;
     #[doc(no_inline)]
     pub use crate::stream::Stream;
 

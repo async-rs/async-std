@@ -10,25 +10,32 @@ impl stream::Extend<char> for String {
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
-
         self.reserve(stream.size_hint().0);
 
-        Box::pin(stream.for_each(move |c| self.push(c)))
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push(item);
+            }
+        })
     }
 }
 
 impl<'b> stream::Extend<&'b char> for String {
     fn extend<'a, S: IntoStream<Item = &'b char> + 'a>(
         &'a mut self,
-        //TODO: Remove the underscore when uncommenting the body of this impl
-        _stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        'b: 'a,
-    {
-        //TODO: This can be uncommented when `copied` is added to Stream/StreamExt
-        //Box::pin(stream.into_stream().copied())
-        unimplemented!()
+        stream: S,
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push(*item);
+            }
+        })
     }
 }
 
@@ -36,11 +43,16 @@ impl<'b> stream::Extend<&'b str> for String {
     fn extend<'a, S: IntoStream<Item = &'b str> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        'b: 'a,
-    {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(s)))
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push_str(item);
+            }
+        })
     }
 }
 
@@ -49,7 +61,15 @@ impl stream::Extend<String> for String {
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(&s)))
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push_str(&item);
+            }
+        })
     }
 }
 
@@ -57,10 +77,15 @@ impl<'b> stream::Extend<Cow<'b, str>> for String {
     fn extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        'b: 'a,
-    {
-        Box::pin(stream.into_stream().for_each(move |s| self.push_str(&s)))
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push_str(&item);
+            }
+        })
     }
 }

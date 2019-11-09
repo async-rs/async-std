@@ -34,9 +34,7 @@ pub trait Extend<A> {
     fn extend<'a, T: IntoStream<Item = A> + 'a>(
         &'a mut self,
         stream: T,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        A: 'a;
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>;
 }
 
 /// Extends a collection with the contents of a stream.
@@ -70,7 +68,6 @@ pub trait Extend<A> {
 pub async fn extend<'a, C, A, T>(collection: &mut C, stream: T)
 where
     C: Extend<A>,
-    A: 'a,
     T: IntoStream<Item = A> + 'a,
 {
     Extend::extend(collection, stream).await

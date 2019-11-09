@@ -1,7 +1,7 @@
 use std::pin::Pin;
+use std::future::Future;
 
 use crate::fs::DirEntry;
-use crate::future::Future;
 use crate::io;
 use crate::path::Path;
 use crate::stream::Stream;

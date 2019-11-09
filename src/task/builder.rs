@@ -1,7 +1,7 @@
 use kv_log_macro::trace;
 use log::log_enabled;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io;
 use crate::task::executor;
 use crate::task::{JoinHandle, Task};

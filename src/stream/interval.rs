@@ -2,9 +2,9 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
-use futures_core::future::Future;
-use futures_core::stream::Stream;
 use futures_timer::Delay;
+
+use crate::prelude::*;
 
 /// Creates a new stream that yields at a set interval.
 ///

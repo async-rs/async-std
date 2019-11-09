@@ -1,6 +1,6 @@
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::stream::Stream;
 
 /// Trait to represent types that can be created by multiplying the elements of a stream.

@@ -242,36 +242,30 @@ impl AsRef<std::path::Path> for PathBuf {
 
 #[cfg(feature = "unstable")]
 impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
-    fn extend<'a, S: IntoStream<Item = P>>(
+    fn extend<'a, S: IntoStream<Item = P> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        P: 'a,
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
 
-        //TODO: This can be added back in once this issue is resolved:
-        // https://github.com/rust-lang/rust/issues/58234
-        //self.reserve(stream.size_hint().0);
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
 
-        Box::pin(stream.for_each(move |item| self.push(item.as_ref())))
+            while let Some(item) = stream.next().await {
+                self.push(item.as_ref());
+            }
+        })
     }
 }
 
 #[cfg(feature = "unstable")]
 impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = P>>(
+    fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         Box::pin(async move {
+            let stream = stream.into_stream();
             pin_utils::pin_mut!(stream);
 
             let mut out = Self::new();

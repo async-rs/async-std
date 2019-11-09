@@ -2,11 +2,11 @@ use std::error::Error;
 use std::fmt;
 use std::pin::Pin;
 use std::time::Duration;
+use std::future::Future;
 
 use futures_timer::Delay;
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// Awaits a future or times out after a duration of time.
