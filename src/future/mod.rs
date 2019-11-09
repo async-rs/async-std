@@ -46,9 +46,6 @@
 //! [`Future::race`]: trait.Future.html#method.race
 //! [`Future::try_race`]: trait.Future.html#method.try_race
 
-#[doc(inline)]
-pub use async_macros::{join, try_join};
-
 pub use future::Future;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
