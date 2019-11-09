@@ -1,16 +1,14 @@
 use std::borrow::Cow;
 use std::pin::Pin;
 
+use crate::prelude::*;
 use crate::stream::{self, FromStream, IntoStream};
 
 impl FromStream<char> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = char>>(
+    fn from_stream<'a, S: IntoStream<Item = char> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
@@ -25,12 +23,9 @@ impl FromStream<char> for String {
 
 impl<'b> FromStream<&'b char> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = &'b char>>(
+    fn from_stream<'a, S: IntoStream<Item = &'b char> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
@@ -45,12 +40,9 @@ impl<'b> FromStream<&'b char> for String {
 
 impl<'b> FromStream<&'b str> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = &'b str>>(
+    fn from_stream<'a, S: IntoStream<Item = &'b str> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
@@ -65,12 +57,9 @@ impl<'b> FromStream<&'b str> for String {
 
 impl FromStream<String> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = String>>(
+    fn from_stream<'a, S: IntoStream<Item = String> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
@@ -85,12 +74,9 @@ impl FromStream<String> for String {
 
 impl<'b> FromStream<Cow<'b, str>> for String {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = Cow<'b, str>>>(
+    fn from_stream<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {

@@ -1,6 +1,7 @@
-use super::IntoStream;
-
+use std::future::Future;
 use std::pin::Pin;
+
+use crate::stream::IntoStream;
 
 /// Conversion from a `Stream`.
 ///
@@ -15,21 +16,24 @@ use std::pin::Pin;
 ///
 /// ```
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-///  use async_std::prelude::*;
-///  use async_std::stream::{self, FromStream};
+/// #
+/// use async_std::prelude::*;
+/// use async_std::stream::{self, FromStream};
 ///
-///  let five_fives = stream::repeat(5).take(5);
+/// let five_fives = stream::repeat(5).take(5);
 ///
-///  let v = Vec::from_stream(five_fives).await;
+/// let v = Vec::from_stream(five_fives).await;
 ///
-///  assert_eq!(v, vec![5, 5, 5, 5, 5]);
+/// assert_eq!(v, vec![5, 5, 5, 5, 5]);
+/// #
 /// # Ok(()) }) }
 /// ```
 ///
 /// Using `collect` to  implicitly use `FromStream`
 ///
-///```
+/// ```
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
 /// let five_fives = stream::repeat(5).take(5);
@@ -39,7 +43,7 @@ use std::pin::Pin;
 /// assert_eq!(v, vec![5, 5, 5, 5, 5]);
 /// #
 /// # Ok(()) }) }
-///```
+/// ```
 ///
 /// Implementing `FromStream` for your type:
 ///
@@ -68,7 +72,7 @@ use std::pin::Pin;
 /// impl FromStream<i32> for MyCollection {
 ///     fn from_stream<'a, S: IntoStream<Item = i32> + 'a>(
 ///         stream: S,
-///     ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>> {
+///     ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
 ///         let stream = stream.into_stream();
 ///
 ///         Box::pin(async move {
@@ -86,6 +90,7 @@ use std::pin::Pin;
 /// }
 ///
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// #
 /// // Now we can make a new stream...
 /// let stream = stream::repeat(5).take(5);
 ///
@@ -100,6 +105,7 @@ use std::pin::Pin;
 /// let c: MyCollection = stream.collect().await;
 ///
 /// assert_eq!(c.0, vec![5, 5, 5, 5, 5]);
+/// #
 /// # Ok(()) }) }
 ///```
 ///
@@ -115,17 +121,19 @@ pub trait FromStream<T> {
     ///
     /// ```
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-    ///  use async_std::prelude::*;
-    ///  use async_std::stream::{self, FromStream};
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream::{self, FromStream};
     ///
-    ///  let five_fives = stream::repeat(5).take(5);
+    /// let five_fives = stream::repeat(5).take(5);
     ///
-    ///  let v = Vec::from_stream(five_fives).await;
+    /// let v = Vec::from_stream(five_fives).await;
     ///
-    ///  assert_eq!(v, vec![5, 5, 5, 5, 5]);
+    /// assert_eq!(v, vec![5, 5, 5, 5, 5]);
+    /// #
     /// # Ok(()) }) }
     /// ```
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>>;
 }
