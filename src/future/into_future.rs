@@ -45,7 +45,6 @@ pub trait IntoFuture {
 
 impl<T: Future> IntoFuture for T {
     type Output = T::Output;
-
     type Future = T;
 
     fn into_future(self) -> Self::Future {

@@ -1,10 +1,10 @@
+use std::future::Future;
 use std::pin::Pin;
 
 use async_macros::MaybeDone;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
-use std::future::Future;
 
 pin_project! {
     #[allow(missing_docs)]

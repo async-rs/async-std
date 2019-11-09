@@ -1,6 +1,6 @@
+use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
-use std::future::Future;
 
 use futures_timer::Delay;
 use pin_project_lite::pin_project;
@@ -9,7 +9,7 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     #[doc(hidden)]
-    #[derive(Debug)]
+    #[allow(missing_debug_implementations)]
     pub struct DelayFuture<F> {
         #[pin]
         future: F,
