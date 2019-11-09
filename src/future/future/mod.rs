@@ -152,7 +152,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
         where
-            Self: Future + Sized
+            Self: Sized,
         {
             DelayFuture::new(self, dur)
         }
@@ -173,10 +173,13 @@ extension_trait! {
         /// ```
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn flatten(self) -> impl Future<Output = <<Self as Future>::Output as IntoFuture>::Output> [FlattenFuture<Self, <<Self as Future>::Output as IntoFuture>::Future>]
+        fn flatten(
+            self,
+        ) -> impl Future<Output = <Self::Output as IntoFuture>::Output>
+            [FlattenFuture<Self, <Self::Output as IntoFuture>::Future>]
         where
-            Self: Future + Sized,
-            <Self as Future>::Output: IntoFuture
+            Self: Sized,
+            <Self as Future>::Output: IntoFuture,
         {
            FlattenFuture::new(self)
         }
@@ -214,7 +217,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn race<F>(
             self,
-            other: F
+            other: F,
         ) -> impl Future<Output = <Self as std::future::Future>::Output> [Race<Self, F>]
         where
             Self: std::future::Future + Sized,
@@ -258,7 +261,7 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn try_race<F: std::future::Future, T, E>(
+        fn try_race<F, T, E>(
             self,
             other: F
         ) -> impl Future<Output = <Self as std::future::Future>::Output> [TryRace<Self, F>]
