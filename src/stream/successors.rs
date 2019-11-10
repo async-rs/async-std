@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 use std::mem;
 
@@ -12,19 +11,18 @@ pin_project_lite::pin_project! {
     /// A stream that yields elements by calling an async closure with the previous value as an
     /// argument
     ///
-    /// This stream is constructed by [`successor`] function
+    /// This stream is constructed by [`successors`] function
     ///
-    /// [`successor`]: fn.successor.html
+    /// [`succcessors`]: fn.succssors.html
     #[derive(Debug)]
     pub struct Successors<F, Fut, T>
     where
         Fut: Future<Output = Option<T>>,
     {
-        successor: F,
+        succ: F,
         #[pin]
         future: Option<Fut>,
         slot: Option<T>,
-        _marker: PhantomData<Fut>,
     }
 }
 
@@ -72,10 +70,9 @@ where
     T: Copy,
 {
     Successors {
-        successor: succ,
+        succ: succ,
         future: None,
         slot: first,
-        _marker: PhantomData,
     }
 }
 
@@ -95,14 +92,15 @@ where
         }
 
         if this.future.is_none() {
-            let x = this.slot.unwrap();
-            let fut = (this.successor)(x);
+            let fut = (this.succ)(this.slot.unwrap());
             this.future.set(Some(fut));
         }
 
         let mut next = ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
 
         this.future.set(None);
+
+        // 'swapping' here means 'slot' will hold the next value and next will be th one from the previous iteration
         mem::swap(this.slot, &mut next);
         Poll::Ready(next)
     }
