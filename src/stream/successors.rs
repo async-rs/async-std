@@ -5,9 +5,11 @@ use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll, ready};
 
+use pin_project_lite::pin_project;
 
 
-pin_project_lite::pin_project! {
+
+pin_project! {
     /// A stream that yields elements by calling an async closure with the previous value as an
     /// argument
     ///
