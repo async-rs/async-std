@@ -48,16 +48,10 @@ where
     JoinHandle::new(handle)
 }
 
-<<<<<<< HEAD
-const MAX_THREADS: usize = 10_000;
-
-static DYNAMIC_THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
-=======
 type Runnable = async_task::Task<Task>;
 
 /// The number of sleeping worker threads.
 static SLEEPING: AtomicUsize = AtomicUsize::new(0);
->>>>>>> 122e87364bef463c5afbf7681ec3ce35a3a7f577
 
 struct Pool {
     sender: Sender<Runnable>,

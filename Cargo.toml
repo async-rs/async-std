@@ -54,27 +54,9 @@ async-attributes = { version = "1.1.0", optional = true }
 async-macros = { version = "1.0.0", optional = true }
 async-task = { version = "1.0.0", optional = true }
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
-<<<<<<< HEAD
-crossbeam-channel = "0.3.9"
-crossbeam-deque = "0.7.1"
-crossbeam-utils = "0.7.0"
-futures-core = "0.3.0"
-futures-io = "0.3.0"
-futures-timer = "1.0.2"
-kv-log-macro = "1.0.4"
-log = { version = "0.4.8", features = ["kv_unstable"] }
-memchr = "2.2.1"
-mio = "0.6.19"
-mio-uds = "0.6.7"
-num_cpus = "1.10.1"
-once_cell = "1.2.0"
-pin-project-lite = "0.1"
-pin-utils = "0.1.0-alpha.4"
-slab = "0.4.2"
-=======
 crossbeam-channel = { version = "0.3.9", optional = true }
 crossbeam-deque = { version = "0.7.1", optional = true }
-crossbeam-utils = { version = "0.6.6", optional = true }
+crossbeam-utils = { version = "0.7.0", optional = true }
 futures-core = { version = "0.3.0", optional = true }
 futures-io = { version = "0.3.0", optional = true }
 futures-timer = { version = "1.0.2", optional = true }
@@ -88,7 +70,6 @@ once_cell = { version = "1.2.0", optional = true }
 pin-project-lite = { version = "0.1", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
->>>>>>> 122e87364bef463c5afbf7681ec3ce35a3a7f577
 
 [dev-dependencies]
 femme = "1.2.0"
