@@ -1,12 +1,51 @@
-use std::ffi::OsStr;
+use std::borrow::{Cow, ToOwned};
+use std::cmp::Ordering;
+use std::ffi::{OsStr, OsString};
+use std::rc::Rc;
+use std::sync::Arc;
 
+use crate::fs;
+use crate::io;
 use crate::path::{Ancestors, Components, Display, Iter, PathBuf, StripPrefixError};
-use crate::{fs, io};
 
+/// A slice of a path.
+///
 /// This struct is an async version of [`std::path::Path`].
 ///
+/// This type supports a number of operations for inspecting a path, including
+/// breaking the path into its components (separated by `/` on Unix and by either
+/// `/` or `\` on Windows), extracting the file name, determining whether the path
+/// is absolute, and so on.
+///
+/// This is an *unsized* type, meaning that it must always be used behind a
+/// pointer like `&` or `Box`. For an owned version of this type,
+/// see [`PathBuf`].
+///
+/// [`PathBuf`]: struct.PathBuf.html
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.Path.html
-#[derive(Debug, PartialEq)]
+///
+/// More details about the overall approach can be found in
+/// the [module documentation](index.html).
+///
+/// # Examples
+///
+/// ```
+/// use std::path::Path;
+/// use std::ffi::OsStr;
+///
+/// // Note: this example does work on Windows
+/// let path = Path::new("./foo/bar.txt");
+///
+/// let parent = path.parent();
+/// assert_eq!(parent, Some(Path::new("./foo")));
+///
+/// let file_stem = path.file_stem();
+/// assert_eq!(file_stem, Some(OsStr::new("bar")));
+///
+/// let extension = path.extension();
+/// assert_eq!(extension, Some(OsStr::new("txt")));
+/// ```
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Path {
     inner: std::path::Path,
 }
@@ -38,14 +77,25 @@ impl Path {
         unsafe { &*(std::path::Path::new(s) as *const std::path::Path as *const Path) }
     }
 
-    /// Yields the underlying [`OsStr`] slice.
+    /// Returns the underlying [`OsStr`] slice.
     ///
     /// [`OsStr`]: https://doc.rust-lang.org/std/ffi/struct.OsStr.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::ffi::OsStr;
+    ///
+    /// use async_std::path::Path;
+    ///
+    /// let os_str = Path::new("foo.txt").as_os_str();
+    /// assert_eq!(os_str, OsStr::new("foo.txt"));
+    /// ```
     pub fn as_os_str(&self) -> &OsStr {
         self.inner.as_os_str()
     }
 
-    /// Yields a [`&str`] slice if the `Path` is valid unicode.
+    /// Returns a [`&str`] slice if the `Path` is valid unicode.
     ///
     /// This conversion may entail doing a check for UTF-8 validity.
     /// Note that validation is performed because non-UTF-8 strings are
@@ -86,7 +136,7 @@ impl Path {
     ///
     /// Had `path` contained invalid unicode, the `to_string_lossy` call might
     /// have returned `"fo�.txt"`.
-    pub fn to_string_lossy(&self) -> std::borrow::Cow<'_, str> {
+    pub fn to_string_lossy(&self) -> Cow<'_, str> {
         self.inner.to_string_lossy()
     }
 
@@ -106,14 +156,16 @@ impl Path {
         PathBuf::from(self.inner.to_path_buf())
     }
 
-    /// Returns `true` if the `Path` is absolute, i.e., if it is independent of
+    /// Returns `true` if the `Path` is absolute, i.e. if it is independent of
     /// the current directory.
     ///
     /// * On Unix, a path is absolute if it starts with the root, so
-    /// `is_absolute` and [`has_root`] are equivalent.
+    ///   `is_absolute` and [`has_root`] are equivalent.
     ///
     /// * On Windows, a path is absolute if it has a prefix and starts with the
-    /// root: `c:\windows` is absolute, while `c:temp` and `\temp` are not.
+    ///   root: `c:\windows` is absolute, while `c:temp` and `\temp` are not.
+    ///
+    /// [`has_root`]: #method.has_root
     ///
     /// # Examples
     ///
@@ -122,15 +174,15 @@ impl Path {
     ///
     /// assert!(!Path::new("foo.txt").is_absolute());
     /// ```
-    ///
-    /// [`has_root`]: #method.has_root
     pub fn is_absolute(&self) -> bool {
         self.inner.is_absolute()
     }
 
-    /// Returns `true` if the `Path` is relative, i.e., not absolute.
+    /// Returns `true` if the `Path` is relative, i.e. not absolute.
     ///
     /// See [`is_absolute`]'s documentation for more details.
+    ///
+    /// [`is_absolute`]: #method.is_absolute
     ///
     /// # Examples
     ///
@@ -139,8 +191,6 @@ impl Path {
     ///
     /// assert!(Path::new("foo.txt").is_relative());
     /// ```
-    ///
-    /// [`is_absolute`]: #method.is_absolute
     pub fn is_relative(&self) -> bool {
         self.inner.is_relative()
     }
@@ -150,9 +200,9 @@ impl Path {
     /// * On Unix, a path has a root if it begins with `/`.
     ///
     /// * On Windows, a path has a root if it:
-    ///     * has no prefix and begins with a separator, e.g., `\windows`
-    ///     * has a prefix followed by a separator, e.g., `c:\windows` but not `c:windows`
-    ///     * has any non-disk prefix, e.g., `\\server\share`
+    ///     * has no prefix and begins with a separator, e.g. `\windows`
+    ///     * has a prefix followed by a separator, e.g. `c:\windows` but not `c:windows`
+    ///     * has any non-disk prefix, e.g. `\\server\share`
     ///
     /// # Examples
     ///
@@ -196,6 +246,9 @@ impl Path {
     /// [`None`], the iterator will do likewise. The iterator will always yield at least one value,
     /// namely `&self`.
     ///
+    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
+    /// [`parent`]: struct.Path.html#method.parent
+    ///
     /// # Examples
     ///
     /// ```
@@ -207,9 +260,6 @@ impl Path {
     /// assert_eq!(ancestors.next(), Some(Path::new("/").into()));
     /// assert_eq!(ancestors.next(), None);
     /// ```
-    ///
-    /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html
-    /// [`parent`]: struct.Path.html#method.parent
     pub fn ancestors(&self) -> Ancestors<'_> {
         Ancestors { next: Some(&self) }
     }
@@ -226,8 +276,9 @@ impl Path {
     /// # Examples
     ///
     /// ```
-    /// use async_std::path::Path;
     /// use std::ffi::OsStr;
+    ///
+    /// use async_std::path::Path;
     ///
     /// assert_eq!(Some(OsStr::new("bin")), Path::new("/usr/bin/").file_name());
     /// assert_eq!(Some(OsStr::new("foo.txt")), Path::new("tmp/foo.txt").file_name());
@@ -240,7 +291,7 @@ impl Path {
         self.inner.file_name()
     }
 
-    /// Returns a path that, when joined onto `base`, yields `self`.
+    /// Returns a path that becomes `self` when joined onto `base`.
     ///
     /// # Errors
     ///
@@ -314,15 +365,15 @@ impl Path {
         self.inner.ends_with(child.as_ref())
     }
 
-    /// Extracts the stem (non-extension) portion of [`self.file_name`].
+    /// Extracts the stem (non-extension) portion of [`file_name`].
     ///
-    /// [`self.file_name`]: struct.Path.html#method.file_name
+    /// [`file_name`]: struct.Path.html#method.file_name
     ///
     /// The stem is:
     ///
-    /// * [`None`], if there is no file name;
-    /// * The entire file name if there is no embedded `.`;
-    /// * The entire file name if the file name begins with `.` and has no other `.`s within;
+    /// * [`None`], if there is no file name
+    /// * The entire file name if there is no embedded `.`
+    /// * The entire file name if the file name begins with `.` and has no other `.`s within
     /// * Otherwise, the portion of the file name before the final `.`
     ///
     /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
@@ -340,16 +391,16 @@ impl Path {
         self.inner.file_stem()
     }
 
-    /// Extracts the extension of [`self.file_name`], if possible.
+    /// Extracts the extension of [`file_name`], if possible.
     ///
     /// The extension is:
     ///
-    /// * [`None`], if there is no file name;
-    /// * [`None`], if there is no embedded `.`;
-    /// * [`None`], if the file name begins with `.` and has no other `.`s within;
+    /// * [`None`], if there is no file name
+    /// * [`None`], if there is no embedded `.`
+    /// * [`None`], if the file name begins with `.` and has no other `.`s within
     /// * Otherwise, the portion of the file name after the final `.`
     ///
-    /// [`self.file_name`]: struct.Path.html#method.file_name
+    /// [`file_name`]: struct.Path.html#method.file_name
     /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
     ///
     /// # Examples
@@ -442,24 +493,27 @@ impl Path {
     /// and `a/b/../c` are distinct, to account for the possibility that `b`
     /// is a symbolic link (so its parent isn't `a`).
     ///
+    /// [`Component`]: enum.Component.html
+    /// [`CurDir`]: enum.Component.html#variant.CurDir
+    ///
     /// # Examples
     ///
     /// ```
-    /// use async_std::path::{Path, Component};
     /// use std::ffi::OsStr;
+    ///
+    /// use async_std::path::{Path, Component};
     ///
     /// let mut components = Path::new("/tmp/foo.txt").components();
     ///
     /// assert_eq!(components.next(), Some(Component::RootDir));
     /// assert_eq!(components.next(), Some(Component::Normal(OsStr::new("tmp"))));
     /// assert_eq!(components.next(), Some(Component::Normal(OsStr::new("foo.txt"))));
-    /// assert_eq!(components.next(), None)
+    /// assert_eq!(components.next(), None);
     /// ```
-    ///
-    /// [`Component`]: enum.Component.html
-    /// [`CurDir`]: enum.Component.html#variant.CurDir
     pub fn components(&self) -> Components<'_> {
-        self.inner.components()
+        Components {
+            inner: self.inner.components(),
+        }
     }
 
     /// Produces an iterator over the path's components viewed as [`OsStr`]
@@ -474,8 +528,9 @@ impl Path {
     /// # Examples
     ///
     /// ```
-    /// use async_std::path::{self, Path};
     /// use std::ffi::OsStr;
+    ///
+    /// use async_std::path::{self, Path};
     ///
     /// let mut it = Path::new("/tmp/foo.txt").iter();
     /// assert_eq!(it.next(), Some(OsStr::new(&path::MAIN_SEPARATOR.to_string())));
@@ -484,7 +539,9 @@ impl Path {
     /// assert_eq!(it.next(), None)
     /// ```
     pub fn iter(&self) -> Iter<'_> {
-        self.inner.iter()
+        Iter {
+            inner: self.components(),
+        }
     }
 
     /// Returns an object that implements [`Display`] for safely printing paths
@@ -505,7 +562,7 @@ impl Path {
         self.inner.display()
     }
 
-    /// Queries the file system to get information about a file, directory, etc.
+    /// Reads the metadata of a file or directory.
     ///
     /// This function will traverse symbolic links to query information about the
     /// destination file.
@@ -522,7 +579,7 @@ impl Path {
     /// use async_std::path::Path;
     ///
     /// let path = Path::new("/Minas/tirith");
-    /// let metadata = path.metadata().await.expect("metadata call failed");
+    /// let metadata = path.metadata().await?;
     /// println!("{:?}", metadata.file_type());
     /// #
     /// # Ok(()) }) }
@@ -531,7 +588,7 @@ impl Path {
         fs::metadata(self).await
     }
 
-    /// Queries the metadata about a file without following symlinks.
+    /// Reads the metadata of a file or directory without following symbolic links.
     ///
     /// This is an alias to [`fs::symlink_metadata`].
     ///
@@ -545,7 +602,7 @@ impl Path {
     /// use async_std::path::Path;
     ///
     /// let path = Path::new("/Minas/tirith");
-    /// let metadata = path.symlink_metadata().await.expect("symlink_metadata call failed");
+    /// let metadata = path.symlink_metadata().await?;
     /// println!("{:?}", metadata.file_type());
     /// #
     /// # Ok(()) }) }
@@ -554,8 +611,10 @@ impl Path {
         fs::symlink_metadata(self).await
     }
 
-    /// Returns the canonical, absolute form of the path with all intermediate
-    /// components normalized and symbolic links resolved.
+    /// Returns the canonical form of a path.
+    ///
+    /// The returned path is in absolute form with all intermediate components normalized and
+    /// symbolic links resolved.
     ///
     /// This is an alias to [`fs::canonicalize`].
     ///
@@ -569,7 +628,7 @@ impl Path {
     /// use async_std::path::{Path, PathBuf};
     ///
     /// let path = Path::new("/foo/test/../test/bar.rs");
-    /// assert_eq!(path.canonicalize().await.unwrap(), PathBuf::from("/foo/test/bar.rs"));
+    /// assert_eq!(path.canonicalize().await?, PathBuf::from("/foo/test/bar.rs"));
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -591,7 +650,7 @@ impl Path {
     /// use async_std::path::Path;
     ///
     /// let path = Path::new("/laputa/sky_castle.rs");
-    /// let path_link = path.read_link().await.expect("read_link call failed");
+    /// let path_link = path.read_link().await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -599,9 +658,9 @@ impl Path {
         fs::read_link(self).await
     }
 
-    /// Returns an iterator over the entries within a directory.
+    /// Returns a stream over the entries within a directory.
     ///
-    /// The iterator will yield instances of [`io::Result`]`<`[`DirEntry`]`>`. New
+    /// The stream will yield instances of [`io::Result`]`<`[`DirEntry`]`>`. New
     /// errors may be encountered after an iterator is initially constructed.
     ///
     /// This is an alias to [`fs::read_dir`].
@@ -620,7 +679,8 @@ impl Path {
     /// use async_std::prelude::*;
     ///
     /// let path = Path::new("/laputa");
-    /// let mut dir = fs::read_dir(&path).await.expect("read_dir call failed");
+    /// let mut dir = fs::read_dir(&path).await?;
+    ///
     /// while let Some(res) = dir.next().await {
     ///     let entry = res?;
     ///     println!("{}", entry.file_name().to_string_lossy());
@@ -710,6 +770,7 @@ impl Path {
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
     /// use async_std::path::Path;
+    ///
     /// assert_eq!(Path::new("./is_a_directory/").is_dir().await, true);
     /// assert_eq!(Path::new("a_file.txt").is_dir().await, false);
     /// #
@@ -736,12 +797,209 @@ impl Path {
     ///
     /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
     /// [`PathBuf`]: struct.PathBuf.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_std::path::Path;
+    ///
+    /// let path: Box<Path> = Path::new("foo.txt").into();
+    /// let path_buf = path.into_path_buf();
+    /// ```
     pub fn into_path_buf(self: Box<Path>) -> PathBuf {
         let rw = Box::into_raw(self) as *mut std::path::Path;
         let inner = unsafe { Box::from_raw(rw) };
         inner.into_path_buf().into()
     }
 }
+
+impl From<&Path> for Box<Path> {
+    fn from(path: &Path) -> Box<Path> {
+        let boxed: Box<std::path::Path> = path.inner.into();
+        let rw = Box::into_raw(boxed) as *mut Path;
+        unsafe { Box::from_raw(rw) }
+    }
+}
+
+impl From<&Path> for Arc<Path> {
+    /// Converts a Path into a Rc by copying the Path data into a new Rc buffer.
+    #[inline]
+    fn from(s: &Path) -> Arc<Path> {
+        let arc: Arc<OsStr> = Arc::from(s.as_os_str());
+        unsafe { Arc::from_raw(Arc::into_raw(arc) as *const Path) }
+    }
+}
+
+impl From<&Path> for Rc<Path> {
+    #[inline]
+    fn from(s: &Path) -> Rc<Path> {
+        let rc: Rc<OsStr> = Rc::from(s.as_os_str());
+        unsafe { Rc::from_raw(Rc::into_raw(rc) as *const Path) }
+    }
+}
+
+impl ToOwned for Path {
+    type Owned = PathBuf;
+
+    fn to_owned(&self) -> PathBuf {
+        self.to_path_buf()
+    }
+}
+
+impl AsRef<OsStr> for Path {
+    fn as_ref(&self) -> &OsStr {
+        self.inner.as_ref()
+    }
+}
+
+impl AsRef<Path> for Path {
+    fn as_ref(&self) -> &Path {
+        self
+    }
+}
+
+impl AsRef<Path> for OsStr {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl<'a> From<&'a Path> for Cow<'a, Path> {
+    #[inline]
+    fn from(s: &'a Path) -> Cow<'a, Path> {
+        Cow::Borrowed(s)
+    }
+}
+
+impl AsRef<Path> for Cow<'_, OsStr> {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for OsString {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for str {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for String {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
+    }
+}
+
+impl AsRef<Path> for PathBuf {
+    fn as_ref(&self) -> &Path {
+        self
+    }
+}
+
+impl<'a> IntoIterator for &'a PathBuf {
+    type Item = &'a OsStr;
+    type IntoIter = Iter<'a>;
+
+    fn into_iter(self) -> Iter<'a> {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a Path {
+    type Item = &'a OsStr;
+    type IntoIter = Iter<'a>;
+
+    fn into_iter(self) -> Iter<'a> {
+        self.iter()
+    }
+}
+
+macro_rules! impl_cmp {
+    ($lhs:ty, $rhs: ty) => {
+        impl<'a, 'b> PartialEq<$rhs> for $lhs {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool {
+                <Path as PartialEq>::eq(self, other)
+            }
+        }
+
+        impl<'a, 'b> PartialEq<$lhs> for $rhs {
+            #[inline]
+            fn eq(&self, other: &$lhs) -> bool {
+                <Path as PartialEq>::eq(self, other)
+            }
+        }
+
+        impl<'a, 'b> PartialOrd<$rhs> for $lhs {
+            #[inline]
+            fn partial_cmp(&self, other: &$rhs) -> Option<Ordering> {
+                <Path as PartialOrd>::partial_cmp(self, other)
+            }
+        }
+
+        impl<'a, 'b> PartialOrd<$lhs> for $rhs {
+            #[inline]
+            fn partial_cmp(&self, other: &$lhs) -> Option<Ordering> {
+                <Path as PartialOrd>::partial_cmp(self, other)
+            }
+        }
+    };
+}
+
+impl_cmp!(PathBuf, Path);
+impl_cmp!(PathBuf, &'a Path);
+impl_cmp!(Cow<'a, Path>, Path);
+impl_cmp!(Cow<'a, Path>, &'b Path);
+impl_cmp!(Cow<'a, Path>, PathBuf);
+
+macro_rules! impl_cmp_os_str {
+    ($lhs:ty, $rhs: ty) => {
+        impl<'a, 'b> PartialEq<$rhs> for $lhs {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool {
+                <Path as PartialEq>::eq(self, other.as_ref())
+            }
+        }
+
+        impl<'a, 'b> PartialEq<$lhs> for $rhs {
+            #[inline]
+            fn eq(&self, other: &$lhs) -> bool {
+                <Path as PartialEq>::eq(self.as_ref(), other)
+            }
+        }
+
+        impl<'a, 'b> PartialOrd<$rhs> for $lhs {
+            #[inline]
+            fn partial_cmp(&self, other: &$rhs) -> Option<Ordering> {
+                <Path as PartialOrd>::partial_cmp(self, other.as_ref())
+            }
+        }
+
+        impl<'a, 'b> PartialOrd<$lhs> for $rhs {
+            #[inline]
+            fn partial_cmp(&self, other: &$lhs) -> Option<Ordering> {
+                <Path as PartialOrd>::partial_cmp(self.as_ref(), other)
+            }
+        }
+    };
+}
+
+impl_cmp_os_str!(PathBuf, OsStr);
+impl_cmp_os_str!(PathBuf, &'a OsStr);
+impl_cmp_os_str!(PathBuf, Cow<'a, OsStr>);
+impl_cmp_os_str!(PathBuf, OsString);
+impl_cmp_os_str!(Path, OsStr);
+impl_cmp_os_str!(Path, &'a OsStr);
+impl_cmp_os_str!(Path, Cow<'a, OsStr>);
+impl_cmp_os_str!(Path, OsString);
+impl_cmp_os_str!(&'a Path, OsStr);
+impl_cmp_os_str!(&'a Path, Cow<'b, OsStr>);
+impl_cmp_os_str!(&'a Path, OsString);
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
     fn from(path: &'a std::path::Path) -> &'a Path {
@@ -764,49 +1022,5 @@ impl AsRef<std::path::Path> for Path {
 impl AsRef<Path> for std::path::Path {
     fn as_ref(&self) -> &Path {
         self.into()
-    }
-}
-
-impl AsRef<Path> for Path {
-    fn as_ref(&self) -> &Path {
-        self
-    }
-}
-
-impl AsRef<OsStr> for Path {
-    fn as_ref(&self) -> &OsStr {
-        self.inner.as_ref()
-    }
-}
-
-impl AsRef<Path> for OsStr {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
-impl AsRef<Path> for str {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
-impl AsRef<Path> for String {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
-impl AsRef<Path> for std::path::PathBuf {
-    fn as_ref(&self) -> &Path {
-        Path::new(self)
-    }
-}
-
-impl std::borrow::ToOwned for Path {
-    type Owned = PathBuf;
-
-    fn to_owned(&self) -> PathBuf {
-        self.to_path_buf()
     }
 }
