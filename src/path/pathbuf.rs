@@ -17,7 +17,7 @@ use crate::stream::{self, FromStream, IntoStream};
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
-#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PathBuf {
     inner: std::path::PathBuf,
 }

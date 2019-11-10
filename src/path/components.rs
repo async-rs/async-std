@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::iter::FusedIterator;
 
