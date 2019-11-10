@@ -1024,3 +1024,10 @@ impl AsRef<Path> for std::path::Path {
         self.into()
     }
 }
+
+impl AsRef<Path> for std::path::PathBuf {
+    fn as_ref(&self) -> &Path {
+        let p: &std::path::Path = self.as_ref();
+        p.into()
+    }
+}
