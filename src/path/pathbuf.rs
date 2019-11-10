@@ -103,9 +103,9 @@ impl PathBuf {
     /// let mut p = PathBuf::from("/test/test.rs");
     ///
     /// p.pop();
-    /// assert_eq!(Path::new("/test"), p.as_ref());
+    /// assert_eq!(Path::new("/test"), p);
     /// p.pop();
-    /// assert_eq!(Path::new("/"), p.as_ref());
+    /// assert_eq!(Path::new("/"), p);
     /// ```
     pub fn pop(&mut self) -> bool {
         self.inner.pop()
@@ -265,7 +265,7 @@ impl Deref for PathBuf {
     type Target = Path;
 
     fn deref(&self) -> &Path {
-        self.as_ref()
+        Path::new(&self.inner)
     }
 }
 
