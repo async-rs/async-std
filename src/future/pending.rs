@@ -1,7 +1,7 @@
+use std::future::Future;
 use std::marker::PhantomData;
 use std::pin::Pin;
 
-use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// Never resolves to a value.

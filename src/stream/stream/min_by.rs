@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 use std::pin::Pin;
+use std::future::Future;
 
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 

@@ -1,12 +1,13 @@
 use std::ffi::{OsStr, OsString};
 #[cfg(feature = "unstable")]
 use std::pin::Pin;
+use std::str::FromStr;
 
 use crate::path::Path;
 #[cfg(feature = "unstable")]
 use crate::prelude::*;
 #[cfg(feature = "unstable")]
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::stream::{self, FromStream, IntoStream};
 
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
@@ -228,6 +229,14 @@ impl From<&str> for PathBuf {
     }
 }
 
+impl FromStr for PathBuf {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(std::path::PathBuf::from(s).into())
+    }
+}
+
 impl AsRef<Path> for PathBuf {
     fn as_ref(&self) -> &Path {
         Path::new(&self.inner)
@@ -241,42 +250,50 @@ impl AsRef<std::path::Path> for PathBuf {
 }
 
 #[cfg(feature = "unstable")]
-impl<P: AsRef<Path>> Extend<P> for PathBuf {
-    fn stream_extend<'a, S: IntoStream<Item = P>>(
+impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
+    fn extend<'a, S: IntoStream<Item = P> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>>
-    where
-        P: 'a,
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
 
-        //TODO: This can be added back in once this issue is resolved:
-        // https://github.com/rust-lang/rust/issues/58234
-        //self.reserve(stream.size_hint().0);
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
 
-        Box::pin(stream.for_each(move |item| self.push(item.as_ref())))
+            while let Some(item) = stream.next().await {
+                self.push(item.as_ref());
+            }
+        })
     }
 }
 
 #[cfg(feature = "unstable")]
 impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = P>>(
+    fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
-        let stream = stream.into_stream();
-
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         Box::pin(async move {
+            let stream = stream.into_stream();
             pin_utils::pin_mut!(stream);
 
             let mut out = Self::new();
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
+    }
+}
+
+impl<P: AsRef<Path>> std::iter::FromIterator<P> for PathBuf {
+    fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> PathBuf {
+        let mut buf = PathBuf::new();
+        buf.extend(iter);
+        buf
+    }
+}
+
+impl<P: AsRef<Path>> std::iter::Extend<P> for PathBuf {
+    fn extend<I: IntoIterator<Item = P>>(&mut self, iter: I) {
+        iter.into_iter().for_each(move |p| self.push(p.as_ref()));
     }
 }

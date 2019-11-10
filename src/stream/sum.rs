@@ -1,6 +1,6 @@
+use std::future::Future;
 use std::pin::Pin;
 
-use crate::future::Future;
 use crate::stream::Stream;
 
 /// Trait to represent types that can be created by summing up a stream.
@@ -23,9 +23,9 @@ pub trait Sum<A = Self>: Sized {
         S: Stream<Item = A> + 'a;
 }
 
-use core::ops::Add;
-use core::num::Wrapping;
 use crate::stream::stream::StreamExt;
+use core::num::Wrapping;
+use core::ops::Add;
 
 macro_rules! integer_sum {
     (@impls $zero: expr, $($a:ty)*) => ($(
@@ -75,5 +75,5 @@ macro_rules! float_sum {
     );
 }
 
-integer_sum!{ i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize }
-float_sum!{ f32 f64 }
+integer_sum! { i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize }
+float_sum! { f32 f64 }

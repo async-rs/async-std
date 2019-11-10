@@ -11,7 +11,7 @@ use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use crossbeam_utils::{Backoff, CachePadded};
+use crossbeam_utils::Backoff;
 
 use crate::stream::Stream;
 use crate::sync::WakerSet;
@@ -577,7 +577,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit in the head is always zero.
     ///
     /// Messages are popped from the head of the channel.
-    head: CachePadded<AtomicUsize>,
+    head: AtomicUsize,
 
     /// The tail of the channel.
     ///
@@ -586,7 +586,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit indicates that the channel is disconnected.
     ///
     /// Messages are pushed into the tail of the channel.
-    tail: CachePadded<AtomicUsize>,
+    tail: AtomicUsize,
 
     /// The buffer holding slots.
     buffer: *mut Slot<T>,
@@ -660,8 +660,8 @@ impl<T> Channel<T> {
             cap,
             one_lap,
             mark_bit,
-            head: CachePadded::new(AtomicUsize::new(head)),
-            tail: CachePadded::new(AtomicUsize::new(tail)),
+            head: AtomicUsize::new(head),
+            tail: AtomicUsize::new(tail),
             send_wakers: WakerSet::new(),
             recv_wakers: WakerSet::new(),
             stream_wakers: WakerSet::new(),
@@ -677,6 +677,14 @@ impl<T> Channel<T> {
         let mut tail = self.tail.load(Ordering::Relaxed);
 
         loop {
+            // Extract mark bit from the tail and unset it.
+            //
+            // If the mark bit was set (which means all receivers have been dropped), we will still
+            // send the message into the channel if there is enough capacity. The message will get
+            // dropped when the channel is dropped (which means when all senders are also dropped).
+            let mark_bit = tail & self.mark_bit;
+            tail ^= mark_bit;
+
             // Deconstruct the tail.
             let index = tail & (self.mark_bit - 1);
             let lap = tail & !(self.one_lap - 1);
@@ -699,8 +707,8 @@ impl<T> Channel<T> {
 
                 // Try moving the tail.
                 match self.tail.compare_exchange_weak(
-                    tail,
-                    new_tail,
+                    tail | mark_bit,
+                    new_tail | mark_bit,
                     Ordering::SeqCst,
                     Ordering::Relaxed,
                 ) {
@@ -732,7 +740,7 @@ impl<T> Channel<T> {
                     // ...then the channel is full.
 
                     // Check if the channel is disconnected.
-                    if tail & self.mark_bit != 0 {
+                    if mark_bit != 0 {
                         return Err(TrySendError::Disconnected(msg));
                     } else {
                         return Err(TrySendError::Full(msg));

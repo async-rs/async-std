@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::future::Future;
 use std::mem::{self, ManuallyDrop};
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
@@ -8,7 +9,6 @@ use crossbeam_utils::sync::Parker;
 use kv_log_macro::trace;
 use log::log_enabled;
 
-use crate::future::Future;
 use crate::task::{Context, Poll, Task, Waker};
 
 /// Spawns a task and blocks the current thread on its result.

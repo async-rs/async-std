@@ -1,9 +1,9 @@
 use std::mem;
 use std::pin::Pin;
 use std::str;
+use std::future::Future;
 
 use super::read_until_internal;
-use crate::future::Future;
 use crate::io::{self, BufRead};
 use crate::task::{Context, Poll};
 

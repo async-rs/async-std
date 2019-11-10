@@ -1,15 +1,15 @@
-use std::future::Future;
 use std::pin::Pin;
 
 use async_macros::MaybeDone;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
+use std::future::Future;
 
 pin_project! {
     #[allow(missing_docs)]
     #[allow(missing_debug_implementations)]
-    pub struct Race<L, R>
+    pub struct Join<L, R>
     where
         L: Future,
         R: Future<Output = L::Output>
@@ -19,7 +19,7 @@ pin_project! {
     }
 }
 
-impl<L, R> Race<L, R>
+impl<L, R> Join<L, R>
 where
     L: Future,
     R: Future<Output = L::Output>,
@@ -32,24 +32,29 @@ where
     }
 }
 
-impl<L, R> Future for Race<L, R>
+impl<L, R> Future for Join<L, R>
 where
     L: Future,
     R: Future<Output = L::Output>,
 {
-    type Output = L::Output;
+    type Output = (L::Output, R::Output);
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
 
         let mut left = this.left;
+        let mut right = this.right;
+
         if Future::poll(Pin::new(&mut left), cx).is_ready() {
-            return Poll::Ready(left.take().unwrap());
+            if right.as_ref().output().is_some() {
+                return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
+            }
         }
 
-        let mut right = this.right;
         if Future::poll(Pin::new(&mut right), cx).is_ready() {
-            return Poll::Ready(right.take().unwrap());
+            if left.as_ref().output().is_some() {
+                return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
+            }
         }
 
         Poll::Pending

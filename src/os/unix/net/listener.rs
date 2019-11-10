@@ -2,12 +2,13 @@
 
 use std::fmt;
 use std::pin::Pin;
+use std::future::Future;
 
 use mio_uds;
 
 use super::SocketAddr;
 use super::UnixStream;
-use crate::future::{self, Future};
+use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};

@@ -18,8 +18,11 @@ pin_project! {
     }
 }
 
+/// Converts an iterator into a stream.
+///
 /// # Examples
-///```
+///
+/// ```
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
@@ -34,8 +37,8 @@ pin_project! {
 /// assert_eq!(s.next().await, None);
 /// #
 /// # })
-///````
-pub fn from_iter<I: IntoIterator>(iter: I) -> FromIter<<I as std::iter::IntoIterator>::IntoIter> {
+/// ```
+pub fn from_iter<I: IntoIterator>(iter: I) -> FromIter<I::IntoIter> {
     FromIter {
         iter: iter.into_iter(),
     }

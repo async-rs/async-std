@@ -3,8 +3,8 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::future::Future;
 
-use crate::future::Future;
 use crate::sync::WakerSet;
 use crate::task::{Context, Poll};
 

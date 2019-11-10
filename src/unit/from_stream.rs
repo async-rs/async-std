@@ -5,12 +5,9 @@ use crate::stream::{FromStream, IntoStream};
 
 impl FromStream<()> for () {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = ()>>(
+    fn from_stream<'a, S: IntoStream<Item = ()> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         Box::pin(stream.into_stream().for_each(|_| ()))
     }
 }
