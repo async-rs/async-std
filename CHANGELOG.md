@@ -388,8 +388,9 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.11...HEAD
-[0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
+[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.12...HEAD
+[0.99.12]: https://github.com/async-rs/async-std/compare/v0.99.11...v0.99.12
+[0.99.11]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
 [0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.9...v0.99.10
 [0.99.9]: https://github.com/async-rs/async-std/compare/v0.99.8...v0.99.9
 [0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8
