@@ -16,6 +16,8 @@ pin_project! {
     /// This stream is constructed by [`successors`] function
     ///
     /// [`succcessors`]: fn.succssors.html
+    #[cfg(feature = "unstable")]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]
     pub struct Successors<F, Fut, T>
     where
@@ -65,6 +67,8 @@ pin_project! {
 /// # }) }
 ///
 /// ```
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn successors<F, Fut, T>(first: Option<T>, succ: F) -> Successors<F, Fut, T>
 where
     F: FnMut(T) -> Fut,

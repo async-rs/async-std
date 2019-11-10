@@ -317,7 +317,6 @@ mod from_iter;
 mod once;
 mod repeat;
 mod repeat_with;
-mod successors;
 
 cfg_unstable! {
     mod double_ended_stream;
@@ -328,6 +327,7 @@ cfg_unstable! {
     mod interval;
     mod into_stream;
     mod product;
+    mod successors;
     mod sum;
 
     pub use double_ended_stream::DoubleEndedStream;
@@ -339,5 +339,6 @@ cfg_unstable! {
     pub use into_stream::IntoStream;
     pub use product::Product;
     pub use stream::Merge;
+    pub use successors::{successors, Successors};
     pub use sum::Sum;
 }
