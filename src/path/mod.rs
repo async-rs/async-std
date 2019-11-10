@@ -70,25 +70,18 @@
 //! [`OsStr`]: https://doc.rust-lang.org/std/ffi/struct.OsStr.html
 
 mod ancestors;
+mod components;
+mod iter;
 mod path;
 mod pathbuf;
 
-// Structs re-export
 #[doc(inline)]
-pub use std::path::{Components, Display, Iter, PrefixComponent, StripPrefixError};
+pub use std::path::{
+    is_separator, Component, Display, Prefix, PrefixComponent, StripPrefixError, MAIN_SEPARATOR,
+};
 
-// Enums re-export
-#[doc(inline)]
-pub use std::path::{Component, Prefix};
-
-// Constants re-export
-#[doc(inline)]
-pub use std::path::MAIN_SEPARATOR;
-
-// Functions re-export
-#[doc(inline)]
-pub use std::path::is_separator;
-
-use ancestors::Ancestors;
+pub use ancestors::Ancestors;
+pub use components::Components;
+pub use iter::Iter;
 pub use path::Path;
 pub use pathbuf::PathBuf;
