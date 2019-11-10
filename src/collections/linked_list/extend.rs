@@ -2,10 +2,10 @@ use std::collections::LinkedList;
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Extend, IntoStream};
+use crate::stream::{self, IntoStream};
 
-impl<T> Extend<T> for LinkedList<T> {
-    fn stream_extend<'a, S: IntoStream<Item = T> + 'a>(
+impl<T> stream::Extend<T> for LinkedList<T> {
+    fn extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {

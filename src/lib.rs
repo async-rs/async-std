@@ -1,7 +1,7 @@
 //! # Async version of the Rust standard library
 //!
 //! `async-std` is a foundation of portable Rust software, a set of minimal and battle-tested
-//! shared abstractions for the [broader Rust ecosystem][crates.io]. It offers core types, like
+//! shared abstractions for the [broader Rust ecosystem][crates.io]. It offers std types, like
 //! [`Future`] and [`Stream`], library-defined [operations on language primitives](#primitives),
 //! [standard macros](#macros), [I/O] and [multithreading], among [many other things][other].
 //!
@@ -157,8 +157,30 @@
 //! version = "0.99"
 //! features = ["unstable"]
 //! ```
+//!
+//! Items marked with
+//! <span
+//!   class="module-item stab portability"
+//!   style="display: inline; border-radius: 3px; padding: 2px; font-size: 80%; line-height: 1.2;"
+//! ><code>attributes</code></span>
+//! are available only when the `attributes` Cargo feature is enabled:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "0.99"
+//! features = ["attributes"]
+//! ```
+//!
+//! Additionally it's possible to only use the core traits and combinators by
+//! only enabling the `std` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "0.99"
+//! default-features = false
+//! features = ["std"]
+//! ```
 
-#![cfg(feature = "default")]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]
@@ -170,16 +192,29 @@
 #[macro_use]
 mod utils;
 
-pub mod fs;
-pub mod future;
-pub mod io;
-pub mod net;
-pub mod os;
-pub mod path;
-pub mod prelude;
-pub mod stream;
-pub mod sync;
-pub mod task;
+#[cfg(feature = "attributes")]
+#[cfg_attr(feature = "docs", doc(cfg(attributes)))]
+#[doc(inline)]
+pub use async_attributes::{main, test};
+
+#[cfg(feature = "std")]
+mod macros;
+
+cfg_std! {
+    pub mod future;
+    pub mod io;
+    pub mod os;
+    pub mod prelude;
+    pub mod stream;
+    pub mod sync;
+    pub mod task;
+}
+
+cfg_default! {
+    pub mod fs;
+    pub mod path;
+    pub mod net;
+}
 
 cfg_unstable! {
     pub mod pin;
@@ -195,5 +230,3 @@ cfg_unstable! {
     #[doc(inline)]
     pub use std::{write, writeln};
 }
-
-mod macros;

@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        rust: [nightly]
+        rust: [nightly, beta, stable]
 
     steps:
     - uses: actions/checkout@master
@@ -38,7 +38,25 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command:  check
-        args: --features unstable --all --benches --bins --examples --tests
+        args: --features unstable --all --bins --examples --tests
+    - name: check bench
+      uses: actions-rs/cargo@v1
+      if: matrix.rust == 'nightly'
+      with:
+        command:  check
+        args: --benches
+
+    - name: check std only
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --no-default-features --features std
+
+    - name: check attributes
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --features attributes
 
     - name: tests
       uses: actions-rs/cargo@v1
@@ -74,14 +92,14 @@ jobs:
     - name: Docs
       run: cargo doc --features docs
 
-  clippy_check:
-    name: Clippy check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install rust
-        run: rustup update beta && rustup default beta
-      - name: Install clippy
-        run: rustup component add clippy
-      - name: clippy
-        run: cargo clippy --all --features unstable
+  # clippy_check:
+  #   name: Clippy check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #     - name: Install rust
+  #       run: rustup update beta && rustup default beta
+  #     - name: Install clippy
+  #       run: rustup component add clippy
+  #     - name: clippy
+  #       run: cargo clippy --all --features unstable

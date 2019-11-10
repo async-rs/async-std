@@ -332,7 +332,7 @@ cfg_unstable! {
 
     pub use double_ended_stream::DoubleEndedStream;
     pub use exact_size_stream::ExactSizeStream;
-    pub use extend::Extend;
+    pub use extend::{extend, Extend};
     pub use from_stream::FromStream;
     pub use fused_stream::FusedStream;
     pub use interval::{interval, Interval};

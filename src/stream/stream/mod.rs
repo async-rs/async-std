@@ -24,8 +24,10 @@
 mod all;
 mod any;
 mod chain;
+mod cloned;
 mod cmp;
 mod copied;
+mod cycle;
 mod enumerate;
 mod eq;
 mod filter;
@@ -65,6 +67,7 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
+use cycle::Cycle;
 use enumerate::Enumerate;
 use eq::EqFuture;
 use filter_map::FilterMap;
@@ -91,6 +94,7 @@ use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
+pub use cloned::Cloned;
 pub use copied::Copied;
 pub use filter::Filter;
 pub use fuse::Fuse;
@@ -108,10 +112,10 @@ use std::cmp::Ordering;
 use std::marker::PhantomData;
 
 cfg_unstable! {
+    use std::future::Future;
     use std::pin::Pin;
     use std::time::Duration;
 
-    use crate::future::Future;
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
 
@@ -299,6 +303,7 @@ extension_trait! {
 
             #
             # }) }
+            ```
         "#]
         fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
         where
@@ -379,6 +384,40 @@ extension_trait! {
             Chain::new(self, other)
         }
 
+            #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let v = stream::from_iter(vec![&1, &2, &3]);
+
+            let mut v_cloned = v.cloned();
+
+            assert_eq!(v_cloned.next().await, Some(1));
+            assert_eq!(v_cloned.next().await, Some(2));
+            assert_eq!(v_cloned.next().await, Some(3));
+            assert_eq!(v_cloned.next().await, None);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn cloned<'a,T>(self) -> Cloned<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T : 'a + Clone,
+        {
+            Cloned::new(self)
+        }
+
 
         #[doc = r#"
             Creates an stream which copies all of its elements.
@@ -394,8 +433,6 @@ extension_trait! {
             use async_std::stream;
 
             let s = stream::from_iter(vec![&1, &2, &3]);
-            let second = stream::from_iter(vec![2, 3]);
-
             let mut s_copied  = s.copied();
 
             assert_eq!(s_copied.next().await, Some(1));
@@ -412,6 +449,38 @@ extension_trait! {
             T : 'a + Copy,
         {
             Copied::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream that yields the provided values infinitely and in order.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let mut s = stream::once(7).cycle();
+
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            #
+            # })
+            ```
+        "#]
+        fn cycle(self) -> Cycle<Self, Self::Item>
+            where
+                Self: Sized,
+                Self::Item: Clone,
+        {
+            Cycle::new(self)
         }
 
         #[doc = r#"
@@ -1586,8 +1655,8 @@ extension_trait! {
         #[doc = r#"
             Combines multiple streams into a single stream of all their outputs.
 
-            Items are yielded as soon as they're received, and the stream continues yield until both
-            streams have been exhausted.
+            Items are yielded as soon as they're received, and the stream continues yield until
+            both streams have been exhausted. The output ordering between streams is not guaranteed.
 
             # Examples
 

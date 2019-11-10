@@ -2,7 +2,8 @@ use std::collections::HashSet;
 use std::hash::{BuildHasher, Hash};
 use std::pin::Pin;
 
-use crate::stream::{Extend, FromStream, IntoStream};
+use crate::prelude::*;
+use crate::stream::{self, FromStream, IntoStream};
 
 impl<T, H> FromStream<T> for HashSet<T, H>
 where
@@ -10,19 +11,16 @@ where
     H: BuildHasher + Default,
 {
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = T>>(
+    fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
             pin_utils::pin_mut!(stream);
 
             let mut out = HashSet::with_hasher(Default::default());
-            out.stream_extend(stream).await;
+            stream::extend(&mut out, stream).await;
             out
         })
     }

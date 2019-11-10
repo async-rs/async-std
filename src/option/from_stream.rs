@@ -11,12 +11,9 @@ where
     /// elements are taken, and `None` is returned. Should no `None`
     /// occur, a container with the values of each `Option` is returned.
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = Option<T>>>(
+    fn from_stream<'a, S: IntoStream<Item = Option<T>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {

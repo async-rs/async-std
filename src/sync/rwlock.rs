@@ -4,9 +4,9 @@ use std::isize;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::process;
+use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::future::Future;
 use crate::sync::WakerSet;
 use crate::task::{Context, Poll};
 
@@ -57,7 +57,7 @@ pub struct RwLock<T> {
 }
 
 unsafe impl<T: Send> Send for RwLock<T> {}
-unsafe impl<T: Send> Sync for RwLock<T> {}
+unsafe impl<T: Send + Sync> Sync for RwLock<T> {}
 
 impl<T> RwLock<T> {
     /// Creates a new reader-writer lock.

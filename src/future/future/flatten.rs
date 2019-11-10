@@ -1,11 +1,11 @@
-use futures_core::ready;
+use std::future::Future;
 use std::pin::Pin;
 
-use crate::future::Future;
 use crate::future::IntoFuture;
-use crate::task::{Context, Poll};
+use crate::task::{ready, Context, Poll};
 
-#[derive(Debug)]
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct FlattenFuture<Fut1, Fut2> {
     state: State<Fut1, Fut2>,
 }
