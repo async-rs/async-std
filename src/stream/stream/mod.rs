@@ -68,11 +68,8 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
-<<<<<<< HEAD
 use count::CountFuture;
-=======
 use cycle::Cycle;
->>>>>>> master
 use enumerate::Enumerate;
 use eq::EqFuture;
 use filter_map::FilterMap;
