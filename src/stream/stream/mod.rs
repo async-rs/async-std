@@ -1813,10 +1813,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s1 = VecDeque::from(vec![0]);
-            let s2 = VecDeque::from(vec![1, 2, 3]);
+            let s1 = stream::from_iter(vec![0]);
+            let s2 = stream::from_iter(vec![1, 2, 3]);
 
             assert_eq!(s1.count().await, 1);
             assert_eq!(s2.count().await, 3);
