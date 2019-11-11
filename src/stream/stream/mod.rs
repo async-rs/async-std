@@ -60,7 +60,6 @@ mod skip_while;
 mod step_by;
 mod take;
 mod take_while;
-mod throttle;
 mod try_fold;
 mod try_for_each;
 mod zip;
@@ -107,16 +106,15 @@ pub use skip_while::SkipWhile;
 pub use step_by::StepBy;
 pub use take::Take;
 pub use take_while::TakeWhile;
-pub use throttle::Throttle;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
 use std::marker::PhantomData;
-use std::time::Duration;
 
 cfg_unstable! {
     use std::future::Future;
     use std::pin::Pin;
+    use std::time::Duration;
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
@@ -125,11 +123,13 @@ cfg_unstable! {
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
+    pub use throttle::Throttle;
 
     mod merge;
     mod flatten;
     mod flat_map;
     mod timeout;
+    mod throttle;
 }
 
 extension_trait! {
@@ -315,6 +315,7 @@ extension_trait! {
             TakeWhile::new(self, predicate)
         }
 
+        #[cfg(all(feature = "default", feature = "unstable"))]
         #[doc = r#"
             Limit the amount of items yielded per timeslice in a stream.
 
