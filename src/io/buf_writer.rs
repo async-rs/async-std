@@ -1,96 +1,96 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures_core::ready;
+use pin_project_lite::pin_project;
 
 use crate::io::write::WriteExt;
 use crate::io::{self, Seek, SeekFrom, Write};
-use crate::task::{Context, Poll};
+use crate::task::{Context, Poll, ready};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
 
-/// Wraps a writer and buffers its output.
-///
-/// It can be excessively inefficient to work directly with something that
-/// implements [`Write`]. For example, every call to
-/// [`write`][`TcpStream::write`] on [`TcpStream`] results in a system call. A
-/// `BufWriter` keeps an in-memory buffer of data and writes it to an underlying
-/// writer in large, infrequent batches.
-///
-/// `BufWriter` can improve the speed of programs that make *small* and
-/// *repeated* write calls to the same file or network socket. It does not
-/// help when writing very large amounts at once, or writing just one or a few
-/// times. It also provides no advantage when writing to a destination that is
-/// in memory, like a `Vec<u8>`.
-///
-/// When the `BufWriter` is dropped, the contents of its buffer will be written
-/// out. However, any errors that happen in the process of flushing the buffer
-/// when the writer is dropped will be ignored. Code that wishes to handle such
-/// errors must manually call [`flush`] before the writer is dropped.
-///
-/// This type is an async version of [`std::io::BufReader`].
-///
-/// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
-///
-/// # Examples
-///
-/// Let's write the numbers one through ten to a [`TcpStream`]:
-///
-/// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-/// use async_std::net::TcpStream;
-/// use async_std::prelude::*;
-///
-/// let mut stream = TcpStream::connect("127.0.0.1:34254").await?;
-///
-/// for i in 0..10 {
-///     let arr = [i+1];
-///     stream.write(&arr).await?;
-/// }
-/// #
-/// # Ok(()) }) }
-/// ```
-///
-/// Because we're not buffering, we write each one in turn, incurring the
-/// overhead of a system call per byte written. We can fix this with a
-/// `BufWriter`:
-///
-/// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-/// use async_std::io::BufWriter;
-/// use async_std::net::TcpStream;
-/// use async_std::prelude::*;
-///
-/// let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").await?);
-/// for i in 0..10 {
-///     let arr = [i+1];
-///     stream.write(&arr).await?;
-/// };
-/// #
-/// # Ok(()) }) }
-/// ```
-///
-/// By wrapping the stream with a `BufWriter`, these ten writes are all grouped
-/// together by the buffer, and will all be written out in one system call when
-/// the `stream` is dropped.
-///
-/// [`Write`]: trait.Write.html
-/// [`TcpStream::write`]: ../net/struct.TcpStream.html#method.write
-/// [`TcpStream`]: ../net/struct.TcpStream.html
-/// [`flush`]: trait.Write.html#tymethod.flush
-pub struct BufWriter<W> {
-    inner: W,
-    buf: Vec<u8>,
-    written: usize,
+pin_project! {
+    /// Wraps a writer and buffers its output.
+    ///
+    /// It can be excessively inefficient to work directly with something that
+    /// implements [`Write`]. For example, every call to
+    /// [`write`][`TcpStream::write`] on [`TcpStream`] results in a system call. A
+    /// `BufWriter` keeps an in-memory buffer of data and writes it to an underlying
+    /// writer in large, infrequent batches.
+    ///
+    /// `BufWriter` can improve the speed of programs that make *small* and
+    /// *repeated* write calls to the same file or network socket. It does not
+    /// help when writing very large amounts at once, or writing just one or a few
+    /// times. It also provides no advantage when writing to a destination that is
+    /// in memory, like a `Vec<u8>`.
+    ///
+    /// When the `BufWriter` is dropped, the contents of its buffer will be written
+    /// out. However, any errors that happen in the process of flushing the buffer
+    /// when the writer is dropped will be ignored. Code that wishes to handle such
+    /// errors must manually call [`flush`] before the writer is dropped.
+    ///
+    /// This type is an async version of [`std::io::BufReader`].
+    ///
+    /// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
+    ///
+    /// # Examples
+    ///
+    /// Let's write the numbers one through ten to a [`TcpStream`]:
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// use async_std::net::TcpStream;
+    /// use async_std::prelude::*;
+    ///
+    /// let mut stream = TcpStream::connect("127.0.0.1:34254").await?;
+    ///
+    /// for i in 0..10 {
+    ///     let arr = [i+1];
+    ///     stream.write(&arr).await?;
+    /// }
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    ///
+    /// Because we're not buffering, we write each one in turn, incurring the
+    /// overhead of a system call per byte written. We can fix this with a
+    /// `BufWriter`:
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// use async_std::io::BufWriter;
+    /// use async_std::net::TcpStream;
+    /// use async_std::prelude::*;
+    ///
+    /// let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").await?);
+    /// for i in 0..10 {
+    ///     let arr = [i+1];
+    ///     stream.write(&arr).await?;
+    /// };
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    ///
+    /// By wrapping the stream with a `BufWriter`, these ten writes are all grouped
+    /// together by the buffer, and will all be written out in one system call when
+    /// the `stream` is dropped.
+    ///
+    /// [`Write`]: trait.Write.html
+    /// [`TcpStream::write`]: ../net/struct.TcpStream.html#method.write
+    /// [`TcpStream`]: ../net/struct.TcpStream.html
+    /// [`flush`]: trait.Write.html#tymethod.flush
+    pub struct BufWriter<W> {
+        #[pin]
+        inner: W,
+        buf: Vec<u8>,
+        written: usize,
+    }
 }
 
 #[derive(Debug)]
 pub struct IntoInnerError<W>(W, std::io::Error);
 
 impl<W: Write> BufWriter<W> {
-    pin_utils::unsafe_pinned!(inner: W);
-    pin_utils::unsafe_unpinned!(buf: Vec<u8>);
-
     /// Creates a new `BufWriter` with a default buffer capacity. The default is currently 8 KB,
     /// but may change in the future.
     ///
@@ -178,6 +178,13 @@ impl<W: Write> BufWriter<W> {
         &mut self.inner
     }
 
+    /// Gets a pinned mutable reference to the underlying writer.
+    ///
+    /// It is inadvisable to directly write to the underlying writer.
+    fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
+        self.project().inner
+    }
+
     /// Consumes BufWriter, returning the underlying writer
     ///
     /// This method will not write leftover data, it will be lost.
@@ -234,16 +241,15 @@ impl<W: Write> BufWriter<W> {
     ///
     /// [`LineWriter`]: struct.LineWriter.html
     fn poll_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let Self {
-            inner,
-            buf,
-            written,
-        } = unsafe { Pin::get_unchecked_mut(self) };
-        let mut inner = unsafe { Pin::new_unchecked(inner) };
-        let len = buf.len();
+        let mut this = self.project();
+        let len = this.buf.len();
         let mut ret = Ok(());
-        while *written < len {
-            match inner.as_mut().poll_write(cx, &buf[*written..]) {
+        while *this.written < len {
+            match this
+                .inner
+                .as_mut()
+                .poll_write(cx, &this.buf[*this.written..])
+            {
                 Poll::Ready(Ok(0)) => {
                     ret = Err(io::Error::new(
                         io::ErrorKind::WriteZero,
@@ -251,7 +257,7 @@ impl<W: Write> BufWriter<W> {
                     ));
                     break;
                 }
-                Poll::Ready(Ok(n)) => *written += n,
+                Poll::Ready(Ok(n)) => *this.written += n,
                 Poll::Ready(Err(ref e)) if e.kind() == io::ErrorKind::Interrupted => {}
                 Poll::Ready(Err(e)) => {
                     ret = Err(e);
@@ -260,10 +266,10 @@ impl<W: Write> BufWriter<W> {
                 Poll::Pending => return Poll::Pending,
             }
         }
-        if *written > 0 {
-            buf.drain(..*written);
+        if *this.written > 0 {
+            this.buf.drain(..*this.written);
         }
-        *written = 0;
+        *this.written = 0;
         Poll::Ready(ret)
     }
 }
@@ -278,20 +284,20 @@ impl<W: Write> Write for BufWriter<W> {
             ready!(self.as_mut().poll_flush_buf(cx))?;
         }
         if buf.len() >= self.buf.capacity() {
-            self.inner().poll_write(cx, buf)
+            self.get_pin_mut().poll_write(cx, buf)
         } else {
-            Pin::new(&mut *self.buf()).poll_write(cx, buf)
+            Pin::new(&mut *self.project().buf).poll_write(cx, buf)
         }
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
-        self.inner().poll_flush(cx)
+        self.get_pin_mut().poll_flush(cx)
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
-        self.inner().poll_close(cx)
+        self.get_pin_mut().poll_close(cx)
     }
 }
 
@@ -314,6 +320,6 @@ impl<W: Write + Seek> Seek for BufWriter<W> {
         pos: SeekFrom,
     ) -> Poll<io::Result<u64>> {
         ready!(self.as_mut().poll_flush_buf(cx))?;
-        self.inner().poll_seek(cx, pos)
+        self.get_pin_mut().poll_seek(cx, pos)
     }
 }

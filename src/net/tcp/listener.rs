@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
+use std::future::Future;
 use std::pin::Pin;
 
-use crate::future::{self, Future};
+use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::net::{TcpStream, ToSocketAddrs};

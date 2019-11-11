@@ -40,7 +40,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn is_dir(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns `true` if this file type represents a regular file.
@@ -60,7 +60,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn is_file(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns `true` if this file type represents a symbolic link.
@@ -78,7 +78,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn is_symlink(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

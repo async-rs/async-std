@@ -2,11 +2,9 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
-use futures_core::future::Future;
-use futures_core::stream::Stream;
-use pin_utils::unsafe_pinned;
-
 use futures_timer::Delay;
+
+use crate::prelude::*;
 
 /// Creates a new stream that yields at a set interval.
 ///
@@ -54,6 +52,10 @@ pub fn interval(dur: Duration) -> Interval {
 
 /// A stream representing notifications at fixed interval
 ///
+/// This stream is created by the [`interval`] function. See its
+/// documentation for more.
+///
+/// [`interval`]: fn.interval.html
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
@@ -62,15 +64,11 @@ pub struct Interval {
     interval: Duration,
 }
 
-impl Interval {
-    unsafe_pinned!(delay: Delay);
-}
-
 impl Stream for Interval {
     type Item = ();
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if Pin::new(&mut *self).delay().poll(cx).is_pending() {
+        if Pin::new(&mut self.delay).poll(cx).is_pending() {
             return Poll::Pending;
         }
         let when = Instant::now();
@@ -117,6 +115,7 @@ fn next_interval(prev: Instant, now: Instant, interval: Duration) -> Instant {
 #[cfg(test)]
 mod test {
     use super::next_interval;
+    use std::cmp::Ordering;
     use std::time::{Duration, Instant};
 
     struct Timeline(Instant);
@@ -140,12 +139,10 @@ mod test {
     // The math around Instant/Duration isn't 100% precise due to rounding
     // errors, see #249 for more info
     fn almost_eq(a: Instant, b: Instant) -> bool {
-        if a == b {
-            true
-        } else if a > b {
-            a - b < Duration::from_millis(1)
-        } else {
-            b - a < Duration::from_millis(1)
+        match a.cmp(&b) {
+            Ordering::Equal => true,
+            Ordering::Greater => a - b < Duration::from_millis(1),
+            Ordering::Less => b - a < Duration::from_millis(1),
         }
     }
 

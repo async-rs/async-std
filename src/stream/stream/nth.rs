@@ -1,7 +1,7 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::future::Future;
 
-use crate::future::Future;
 use crate::stream::Stream;
 
 #[doc(hidden)]

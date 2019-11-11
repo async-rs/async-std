@@ -1,65 +1,9 @@
 use std::cell::UnsafeCell;
 use std::error::Error;
 use std::fmt;
-use std::future::Future;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 
-use lazy_static::lazy_static;
-
-use super::worker;
-use crate::utils::abort_on_panic;
-
-/// Declares task-local values.
-///
-/// The macro wraps any number of static declarations and makes them task-local. Attributes and
-/// visibility modifiers are allowed.
-///
-/// Each declared value is of the accessor type [`LocalKey`].
-///
-/// [`LocalKey`]: task/struct.LocalKey.html
-///
-/// # Examples
-///
-/// ```
-/// #
-/// use std::cell::Cell;
-///
-/// use async_std::task;
-/// use async_std::prelude::*;
-///
-/// task_local! {
-///     static VAL: Cell<u32> = Cell::new(5);
-/// }
-///
-/// task::block_on(async {
-///     let v = VAL.with(|c| c.get());
-///     assert_eq!(v, 5);
-/// });
-/// ```
-#[macro_export]
-macro_rules! task_local {
-    () => ();
-
-    ($(#[$attr:meta])* $vis:vis static $name:ident: $t:ty = $init:expr) => (
-        $(#[$attr])* $vis static $name: $crate::task::LocalKey<$t> = {
-            #[inline]
-            fn __init() -> $t {
-                $init
-            }
-
-            $crate::task::LocalKey {
-                __init,
-                __key: ::std::sync::atomic::AtomicUsize::new(0),
-            }
-        };
-    );
-
-    ($(#[$attr:meta])* $vis:vis static $name:ident: $t:ty = $init:expr; $($rest:tt)*) => (
-        $crate::task_local!($(#[$attr])* $vis static $name: $t = $init);
-        $crate::task_local!($($rest)*);
-    );
-}
+use crate::task::Task;
 
 /// The key for accessing a task-local value.
 ///
@@ -71,7 +15,7 @@ pub struct LocalKey<T: Send + 'static> {
     pub __init: fn() -> T,
 
     #[doc(hidden)]
-    pub __key: AtomicUsize,
+    pub __key: AtomicU32,
 }
 
 impl<T: Send + 'static> LocalKey<T> {
@@ -154,14 +98,13 @@ impl<T: Send + 'static> LocalKey<T> {
     where
         F: FnOnce(&T) -> R,
     {
-        worker::get_task(|task| unsafe {
+        Task::get_current(|task| unsafe {
             // Prepare the numeric key, initialization function, and the map of task-locals.
             let key = self.key();
             let init = || Box::new((self.__init)()) as Box<dyn Send>;
-            let map = &task.metadata().local_map;
 
             // Get the value in the map of task-locals, or initialize and insert one.
-            let value: *const dyn Send = map.get_or_insert(key, init);
+            let value: *const dyn Send = task.locals().get_or_insert(key, init);
 
             // Call the closure with the value passed as an argument.
             f(&*(value as *const T))
@@ -171,26 +114,26 @@ impl<T: Send + 'static> LocalKey<T> {
 
     /// Returns the numeric key associated with this task-local.
     #[inline]
-    fn key(&self) -> usize {
+    fn key(&self) -> u32 {
         #[cold]
-        fn init(key: &AtomicUsize) -> usize {
-            lazy_static! {
-                static ref COUNTER: Mutex<usize> = Mutex::new(1);
+        fn init(key: &AtomicU32) -> u32 {
+            static COUNTER: AtomicU32 = AtomicU32::new(1);
+
+            let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+            if counter > u32::max_value() / 2 {
+                std::process::abort();
             }
 
-            let mut counter = COUNTER.lock().unwrap();
-            let prev = key.compare_and_swap(0, *counter, Ordering::AcqRel);
-
-            if prev == 0 {
-                *counter += 1;
-                *counter - 1
-            } else {
-                prev
+            match key.compare_and_swap(0, counter, Ordering::AcqRel) {
+                0 => counter,
+                k => k,
             }
         }
 
-        let key = self.__key.load(Ordering::Acquire);
-        if key == 0 { init(&self.__key) } else { key }
+        match self.__key.load(Ordering::Acquire) {
+            0 => init(&self.__key),
+            k => k,
+        }
     }
 }
 
@@ -216,51 +159,55 @@ impl fmt::Display for AccessError {
 
 impl Error for AccessError {}
 
-/// A map that holds task-locals.
-pub(crate) struct Map {
-    /// A list of `(key, value)` entries sorted by the key.
-    entries: UnsafeCell<Vec<(usize, Box<dyn Send>)>>,
+/// A key-value entry in a map of task-locals.
+struct Entry {
+    /// Key identifying the task-local variable.
+    key: u32,
+
+    /// Value stored in this entry.
+    value: Box<dyn Send>,
 }
 
-impl Map {
+/// A map that holds task-locals.
+pub(crate) struct LocalsMap {
+    /// A list of key-value entries sorted by the key.
+    entries: UnsafeCell<Option<Vec<Entry>>>,
+}
+
+impl LocalsMap {
     /// Creates an empty map of task-locals.
-    pub fn new() -> Map {
-        Map {
-            entries: UnsafeCell::new(Vec::new()),
+    pub fn new() -> LocalsMap {
+        LocalsMap {
+            entries: UnsafeCell::new(Some(Vec::new())),
         }
     }
 
-    /// Returns a thread-local value associated with `key` or inserts one constructed by `init`.
+    /// Returns a task-local value associated with `key` or inserts one constructed by `init`.
     #[inline]
-    pub fn get_or_insert(&self, key: usize, init: impl FnOnce() -> Box<dyn Send>) -> &dyn Send {
-        let entries = unsafe { &mut *self.entries.get() };
-
-        let index = match entries.binary_search_by_key(&key, |e| e.0) {
-            Ok(i) => i,
-            Err(i) => {
-                entries.insert(i, (key, init()));
-                i
+    pub fn get_or_insert(&self, key: u32, init: impl FnOnce() -> Box<dyn Send>) -> &dyn Send {
+        match unsafe { (*self.entries.get()).as_mut() } {
+            None => panic!("can't access task-locals while the task is being dropped"),
+            Some(entries) => {
+                let index = match entries.binary_search_by_key(&key, |e| e.key) {
+                    Ok(i) => i,
+                    Err(i) => {
+                        let value = init();
+                        entries.insert(i, Entry { key, value });
+                        i
+                    }
+                };
+                &*entries[index].value
             }
-        };
-
-        &*entries[index].1
+        }
     }
 
     /// Clears the map and drops all task-locals.
-    pub fn clear(&self) {
-        let entries = unsafe { &mut *self.entries.get() };
-        entries.clear();
-    }
-}
-
-// Wrap the future into one that drops task-local variables on exit.
-pub(crate) unsafe fn add_finalizer<T>(f: impl Future<Output = T>) -> impl Future<Output = T> {
-    async move {
-        let res = f.await;
-
-        // Abort on panic because thread-local variables behave the same way.
-        abort_on_panic(|| worker::get_task(|task| task.metadata().local_map.clear()));
-
-        res
+    ///
+    /// This method is only safe to call at the end of the task.
+    pub unsafe fn clear(&self) {
+        // Since destructors may attempt to access task-locals, we musnt't hold a mutable reference
+        // to the `Vec` while dropping them. Instead, we first take the `Vec` out and then drop it.
+        let entries = (*self.entries.get()).take();
+        drop(entries);
     }
 }

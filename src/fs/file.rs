@@ -12,7 +12,7 @@ use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::path::Path;
 use crate::prelude::*;
-use crate::task::{self, blocking, Context, Poll, Waker};
+use crate::task::{self, spawn_blocking, Context, Poll, Waker};
 
 /// An open file on the filesystem.
 ///
@@ -66,6 +66,23 @@ pub struct File {
 }
 
 impl File {
+    /// Creates an async file handle.
+    pub(crate) fn new(file: std::fs::File, is_flushed: bool) -> File {
+        let file = Arc::new(file);
+
+        File {
+            file: file.clone(),
+            lock: Lock::new(State {
+                file,
+                mode: Mode::Idle,
+                cache: Vec::new(),
+                is_flushed,
+                last_read_err: None,
+                last_write_err: None,
+            }),
+        }
+    }
+
     /// Opens a file in read-only mode.
     ///
     /// See the [`OpenOptions::open`] function for more options.
@@ -95,8 +112,8 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(move || std::fs::File::open(&path)).await?;
-        Ok(file.into())
+        let file = spawn_blocking(move || std::fs::File::open(&path)).await?;
+        Ok(File::new(file, true))
     }
 
     /// Opens a file in write-only mode.
@@ -130,8 +147,8 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = blocking::spawn(move || std::fs::File::create(&path)).await?;
-        Ok(file.into())
+        let file = spawn_blocking(move || std::fs::File::create(&path)).await?;
+        Ok(File::new(file, true))
     }
 
     /// Synchronizes OS-internal buffered contents and metadata to disk.
@@ -163,7 +180,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(move || state.file.sync_all()).await
+        spawn_blocking(move || state.file.sync_all()).await
     }
 
     /// Synchronizes OS-internal buffered contents to disk.
@@ -199,7 +216,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(move || state.file.sync_data()).await
+        spawn_blocking(move || state.file.sync_data()).await
     }
 
     /// Truncates or extends the file.
@@ -232,7 +249,7 @@ impl File {
         })
         .await?;
 
-        blocking::spawn(move || state.file.set_len(size)).await
+        spawn_blocking(move || state.file.set_len(size)).await
     }
 
     /// Reads the file's metadata.
@@ -251,7 +268,7 @@ impl File {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let file = self.file.clone();
-        blocking::spawn(move || file.metadata()).await
+        spawn_blocking(move || file.metadata()).await
     }
 
     /// Changes the permissions on the file.
@@ -280,7 +297,7 @@ impl File {
     /// ```
     pub async fn set_permissions(&self, perm: Permissions) -> io::Result<()> {
         let file = self.file.clone();
-        blocking::spawn(move || file.set_permissions(perm)).await
+        spawn_blocking(move || file.set_permissions(perm)).await
     }
 }
 
@@ -383,19 +400,7 @@ impl Seek for &File {
 
 impl From<std::fs::File> for File {
     fn from(file: std::fs::File) -> File {
-        let file = Arc::new(file);
-
-        File {
-            file: file.clone(),
-            lock: Lock::new(State {
-                file,
-                mode: Mode::Idle,
-                cache: Vec::new(),
-                is_flushed: false,
-                last_read_err: None,
-                last_write_err: None,
-            }),
-        }
+        File::new(file, false)
     }
 }
 
@@ -687,7 +692,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a read operation asynchronously.
-        blocking::spawn(move || {
+        spawn_blocking(move || {
             // Read some data from the file into the cache.
             let res = {
                 let State { file, cache, .. } = &mut *self;
@@ -796,7 +801,7 @@ impl LockGuard<State> {
                 self.register(cx);
 
                 // Start a write operation asynchronously.
-                blocking::spawn(move || {
+                spawn_blocking(move || {
                     match (&*self.file).write_all(&self.cache) {
                         Ok(_) => {
                             // Switch to idle mode.
@@ -829,7 +834,7 @@ impl LockGuard<State> {
         self.register(cx);
 
         // Start a flush operation asynchronously.
-        blocking::spawn(move || {
+        spawn_blocking(move || {
             match (&*self.file).flush() {
                 Ok(()) => {
                     // Mark the file as flushed.

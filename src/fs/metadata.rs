@@ -1,6 +1,6 @@
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Reads metadata for a path.
 ///
@@ -34,7 +34,7 @@ use crate::task::blocking;
 /// ```
 pub async fn metadata<P: AsRef<Path>>(path: P) -> io::Result<Metadata> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(move || std::fs::metadata(path)).await
+    spawn_blocking(move || std::fs::metadata(path)).await
 }
 
 cfg_not_docs! {
@@ -78,7 +78,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn file_type(&self) -> FileType {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns `true` if this metadata is for a regular directory.
@@ -98,7 +98,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn is_dir(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns `true` if this metadata is for a regular file.
@@ -118,7 +118,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn is_file(&self) -> bool {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns the file size in bytes.
@@ -136,7 +136,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn len(&self) -> u64 {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns the permissions from this metadata.
@@ -154,7 +154,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn permissions(&self) -> Permissions {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns the last modification time.
@@ -177,7 +177,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn modified(&self) -> io::Result<SystemTime> {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns the last access time.
@@ -200,7 +200,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn accessed(&self) -> io::Result<SystemTime> {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
 
         /// Returns the creation time.
@@ -223,7 +223,7 @@ cfg_docs! {
         /// # Ok(()) }) }
         /// ```
         pub fn created(&self) -> io::Result<SystemTime> {
-            unimplemented!()
+            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

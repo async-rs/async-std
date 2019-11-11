@@ -8,7 +8,7 @@ use crate::sync::Mutex;
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::sync::{Arc, Barrier};
 /// use async_std::task;
@@ -30,7 +30,6 @@ use crate::sync::Mutex;
 ///     handle.await;
 /// }
 /// # });
-/// # }
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -120,7 +119,7 @@ impl Barrier {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::{Arc, Barrier};
     /// use async_std::task;
@@ -142,7 +141,6 @@ impl Barrier {
     ///     handle.await;
     /// }
     /// # });
-    /// # }
     /// ```
     pub async fn wait(&self) -> BarrierWaitResult {
         let mut lock = self.state.lock().await;
@@ -190,7 +188,7 @@ impl BarrierWaitResult {
     /// # Examples
     ///
     /// ```
-    /// # fn main() { async_std::task::block_on(async {
+    /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::Barrier;
     ///
@@ -198,7 +196,6 @@ impl BarrierWaitResult {
     /// let barrier_wait_result = barrier.wait().await;
     /// println!("{:?}", barrier_wait_result.is_leader());
     /// # });
-    /// # }
     /// ```
     pub fn is_leader(&self) -> bool {
         self.0
@@ -207,9 +204,9 @@ impl BarrierWaitResult {
 
 #[cfg(test)]
 mod test {
-    use futures_channel::mpsc::unbounded;
-    use futures_util::sink::SinkExt;
-    use futures_util::stream::StreamExt;
+    use futures::channel::mpsc::unbounded;
+    use futures::sink::SinkExt;
+    use futures::stream::StreamExt;
 
     use crate::sync::{Arc, Barrier};
     use crate::task;

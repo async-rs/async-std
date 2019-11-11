@@ -1,6 +1,6 @@
 use crate::io;
 use crate::path::{Path, PathBuf};
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Reads a symbolic link and returns the path it points to.
 ///
@@ -28,5 +28,5 @@ use crate::task::blocking;
 /// ```
 pub async fn read_link<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(move || std::fs::read_link(path).map(Into::into)).await
+    spawn_blocking(move || std::fs::read_link(path).map(Into::into)).await
 }

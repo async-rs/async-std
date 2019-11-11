@@ -1,6 +1,6 @@
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
 use crate::io::{self, IoSlice, Write};
 use crate::task::{Context, Poll};
 

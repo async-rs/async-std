@@ -1,11 +1,23 @@
+use std::borrow::{Borrow, Cow};
 use std::ffi::{OsStr, OsString};
+use std::iter::{self, FromIterator};
+use std::ops::Deref;
+#[cfg(feature = "unstable")]
+use std::pin::Pin;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::path::Path;
+#[cfg(feature = "unstable")]
+use crate::prelude::*;
+#[cfg(feature = "unstable")]
+use crate::stream::{self, FromStream, IntoStream};
 
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PathBuf {
     inner: std::path::PathBuf,
 }
@@ -91,9 +103,9 @@ impl PathBuf {
     /// let mut p = PathBuf::from("/test/test.rs");
     ///
     /// p.pop();
-    /// assert_eq!(Path::new("/test"), p.as_ref());
+    /// assert_eq!(Path::new("/test"), p);
     /// p.pop();
-    /// assert_eq!(Path::new("/"), p.as_ref());
+    /// assert_eq!(Path::new("/"), p);
     /// ```
     pub fn pop(&mut self) -> bool {
         self.inner.pop()
@@ -158,7 +170,7 @@ impl PathBuf {
         self.inner.set_extension(extension)
     }
 
-    /// Consumes the `PathBuf`, yielding its internal [`OsString`] storage.
+    /// Consumes the `PathBuf`, returning its internal [`OsString`] storage.
     ///
     /// [`OsString`]: https://doc.rust-lang.org/std/ffi/struct.OsString.html
     ///
@@ -184,17 +196,160 @@ impl PathBuf {
     }
 }
 
-impl std::ops::Deref for PathBuf {
-    type Target = Path;
-
-    fn deref(&self) -> &Path {
-        self.as_ref()
+impl From<Box<Path>> for PathBuf {
+    fn from(boxed: Box<Path>) -> PathBuf {
+        boxed.into_path_buf()
     }
 }
 
-impl std::borrow::Borrow<Path> for PathBuf {
+impl From<PathBuf> for Box<Path> {
+    fn from(p: PathBuf) -> Box<Path> {
+        p.into_boxed_path()
+    }
+}
+
+impl Clone for Box<Path> {
+    #[inline]
+    fn clone(&self) -> Self {
+        self.to_path_buf().into_boxed_path()
+    }
+}
+
+impl<T: ?Sized + AsRef<OsStr>> From<&T> for PathBuf {
+    fn from(s: &T) -> PathBuf {
+        PathBuf::from(s.as_ref().to_os_string())
+    }
+}
+
+impl From<OsString> for PathBuf {
+    fn from(s: OsString) -> PathBuf {
+        PathBuf { inner: s.into() }
+    }
+}
+
+impl From<PathBuf> for OsString {
+    fn from(path_buf: PathBuf) -> OsString {
+        path_buf.inner.into()
+    }
+}
+
+impl From<String> for PathBuf {
+    fn from(s: String) -> PathBuf {
+        PathBuf::from(OsString::from(s))
+    }
+}
+
+impl FromStr for PathBuf {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(PathBuf::from(s))
+    }
+}
+
+impl<P: AsRef<Path>> FromIterator<P> for PathBuf {
+    fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> PathBuf {
+        let mut buf = PathBuf::new();
+        buf.extend(iter);
+        buf
+    }
+}
+
+impl<P: AsRef<Path>> iter::Extend<P> for PathBuf {
+    fn extend<I: IntoIterator<Item = P>>(&mut self, iter: I) {
+        iter.into_iter().for_each(move |p| self.push(p.as_ref()));
+    }
+}
+
+impl Deref for PathBuf {
+    type Target = Path;
+
+    fn deref(&self) -> &Path {
+        Path::new(&self.inner)
+    }
+}
+
+impl Borrow<Path> for PathBuf {
     fn borrow(&self) -> &Path {
-        &**self
+        self.deref()
+    }
+}
+
+impl<'a> From<PathBuf> for Cow<'a, Path> {
+    #[inline]
+    fn from(s: PathBuf) -> Cow<'a, Path> {
+        Cow::Owned(s)
+    }
+}
+
+impl<'a> From<&'a PathBuf> for Cow<'a, Path> {
+    #[inline]
+    fn from(p: &'a PathBuf) -> Cow<'a, Path> {
+        Cow::Borrowed(p.as_path())
+    }
+}
+
+impl<'a> From<Cow<'a, Path>> for PathBuf {
+    #[inline]
+    fn from(p: Cow<'a, Path>) -> Self {
+        p.into_owned()
+    }
+}
+
+impl From<PathBuf> for Arc<Path> {
+    #[inline]
+    fn from(s: PathBuf) -> Arc<Path> {
+        let arc: Arc<OsStr> = Arc::from(s.into_os_string());
+        unsafe { Arc::from_raw(Arc::into_raw(arc) as *const Path) }
+    }
+}
+
+impl From<PathBuf> for Rc<Path> {
+    #[inline]
+    fn from(s: PathBuf) -> Rc<Path> {
+        let rc: Rc<OsStr> = Rc::from(s.into_os_string());
+        unsafe { Rc::from_raw(Rc::into_raw(rc) as *const Path) }
+    }
+}
+
+impl AsRef<OsStr> for PathBuf {
+    fn as_ref(&self) -> &OsStr {
+        self.inner.as_ref()
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
+    fn extend<'a, S: IntoStream<Item = P> + 'a>(
+        &'a mut self,
+        stream: S,
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+        let stream = stream.into_stream();
+
+        Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
+            while let Some(item) = stream.next().await {
+                self.push(item.as_ref());
+            }
+        })
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
+    #[inline]
+    fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
+        stream: S,
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+        Box::pin(async move {
+            let stream = stream.into_stream();
+            pin_utils::pin_mut!(stream);
+
+            let mut out = Self::new();
+            stream::extend(&mut out, stream).await;
+            out
+        })
     }
 }
 
@@ -206,25 +361,7 @@ impl From<std::path::PathBuf> for PathBuf {
 
 impl Into<std::path::PathBuf> for PathBuf {
     fn into(self) -> std::path::PathBuf {
-        self.inner.into()
-    }
-}
-
-impl From<OsString> for PathBuf {
-    fn from(path: OsString) -> PathBuf {
-        std::path::PathBuf::from(path).into()
-    }
-}
-
-impl From<&str> for PathBuf {
-    fn from(path: &str) -> PathBuf {
-        std::path::PathBuf::from(path).into()
-    }
-}
-
-impl AsRef<Path> for PathBuf {
-    fn as_ref(&self) -> &Path {
-        Path::new(&self.inner)
+        self.inner
     }
 }
 

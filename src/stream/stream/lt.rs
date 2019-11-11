@@ -1,26 +1,29 @@
 use std::cmp::Ordering;
 use std::pin::Pin;
+use std::future::Future;
+
+use pin_project_lite::pin_project;
 
 use super::partial_cmp::PartialCmpFuture;
-use crate::future::Future;
 use crate::prelude::*;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-// Determines if the elements of this `Stream` are lexicographically
-// less than those of another.
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct LtFuture<L: Stream, R: Stream> {
-    partial_cmp: PartialCmpFuture<L, R>,
+pin_project! {
+    // Determines if the elements of this `Stream` are lexicographically
+    // less than those of another.
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct LtFuture<L: Stream, R: Stream> {
+        #[pin]
+        partial_cmp: PartialCmpFuture<L, R>,
+    }
 }
 
 impl<L: Stream, R: Stream> LtFuture<L, R>
 where
     L::Item: PartialOrd<R::Item>,
 {
-    pin_utils::unsafe_pinned!(partial_cmp: PartialCmpFuture<L, R>);
-
     pub(super) fn new(l: L, r: R) -> Self {
         LtFuture {
             partial_cmp: l.partial_cmp(r),
@@ -36,8 +39,8 @@ where
 {
     type Output = bool;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let result = futures_core::ready!(self.as_mut().partial_cmp().poll(cx));
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let result = futures_core::ready!(self.project().partial_cmp.poll(cx));
 
         match result {
             Some(Ordering::Less) => Poll::Ready(true),

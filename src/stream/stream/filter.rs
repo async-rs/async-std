@@ -1,21 +1,29 @@
 use std::marker::PhantomData;
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream to filter elements of another stream with a predicate.
-#[derive(Debug)]
-pub struct Filter<S, P, T> {
-    stream: S,
-    predicate: P,
-    __t: PhantomData<T>,
+pin_project! {
+    /// A stream to filter elements of another stream with a predicate.
+    ///
+    /// This `struct` is created by the [`filter`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`filter`]: trait.Stream.html#method.filter
+    /// [`Stream`]: trait.Stream.html
+    #[derive(Debug)]
+    pub struct Filter<S, P, T> {
+        #[pin]
+        stream: S,
+        predicate: P,
+        __t: PhantomData<T>,
+    }
 }
 
 impl<S, P, T> Filter<S, P, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(predicate: P);
-
     pub(super) fn new(stream: S, predicate: P) -> Self {
         Filter {
             stream,
@@ -32,11 +40,12 @@ where
 {
     type Item = S::Item;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
+        let next = futures_core::ready!(this.stream.poll_next(cx));
 
         match next {
-            Some(v) if (self.as_mut().predicate())(&v) => Poll::Ready(Some(v)),
+            Some(v) if (this.predicate)(&v) => Poll::Ready(Some(v)),
             Some(_) => {
                 cx.waker().wake_by_ref();
                 Poll::Pending

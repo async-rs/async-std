@@ -1,7 +1,7 @@
-use crate::future::Future;
-use crate::task::{Context, Poll};
-
 use std::pin::Pin;
+use std::future::Future;
+
+use crate::task::{Context, Poll};
 
 /// Cooperatively gives up a timeslice to the task scheduler.
 ///
@@ -18,13 +18,13 @@ use std::pin::Pin;
 /// Basic usage:
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
 ///
 /// task::yield_now().await;
 /// #
-/// # }) }
+/// # })
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]

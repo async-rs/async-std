@@ -28,9 +28,10 @@ pub fn empty() -> Empty {
 
 /// A reader that contains no data.
 ///
-/// This reader is constructed by the [`sink`] function.
+/// This reader is created by the [`empty`] function. See its
+/// documentation for more.
 ///
-/// [`sink`]: fn.sink.html
+/// [`empty`]: fn.empty.html
 pub struct Empty {
     _private: (),
 }

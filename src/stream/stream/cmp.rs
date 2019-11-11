@@ -1,29 +1,30 @@
 use std::cmp::Ordering;
 use std::pin::Pin;
+use std::future::Future;
+
+use pin_project_lite::pin_project;
 
 use super::fuse::Fuse;
-use crate::future::Future;
 use crate::prelude::*;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-// Lexicographically compares the elements of this `Stream` with those
-// of another using `Ord`.
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct CmpFuture<L: Stream, R: Stream> {
-    l: Fuse<L>,
-    r: Fuse<R>,
-    l_cache: Option<L::Item>,
-    r_cache: Option<R::Item>,
+pin_project! {
+    // Lexicographically compares the elements of this `Stream` with those
+    // of another using `Ord`.
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct CmpFuture<L: Stream, R: Stream> {
+        #[pin]
+        l: Fuse<L>,
+        #[pin]
+        r: Fuse<R>,
+        l_cache: Option<L::Item>,
+        r_cache: Option<R::Item>,
+    }
 }
 
 impl<L: Stream, R: Stream> CmpFuture<L, R> {
-    pin_utils::unsafe_pinned!(l: Fuse<L>);
-    pin_utils::unsafe_pinned!(r: Fuse<R>);
-    pin_utils::unsafe_unpinned!(l_cache: Option<L::Item>);
-    pin_utils::unsafe_unpinned!(r_cache: Option<R::Item>);
-
     pub(super) fn new(l: L, r: R) -> Self {
         CmpFuture {
             l: l.fuse(),
@@ -42,11 +43,12 @@ where
 {
     type Output = Ordering;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
         loop {
             // Stream that completes earliest can be considered Less, etc
-            let l_complete = self.l.done && self.as_mut().l_cache.is_none();
-            let r_complete = self.r.done && self.as_mut().r_cache.is_none();
+            let l_complete = this.l.done && this.l_cache.is_none();
+            let r_complete = this.r.done && this.r_cache.is_none();
 
             if l_complete && r_complete {
                 return Poll::Ready(Ordering::Equal);
@@ -57,30 +59,30 @@ where
             }
 
             // Get next value if possible and necesary
-            if !self.l.done && self.as_mut().l_cache.is_none() {
-                let l_next = futures_core::ready!(self.as_mut().l().poll_next(cx));
+            if !this.l.done && this.l_cache.is_none() {
+                let l_next = futures_core::ready!(this.l.as_mut().poll_next(cx));
                 if let Some(item) = l_next {
-                    *self.as_mut().l_cache() = Some(item);
+                    *this.l_cache = Some(item);
                 }
             }
 
-            if !self.r.done && self.as_mut().r_cache.is_none() {
-                let r_next = futures_core::ready!(self.as_mut().r().poll_next(cx));
+            if !this.r.done && this.r_cache.is_none() {
+                let r_next = futures_core::ready!(this.r.as_mut().poll_next(cx));
                 if let Some(item) = r_next {
-                    *self.as_mut().r_cache() = Some(item);
+                    *this.r_cache = Some(item);
                 }
             }
 
             // Compare if both values are available.
-            if self.as_mut().l_cache.is_some() && self.as_mut().r_cache.is_some() {
-                let l_value = self.as_mut().l_cache().take().unwrap();
-                let r_value = self.as_mut().r_cache().take().unwrap();
+            if this.l_cache.is_some() && this.r_cache.is_some() {
+                let l_value = this.l_cache.take().unwrap();
+                let r_value = this.r_cache.take().unwrap();
                 let result = l_value.cmp(&r_value);
 
                 if let Ordering::Equal = result {
                     // Reset cache to prepare for next comparison
-                    *self.as_mut().l_cache() = None;
-                    *self.as_mut().r_cache() = None;
+                    *this.l_cache = None;
+                    *this.r_cache = None;
                 } else {
                     // Return non equal value
                     return Poll::Ready(result);

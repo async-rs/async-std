@@ -1,20 +1,22 @@
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct LastFuture<S, T> {
-    stream: S,
-    last: Option<T>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct LastFuture<S, T> {
+        #[pin]
+        stream: S,
+        last: Option<T>,
+    }
 }
 
 impl<S, T> LastFuture<S, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(last: Option<T>);
-
     pub(crate) fn new(stream: S) -> Self {
         LastFuture { stream, last: None }
     }
@@ -27,16 +29,17 @@ where
 {
     type Output = Option<S::Item>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        let next = futures_core::ready!(this.stream.poll_next(cx));
 
         match next {
             Some(new) => {
                 cx.waker().wake_by_ref();
-                *self.as_mut().last() = Some(new);
+                *this.last = Some(new);
                 Poll::Pending
             }
-            None => Poll::Ready(self.last),
+            None => Poll::Ready(*this.last),
         }
     }
 }

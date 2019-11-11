@@ -1,13 +1,24 @@
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream to maintain state while polling another stream.
-#[derive(Debug)]
-pub struct Scan<S, St, F> {
-    stream: S,
-    state_f: (St, F),
+pin_project! {
+    /// A stream to maintain state while polling another stream.
+    ///
+    /// This `struct` is created by the [`scan`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`scan`]: trait.Stream.html#method.scan
+    /// [`Stream`]: trait.Stream.html
+    #[derive(Debug)]
+    pub struct Scan<S, St, F> {
+        #[pin]
+        stream: S,
+        state_f: (St, F),
+    }
 }
 
 impl<S, St, F> Scan<S, St, F> {
@@ -17,12 +28,7 @@ impl<S, St, F> Scan<S, St, F> {
             state_f: (initial_state, f),
         }
     }
-
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(state_f: (St, F));
 }
-
-impl<S: Unpin, St, F> Unpin for Scan<S, St, F> {}
 
 impl<S, St, F, B> Stream for Scan<S, St, F>
 where
@@ -31,11 +37,12 @@ where
 {
     type Item = B;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<B>> {
-        let poll_result = self.as_mut().stream().poll_next(cx);
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<B>> {
+        let mut this = self.project();
+        let poll_result = this.stream.as_mut().poll_next(cx);
         poll_result.map(|item| {
             item.and_then(|item| {
-                let (state, f) = self.as_mut().state_f();
+                let (state, f) = this.state_f;
                 f(state, item)
             })
         })
