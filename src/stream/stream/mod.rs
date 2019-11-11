@@ -1670,11 +1670,14 @@ extension_trait! {
             let c = stream::once(3u8);
 
             let mut s = a.merge(b).merge(c);
+            let mut lst = Vec::new();
 
-            assert_eq!(s.next().await, Some(1u8));
-            assert_eq!(s.next().await, Some(2u8));
-            assert_eq!(s.next().await, Some(3u8));
-            assert_eq!(s.next().await, None);
+            while let Some(n) = s.next().await {
+                lst.push(n)
+            }
+
+            lst.sort_unstable();
+            assert_eq!(&lst, &[1u8, 2u8, 3u8]);
             # });
             ```
         "#]
