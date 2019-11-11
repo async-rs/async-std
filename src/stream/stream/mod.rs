@@ -117,7 +117,6 @@ use std::time::Duration;
 cfg_unstable! {
     use std::future::Future;
     use std::pin::Pin;
-    use std::time::Duration;
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
@@ -316,7 +315,33 @@ extension_trait! {
             TakeWhile::new(self, predicate)
         }
 
-        fn throttle(self, d: Duration) -> Throttle<Self, Self::Item>
+        #[doc = r#"
+            Limit the amount of items yielded per timeslice in a stream.
+
+            # Examples
+            ```ignore
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream;
+            use std::time::Duration;
+
+            // emit value every 1 second
+            let s = stream::interval(Duration::from_nanos(1000000)).enumerate();
+
+            // throttle for 2 seconds
+            let s = s.throttle(Duration::from_secs(2));
+
+            s.for_each(|(n, _)| {
+                dbg!(n);
+            })
+            .await;
+            // => 0 .. 1 .. 2 .. 3
+            // with a pause of 2 seconds between each print
+            #
+            # }) }
+            ```
+        "#]
+        fn throttle(self, d: Duration) -> Throttle<Self>
         where
             Self: Sized,
         {
