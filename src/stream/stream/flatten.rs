@@ -1,30 +1,38 @@
-use pin_project_lite::pin_project;
+use std::fmt;
 use std::pin::Pin;
+
+use pin_project_lite::pin_project;
 
 use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 
 pin_project! {
+    /// A stream that flattens one level of nesting in an stream of things that can be turned into
+    /// streams.
+    ///
     /// This `struct` is created by the [`flatten`] method on [`Stream`]. See its
     /// documentation for more.
     ///
     /// [`flatten`]: trait.Stream.html#method.flatten
     /// [`Stream`]: trait.Stream.html
-    #[allow(missing_debug_implementations)]
-    pub struct Flatten<S, U> {
+    pub struct Flatten<S>
+    where
+        S: Stream,
+        S::Item: IntoStream,
+    {
         #[pin]
         stream: S,
         #[pin]
-        inner_stream: Option<U>,
+        inner_stream: Option<<S::Item as IntoStream>::IntoStream>,
     }
 }
 
-impl<S> Flatten<S, S::Item>
+impl<S> Flatten<S>
 where
     S: Stream,
     S::Item: IntoStream,
 {
-    pub(super) fn new(stream: S) -> Flatten<S, S::Item> {
+    pub(super) fn new(stream: S) -> Flatten<S> {
         Flatten {
             stream,
             inner_stream: None,
@@ -32,7 +40,7 @@ where
     }
 }
 
-impl<S, U> Stream for Flatten<S, <S::Item as IntoStream>::IntoStream>
+impl<S, U> Stream for Flatten<S>
 where
     S: Stream,
     S::Item: IntoStream<IntoStream = U, Item = U::Item>,
@@ -54,5 +62,18 @@ where
                 Some(inner) => this.inner_stream.set(Some(inner.into_stream())),
             }
         }
+    }
+}
+
+impl<S, U> fmt::Debug for Flatten<S>
+where
+    S: fmt::Debug + Stream,
+    S::Item: IntoStream<IntoStream = U, Item = U::Item>,
+    U: fmt::Debug + Stream,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Flatten")
+            .field("inner", &self.stream)
+            .finish()
     }
 }

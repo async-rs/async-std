@@ -1,5 +1,6 @@
-use pin_project_lite::pin_project;
 use std::pin::Pin;
+
+use pin_project_lite::pin_project;
 
 use crate::prelude::*;
 use crate::stream::stream::map::Map;
@@ -7,27 +8,29 @@ use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 
 pin_project! {
+    /// A stream that maps each element to a stream, and yields the elements of the produced
+    /// streams.
+    ///
     /// This `struct` is created by the [`flat_map`] method on [`Stream`]. See its
     /// documentation for more.
     ///
     /// [`flat_map`]: trait.Stream.html#method.flat_map
     /// [`Stream`]: trait.Stream.html
-    #[allow(missing_debug_implementations)]
-    pub struct FlatMap<S, U, T, F> {
+    pub struct FlatMap<S, U, F> {
         #[pin]
-        stream: Map<S, F, T, U>,
+        stream: Map<S, F>,
         #[pin]
         inner_stream: Option<U>,
     }
 }
 
-impl<S, U, F> FlatMap<S, U, S::Item, F>
+impl<S, U, F> FlatMap<S, U, F>
 where
     S: Stream,
     U: IntoStream,
     F: FnMut(S::Item) -> U,
 {
-    pub(super) fn new(stream: S, f: F) -> FlatMap<S, U, S::Item, F> {
+    pub(super) fn new(stream: S, f: F) -> FlatMap<S, U, F> {
         FlatMap {
             stream: stream.map(f),
             inner_stream: None,
@@ -35,7 +38,7 @@ where
     }
 }
 
-impl<S, U, F> Stream for FlatMap<S, U, S::Item, F>
+impl<S, U, F> Stream for FlatMap<S, U, F>
 where
     S: Stream,
     S::Item: IntoStream<IntoStream = U, Item = U::Item>,

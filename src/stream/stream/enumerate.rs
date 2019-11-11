@@ -6,8 +6,7 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
+    #[derive(Debug)]
     pub struct Enumerate<S> {
         #[pin]
         stream: S,

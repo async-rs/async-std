@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
@@ -15,25 +14,23 @@ pin_project! {
     /// [`inspect`]: trait.Stream.html#method.inspect
     /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
-    pub struct Inspect<S, F, T> {
+    pub struct Inspect<S, F> {
         #[pin]
         stream: S,
         f: F,
-        __t: PhantomData<T>,
     }
 }
 
-impl<S, F, T> Inspect<S, F, T> {
+impl<S, F> Inspect<S, F> {
     pub(super) fn new(stream: S, f: F) -> Self {
         Inspect {
             stream,
             f,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, F> Stream for Inspect<S, F, S::Item>
+impl<S, F> Stream for Inspect<S, F>
 where
     S: Stream,
     F: FnMut(&S::Item),

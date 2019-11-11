@@ -22,7 +22,7 @@ pin_project! {
 }
 
 impl<S: Stream> Timeout<S> {
-    pub fn new(stream: S, dur: Duration) -> Timeout<S> {
+    pub(crate) fn new(stream: S, dur: Duration) -> Timeout<S> {
         let delay = Delay::new(dur);
 
         Timeout { stream, delay }
