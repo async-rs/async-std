@@ -1,15 +1,27 @@
 use std::pin::Pin;
 use std::sync::Mutex;
+use std::future::Future;
 
-use crate::future::{self, Future};
+use crate::future;
 use crate::io::{self, Read};
-use crate::task::{blocking, Context, JoinHandle, Poll};
+use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+
+cfg_unstable! {
+    use once_cell::sync::Lazy;
+    use std::io::Read as _;
+}
 
 /// Constructs a new handle to the standard input of the current process.
 ///
 /// This function is an async version of [`std::io::stdin`].
 ///
 /// [`std::io::stdin`]: https://doc.rust-lang.org/std/io/fn.stdin.html
+///
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
 ///
 /// # Examples
 ///
@@ -35,14 +47,33 @@ pub fn stdin() -> Stdin {
 
 /// A handle to the standard input of the current process.
 ///
-/// Created by the [`stdin`] function.
+/// This reader is created by the [`stdin`] function. See its documentation for
+/// more.
 ///
-/// This type is an async version of [`std::io::Stdin`].
+/// ### Note: Windows Portability Consideration
+///
+/// When operating in a console, the Windows implementation of this stream does not support
+/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// an error.
 ///
 /// [`stdin`]: fn.stdin.html
-/// [`std::io::Stdin`]: https://doc.rust-lang.org/std/io/struct.Stdin.html
 #[derive(Debug)]
 pub struct Stdin(Mutex<State>);
+
+/// A locked reference to the Stdin handle.
+///
+/// This handle implements the [`Read`] traits, and is constructed via the [`Stdin::lock`] method.
+///
+/// [`Read`]: trait.Read.html
+/// [`Stdin::lock`]: struct.Stdin.html#method.lock
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(feature = "unstable")]
+#[derive(Debug)]
+pub struct StdinLock<'a>(std::io::StdinLock<'a>);
+
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+unsafe impl Send for StdinLock<'_> {}
 
 /// The state of the asynchronous stdin.
 ///
@@ -117,7 +148,7 @@ impl Stdin {
                             let mut inner = opt.take().unwrap();
 
                             // Start the operation asynchronously.
-                            *state = State::Busy(blocking::spawn(move || {
+                            *state = State::Busy(spawn_blocking(move || {
                                 inner.line.clear();
                                 let res = inner.stdin.read_line(&mut inner.line);
                                 inner.last_op = Some(Operation::ReadLine(res));
@@ -131,6 +162,35 @@ impl Stdin {
             }
         })
         .await
+    }
+
+    /// Locks this handle to the standard input stream, returning a readable guard.
+    ///
+    /// The lock is released when the returned lock goes out of scope. The returned guard also implements the Read trait for accessing the underlying data.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::io;
+    /// use async_std::prelude::*;
+    ///
+    /// let mut buffer = String::new();
+    ///
+    /// let stdin = io::stdin();
+    /// let mut handle = stdin.lock().await;
+    ///
+    /// handle.read_to_string(&mut buffer).await?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[cfg(any(feature = "unstable", feature = "docs"))]
+    pub async fn lock(&self) -> StdinLock<'static> {
+        static STDIN: Lazy<std::io::Stdin> = Lazy::new(std::io::stdin);
+
+        spawn_blocking(move || StdinLock(STDIN.lock())).await
     }
 }
 
@@ -170,7 +230,7 @@ impl Read for Stdin {
                         }
 
                         // Start the operation asynchronously.
-                        *state = State::Busy(blocking::spawn(move || {
+                        *state = State::Busy(spawn_blocking(move || {
                             let res = std::io::Read::read(&mut inner.stdin, &mut inner.buf);
                             inner.last_op = Some(Operation::Read(res));
                             State::Idle(Some(inner))
@@ -201,5 +261,17 @@ cfg_windows! {
         fn as_raw_handle(&self) -> RawHandle {
             std::io::stdin().as_raw_handle()
         }
+    }
+}
+
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+impl Read for StdinLock<'_> {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        Poll::Ready(self.0.read(buf))
     }
 }

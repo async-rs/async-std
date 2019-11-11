@@ -6,8 +6,7 @@ use crate::future;
 use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
-use crate::task::blocking;
-use crate::task::{Context, Poll};
+use crate::task::{spawn_blocking, Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -74,7 +73,7 @@ impl TcpStream {
         let mut last_err = None;
 
         for addr in addrs.to_socket_addrs().await? {
-            let res = blocking::spawn(move || {
+            let res = spawn_blocking(move || {
                 let std_stream = std::net::TcpStream::connect(addr)?;
                 let mio_stream = mio::net::TcpStream::from_stream(std_stream)?;
                 Ok(TcpStream {

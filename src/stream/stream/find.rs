@@ -1,31 +1,25 @@
-use std::marker::PhantomData;
+use std::future::Future;
 use std::pin::Pin;
 
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub struct FindFuture<'a, S, P, T> {
+pub struct FindFuture<'a, S, P> {
     stream: &'a mut S,
     p: P,
-    __t: PhantomData<T>,
 }
 
-impl<'a, S, P, T> FindFuture<'a, S, P, T> {
+impl<'a, S, P> FindFuture<'a, S, P> {
     pub(super) fn new(stream: &'a mut S, p: P) -> Self {
-        FindFuture {
-            stream,
-            p,
-            __t: PhantomData,
-        }
+        FindFuture { stream, p }
     }
 }
 
-impl<S: Unpin, P, T> Unpin for FindFuture<'_, S, P, T> {}
+impl<S: Unpin, P> Unpin for FindFuture<'_, S, P> {}
 
-impl<'a, S, P> Future for FindFuture<'a, S, P, S::Item>
+impl<'a, S, P> Future for FindFuture<'a, S, P>
 where
     S: Stream + Unpin + Sized,
     P: FnMut(&S::Item) -> bool,

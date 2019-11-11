@@ -2,10 +2,10 @@ use std::collections::BTreeMap;
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Extend, IntoStream};
+use crate::stream::{self, IntoStream};
 
-impl<K: Ord, V> Extend<(K, V)> for BTreeMap<K, V> {
-    fn stream_extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
+impl<K: Ord, V> stream::Extend<(K, V)> for BTreeMap<K, V> {
+    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {

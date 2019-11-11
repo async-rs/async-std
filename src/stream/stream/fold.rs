@@ -1,36 +1,32 @@
-use std::marker::PhantomData;
+use std::future::Future;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
-    pub struct FoldFuture<S, F, T, B> {
+    #[derive(Debug)]
+    pub struct FoldFuture<S, F, B> {
         #[pin]
         stream: S,
         f: F,
         acc: Option<B>,
-        __t: PhantomData<T>,
     }
 }
 
-impl<S, F, T, B> FoldFuture<S, F, T, B> {
+impl<S, F, B> FoldFuture<S, F, B> {
     pub(super) fn new(stream: S, init: B, f: F) -> Self {
         FoldFuture {
             stream,
             f,
             acc: Some(init),
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, F, B> Future for FoldFuture<S, F, S::Item, B>
+impl<S, F, B> Future for FoldFuture<S, F, B>
 where
     S: Stream + Sized,
     F: FnMut(B, S::Item) -> B,

@@ -2,7 +2,7 @@
 
 use crate::io;
 use crate::path::Path;
-use crate::task::blocking;
+use crate::task::spawn_blocking;
 
 /// Creates a new symbolic link on the filesystem.
 ///
@@ -26,7 +26,7 @@ use crate::task::blocking;
 pub async fn symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
     let src = src.as_ref().to_owned();
     let dst = dst.as_ref().to_owned();
-    blocking::spawn(move || std::os::unix::fs::symlink(&src, &dst)).await
+    spawn_blocking(move || std::os::unix::fs::symlink(&src, &dst)).await
 }
 
 cfg_not_docs! {

@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
@@ -8,26 +7,30 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream to filter elements of another stream with a predicate.
+    ///
+    /// This `struct` is created by the [`filter`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`filter`]: trait.Stream.html#method.filter
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
-    pub struct Filter<S, P, T> {
+    pub struct Filter<S, P> {
         #[pin]
         stream: S,
         predicate: P,
-        __t: PhantomData<T>,
     }
 }
 
-impl<S, P, T> Filter<S, P, T> {
+impl<S, P> Filter<S, P> {
     pub(super) fn new(stream: S, predicate: P) -> Self {
         Filter {
             stream,
             predicate,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, P> Stream for Filter<S, P, S::Item>
+impl<S, P> Stream for Filter<S, P>
 where
     S: Stream,
     P: FnMut(&S::Item) -> bool,

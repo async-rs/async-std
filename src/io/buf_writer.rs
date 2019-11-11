@@ -1,12 +1,11 @@
 use std::fmt;
 use std::pin::Pin;
 
-use futures_core::ready;
 use pin_project_lite::pin_project;
 
 use crate::io::write::WriteExt;
 use crate::io::{self, Seek, SeekFrom, Write};
-use crate::task::{Context, Poll};
+use crate::task::{Context, Poll, ready};
 
 const DEFAULT_CAPACITY: usize = 8 * 1024;
 

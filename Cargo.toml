@@ -1,6 +1,6 @@
 [package]
 name = "async-std"
-version = "0.99.10"
+version = "1.0.0"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "Yoshua Wuyts <yoshuawuyts@gmail.com>",
@@ -21,37 +21,67 @@ features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
 
 [features]
-docs = ["unstable"]
-unstable = ["broadcaster"]
+default = [
+  "std",
+  "async-task",
+  "crossbeam-channel",
+  "crossbeam-deque",
+  "futures-timer",
+  "kv-log-macro",
+  "log",
+  "mio",
+  "mio-uds",
+  "num_cpus",
+  "pin-project-lite",
+]
+docs = ["attributes", "unstable"]
+unstable = ["default", "broadcaster"]
+attributes = ["async-attributes"]
+std = [
+  "async-macros",
+  "crossbeam-utils",
+  "futures-core",
+  "futures-io",
+  "memchr",
+  "once_cell",
+  "pin-project-lite",
+  "pin-utils",
+  "slab",
+]
 
 [dependencies]
-async-macros = "1.0.0"
-async-task = "1.0.0"
-crossbeam-channel = "0.3.9"
-crossbeam-deque = "0.7.1"
-crossbeam-utils = "0.6.6"
-futures-core-preview = "=0.3.0-alpha.19"
-futures-io-preview = "=0.3.0-alpha.19"
-futures-timer = "1.0.2"
-lazy_static = "1.4.0"
-log = { version = "0.4.8", features = ["kv_unstable"] }
-memchr = "2.2.1"
-mio = "0.6.19"
-mio-uds = "0.6.7"
-num_cpus = "1.10.1"
-pin-utils = "0.1.0-alpha.4"
-slab = "0.4.2"
-kv-log-macro = "1.0.4"
+async-attributes = { version = "1.1.0", optional = true }
+async-macros = { version = "1.0.0", optional = true }
+async-task = { version = "1.0.0", optional = true }
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
-pin-project-lite = "0.1"
+crossbeam-channel = { version = "0.3.9", optional = true }
+crossbeam-deque = { version = "0.7.1", optional = true }
+crossbeam-utils = { version = "0.6.6", optional = true }
+futures-core = { version = "0.3.0", optional = true }
+futures-io = { version = "0.3.0", optional = true }
+futures-timer = { version = "1.0.2", optional = true }
+kv-log-macro = { version = "1.0.4", optional = true }
+log = { version = "0.4.8", features = ["kv_unstable"], optional = true }
+memchr = { version = "2.2.1", optional = true }
+mio = { version = "0.6.19", optional = true }
+mio-uds = { version = "0.6.7", optional = true }
+num_cpus = { version = "1.10.1", optional = true }
+once_cell = { version = "1.2.0", optional = true }
+pin-project-lite = { version = "0.1", optional = true }
+pin-utils = { version = "0.1.0-alpha.4", optional = true }
+slab = { version = "0.4.2", optional = true }
 
 [dev-dependencies]
 femme = "1.2.0"
 rand = "0.7.2"
 # surf = "1.0.2"
 tempdir = "0.3.7"
-futures-preview = { version = "=0.3.0-alpha.19", features = ["async-await"] }
+futures = "0.3.0"
 
-# These are used by the book for examples
-futures-channel-preview = "=0.3.0-alpha.19"
-futures-util-preview = "=0.3.0-alpha.19"
+[[test]]
+name = "stream"
+required-features = ["unstable"]
+
+[[example]]
+name = "tcp-ipv4-and-6-echo"
+required-features = ["unstable"]

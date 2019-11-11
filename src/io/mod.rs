@@ -19,8 +19,8 @@
 //! [`File`]s:
 //!
 //! ```no_run
-//! use async_std::prelude::*;
 //! use async_std::fs::File;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -47,9 +47,9 @@
 //! coming from:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::SeekFrom;
 //! use async_std::fs::File;
+//! use async_std::io::SeekFrom;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -82,9 +82,9 @@
 //! methods to any reader:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::BufReader;
 //! use async_std::fs::File;
+//! use async_std::io::BufReader;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -104,9 +104,9 @@
 //! to [`write`][`Write::write`]:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::BufWriter;
 //! use async_std::fs::File;
+//! use async_std::io::BufWriter;
+//! use async_std::io::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -179,9 +179,9 @@
 //! lines:
 //!
 //! ```no_run
-//! use async_std::prelude::*;
-//! use async_std::io::BufReader;
 //! use async_std::fs::File;
+//! use async_std::io::BufReader;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -269,45 +269,57 @@
 //! [`Result`]: https://doc.rust-lang.org/std/result/enum.Result.html
 //! [`.unwrap()`]: https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap
 
-#[doc(inline)]
-pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
+cfg_std! {
+    #[doc(inline)]
+    pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
-pub use buf_read::{BufRead, Lines};
-pub use buf_reader::BufReader;
-pub use buf_writer::BufWriter;
-pub use copy::copy;
-pub use cursor::Cursor;
-pub use empty::{empty, Empty};
-pub use read::Read;
-pub use repeat::{repeat, Repeat};
-pub use seek::Seek;
-pub use sink::{sink, Sink};
-pub use stderr::{stderr, Stderr};
-pub use stdin::{stdin, Stdin};
-pub use stdout::{stdout, Stdout};
-pub use timeout::timeout;
-pub use write::Write;
+    pub use buf_read::{BufRead, Lines};
+    pub use buf_reader::BufReader;
+    pub use buf_writer::BufWriter;
+    pub use copy::copy;
+    pub use cursor::Cursor;
+    pub use empty::{empty, Empty};
+    pub use read::Read;
+    pub use repeat::{repeat, Repeat};
+    pub use seek::Seek;
+    pub use sink::{sink, Sink};
+    pub use write::Write;
 
-// For use in the print macros.
-#[doc(hidden)]
-pub use stdio::{_eprint, _print};
+    pub mod prelude;
 
-pub mod prelude;
+    pub(crate) mod buf_read;
+    pub(crate) mod read;
+    pub(crate) mod seek;
+    pub(crate) mod write;
 
-pub(crate) mod buf_read;
-pub(crate) mod read;
-pub(crate) mod seek;
-pub(crate) mod write;
+    mod buf_reader;
+    mod buf_writer;
+    mod copy;
+    mod cursor;
+    mod empty;
+    mod repeat;
+    mod sink;
+}
 
-mod buf_reader;
-mod buf_writer;
-mod copy;
-mod cursor;
-mod empty;
-mod repeat;
-mod sink;
-mod stderr;
-mod stdin;
-mod stdio;
-mod stdout;
-mod timeout;
+cfg_default! {
+    // For use in the print macros.
+    #[doc(hidden)]
+    pub use stdio::{_eprint, _print};
+
+    pub use stderr::{stderr, Stderr};
+    pub use stdin::{stdin, Stdin};
+    pub use stdout::{stdout, Stdout};
+    pub use timeout::timeout;
+
+    mod timeout;
+    mod stderr;
+    mod stdin;
+    mod stdio;
+    mod stdout;
+}
+
+cfg_unstable! {
+    pub use stderr::StderrLock;
+    pub use stdin::StdinLock;
+    pub use stdout::StdoutLock;
+}

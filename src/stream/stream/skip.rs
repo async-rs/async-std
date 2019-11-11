@@ -7,6 +7,12 @@ use crate::stream::Stream;
 
 pin_project! {
     /// A stream to skip first n elements of another stream.
+    ///
+    /// This `struct` is created by the [`skip`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`skip`]: trait.Stream.html#method.skip
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct Skip<S> {
         #[pin]

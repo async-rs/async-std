@@ -1,34 +1,31 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
+use std::future::Future;
 
 use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
     #[doc(hidden)]
     #[allow(missing_debug_implementations)]
-    pub struct ForEachFuture<S, F, T> {
+    pub struct ForEachFuture<S, F> {
         #[pin]
         stream: S,
         f: F,
-        __t: PhantomData<T>,
     }
 }
 
-impl<S, F, T> ForEachFuture<S, F, T> {
+impl<S, F> ForEachFuture<S, F> {
     pub(super) fn new(stream: S, f: F) -> Self {
         ForEachFuture {
             stream,
             f,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, F> Future for ForEachFuture<S, F, S::Item>
+impl<S, F> Future for ForEachFuture<S, F>
 where
     S: Stream + Sized,
     F: FnMut(S::Item),

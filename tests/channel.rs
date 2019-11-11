@@ -1,3 +1,5 @@
+#![cfg(feature = "unstable")]
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -23,7 +25,13 @@ fn smoke() {
 
         drop(s);
         assert_eq!(r.recv().await, None);
-    })
+    });
+
+    task::block_on(async {
+        let (s, r) = channel(10);
+        drop(r);
+        s.send(1).await;
+    });
 }
 
 #[test]
@@ -37,6 +45,7 @@ fn capacity() {
 
 #[test]
 fn len_empty_full() {
+    #![allow(clippy::cognitive_complexity)]
     task::block_on(async {
         let (s, r) = channel(2);
 

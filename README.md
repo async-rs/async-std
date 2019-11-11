@@ -61,7 +61,7 @@ syntax.
 ## Features
 
 - __Modern:__ Built from the ground up for `std::future` and `async/await` with
-    blazing fast compilation times.
+    blazing fast compilation time.
 - __Fast:__ Our robust allocator and threadpool designs provide ultra-high
     throughput with predictably low latency.
 - __Intuitive:__ Complete parity with the stdlib means you only need to learn

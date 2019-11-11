@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
@@ -7,29 +6,25 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
-    pub struct Map<S, F, T, B> {
+    /// A stream that maps value of another stream with a function.
+    #[derive(Debug)]
+    pub struct Map<S, F> {
         #[pin]
         stream: S,
         f: F,
-        __from: PhantomData<T>,
-        __to: PhantomData<B>,
     }
 }
 
-impl<S, F, T, B> Map<S, F, T, B> {
+impl<S, F> Map<S, F> {
     pub(crate) fn new(stream: S, f: F) -> Self {
         Map {
             stream,
             f,
-            __from: PhantomData,
-            __to: PhantomData,
         }
     }
 }
 
-impl<S, F, B> Stream for Map<S, F, S::Item, B>
+impl<S, F, B> Stream for Map<S, F>
 where
     S: Stream,
     F: FnMut(S::Item) -> B,

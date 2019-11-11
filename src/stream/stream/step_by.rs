@@ -7,6 +7,12 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that steps a given amount of elements of another stream.
+    ///
+    /// This `struct` is created by the [`step_by`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`step_by`]: trait.Stream.html#method.step_by
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
     pub struct StepBy<S> {
         #[pin]

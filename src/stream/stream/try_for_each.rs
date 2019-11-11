@@ -1,52 +1,39 @@
-use std::marker::PhantomData;
+use std::future::Future;
 use std::pin::Pin;
 
-use pin_project_lite::pin_project;
-
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
-    pub struct TryForEeachFuture<S, F, T, R> {
-        #[pin]
-        stream: S,
-        f: F,
-        __from: PhantomData<T>,
-        __to: PhantomData<R>,
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct TryForEachFuture<'a, S, F> {
+    stream: &'a mut S,
+    f: F,
+}
+
+impl<'a, S, F> Unpin for TryForEachFuture<'a, S, F> {}
+
+impl<'a, S, F> TryForEachFuture<'a, S, F> {
+    pub(crate) fn new(stream: &'a mut S, f: F) -> Self {
+        TryForEachFuture { stream, f }
     }
 }
 
-impl<S, F, T, R> TryForEeachFuture<S, F, T, R> {
-    pub(crate) fn new(stream: S, f: F) -> Self {
-        TryForEeachFuture {
-            stream,
-            f,
-            __from: PhantomData,
-            __to: PhantomData,
-        }
-    }
-}
-
-impl<S, F, E> Future for TryForEeachFuture<S, F, S::Item, E>
+impl<'a, S, F, E> Future for TryForEachFuture<'a, S, F>
 where
-    S: Stream,
-    S::Item: std::fmt::Debug,
+    S: Stream + Unpin,
     F: FnMut(S::Item) -> Result<(), E>,
 {
     type Output = Result<(), E>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut this = self.project();
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
-            let item = futures_core::ready!(this.stream.as_mut().poll_next(cx));
+            let item = futures_core::ready!(Pin::new(&mut self.stream).poll_next(cx));
 
             match item {
                 None => return Poll::Ready(Ok(())),
                 Some(v) => {
-                    let res = (this.f)(v);
+                    let res = (&mut self.f)(v);
                     if let Err(e) = res {
                         return Poll::Ready(Err(e));
                     }

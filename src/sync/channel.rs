@@ -4,17 +4,17 @@ use std::future::Future;
 use std::isize;
 use std::marker::PhantomData;
 use std::mem;
-use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::process;
 use std::ptr;
-use std::sync::atomic::{self, AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::task::{Context, Poll, Waker};
+use std::task::{Context, Poll};
 
-use crossbeam_utils::{Backoff, CachePadded};
-use futures_core::stream::Stream;
-use slab::Slab;
+use crossbeam_utils::Backoff;
+
+use crate::stream::Stream;
+use crate::sync::WakerSet;
 
 /// Creates a bounded multi-producer multi-consumer channel.
 ///
@@ -22,7 +22,7 @@ use slab::Slab;
 ///
 /// Senders and receivers can be cloned. When all senders associated with a channel get dropped, it
 /// becomes closed. Receive operations on a closed and empty channel return `None` instead of
-/// blocking.
+/// trying to await a message.
 ///
 /// # Panics
 ///
@@ -44,7 +44,7 @@ use slab::Slab;
 /// s.send(1).await;
 ///
 /// task::spawn(async move {
-///     // This call blocks the current task because the channel is full.
+///     // This call will have to wait because the channel is full.
 ///     // It will be able to complete only after the first message is received.
 ///     s.send(2).await;
 /// });
@@ -102,8 +102,7 @@ pub struct Sender<T> {
 impl<T> Sender<T> {
     /// Sends a message into the channel.
     ///
-    /// If the channel is full, this method will block the current task until the send operation
-    /// can proceed.
+    /// If the channel is full, this method will wait until there is space in the channel.
     ///
     /// # Examples
     ///
@@ -128,7 +127,7 @@ impl<T> Sender<T> {
     /// ```
     pub async fn send(&self, msg: T) {
         struct SendFuture<'a, T> {
-            sender: &'a Sender<T>,
+            channel: &'a Channel<T>,
             msg: Option<T>,
             opt_key: Option<usize>,
         }
@@ -139,57 +138,49 @@ impl<T> Sender<T> {
             type Output = ();
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let msg = self.msg.take().unwrap();
+                loop {
+                    let msg = self.msg.take().unwrap();
 
-                // Try sending the message.
-                let poll = match self.sender.channel.push(msg) {
-                    Ok(()) => Poll::Ready(()),
-                    Err(PushError::Disconnected(msg)) => {
-                        self.msg = Some(msg);
-                        Poll::Pending
+                    // If the current task is in the set, remove it.
+                    if let Some(key) = self.opt_key.take() {
+                        self.channel.send_wakers.remove(key);
                     }
-                    Err(PushError::Full(msg)) => {
-                        // Register the current task.
-                        match self.opt_key {
-                            None => self.opt_key = Some(self.sender.channel.sends.register(cx)),
-                            Some(key) => self.sender.channel.sends.reregister(key, cx),
-                        }
 
-                        // Try sending the message again.
-                        match self.sender.channel.push(msg) {
-                            Ok(()) => Poll::Ready(()),
-                            Err(PushError::Disconnected(msg)) | Err(PushError::Full(msg)) => {
-                                self.msg = Some(msg);
-                                Poll::Pending
+                    // Try sending the message.
+                    match self.channel.try_send(msg) {
+                        Ok(()) => return Poll::Ready(()),
+                        Err(TrySendError::Disconnected(msg)) => {
+                            self.msg = Some(msg);
+                            return Poll::Pending;
+                        }
+                        Err(TrySendError::Full(msg)) => {
+                            self.msg = Some(msg);
+
+                            // Insert this send operation.
+                            self.opt_key = Some(self.channel.send_wakers.insert(cx));
+
+                            // If the channel is still full and not disconnected, return.
+                            if self.channel.is_full() && !self.channel.is_disconnected() {
+                                return Poll::Pending;
                             }
                         }
                     }
-                };
-
-                if poll.is_ready() {
-                    // If the current task was registered, unregister now.
-                    if let Some(key) = self.opt_key.take() {
-                        // `true` means the send operation is completed.
-                        self.sender.channel.sends.unregister(key, true);
-                    }
                 }
-
-                poll
             }
         }
 
         impl<T> Drop for SendFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task was registered, unregister now.
+                // If the current task is still in the set, that means it is being cancelled now.
+                // Wake up another task instead.
                 if let Some(key) = self.opt_key {
-                    // `false` means the send operation is cancelled.
-                    self.sender.channel.sends.unregister(key, false);
+                    self.channel.send_wakers.cancel(key);
                 }
             }
         }
 
         SendFuture {
-            sender: self,
+            channel: &self.channel,
             msg: Some(msg),
             opt_key: None,
         }
@@ -340,16 +331,15 @@ pub struct Receiver<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
 
-    /// The registration key for this receiver in the `channel.streams` registry.
+    /// The key for this receiver in the `channel.stream_wakers` set.
     opt_key: Option<usize>,
 }
 
 impl<T> Receiver<T> {
     /// Receives a message from the channel.
     ///
-    /// If the channel is empty and it still has senders, this method will block the current task
-    /// until the receive operation can proceed. If the channel is empty and there are no more
-    /// senders, this method returns `None`.
+    /// If the channel is empty and still has senders, this method will wait until a message is
+    /// sent into the channel or until all senders get dropped.
     ///
     /// # Examples
     ///
@@ -382,16 +372,20 @@ impl<T> Receiver<T> {
             type Output = Option<T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                poll_recv(&self.channel, &self.channel.recvs, &mut self.opt_key, cx)
+                poll_recv(
+                    &self.channel,
+                    &self.channel.recv_wakers,
+                    &mut self.opt_key,
+                    cx,
+                )
             }
         }
 
         impl<T> Drop for RecvFuture<'_, T> {
             fn drop(&mut self) {
-                // If the current task was registered, unregister now.
+                // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
-                    // `false` means the receive operation is cancelled.
-                    self.channel.recvs.unregister(key, false);
+                    self.channel.recv_wakers.cancel(key);
                 }
             }
         }
@@ -484,10 +478,9 @@ impl<T> Receiver<T> {
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        // If the current task was registered as blocked on this stream, unregister now.
+        // If the current task is still in the stream set, that means it is being cancelled now.
         if let Some(key) = self.opt_key {
-            // `false` means the last request for a stream item is cancelled.
-            self.channel.streams.unregister(key, false);
+            self.channel.stream_wakers.cancel(key);
         }
 
         // Decrement the receiver count and disconnect the channel if it drops down to zero.
@@ -518,7 +511,12 @@ impl<T> Stream for Receiver<T> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
-        poll_recv(&this.channel, &this.channel.streams, &mut this.opt_key, cx)
+        poll_recv(
+            &this.channel,
+            &this.channel.stream_wakers,
+            &mut this.opt_key,
+            cx,
+        )
     }
 }
 
@@ -530,43 +528,35 @@ impl<T> fmt::Debug for Receiver<T> {
 
 /// Polls a receive operation on a channel.
 ///
-/// If the receive operation is blocked, the current task will be registered in `registry` and its
-/// registration key will then be stored in `opt_key`.
+/// If the receive operation is blocked, the current task will be inserted into `wakers` and its
+/// associated key will then be stored in `opt_key`.
 fn poll_recv<T>(
     channel: &Channel<T>,
-    registry: &Registry,
+    wakers: &WakerSet,
     opt_key: &mut Option<usize>,
     cx: &mut Context<'_>,
 ) -> Poll<Option<T>> {
-    // Try receiving a message.
-    let poll = match channel.pop() {
-        Ok(msg) => Poll::Ready(Some(msg)),
-        Err(PopError::Disconnected) => Poll::Ready(None),
-        Err(PopError::Empty) => {
-            // Register the current task.
-            match *opt_key {
-                None => *opt_key = Some(registry.register(cx)),
-                Some(key) => registry.reregister(key, cx),
-            }
-
-            // Try receiving a message again.
-            match channel.pop() {
-                Ok(msg) => Poll::Ready(Some(msg)),
-                Err(PopError::Disconnected) => Poll::Ready(None),
-                Err(PopError::Empty) => Poll::Pending,
-            }
-        }
-    };
-
-    if poll.is_ready() {
-        // If the current task was registered, unregister now.
+    loop {
+        // If the current task is in the set, remove it.
         if let Some(key) = opt_key.take() {
-            // `true` means the receive operation is completed.
-            registry.unregister(key, true);
+            wakers.remove(key);
+        }
+
+        // Try receiving a message.
+        match channel.try_recv() {
+            Ok(msg) => return Poll::Ready(Some(msg)),
+            Err(TryRecvError::Disconnected) => return Poll::Ready(None),
+            Err(TryRecvError::Empty) => {
+                // Insert this receive operation.
+                *opt_key = Some(wakers.insert(cx));
+
+                // If the channel is still empty and not disconnected, return.
+                if channel.is_empty() && !channel.is_disconnected() {
+                    return Poll::Pending;
+                }
+            }
         }
     }
-
-    poll
 }
 
 /// A slot in a channel.
@@ -587,7 +577,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit in the head is always zero.
     ///
     /// Messages are popped from the head of the channel.
-    head: CachePadded<AtomicUsize>,
+    head: AtomicUsize,
 
     /// The tail of the channel.
     ///
@@ -596,7 +586,7 @@ struct Channel<T> {
     /// represent the lap. The mark bit indicates that the channel is disconnected.
     ///
     /// Messages are pushed into the tail of the channel.
-    tail: CachePadded<AtomicUsize>,
+    tail: AtomicUsize,
 
     /// The buffer holding slots.
     buffer: *mut Slot<T>,
@@ -612,13 +602,13 @@ struct Channel<T> {
     mark_bit: usize,
 
     /// Send operations waiting while the channel is full.
-    sends: Registry,
+    send_wakers: WakerSet,
 
     /// Receive operations waiting while the channel is empty and not disconnected.
-    recvs: Registry,
+    recv_wakers: WakerSet,
 
     /// Streams waiting while the channel is empty and not disconnected.
-    streams: Registry,
+    stream_wakers: WakerSet,
 
     /// The number of currently active `Sender`s.
     sender_count: AtomicUsize,
@@ -670,23 +660,31 @@ impl<T> Channel<T> {
             cap,
             one_lap,
             mark_bit,
-            head: CachePadded::new(AtomicUsize::new(head)),
-            tail: CachePadded::new(AtomicUsize::new(tail)),
-            sends: Registry::new(),
-            recvs: Registry::new(),
-            streams: Registry::new(),
+            head: AtomicUsize::new(head),
+            tail: AtomicUsize::new(tail),
+            send_wakers: WakerSet::new(),
+            recv_wakers: WakerSet::new(),
+            stream_wakers: WakerSet::new(),
             sender_count: AtomicUsize::new(1),
             receiver_count: AtomicUsize::new(1),
             _marker: PhantomData,
         }
     }
 
-    /// Attempts to push a message.
-    fn push(&self, msg: T) -> Result<(), PushError<T>> {
+    /// Attempts to send a message.
+    fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
         let backoff = Backoff::new();
         let mut tail = self.tail.load(Ordering::Relaxed);
 
         loop {
+            // Extract mark bit from the tail and unset it.
+            //
+            // If the mark bit was set (which means all receivers have been dropped), we will still
+            // send the message into the channel if there is enough capacity. The message will get
+            // dropped when the channel is dropped (which means when all senders are also dropped).
+            let mark_bit = tail & self.mark_bit;
+            tail ^= mark_bit;
+
             // Deconstruct the tail.
             let index = tail & (self.mark_bit - 1);
             let lap = tail & !(self.one_lap - 1);
@@ -709,8 +707,8 @@ impl<T> Channel<T> {
 
                 // Try moving the tail.
                 match self.tail.compare_exchange_weak(
-                    tail,
-                    new_tail,
+                    tail | mark_bit,
+                    new_tail | mark_bit,
                     Ordering::SeqCst,
                     Ordering::Relaxed,
                 ) {
@@ -721,10 +719,10 @@ impl<T> Channel<T> {
                         slot.stamp.store(stamp, Ordering::Release);
 
                         // Wake a blocked receive operation.
-                        self.recvs.notify_one();
+                        self.recv_wakers.notify_one();
 
                         // Wake all blocked streams.
-                        self.streams.notify_all();
+                        self.stream_wakers.notify_all();
 
                         return Ok(());
                     }
@@ -742,10 +740,10 @@ impl<T> Channel<T> {
                     // ...then the channel is full.
 
                     // Check if the channel is disconnected.
-                    if tail & self.mark_bit != 0 {
-                        return Err(PushError::Disconnected(msg));
+                    if mark_bit != 0 {
+                        return Err(TrySendError::Disconnected(msg));
                     } else {
-                        return Err(PushError::Full(msg));
+                        return Err(TrySendError::Full(msg));
                     }
                 }
 
@@ -759,8 +757,8 @@ impl<T> Channel<T> {
         }
     }
 
-    /// Attempts to pop a message.
-    fn pop(&self) -> Result<T, PopError> {
+    /// Attempts to receive a message.
+    fn try_recv(&self) -> Result<T, TryRecvError> {
         let backoff = Backoff::new();
         let mut head = self.head.load(Ordering::Relaxed);
 
@@ -799,7 +797,7 @@ impl<T> Channel<T> {
                         slot.stamp.store(stamp, Ordering::Release);
 
                         // Wake a blocked send operation.
-                        self.sends.notify_one();
+                        self.send_wakers.notify_one();
 
                         return Ok(msg);
                     }
@@ -816,10 +814,10 @@ impl<T> Channel<T> {
                 if (tail & !self.mark_bit) == head {
                     // If the channel is disconnected...
                     if tail & self.mark_bit != 0 {
-                        return Err(PopError::Disconnected);
+                        return Err(TryRecvError::Disconnected);
                     } else {
                         // Otherwise, the receive operation is not ready.
-                        return Err(PopError::Empty);
+                        return Err(TryRecvError::Empty);
                     }
                 }
 
@@ -858,6 +856,11 @@ impl<T> Channel<T> {
         }
     }
 
+    /// Returns `true` if the channel is disconnected.
+    pub fn is_disconnected(&self) -> bool {
+        self.tail.load(Ordering::SeqCst) & self.mark_bit != 0
+    }
+
     /// Returns `true` if the channel is empty.
     fn is_empty(&self) -> bool {
         let head = self.head.load(Ordering::SeqCst);
@@ -888,9 +891,9 @@ impl<T> Channel<T> {
 
         if tail & self.mark_bit == 0 {
             // Notify everyone blocked on this channel.
-            self.sends.notify_all();
-            self.recvs.notify_all();
-            self.streams.notify_all();
+            self.send_wakers.notify_all();
+            self.recv_wakers.notify_all();
+            self.stream_wakers.notify_all();
         }
     }
 }
@@ -921,8 +924,8 @@ impl<T> Drop for Channel<T> {
     }
 }
 
-/// An error returned from the `push()` method.
-enum PushError<T> {
+/// An error returned from the `try_send()` method.
+enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
 
@@ -930,203 +933,11 @@ enum PushError<T> {
     Disconnected(T),
 }
 
-/// An error returned from the `pop()` method.
-enum PopError {
+/// An error returned from the `try_recv()` method.
+enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
 
     /// The channel is empty and disconnected.
     Disconnected,
-}
-
-/// A list of blocked channel operations.
-struct Blocked {
-    /// A list of registered channel operations.
-    ///
-    /// Each entry has a waker associated with the task that is executing the operation. If the
-    /// waker is set to `None`, that means the task has been woken up but hasn't removed itself
-    /// from the registry yet.
-    entries: Slab<Option<Waker>>,
-
-    /// The number of wakers in the entry list.
-    waker_count: usize,
-}
-
-/// A registry of blocked channel operations.
-///
-/// Blocked operations register themselves in a registry. Successful operations on the opposite
-/// side of the channel wake blocked operations in the registry.
-struct Registry {
-    /// A list of blocked channel operations.
-    blocked: Spinlock<Blocked>,
-
-    /// Set to `true` if there are no wakers in the registry.
-    ///
-    /// Note that this either means there are no entries in the registry, or that all entries have
-    /// been notified.
-    is_empty: AtomicBool,
-}
-
-impl Registry {
-    /// Creates a new registry.
-    fn new() -> Registry {
-        Registry {
-            blocked: Spinlock::new(Blocked {
-                entries: Slab::new(),
-                waker_count: 0,
-            }),
-            is_empty: AtomicBool::new(true),
-        }
-    }
-
-    /// Registers a blocked channel operation and returns a key associated with it.
-    fn register(&self, cx: &Context<'_>) -> usize {
-        let mut blocked = self.blocked.lock();
-
-        // Insert a new entry into the list of blocked tasks.
-        let w = cx.waker().clone();
-        let key = blocked.entries.insert(Some(w));
-
-        blocked.waker_count += 1;
-        if blocked.waker_count == 1 {
-            self.is_empty.store(false, Ordering::SeqCst);
-        }
-
-        key
-    }
-
-    /// Re-registers a blocked channel operation by filling in its waker.
-    fn reregister(&self, key: usize, cx: &Context<'_>) {
-        let mut blocked = self.blocked.lock();
-
-        let was_none = blocked.entries[key].is_none();
-        let w = cx.waker().clone();
-        blocked.entries[key] = Some(w);
-
-        if was_none {
-            blocked.waker_count += 1;
-            if blocked.waker_count == 1 {
-                self.is_empty.store(false, Ordering::SeqCst);
-            }
-        }
-    }
-
-    /// Unregisters a channel operation.
-    ///
-    /// If `completed` is `true`, the operation will be removed from the registry. If `completed`
-    /// is `false`, that means the operation was cancelled so another one will be notified.
-    fn unregister(&self, key: usize, completed: bool) {
-        let mut blocked = self.blocked.lock();
-        let mut removed = false;
-
-        match blocked.entries.remove(key) {
-            Some(_) => removed = true,
-            None => {
-                if !completed {
-                    // This operation was cancelled. Notify another one.
-                    if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
-                        if let Some(w) = opt_waker.take() {
-                            w.wake();
-                            removed = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        if removed {
-            blocked.waker_count -= 1;
-            if blocked.waker_count == 0 {
-                self.is_empty.store(true, Ordering::SeqCst);
-            }
-        }
-    }
-
-    /// Notifies one blocked channel operation.
-    #[inline]
-    fn notify_one(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
-            let mut blocked = self.blocked.lock();
-
-            if let Some((_, opt_waker)) = blocked.entries.iter_mut().next() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-
-                    blocked.waker_count -= 1;
-                    if blocked.waker_count == 0 {
-                        self.is_empty.store(true, Ordering::SeqCst);
-                    }
-                }
-            }
-        }
-    }
-
-    /// Notifies all blocked channel operations.
-    #[inline]
-    fn notify_all(&self) {
-        if !self.is_empty.load(Ordering::SeqCst) {
-            let mut blocked = self.blocked.lock();
-
-            for (_, opt_waker) in blocked.entries.iter_mut() {
-                // If there is no waker in this entry, that means it was already woken.
-                if let Some(w) = opt_waker.take() {
-                    w.wake();
-                }
-            }
-
-            blocked.waker_count = 0;
-            self.is_empty.store(true, Ordering::SeqCst);
-        }
-    }
-}
-
-/// A simple spinlock.
-struct Spinlock<T> {
-    flag: AtomicBool,
-    value: UnsafeCell<T>,
-}
-
-impl<T> Spinlock<T> {
-    /// Returns a new spinlock initialized with `value`.
-    fn new(value: T) -> Spinlock<T> {
-        Spinlock {
-            flag: AtomicBool::new(false),
-            value: UnsafeCell::new(value),
-        }
-    }
-
-    /// Locks the spinlock.
-    fn lock(&self) -> SpinlockGuard<'_, T> {
-        let backoff = Backoff::new();
-        while self.flag.swap(true, Ordering::Acquire) {
-            backoff.snooze();
-        }
-        SpinlockGuard { parent: self }
-    }
-}
-
-/// A guard holding a spinlock locked.
-struct SpinlockGuard<'a, T> {
-    parent: &'a Spinlock<T>,
-}
-
-impl<'a, T> Drop for SpinlockGuard<'a, T> {
-    fn drop(&mut self) {
-        self.parent.flag.store(false, Ordering::Release);
-    }
-}
-
-impl<'a, T> Deref for SpinlockGuard<'a, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        unsafe { &*self.parent.value.get() }
-    }
-}
-
-impl<'a, T> DerefMut for SpinlockGuard<'a, T> {
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.parent.value.get() }
-    }
 }

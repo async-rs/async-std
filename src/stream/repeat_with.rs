@@ -1,26 +1,20 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 
-use pin_project_lite::pin_project;
-
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-pin_project! {
-    /// A stream that repeats elements of type `T` endlessly by applying a provided closure.
-    ///
-    /// This stream is constructed by the [`repeat_with`] function.
-    ///
-    /// [`repeat_with`]: fn.repeat_with.html
-    #[derive(Debug)]
-    pub struct RepeatWith<F, Fut, A> {
-        f: F,
-        #[pin]
-        future: Option<Fut>,
-        __a: PhantomData<A>,
-    }
+/// A stream that repeats elements of type `T` endlessly by applying a provided closure.
+///
+/// This stream is created by the [`repeat_with`] function. See its
+/// documentation for more.
+///
+/// [`repeat_with`]: fn.repeat_with.html
+#[derive(Clone, Debug)]
+pub struct RepeatWith<F> {
+    f: F,
 }
+
+impl<F> Unpin for RepeatWith<F> {}
 
 /// Creates a new stream that repeats elements of type `A` endlessly by applying the provided closure.
 ///
@@ -34,7 +28,7 @@ pin_project! {
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::repeat_with(|| async { 1 });
+/// let s = stream::repeat_with(|| 1);
 ///
 /// pin_utils::pin_mut!(s);
 ///
@@ -53,48 +47,38 @@ pin_project! {
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::repeat_with(|| async { 1u8 }).take(2);
+/// let mut n = 1;
+/// let s = stream::repeat_with(|| {
+///     let item = n;
+///     n *= 2;
+///     item
+/// })
+/// .take(4);
 ///
 /// pin_utils::pin_mut!(s);
 ///
 /// assert_eq!(s.next().await, Some(1));
-/// assert_eq!(s.next().await, Some(1));
+/// assert_eq!(s.next().await, Some(2));
+/// assert_eq!(s.next().await, Some(4));
+/// assert_eq!(s.next().await, Some(8));
 /// assert_eq!(s.next().await, None);
 /// # })
 /// ```
-pub fn repeat_with<F, Fut, A>(repeater: F) -> RepeatWith<F, Fut, A>
+pub fn repeat_with<T, F>(repeater: F) -> RepeatWith<F>
 where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = A>,
+    F: FnMut() -> T,
 {
-    RepeatWith {
-        f: repeater,
-        future: None,
-        __a: PhantomData,
-    }
+    RepeatWith { f: repeater }
 }
 
-impl<F, Fut, A> Stream for RepeatWith<F, Fut, A>
+impl<T, F> Stream for RepeatWith<F>
 where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = A>,
+    F: FnMut() -> T,
 {
-    type Item = A;
+    type Item = T;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut this = self.project();
-        loop {
-            if this.future.is_some() {
-                let res = futures_core::ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
-
-                this.future.set(None);
-
-                return Poll::Ready(Some(res));
-            } else {
-                let fut = (this.f)();
-
-                this.future.set(Some(fut));
-            }
-        }
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let item = (&mut self.f)();
+        Poll::Ready(Some(item))
     }
 }

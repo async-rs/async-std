@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
@@ -8,26 +7,30 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     /// A stream that yields elements based on a predicate.
+    ///
+    /// This `struct` is created by the [`take_while`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`take_while`]: trait.Stream.html#method.take_while
+    /// [`Stream`]: trait.Stream.html
     #[derive(Debug)]
-    pub struct TakeWhile<S, P, T> {
+    pub struct TakeWhile<S, P> {
         #[pin]
         stream: S,
         predicate: P,
-        __t: PhantomData<T>,
     }
 }
 
-impl<S, P, T> TakeWhile<S, P, T> {
+impl<S, P> TakeWhile<S, P> {
     pub(super) fn new(stream: S, predicate: P) -> Self {
         TakeWhile {
             stream,
             predicate,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, P> Stream for TakeWhile<S, P, S::Item>
+impl<S, P> Stream for TakeWhile<S, P>
 where
     S: Stream,
     P: FnMut(&S::Item) -> bool,
@@ -39,10 +42,12 @@ where
         let next = futures_core::ready!(this.stream.poll_next(cx));
 
         match next {
-            Some(v) if (this.predicate)(&v) => Poll::Ready(Some(v)),
-            Some(_) => {
-                cx.waker().wake_by_ref();
-                Poll::Pending
+            Some(v) => {
+                if (this.predicate)(&v) {
+                    Poll::Ready(Some(v))
+                } else {
+                    Poll::Ready(None)
+                }
             }
             None => Poll::Ready(None),
         }
