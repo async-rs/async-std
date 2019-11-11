@@ -315,7 +315,6 @@ extension_trait! {
             TakeWhile::new(self, predicate)
         }
 
-        #[cfg(all(feature = "default", feature = "unstable"))]
         #[doc = r#"
             Limit the amount of items yielded per timeslice in a stream.
 
@@ -342,6 +341,8 @@ extension_trait! {
             # }) }
             ```
         "#]
+        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn throttle(self, d: Duration) -> Throttle<Self>
         where
             Self: Sized,
