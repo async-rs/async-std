@@ -33,10 +33,14 @@ default = [
   "mio-uds",
   "num_cpus",
   "pin-project-lite",
+  "serde-remotes",
 ]
 docs = ["attributes", "unstable"]
 unstable = ["default", "broadcaster"]
 attributes = ["async-attributes"]
+serde-support = [
+  "serde",
+]
 std = [
   "async-macros",
   "crossbeam-utils",
@@ -70,6 +74,7 @@ once_cell = { version = "1.2.0", optional = true }
 pin-project-lite = { version = "0.1", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
+serde = { version = "1.0.0", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 femme = "1.2.0"

@@ -13,12 +13,16 @@ use crate::path::Path;
 use crate::prelude::*;
 #[cfg(feature = "unstable")]
 use crate::stream::{self, FromStream, IntoStream};
+#[cfg(feature = "serde-support")]
+use serde::{Serialize, Deserialize};
 
 /// This struct is an async version of [`std::path::PathBuf`].
 ///
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
+#[cfg_attr(feature = "serde-support", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PathBuf {
+    #[cfg_attr(feature = "serde-support", serde(flatten))]
     inner: std::path::PathBuf,
 }
 
