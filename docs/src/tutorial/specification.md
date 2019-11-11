@@ -38,18 +38,17 @@ $ cargo new a-chat
 $ cd a-chat
 ```
 
-At the moment `async-std` requires Rust nightly, so let's add a rustup override for convenience:
+`async-std` requires Rust 1.39+, make sure it is up to date:
 
 ```bash
-$ rustup override add nightly
 $ rustc --version
-rustc 1.38.0-nightly (c4715198b 2019-08-05)
+rustc 1.39.0 (4560ea788 2019-11-04)
 ```
 
 Add the following lines to `Cargo.toml`:
 
 ```toml
 [dependencies]
-futures-preview = { version = "0.3.0-alpha.19", features = [ "async-await" ] }
+futures = "0.3"
 async-std = "0.99"
 ```
