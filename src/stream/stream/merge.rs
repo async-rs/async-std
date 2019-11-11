@@ -5,6 +5,7 @@ use pin_project_lite::pin_project;
 
 use crate::prelude::*;
 use crate::stream::Fuse;
+use crate::utils;
 
 pin_project! {
     /// A stream that merges two other streams into a single stream.
@@ -43,19 +44,27 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
-        let (first, second) = if (utils::random(1) == 1) {
-            (this.left, this.right)
+        if utils::random(1) == 1 {
+            poll_next_in_order(cx, this.left, this.right)
         } else {
-            (this.right, this.left)
-        };
-        match first.poll_next(cx) {
-            Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-            Poll::Ready(None) => second.poll_next(cx),
-            Poll::Pending => match second.poll_next(cx) {
-                Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-                Poll::Ready(None) => Poll::Pending,
-                Poll::Pending => Poll::Pending,
-            },
+            poll_next_in_order(cx, this.right, this.left)
         }
+    }
+}
+
+/// Pools the next item, trying in order, first the first item, then the second one.
+fn poll_next_in_order<F, S, T>(cx: &mut Context<'_>, first: F, second: S) -> Poll<Option<T>>
+where
+    F: Stream<Item = T>,
+    S: Stream<Item = T>,
+{
+    match first.poll_next(cx) {
+        Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+        Poll::Ready(None) => second.poll_next(cx),
+        Poll::Pending => match second.poll_next(cx) {
+            Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+            Poll::Ready(None) => Poll::Pending,
+            Poll::Pending => Poll::Pending,
+        },
     }
 }
