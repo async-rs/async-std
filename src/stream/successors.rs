@@ -18,7 +18,7 @@ use pin_project_lite::pin_project;
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::successors(Some(22), |val| {
+/// let s = stream::successors(Some(22), |&val| {
 ///     async move {
 ///         Some(val + 1)
 ///     }
@@ -31,9 +31,9 @@ use pin_project_lite::pin_project;
 /// assert_eq!(s.next().await, Some(25));
 ///
 ///
-///let never = stream::successors(None, |val: usize| {
+///let never = stream::successors(None, |_| {
 ///     async move {
-///         Some(val + 1)
+///         Some(1)
 ///     }
 /// });
 ///
@@ -48,7 +48,7 @@ use pin_project_lite::pin_project;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn successors<F, Fut, T>(first: Option<T>, succ: F) -> Successors<F, Fut, T>
 where
-    F: FnMut(T) -> Fut,
+    F: FnMut(&T) -> Fut,
     Fut: Future<Output = Option<T>>,
     T: Copy,
 {
@@ -83,7 +83,7 @@ pin_project! {
 impl<F, Fut, T> Stream for Successors<F, Fut, T>
 where
     Fut: Future<Output = Option<T>>,
-    F: FnMut(T) -> Fut,
+    F: FnMut(&T) -> Fut,
     T: Copy,
 {
     type Item = T;
@@ -96,7 +96,7 @@ where
         }
 
         if this.future.is_none() {
-            let fut = (this.succ)(this.slot.unwrap());
+            let fut = (this.succ)(&this.slot.unwrap());
             this.future.set(Some(fut));
         }
 
