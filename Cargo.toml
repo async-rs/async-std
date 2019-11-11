@@ -33,7 +33,7 @@ default = [
   "mio-uds",
   "num_cpus",
   "pin-project-lite",
-  "serde-remotes",
+  "serde-support",
 ]
 docs = ["attributes", "unstable"]
 unstable = ["default", "broadcaster"]
