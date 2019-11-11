@@ -68,7 +68,7 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
 
 fn start_thread() {
     SLEEPING.fetch_add(1, Ordering::SeqCst);
-    let timeout = Duration::from_secs(10);
+    let timeout = Duration::from_secs(1);
 
     thread::Builder::new()
         .name("async-std/blocking".to_string())
