@@ -50,7 +50,6 @@ pub fn successors<F, Fut, T>(first: Option<T>, succ: F) -> Successors<F, Fut, T>
 where
     F: FnMut(&T) -> Fut,
     Fut: Future<Output = Option<T>>,
-    T: Copy,
 {
     Successors {
         succ: succ,
@@ -84,7 +83,6 @@ impl<F, Fut, T> Stream for Successors<F, Fut, T>
 where
     Fut: Future<Output = Option<T>>,
     F: FnMut(&T) -> Fut,
-    T: Copy,
 {
     type Item = T;
 
@@ -96,7 +94,7 @@ where
         }
 
         if this.future.is_none() {
-            let fut = (this.succ)(&this.slot.unwrap());
+            let fut = (this.succ)(this.slot.as_ref().unwrap());
             this.future.set(Some(fut));
         }
 
