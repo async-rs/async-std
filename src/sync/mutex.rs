@@ -19,9 +19,7 @@ use crate::task::{Context, Poll};
 /// ```
 /// # async_std::task::block_on(async {
 /// #
-/// use std::sync::Arc;
-///
-/// use async_std::sync::Mutex;
+/// use async_std::sync::{Arc, Mutex};
 /// use async_std::task;
 ///
 /// let m = Arc::new(Mutex::new(0));
@@ -77,9 +75,7 @@ impl<T> Mutex<T> {
     /// ```
     /// # async_std::task::block_on(async {
     /// #
-    /// use std::sync::Arc;
-    ///
-    /// use async_std::sync::Mutex;
+    /// use async_std::sync::{Arc, Mutex};
     /// use async_std::task;
     ///
     /// let m1 = Arc::new(Mutex::new(10));
@@ -155,9 +151,7 @@ impl<T> Mutex<T> {
     /// ```
     /// # async_std::task::block_on(async {
     /// #
-    /// use std::sync::Arc;
-    ///
-    /// use async_std::sync::Mutex;
+    /// use async_std::sync::{Arc, Mutex};
     /// use async_std::task;
     ///
     /// let m1 = Arc::new(Mutex::new(10));

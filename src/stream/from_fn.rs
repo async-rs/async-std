@@ -28,6 +28,7 @@ impl<F> Unpin for FromFn<F> {}
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
+/// use async_std::sync::{Arc, Mutex};
 ///
 /// let mut count = 0u8;
 /// let s = stream::from_fn(|| {
