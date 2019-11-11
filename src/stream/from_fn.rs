@@ -34,8 +34,7 @@ pin_project! {
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
-/// use async_std::sync::Mutex;
-/// use std::sync::Arc;
+/// use async_std::sync::{Arc, Mutex};
 /// use async_std::stream;
 ///
 /// let count = Arc::new(Mutex::new(0u8));
