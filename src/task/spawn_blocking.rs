@@ -68,16 +68,13 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
 
 fn start_thread() {
     SLEEPING.fetch_add(1, Ordering::SeqCst);
-
-    // Generate a random duration of time between 1 second and 10 seconds. If the thread doesn't
-    // receive the next task in this duration of time, it will stop running.
-    let timeout = Duration::from_millis(1000 + u64::from(random(9_000)));
+    let timeout = Duration::from_secs(10);
 
     thread::Builder::new()
         .name("async-std/blocking".to_string())
         .spawn(move || {
             loop {
-                let task = match POOL.receiver.recv_timeout(timeout) {
+                let mut task = match POOL.receiver.recv_timeout(timeout) {
                     Ok(task) => task,
                     Err(_) => {
                         // Check whether this is the last sleeping thread.
@@ -100,8 +97,22 @@ fn start_thread() {
                     start_thread();
                 }
 
-                // Run the task.
-                abort_on_panic(|| task.run());
+                loop {
+                    // Run the task.
+                    abort_on_panic(|| task.run());
+
+                    // Try taking another task if there are any available.
+                    task = match POOL.receiver.try_recv() {
+                        Ok(task) => task,
+                        Err(_) => break,
+                    };
+                }
+
+                // If there is at least one sleeping thread, stop this thread instead of putting it
+                // to sleep.
+                if SLEEPING.load(Ordering::SeqCst) > 0 {
+                    return;
+                }
 
                 SLEEPING.fetch_add(1, Ordering::SeqCst);
             }
