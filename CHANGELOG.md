@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.0.1] - 2019-11-12
+
+We were seeing a regression in our fs performance, caused by too many
+long-running tasks. This patch fixes that regression by being more proactive
+about closing down idle threads.
+
+## Changes
+
+- Improved thread startup/shutdown algorithm in spawn_blocking.
+- Fixed a typo in the tutorial.
+
 # [1.0.0] - 2019-11-11
 
 [API Documentation](https://docs.rs/async-std/1.0.0/async-std)
@@ -429,7 +440,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.0.1...HEAD
+[1.0.0]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/async-rs/async-std/compare/v0.99.12...v1.0.0
 [0.99.12]: https://github.com/async-rs/async-std/compare/v0.99.11...v0.99.12
 [0.99.11]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
