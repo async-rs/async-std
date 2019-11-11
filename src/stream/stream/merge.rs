@@ -27,7 +27,10 @@ pin_project! {
 
 impl<L: Stream, R: Stream> Merge<L, R> {
     pub(crate) fn new(left: L, right: R) -> Self {
-        Self { left: left.fuse(), right: right.fuse() }
+        Self {
+            left: left.fuse(),
+            right: right.fuse(),
+        }
     }
 }
 
@@ -40,14 +43,19 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
-        match this.left.poll_next(cx) {
+        let (first, second) = if (utils::random(1) == 1) {
+            (this.left, this.right)
+        } else {
+            (this.right, this.left)
+        };
+        match first.poll_next(cx) {
             Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-            Poll::Ready(None) => this.right.poll_next(cx),
-            Poll::Pending => match this.right.poll_next(cx) {
+            Poll::Ready(None) => second.poll_next(cx),
+            Poll::Pending => match second.poll_next(cx) {
                 Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
                 Poll::Ready(None) => Poll::Pending,
                 Poll::Pending => Poll::Pending,
-            }
+            },
         }
     }
 }
