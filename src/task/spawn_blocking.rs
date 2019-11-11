@@ -6,7 +6,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use once_cell::sync::Lazy;
 
 use crate::task::{JoinHandle, Task};
-use crate::utils::{abort_on_panic, random};
+use crate::utils::abort_on_panic;
 
 /// Spawns a blocking task.
 ///
