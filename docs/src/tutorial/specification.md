@@ -50,6 +50,6 @@ Add the following lines to `Cargo.toml`:
 
 ```toml
 [dependencies]
-futures-preview = { version = "0.3.0-alpha.19", features = [ "async-await" ] }
-async-std = "0.99"
+futures = "0.3.0"
+async-std = "1.00"
 ```
