@@ -7,33 +7,10 @@ use crate::task::{Context, Poll, ready};
 
 use pin_project_lite::pin_project;
 
-
-
-pin_project! {
-    /// A stream that yields elements by calling an async closure with the previous value as an
-    /// argument
-    ///
-    /// This stream is constructed by [`successors`] function
-    ///
-    /// [`succcessors`]: fn.succssors.html
-    #[cfg(feature = "unstable")]
-    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-    #[derive(Debug)]
-    pub struct Successors<F, Fut, T>
-    where
-        Fut: Future<Output = Option<T>>,
-    {
-        succ: F,
-        #[pin]
-        future: Option<Fut>,
-        slot: Option<T>,
-    }
-}
-
 /// Creates a new stream where to produce each new element a closure is called with the previous
 /// value.
 ///
-/// #Examples
+/// # Examples
 ///
 /// ```
 /// # fn main() { async_std::task::block_on(async {
@@ -79,6 +56,27 @@ where
         succ: succ,
         future: None,
         slot: first,
+    }
+}
+
+pin_project! {
+    /// A stream that yields elements by calling an async closure with the previous value as an
+    /// argument
+    ///
+    /// This stream is constructed by [`successors`] function
+    ///
+    /// [`successors`]: fn.succssors.html
+    #[cfg(feature = "unstable")]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+    #[derive(Debug)]
+    pub struct Successors<F, Fut, T>
+    where
+        Fut: Future<Output = Option<T>>,
+    {
+        succ: F,
+        #[pin]
+        future: Option<Fut>,
+        slot: Option<T>,
     }
 }
 
