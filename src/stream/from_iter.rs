@@ -6,7 +6,7 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
-    /// A stream that created from iterator
+    /// A stream that was created from iterator.
     ///
     /// This stream is created by the [`from_iter`] function.
     /// See it documentation for more.

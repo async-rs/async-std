@@ -1,24 +1,21 @@
-use std::pin::Pin;
 use std::future::Future;
-
-use pin_project_lite::pin_project;
+use std::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
-    pub struct PositionFuture<S, P> {
-        #[pin]
-        stream: S,
-        predicate: P,
-        index:usize,
-    }
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct PositionFuture<'a, S, P> {
+    stream: &'a mut S,
+    predicate: P,
+    index: usize,
 }
 
-impl<S, P> PositionFuture<S, P> {
-    pub(super) fn new(stream: S, predicate: P) -> Self {
+impl<'a, S, P> Unpin for PositionFuture<'a, S, P> {}
+
+impl<'a, S, P> PositionFuture<'a, S, P> {
+    pub(super) fn new(stream: &'a mut S, predicate: P) -> Self {
         PositionFuture {
             stream,
             predicate,
@@ -27,23 +24,25 @@ impl<S, P> PositionFuture<S, P> {
     }
 }
 
-impl<S, P> Future for PositionFuture<S, P>
+impl<'a, S, P> Future for PositionFuture<'a, S, P>
 where
-    S: Stream,
-    P: FnMut(&S::Item) -> bool,
+    S: Stream + Unpin,
+    P: FnMut(S::Item) -> bool,
 {
     type Output = Option<usize>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        let next = futures_core::ready!(this.stream.poll_next(cx));
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let next = futures_core::ready!(Pin::new(&mut self.stream).poll_next(cx));
 
         match next {
-            Some(v) if (this.predicate)(&v) => Poll::Ready(Some(*this.index)),
-            Some(_) => {
-                cx.waker().wake_by_ref();
-                *this.index += 1;
-                Poll::Pending
+            Some(v) => {
+                if (&mut self.predicate)(v) {
+                    Poll::Ready(Some(self.index))
+                } else {
+                    cx.waker().wake_by_ref();
+                    self.index += 1;
+                    Poll::Pending
+                }
             }
             None => Poll::Ready(None),
         }

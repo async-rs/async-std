@@ -4,6 +4,7 @@ use pin_project_lite::pin_project;
 use std::pin::Pin;
 
 pin_project! {
+    /// A stream that clones the elements of an underlying stream.
     #[derive(Debug)]
     pub struct Cloned<S> {
         #[pin]

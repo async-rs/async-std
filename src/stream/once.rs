@@ -33,7 +33,7 @@ pin_project! {
     /// documentation for more.
     ///
     /// [`once`]: fn.once.html
-    #[derive(Debug)]
+    #[derive(Clone, Debug)]
     pub struct Once<T> {
         value: Option<T>,
     }

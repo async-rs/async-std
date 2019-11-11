@@ -4,8 +4,8 @@ use pin_project_lite::pin_project;
 use std::pin::Pin;
 
 pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
+    /// A stream that copies the elements of an underlying stream.
+    #[derive(Debug)]
     pub struct Copied<S> {
         #[pin]
         stream: S,
