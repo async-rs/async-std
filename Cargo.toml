@@ -74,7 +74,7 @@ slab = { version = "0.4.2", optional = true }
 [dev-dependencies]
 femme = "1.2.0"
 rand = "0.7.2"
-# surf = "1.0.2"
+surf = "1.0.3"
 tempdir = "0.3.7"
 futures = "0.3.0"
 
