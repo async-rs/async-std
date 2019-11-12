@@ -21,10 +21,7 @@ use serde::{Serialize, Deserialize};
 /// [`std::path::Path`]: https://doc.rust-lang.org/std/path/struct.PathBuf.html
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PathBuf {
-    #[cfg_attr(feature = "serde", serde(flatten))]
-    inner: std::path::PathBuf,
-}
+pub struct PathBuf(std::path::PathBuf);
 
 impl PathBuf {
     /// Allocates an empty `PathBuf`.
@@ -53,7 +50,7 @@ impl PathBuf {
     /// assert_eq!(Path::new("/test"), p.as_path());
     /// ```
     pub fn as_path(&self) -> &Path {
-        self.inner.as_path().into()
+        self.0.as_path().into()
     }
 
     /// Extends `self` with `path`.
@@ -88,7 +85,7 @@ impl PathBuf {
     /// assert_eq!(path, PathBuf::from("/etc"));
     /// ```
     pub fn push<P: AsRef<Path>>(&mut self, path: P) {
-        self.inner.push(path.as_ref())
+        self.0.push(path.as_ref())
     }
 
     /// Truncates `self` to [`self.parent`].
@@ -112,7 +109,7 @@ impl PathBuf {
     /// assert_eq!(Path::new("/"), p);
     /// ```
     pub fn pop(&mut self) -> bool {
-        self.inner.pop()
+        self.0.pop()
     }
 
     /// Updates [`self.file_name`] to `file_name`.
@@ -142,7 +139,7 @@ impl PathBuf {
     /// assert!(buf == PathBuf::from("/baz.txt"));
     /// ```
     pub fn set_file_name<S: AsRef<OsStr>>(&mut self, file_name: S) {
-        self.inner.set_file_name(file_name)
+        self.0.set_file_name(file_name)
     }
 
     /// Updates [`self.extension`] to `extension`.
@@ -171,7 +168,7 @@ impl PathBuf {
     /// assert_eq!(Path::new("/feel/the.dark_side"), p.as_path());
     /// ```
     pub fn set_extension<S: AsRef<OsStr>>(&mut self, extension: S) -> bool {
-        self.inner.set_extension(extension)
+        self.0.set_extension(extension)
     }
 
     /// Consumes the `PathBuf`, returning its internal [`OsString`] storage.
@@ -187,7 +184,7 @@ impl PathBuf {
     /// let os_str = p.into_os_string();
     /// ```
     pub fn into_os_string(self) -> OsString {
-        self.inner.into_os_string()
+        self.0.into_os_string()
     }
 
     /// Converts this `PathBuf` into a [boxed][`Box`] [`Path`].
@@ -195,7 +192,7 @@ impl PathBuf {
     /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
     /// [`Path`]: struct.Path.html
     pub fn into_boxed_path(self) -> Box<Path> {
-        let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
+        let rw = Box::into_raw(self.0.into_boxed_path()) as *mut Path;
         unsafe { Box::from_raw(rw) }
     }
 }
@@ -227,13 +224,13 @@ impl<T: ?Sized + AsRef<OsStr>> From<&T> for PathBuf {
 
 impl From<OsString> for PathBuf {
     fn from(s: OsString) -> PathBuf {
-        PathBuf { inner: s.into() }
+        PathBuf(s.into())
     }
 }
 
 impl From<PathBuf> for OsString {
     fn from(path_buf: PathBuf) -> OsString {
-        path_buf.inner.into()
+        path_buf.0.into()
     }
 }
 
@@ -269,7 +266,7 @@ impl Deref for PathBuf {
     type Target = Path;
 
     fn deref(&self) -> &Path {
-        Path::new(&self.inner)
+        Path::new(&self.0)
     }
 }
 
@@ -318,7 +315,7 @@ impl From<PathBuf> for Rc<Path> {
 
 impl AsRef<OsStr> for PathBuf {
     fn as_ref(&self) -> &OsStr {
-        self.inner.as_ref()
+        self.0.as_ref()
     }
 }
 
@@ -359,18 +356,18 @@ impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
 
 impl From<std::path::PathBuf> for PathBuf {
     fn from(path: std::path::PathBuf) -> PathBuf {
-        PathBuf { inner: path }
+        PathBuf(path)
     }
 }
 
 impl Into<std::path::PathBuf> for PathBuf {
     fn into(self) -> std::path::PathBuf {
-        self.inner
+        self.0
     }
 }
 
 impl AsRef<std::path::Path> for PathBuf {
     fn as_ref(&self) -> &std::path::Path {
-        self.inner.as_ref()
+        self.0.as_ref()
     }
 }
