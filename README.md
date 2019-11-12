@@ -75,19 +75,21 @@ syntax.
 ## Examples
 
 ```rust
-use async_std::task;
+async fn say_hello() {
+    println!("Hello, world!");
+}
 
-fn main() {
-    task::block_on(async {
-        println!("Hello, world!");
-    })
+#[async_std::main]
+async fn main() {
+    say_hello().await;
 }
 ```
 
 More examples, including networking and file access, can be found in our
-[`examples`] directory.
+[`examples`] directory and in our [documentation].
 
 [`examples`]: https://github.com/async-rs/async-std/tree/master/examples
+[documentation]: https://docs.rs/async-std#examples
 
 ## Philosophy
 
