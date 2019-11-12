@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures_timer::Delay;
 use pin_project_lite::pin_project;
@@ -23,7 +23,9 @@ pin_project! {
         stream: S,
         duration: Duration,
         #[pin]
-        delay: Option<Delay>,
+        blocked: bool,
+        #[pin]
+        delay: Delay,
     }
 }
 
@@ -32,7 +34,8 @@ impl<S: Stream> Throttle<S> {
         Throttle {
             stream,
             duration,
-            delay: None,
+            blocked: false,
+            delay: Delay::new(Duration::default()),
         }
     }
 }
@@ -42,9 +45,10 @@ impl<S: Stream> Stream for Throttle<S> {
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
         let mut this = self.project();
-        if let Some(d) = this.delay.as_mut().as_pin_mut() {
+        if *this.blocked {
+            let d = this.delay.as_mut();
             if d.poll(cx).is_ready() {
-                this.delay.set(None);
+                *this.blocked = false;
             } else {
                 return Poll::Pending;
             }
@@ -57,7 +61,8 @@ impl<S: Stream> Stream for Throttle<S> {
             }
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
-                this.delay.set(Some(Delay::new(*this.duration)));
+                *this.blocked = true;
+                this.delay.reset(Instant::now() + *this.duration);
                 Poll::Ready(Some(v))
             }
         }

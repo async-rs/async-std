@@ -318,7 +318,7 @@ extension_trait! {
         #[doc = r#"
             Limit the amount of items yielded per timeslice in a stream.
 
-This stream does not drop any items, but will only limit the rate at which items pass through.
+            This stream does not drop any items, but will only limit the rate at which items pass through.
             # Examples
             ```
             # fn main() { async_std::task::block_on(async {
