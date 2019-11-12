@@ -1,73 +1,54 @@
+use std::mem::ManuallyDrop;
 use std::pin::Pin;
-
-use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-pin_project! {
-    /// A stream that will repeatedly yield the same list of elements
-    pub struct Cycle<S, T> {
-        #[pin]
-        source: S,
-        index: usize,
-        buffer: Vec<T>,
-        state: CycleState,
-    }
+/// A stream that will repeatedly yield the same list of elements.
+#[derive(Debug)]
+pub struct Cycle<S> {
+    orig: S,
+    source: ManuallyDrop<S>,
 }
 
-#[derive(Eq, PartialEq)]
-enum CycleState {
-    FromStream,
-    FromBuffer,
-}
-
-impl<S> Cycle<S, S::Item>
+impl<S> Cycle<S>
 where
-    S: Stream,
-    S::Item: Clone,
+    S: Stream + Clone,
 {
-    pub fn new(source: S) -> Cycle<S, S::Item> {
+    pub fn new(source: S) -> Cycle<S> {
         Cycle {
-            source,
-            index: 0,
-            buffer: Vec::new(),
-            state: CycleState::FromStream,
+            orig: source.clone(),
+            source: ManuallyDrop::new(source),
         }
     }
 }
 
-impl<S> Stream for Cycle<S, S::Item>
+impl<S> Drop for Cycle<S> {
+    fn drop(&mut self) {
+        unsafe {
+            ManuallyDrop::drop(&mut self.source);
+        }
+    }
+}
+
+impl<S> Stream for Cycle<S>
 where
-    S: Stream,
-    S::Item: Clone,
+    S: Stream + Clone,
 {
     type Item = S::Item;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = self.project();
+        unsafe {
+            let this = self.get_unchecked_mut();
 
-        let mut next;
-        if *this.state == CycleState::FromStream {
-            next = futures_core::ready!(this.source.poll_next(cx));
-
-            if let Some(val) = next {
-                this.buffer.push(val.clone());
-                next = Some(val)
-            } else {
-                *this.state = CycleState::FromBuffer;
-                next = this.buffer.get(*this.index).cloned();
+            match futures_core::ready!(Pin::new_unchecked(&mut *this.source).poll_next(cx)) {
+                Some(item) => Poll::Ready(Some(item)),
+                None => {
+                    ManuallyDrop::drop(&mut this.source);
+                    this.source = ManuallyDrop::new(this.orig.clone());
+                    Pin::new_unchecked(&mut *this.source).poll_next(cx)
+                }
             }
-        } else {
-            let mut index = *this.index;
-            if index == this.buffer.len() {
-                index = 0
-            }
-            next = Some(this.buffer[index].clone());
-
-            *this.index = index + 1;
         }
-
-        Poll::Ready(next)
     }
 }

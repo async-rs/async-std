@@ -33,7 +33,7 @@ where
 /// documentation for more.
 ///
 /// [`repeat`]: fn.repeat.html
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Repeat<T> {
     item: T,
 }

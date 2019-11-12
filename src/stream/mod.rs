@@ -306,9 +306,7 @@ pub use from_iter::{from_iter, FromIter};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
-pub use stream::{
-    Chain, Filter, Fuse, Inspect, Scan, Skip, SkipWhile, StepBy, Stream, Take, TakeWhile, Zip,
-};
+pub use stream::*;
 
 pub(crate) mod stream;
 

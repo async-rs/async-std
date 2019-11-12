@@ -154,7 +154,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "0.99"
+//! version = "1.0.0"
 //! features = ["unstable"]
 //! ```
 //!
@@ -167,7 +167,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "0.99"
+//! version = "1.0.0"
 //! features = ["attributes"]
 //! ```
 //!
@@ -176,7 +176,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "0.99"
+//! version = "1.0.0"
 //! default-features = false
 //! features = ["std"]
 //! ```

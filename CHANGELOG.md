@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.0.1] - 2019-11-12
+
+[API Documentation](https://docs.rs/async-std/1.0.1/async-std)
+
+We were seeing a regression in our fs performance, caused by too many
+long-running tasks. This patch fixes that regression by being more proactive
+about closing down idle threads.
+
+## Changes
+
+- Improved thread startup/shutdown algorithm in `task::spawn_blocking`.
+- Fixed a typo in the tutorial.
+
+# [1.0.0] - 2019-11-11
+
+[API Documentation](https://docs.rs/async-std/1.0.0/async-std)
+
+This release marks the `1.0.0` release of async-std; a major milestone for our
+development. This release itself mostly includes quality of life improvements
+for all of modules, including more consistent API bounds for a lot of our
+submodules.
+
+The biggest change is that we're now using the full semver range,
+`major.minor.patch`, and any breaking changes to our "stable" APIs will require
+an update of the `major` number.
+
+We're excited we've hit this milestone together with you all. Thank you!
+
+## Added
+
+- Added `Future::join` as "unstable", replacing `future::join!`.
+- Added `Future::try_join` as "unstable", replacing `future::try_join!`.
+- Enabled `stable` and `beta` channel testing on CI.
+- Implemented `FromIterator` and `Extend` for `PathBuf`.
+- Implemented `FromStream` for `PathBuf`.
+- Loosened the trait bounds of `io::copy` on "unstable".
+
+## Changed
+
+- Added a `Sync` bound to `RwLock`, resolving a memory safety issue.
+- Fixed a bug in `Stream::take_while` where it could continue after it should've
+  ended.
+- Fixed a bug where our `attributes` Cargo feature wasn't working as intended.
+- Improved documentation of `Stream::merge`, documenting  ordering guarantees.
+- Update doc imports in examples to prefer async-std's types.
+- Various quality of life improvements to the `future` submodule.
+- Various quality of life improvements to the `path` submodule.
+- Various quality of life improvements to the `stream` submodule.
+
+## Removed
+
+- Removed `future::join!` in favor of `Future::join`.
+- Removed `future::try_join!` in favor of `Future::try_join`.
+
 # [0.99.12] - 2019-11-07
 
 [API Documentation](https://docs.rs/async-std/0.99.12/async-std)
@@ -388,8 +442,11 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.11...HEAD
-[0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/async-rs/async-std/compare/v0.99.12...v1.0.0
+[0.99.12]: https://github.com/async-rs/async-std/compare/v0.99.11...v0.99.12
+[0.99.11]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
 [0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.9...v0.99.10
 [0.99.9]: https://github.com/async-rs/async-std/compare/v0.99.8...v0.99.9
 [0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8

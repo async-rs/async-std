@@ -65,10 +65,10 @@ pub trait Extend<A> {
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub async fn extend<'a, C, A, T>(collection: &mut C, stream: T)
+pub async fn extend<'a, C, T, S>(collection: &mut C, stream: S)
 where
-    C: Extend<A>,
-    T: IntoStream<Item = A> + 'a,
+    C: Extend<T>,
+    S: IntoStream<Item = T> + 'a,
 {
     Extend::extend(collection, stream).await
 }

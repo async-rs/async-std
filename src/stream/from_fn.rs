@@ -1,27 +1,20 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
-use std::future::Future;
-
-use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-pin_project! {
-    /// A stream that yields elements by calling a closure.
-    ///
-    /// This stream is created by the [`from_fn`] function. See its
-    /// documentation for more.
-    ///
-    /// [`from_fn`]: fn.from_fn.html
-    #[derive(Debug)]
-    pub struct FromFn<F, Fut, T> {
-        f: F,
-        #[pin]
-        future: Option<Fut>,
-        __t: PhantomData<T>,
-    }
+/// A stream that yields elements by calling a closure.
+///
+/// This stream is created by the [`from_fn`] function. See its
+/// documentation for more.
+///
+/// [`from_fn`]: fn.from_fn.html
+#[derive(Clone, Debug)]
+pub struct FromFn<F> {
+    f: F,
 }
+
+impl<F> Unpin for FromFn<F> {}
 
 /// Creates a new stream where to produce each new element a provided closure is called.
 ///
@@ -34,22 +27,15 @@ pin_project! {
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
-/// use async_std::sync::Mutex;
-/// use std::sync::Arc;
 /// use async_std::stream;
 ///
-/// let count = Arc::new(Mutex::new(0u8));
+/// let mut count = 0u8;
 /// let s = stream::from_fn(|| {
-///     let count = Arc::clone(&count);
-///
-///     async move {
-///         *count.lock().await += 1;
-///
-///         if *count.lock().await > 3 {
-///             None
-///         } else {
-///             Some(*count.lock().await)
-///         }
+///     count += 1;
+///     if count > 3 {
+///         None
+///     } else {
+///         Some(count)
 ///     }
 /// });
 ///
@@ -61,38 +47,21 @@ pin_project! {
 /// #
 /// # })
 /// ```
-pub fn from_fn<T, F, Fut>(f: F) -> FromFn<F, Fut, T>
+pub fn from_fn<T, F>(f: F) -> FromFn<F>
 where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Option<T>>,
+    F: FnMut() -> Option<T>,
 {
-    FromFn {
-        f,
-        future: None,
-        __t: PhantomData,
-    }
+    FromFn { f }
 }
 
-impl<F, Fut, T> Stream for FromFn<F, Fut, T>
+impl<T, F> Stream for FromFn<F>
 where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Option<T>>,
+    F: FnMut() -> Option<T>,
 {
     type Item = T;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut this = self.project();
-        loop {
-            if this.future.is_some() {
-                let next =
-                    futures_core::ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
-                this.future.set(None);
-
-                return Poll::Ready(next);
-            } else {
-                let fut = (this.f)();
-                this.future.set(Some(fut));
-            }
-        }
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let item = (&mut self.f)();
+        Poll::Ready(item)
     }
 }

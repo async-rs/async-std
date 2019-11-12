@@ -290,6 +290,7 @@ extension_trait! {
             Creates a stream that yields elements based on a predicate.
 
             # Examples
+
             ```
             # fn main() { async_std::task::block_on(async {
             #
@@ -302,12 +303,11 @@ extension_trait! {
             assert_eq!(s.next().await, Some(1));
             assert_eq!(s.next().await, Some(2));
             assert_eq!(s.next().await, None);
-
             #
             # }) }
             ```
         "#]
-        fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P, Self::Item>
+        fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P>
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -447,10 +447,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn cloned<'a,T>(self) -> Cloned<Self>
+        fn cloned<'a, T>(self) -> Cloned<Self>
         where
             Self: Sized + Stream<Item = &'a T>,
-            T : 'a + Clone,
+            T: Clone + 'a,
         {
             Cloned::new(self)
         }
@@ -480,10 +480,10 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn copied<'a,T>(self) -> Copied<Self>
+        fn copied<'a, T>(self) -> Copied<Self>
         where
             Self: Sized + Stream<Item = &'a T>,
-            T : 'a + Copy,
+            T: Copy + 'a,
         {
             Copied::new(self)
         }
@@ -512,10 +512,9 @@ extension_trait! {
             # })
             ```
         "#]
-        fn cycle(self) -> Cycle<Self, Self::Item>
-            where
-                Self: Sized,
-                Self::Item: Clone,
+        fn cycle(self) -> Cycle<Self>
+        where
+            Self: Clone + Sized,
         {
             Cycle::new(self)
         }
@@ -542,7 +541,6 @@ extension_trait! {
             assert_eq!(s.next().await, Some((1, 'b')));
             assert_eq!(s.next().await, Some((2, 'c')));
             assert_eq!(s.next().await, None);
-
             #
             # }) }
             ```
@@ -577,7 +575,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn map<B, F>(self, f: F) -> Map<Self, F, Self::Item, B>
+        fn map<B, F>(self, f: F) -> Map<Self, F>
         where
             Self: Sized,
             F: FnMut(Self::Item) -> B,
@@ -602,17 +600,18 @@ extension_trait! {
             let s = stream::from_iter(vec![1, 2, 3, 4, 5]);
 
             let sum = s
-                    .inspect(|x| println!("about to filter {}", x))
-                    .filter(|x| x % 2 == 0)
-                    .inspect(|x| println!("made it through filter: {}", x))
-                    .fold(0, |sum, i| sum + i).await;
+               .inspect(|x| println!("about to filter {}", x))
+               .filter(|x| x % 2 == 0)
+               .inspect(|x| println!("made it through filter: {}", x))
+               .fold(0, |sum, i| sum + i)
+               .await;
 
             assert_eq!(sum, 6);
             #
             # }) }
             ```
         "#]
-        fn inspect<F>(self, f: F) -> Inspect<Self, F, Self::Item>
+        fn inspect<F>(self, f: F) -> Inspect<Self, F>
         where
             Self: Sized,
             F: FnMut(&Self::Item),
@@ -655,7 +654,6 @@ extension_trait! {
             #
             # }) }
             ```
-
         "#]
         fn last(
             self,
@@ -722,7 +720,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn filter<P>(self, predicate: P) -> Filter<Self, P, Self::Item>
+        fn filter<P>(self, predicate: P) -> Filter<Self, P>
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -758,7 +756,7 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, Self::Item, F>
+        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
             where
                 Self: Sized,
                 U: IntoStream,
@@ -792,7 +790,7 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn flatten(self) -> Flatten<Self, Self::Item>
+        fn flatten(self) -> Flatten<Self>
         where
             Self: Sized,
             Self::Item: IntoStream,
@@ -833,7 +831,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F, Self::Item, B>
+        fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F>
         where
             Self: Sized,
             F: FnMut(Self::Item) -> Option<B>,
@@ -841,7 +839,7 @@ extension_trait! {
             FilterMap::new(self, f)
         }
 
-         #[doc = r#"
+        #[doc = r#"
             Returns the element that gives the minimum value with respect to the
             specified key function. If several elements are equally minimum,
             the first element is returned. If the stream is empty, `None` is returned.
@@ -865,19 +863,19 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn min_by_key<K>(
+        fn min_by_key<B, F>(
             self,
-            key_by: K,
-        ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, K>]
+            key_by: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, F>]
         where
             Self: Sized,
-            Self::Item: Ord,
-            K: FnMut(&Self::Item) -> Self::Item,
+            B: Ord,
+            F: FnMut(&Self::Item) -> B,
         {
             MinByKeyFuture::new(self, key_by)
         }
 
-         #[doc = r#"
+        #[doc = r#"
             Returns the element that gives the maximum value with respect to the
             specified key function. If several elements are equally maximum,
             the first element is returned. If the stream is empty, `None` is returned.
@@ -901,14 +899,14 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn max_by_key<K>(
+        fn max_by_key<B, F>(
             self,
-            key_by: K,
-        ) -> impl Future<Output = Option<Self::Item>> [MaxByKeyFuture<Self, Self::Item, K>]
+            key_by: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByKeyFuture<Self, Self::Item, F>]
         where
             Self: Sized,
-            Self::Item: Ord,
-            K: FnMut(&Self::Item) -> Self::Item,
+            B: Ord,
+            F: FnMut(&Self::Item) -> B,
         {
             MaxByKeyFuture::new(self, key_by)
         }
@@ -1080,7 +1078,7 @@ extension_trait! {
             n: usize,
         ) -> impl Future<Output = Option<Self::Item>> + '_ [NthFuture<'_, Self>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
         {
             NthFuture::new(self, n)
         }
@@ -1188,9 +1186,9 @@ extension_trait! {
         fn find<P>(
             &mut self,
             p: P,
-        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             P: FnMut(&Self::Item) -> bool,
         {
             FindFuture::new(self, p)
@@ -1216,9 +1214,9 @@ extension_trait! {
         fn find_map<F, B>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Self::Item, B>]
+        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Option<B>,
         {
             FindMapFuture::new(self, f)
@@ -1250,7 +1248,7 @@ extension_trait! {
             self,
             init: B,
             f: F,
-        ) -> impl Future<Output = B> [FoldFuture<Self, F, Self::Item, B>]
+        ) -> impl Future<Output = B> [FoldFuture<Self, F, B>]
         where
             Self: Sized,
             F: FnMut(B, Self::Item) -> B,
@@ -1285,7 +1283,7 @@ extension_trait! {
         fn for_each<F>(
             self,
             f: F,
-        ) -> impl Future<Output = ()> [ForEachFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = ()> [ForEachFuture<Self, F>]
         where
             Self: Sized,
             F: FnMut(Self::Item),
@@ -1426,7 +1424,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn skip_while<P>(self, predicate: P) -> SkipWhile<Self, P, Self::Item>
+        fn skip_while<P>(self, predicate: P) -> SkipWhile<Self, P>
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -1509,7 +1507,7 @@ extension_trait! {
             use async_std::prelude::*;
             use async_std::stream;
 
-            let s = stream::from_iter(vec![1usize, 2, 3]);
+            let mut s = stream::from_iter(vec![1usize, 2, 3]);
             let sum = s.try_fold(0, |acc, v| {
                 if (acc+v) % 2 == 1 {
                     Ok(v+3)
@@ -1524,12 +1522,12 @@ extension_trait! {
             ```
         "#]
         fn try_fold<B, F, T, E>(
-            self,
+            &mut self,
             init: T,
             f: F,
-        ) -> impl Future<Output = Result<T, E>> [TryFoldFuture<Self, F, T>]
+        ) -> impl Future<Output = Result<T, E>> + '_ [TryFoldFuture<'_, Self, F, T>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             F: FnMut(B, Self::Item) -> Result<T, E>,
         {
             TryFoldFuture::new(self, init, f)
@@ -1549,7 +1547,7 @@ extension_trait! {
 
             let (tx, rx) = channel();
 
-            let s = stream::from_iter(vec![1u8, 2, 3]);
+            let mut s = stream::from_iter(vec![1u8, 2, 3]);
             let s = s.try_for_each(|v| {
                 if v % 2 == 1 {
                     tx.clone().send(v).unwrap();
@@ -1570,11 +1568,11 @@ extension_trait! {
             ```
         "#]
         fn try_for_each<F, E>(
-            self,
+            &mut self,
             f: F,
-        ) -> impl Future<Output = E> [TryForEachFuture<Self, F, Self::Item, E>]
+        ) -> impl Future<Output = E> + 'a [TryForEachFuture<'_, Self, F>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
         {
             TryForEachFuture::new(self, f)
@@ -1619,7 +1617,7 @@ extension_trait! {
         #[inline]
         fn zip<U>(self, other: U) -> Zip<Self, U>
         where
-            Self: Sized + Stream,
+            Self: Sized,
             U: Stream,
         {
             Zip::new(self, other)
@@ -1678,7 +1676,6 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
         fn collect<'a, B>(
             self,
         ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a>>]
@@ -1777,28 +1774,28 @@ extension_trait! {
             use async_std::stream;
 
             let s = stream::from_iter(vec![1usize, 2, 3]);
-            let res = s.clone().position(|x| *x == 1).await;
+            let res = s.clone().position(|x| x == 1).await;
             assert_eq!(res, Some(0));
 
-            let res = s.clone().position(|x| *x == 2).await;
+            let res = s.clone().position(|x| x == 2).await;
             assert_eq!(res, Some(1));
 
-            let res = s.clone().position(|x| *x == 3).await;
+            let res = s.clone().position(|x| x == 3).await;
             assert_eq!(res, Some(2));
 
-            let res = s.clone().position(|x| *x == 4).await;
+            let res = s.clone().position(|x| x == 4).await;
             assert_eq!(res, None);
             #
             # }) }
             ```
         "#]
         fn position<P>(
-           self,
-           predicate: P
-        ) -> impl Future<Output = Option<usize>>  [PositionFuture<Self, P>]
+           &mut self,
+           predicate: P,
+        ) -> impl Future<Output = Option<usize>> + '_ [PositionFuture<'_, Self, P>]
         where
-            Self: Sized,
-            P: FnMut(&Self::Item) -> bool,
+            Self: Unpin + Sized,
+            P: FnMut(Self::Item) -> bool,
         {
             PositionFuture::new(self, predicate)
         }
@@ -1842,10 +1839,12 @@ extension_trait! {
             CmpFuture::new(self, other)
         }
 
-           #[doc = r#"
+        #[doc = r#"
             Determines if the elements of this `Stream` are lexicographically
             not equal to those of another.
+
             # Examples
+
             ```
             # fn main() { async_std::task::block_on(async {
             #
@@ -1870,7 +1869,7 @@ extension_trait! {
            other: S
         ) -> impl Future<Output = bool> [NeFuture<Self, S>]
         where
-            Self: Sized + Stream,
+            Self: Sized,
             S: Sized + Stream,
             <Self as Stream>::Item: PartialEq<S::Item>,
         {
@@ -2063,11 +2062,11 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Sums the elements of an iterator.
+            Sums the elements of a stream.
 
             Takes each element, adds them together, and returns the result.
 
-            An empty iterator returns the zero value of the type.
+            An empty streams returns the zero value of the type.
 
             # Panics
 
@@ -2100,15 +2099,15 @@ extension_trait! {
         ) -> impl Future<Output = S> + 'a [Pin<Box<dyn Future<Output = S> + 'a>>]
         where
             Self: Sized + Stream<Item = S> + 'a,
-            S: Sum,
+            S: Sum<Self::Item>,
         {
             Sum::sum(self)
         }
 
         #[doc = r#"
-            Iterates over the entire iterator, multiplying all the elements
+            Multiplies all elements of the stream.
 
-            An empty iterator returns the one value of the type.
+            An empty stream returns the one value of the type.
 
             # Panics
 

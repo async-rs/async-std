@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -7,29 +6,21 @@ use pin_project_lite::pin_project;
 use crate::stream::Stream;
 
 pin_project! {
-    #[doc(hidden)]
-    #[allow(missing_debug_implementations)]
-    pub struct FilterMap<S, F, T, B> {
+    #[derive(Debug)]
+    pub struct FilterMap<S, F> {
         #[pin]
         stream: S,
         f: F,
-        __from: PhantomData<T>,
-        __to: PhantomData<B>,
     }
 }
 
-impl<S, F, T, B> FilterMap<S, F, T, B> {
+impl<S, F> FilterMap<S, F> {
     pub(crate) fn new(stream: S, f: F) -> Self {
-        FilterMap {
-            stream,
-            f,
-            __from: PhantomData,
-            __to: PhantomData,
-        }
+        FilterMap { stream, f }
     }
 }
 
-impl<S, F, B> Stream for FilterMap<S, F, S::Item, B>
+impl<S, F, B> Stream for FilterMap<S, F>
 where
     S: Stream,
     F: FnMut(S::Item) -> Option<B>,

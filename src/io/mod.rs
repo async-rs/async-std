@@ -19,8 +19,8 @@
 //! [`File`]s:
 //!
 //! ```no_run
-//! use async_std::prelude::*;
 //! use async_std::fs::File;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -47,9 +47,9 @@
 //! coming from:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::SeekFrom;
 //! use async_std::fs::File;
+//! use async_std::io::SeekFrom;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -82,9 +82,9 @@
 //! methods to any reader:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::BufReader;
 //! use async_std::fs::File;
+//! use async_std::io::BufReader;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -104,9 +104,9 @@
 //! to [`write`][`Write::write`]:
 //!
 //! ```no_run
-//! use async_std::io::prelude::*;
-//! use async_std::io::BufWriter;
 //! use async_std::fs::File;
+//! use async_std::io::BufWriter;
+//! use async_std::io::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -179,9 +179,9 @@
 //! lines:
 //!
 //! ```no_run
-//! use async_std::prelude::*;
-//! use async_std::io::BufReader;
 //! use async_std::fs::File;
+//! use async_std::io::BufReader;
+//! use async_std::prelude::*;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
