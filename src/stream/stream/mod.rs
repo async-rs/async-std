@@ -325,19 +325,32 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use async_std::stream;
-            use std::time::Duration;
+            use std::time::{Duration, Instant};
 
-            // emit value every 1 second
-            let s = stream::interval(Duration::from_millis(5)).enumerate().take(3);
+            // emit value every 5 milliseconds
+            let s = stream::interval(Duration::from_millis(5))
+                .enumerate()
+                .take(3);
 
-            // throttle for 2 seconds
+            // throttle for 10 milliseconds
             let mut s = s.throttle(Duration::from_millis(10));
 
+            let start = Instant::now();
             assert_eq!(s.next().await, Some((0, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 5 && duration_ms < 15);
+
             assert_eq!(s.next().await, Some((1, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 15 && duration_ms < 25);
+
             assert_eq!(s.next().await, Some((2, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 25 && duration_ms < 35);
+
             assert_eq!(s.next().await, None);
-            // with a pause of 2 seconds between each print
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 35 && duration_ms < 45);
             #
             # }) }
             ```

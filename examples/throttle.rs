@@ -11,7 +11,7 @@ fn main() {
             use std::time::Duration;
 
             // emit value every 1 second
-            let s = stream::interval(Duration::from_nanos(1000000)).enumerate();
+            let s = stream::interval(Duration::from_secs(1)).enumerate();
 
             // throttle for 2 seconds
             let s = s.throttle(Duration::from_secs(2));
