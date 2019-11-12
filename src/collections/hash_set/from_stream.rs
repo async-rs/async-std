@@ -17,8 +17,6 @@ where
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = HashSet::with_hasher(Default::default());
             stream::extend(&mut out, stream).await;
             out

@@ -30,7 +30,7 @@ impl<F> Unpin for FromFn<F> {}
 /// use async_std::stream;
 ///
 /// let mut count = 0u8;
-/// let s = stream::from_fn(|| {
+/// let mut s = stream::from_fn(|| {
 ///     count += 1;
 ///     if count > 3 {
 ///         None
@@ -39,7 +39,6 @@ impl<F> Unpin for FromFn<F> {}
 ///     }
 /// });
 ///
-/// pin_utils::pin_mut!(s);
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(2));
 /// assert_eq!(s.next().await, Some(3));

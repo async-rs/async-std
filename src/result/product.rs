@@ -39,8 +39,6 @@ where
         where S: Stream<Item = Result<U, E>> + 'a
     {
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = None;

@@ -12,8 +12,6 @@ impl<T: Ord> FromStream<T> for BinaryHeap<T> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = BinaryHeap::new();
             stream::extend(&mut out, stream).await;
             out

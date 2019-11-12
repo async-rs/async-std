@@ -17,8 +17,6 @@ impl<T> FromStream<T> for Vec<T> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = vec![];
             stream::extend(&mut out, stream).await;
             out
@@ -34,8 +32,6 @@ impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             Cow::Owned(FromStream::from_stream(stream).await)
         })
     }
@@ -49,8 +45,6 @@ impl<T> FromStream<T> for Box<[T]> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into_boxed_slice()
         })
     }
@@ -64,8 +58,6 @@ impl<T> FromStream<T> for Rc<[T]> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into()
         })
     }
@@ -79,8 +71,6 @@ impl<T> FromStream<T> for Arc<[T]> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             Vec::from_stream(stream).await.into()
         })
     }

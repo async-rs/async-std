@@ -9,8 +9,8 @@ impl stream::Extend<()> for () {
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
         let stream = stream.into_stream();
+
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
             while let Some(_) = stream.next().await {}
         })
     }

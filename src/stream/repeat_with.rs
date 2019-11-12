@@ -28,9 +28,7 @@ impl<F> Unpin for RepeatWith<F> {}
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::repeat_with(|| 1);
-///
-/// pin_utils::pin_mut!(s);
+/// let mut s = stream::repeat_with(|| 1);
 ///
 /// assert_eq!(s.next().await, Some(1));
 /// assert_eq!(s.next().await, Some(1));
