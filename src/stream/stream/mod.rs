@@ -319,23 +319,23 @@ extension_trait! {
             Limit the amount of items yielded per timeslice in a stream.
 
             # Examples
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
+            use async_std::prelude::*;
             use async_std::stream;
             use std::time::Duration;
 
             // emit value every 1 second
-            let s = stream::interval(Duration::from_nanos(1000000)).enumerate();
+            let s = stream::interval(Duration::from_millis(5)).enumerate().take(3);
 
             // throttle for 2 seconds
-            let s = s.throttle(Duration::from_secs(2));
+            let mut s = s.throttle(Duration::from_millis(10));
 
-            s.for_each(|(n, _)| {
-                dbg!(n);
-            })
-            .await;
-            // => 0 .. 1 .. 2 .. 3
+            assert_eq!(s.next().await, Some((0, ())));
+            assert_eq!(s.next().await, Some((1, ())));
+            assert_eq!(s.next().await, Some((2, ())));
+            assert_eq!(s.next().await, None);
             // with a pause of 2 seconds between each print
             #
             # }) }
