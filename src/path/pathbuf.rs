@@ -327,6 +327,8 @@ impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
         let stream = stream.into_stream();
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push(item.as_ref());
             }

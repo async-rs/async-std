@@ -13,6 +13,8 @@ impl stream::Extend<char> for String {
         self.reserve(stream.size_hint().0);
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push(item);
             }
@@ -28,6 +30,8 @@ impl<'b> stream::Extend<&'b char> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push(*item);
             }
@@ -43,6 +47,8 @@ impl<'b> stream::Extend<&'b str> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push_str(item);
             }
@@ -58,6 +64,8 @@ impl stream::Extend<String> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push_str(&item);
             }
@@ -73,6 +81,8 @@ impl<'b> stream::Extend<Cow<'b, str>> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
+            pin_utils::pin_mut!(stream);
+
             while let Some(item) = stream.next().await {
                 self.push_str(&item);
             }
