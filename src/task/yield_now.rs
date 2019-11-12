@@ -26,8 +26,6 @@ use crate::task::{Context, Poll};
 /// #
 /// # })
 /// ```
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
 pub async fn yield_now() {
     YieldNow(false).await

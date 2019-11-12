@@ -124,6 +124,9 @@ cfg_std! {
 
     #[doc(inline)]
     pub use async_macros::ready;
+
+    pub use yield_now::yield_now;
+    mod yield_now;
 }
 
 cfg_default! {
@@ -156,9 +159,4 @@ cfg_default! {
     pub use spawn_blocking::spawn_blocking;
     #[cfg(not(any(feature = "unstable", test)))]
     pub(crate) use spawn_blocking::spawn_blocking;
-}
-
-cfg_unstable! {
-    pub use yield_now::yield_now;
-    mod yield_now;
 }
