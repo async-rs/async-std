@@ -33,15 +33,11 @@ default = [
   "mio-uds",
   "num_cpus",
   "pin-project-lite",
-  "serde-support",
+  "serde",
 ]
 docs = ["attributes", "unstable"]
 unstable = ["default", "broadcaster"]
 attributes = ["async-attributes"]
-serde-support = [
-  "default",
-  "serde",
-]
 std = [
   "async-macros",
   "crossbeam-utils",
