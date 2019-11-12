@@ -28,9 +28,11 @@ use crate::task::{Context, Poll, Task, Waker};
 /// ```no_run
 /// use async_std::task;
 ///
-/// task::block_on(async {
-///     println!("Hello, world!");
-/// })
+/// fn main() {
+///     task::block_on(async {
+///         println!("Hello, world!");
+///     })
+/// }
 /// ```
 pub fn block_on<F, T>(future: F) -> T
 where
