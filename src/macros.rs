@@ -23,8 +23,8 @@
 /// ```
 /// # async_std::task::block_on(async {
 /// #
-/// use async_std::prelude::*;
 /// use async_std::io;
+/// use async_std::prelude::*;
 /// use async_std::print;
 ///
 /// print!("this ").await;
@@ -181,8 +181,8 @@ macro_rules! eprintln {
 /// #
 /// use std::cell::Cell;
 ///
-/// use async_std::task;
 /// use async_std::prelude::*;
+/// use async_std::task;
 ///
 /// task_local! {
 ///     static VAL: Cell<u32> = Cell::new(5);
