@@ -171,6 +171,18 @@
 //! features = ["attributes"]
 //! ```
 //!
+//! When the `serde` feature is enabled, it is possible to use `async_std` types such as [`path::PathBuf`]
+//! within types that are serialized or deserialized using [`serde`] compatible crates.
+//!
+//! [`serde`]: https://serde.rs
+//! [`path::PathBuf`]: path/struct.PathBuf.html
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.0.0"
+//! features = ["serde"]
+//! ```
+//!
 //! Additionally it's possible to only use the core traits and combinators by
 //! only enabling the `std` Cargo feature:
 //!
