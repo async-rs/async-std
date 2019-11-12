@@ -9,7 +9,13 @@ use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
-    /// A stream that only yields one element once every `duration`, and applies backpressure. Does not drop any elements.
+    /// A stream that only yields one element once every `duration`.
+    ///
+    /// This `struct` is created by the [`throttle`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`throttle`]: trait.Stream.html#method.throttle
+    /// [`Stream`]: trait.Stream.html
     #[doc(hidden)]
     #[allow(missing_debug_implementations)]
     pub struct Throttle<S> {
