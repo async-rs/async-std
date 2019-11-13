@@ -12,8 +12,6 @@ impl<T> FromStream<T> for LinkedList<T> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = LinkedList::new();
             stream::extend(&mut out, stream).await;
             out

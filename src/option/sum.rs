@@ -34,8 +34,6 @@ where
         where S: Stream<Item = Option<U>> + 'a
     {
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_none = false;

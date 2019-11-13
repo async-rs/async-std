@@ -17,8 +17,6 @@ where
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = false;

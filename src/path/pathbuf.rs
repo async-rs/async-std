@@ -342,10 +342,9 @@ impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
     fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
         stream: S,
     ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
-        Box::pin(async move {
-            let stream = stream.into_stream();
-            pin_utils::pin_mut!(stream);
+        let stream = stream.into_stream();
 
+        Box::pin(async move {
             let mut out = Self::new();
             stream::extend(&mut out, stream).await;
             out

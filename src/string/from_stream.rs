@@ -12,8 +12,6 @@ impl FromStream<char> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = String::new();
             stream::extend(&mut out, stream).await;
             out
@@ -29,8 +27,6 @@ impl<'b> FromStream<&'b char> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = String::new();
             stream::extend(&mut out, stream).await;
             out
@@ -46,8 +42,6 @@ impl<'b> FromStream<&'b str> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = String::new();
             stream::extend(&mut out, stream).await;
             out
@@ -63,8 +57,6 @@ impl FromStream<String> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = String::new();
             stream::extend(&mut out, stream).await;
             out
@@ -80,8 +72,6 @@ impl<'b> FromStream<Cow<'b, str>> for String {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = String::new();
             stream::extend(&mut out, stream).await;
             out

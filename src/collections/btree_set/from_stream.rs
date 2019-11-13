@@ -12,8 +12,6 @@ impl<T: Ord> FromStream<T> for BTreeSet<T> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             let mut out = BTreeSet::new();
             stream::extend(&mut out, stream).await;
             out
