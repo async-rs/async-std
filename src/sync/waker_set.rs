@@ -60,6 +60,7 @@ impl WakerSet {
     }
 
     /// Inserts a waker for a blocked operation and returns a key associated with it.
+    #[cold]
     pub fn insert(&self, cx: &Context<'_>) -> usize {
         let w = cx.waker().clone();
         let mut inner = self.lock();
@@ -70,6 +71,7 @@ impl WakerSet {
     }
 
     /// Removes the waker of an operation.
+    #[cold]
     pub fn remove(&self, key: usize) {
         let mut inner = self.lock();
 
@@ -81,6 +83,7 @@ impl WakerSet {
     /// Removes the waker of a cancelled operation.
     ///
     /// Returns `true` if another blocked operation from the set was notified.
+    #[cold]
     pub fn cancel(&self, key: usize) -> bool {
         let mut inner = self.lock();
 
@@ -147,6 +150,7 @@ impl WakerSet {
     /// Notifies blocked operations, either one or all of them.
     ///
     /// Returns `true` if at least one operation was notified.
+    #[cold]
     fn notify(&self, n: Notify) -> bool {
         let mut inner = &mut *self.lock();
         let mut notified = false;
@@ -172,7 +176,6 @@ impl WakerSet {
     }
 
     /// Locks the list of entries.
-    #[cold]
     fn lock(&self) -> Lock<'_> {
         let backoff = Backoff::new();
         while self.flag.fetch_or(LOCKED, Ordering::Acquire) & LOCKED != 0 {

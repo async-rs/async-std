@@ -2,9 +2,7 @@
 
 extern crate test;
 
-use std::sync::Arc;
-
-use async_std::sync::Mutex;
+use async_std::sync::{Arc, Mutex};
 use async_std::task;
 use test::Bencher;
 

@@ -170,6 +170,7 @@ impl<T> Mutex<T> {
     /// #
     /// # })
     /// ```
+    #[inline]
     pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         if !self.locked.swap(true, Ordering::SeqCst) {
             Some(MutexGuard(self))
