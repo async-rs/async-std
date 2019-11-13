@@ -4,10 +4,8 @@ use std::pin::Pin;
 use pin_project_lite::pin_project;
 
 use crate::io::write::WriteExt;
-use crate::io::{self, Seek, SeekFrom, Write};
+use crate::io::{self, Seek, SeekFrom, Write, DEFAULT_BUF_SIZE};
 use crate::task::{Context, Poll, ready};
-
-const DEFAULT_CAPACITY: usize = 8 * 1024;
 
 pin_project! {
     /// Wraps a writer and buffers its output.
@@ -107,7 +105,7 @@ impl<W: Write> BufWriter<W> {
     /// # Ok(()) }) }
     /// ```
     pub fn new(inner: W) -> BufWriter<W> {
-        BufWriter::with_capacity(DEFAULT_CAPACITY, inner)
+        BufWriter::with_capacity(DEFAULT_BUF_SIZE, inner)
     }
 
     /// Creates a new `BufWriter` with the specified buffer capacity.

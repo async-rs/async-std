@@ -269,6 +269,8 @@
 //! [`Result`]: https://doc.rust-lang.org/std/result/enum.Result.html
 //! [`.unwrap()`]: https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap
 
+const DEFAULT_BUF_SIZE: usize = 8 * 1024;
+
 cfg_std! {
     #[doc(inline)]
     pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
