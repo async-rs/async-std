@@ -83,13 +83,14 @@ pub(crate) fn schedule(task: Runnable) {
                 if let Some(task) = proc.slot.replace(Some(task)) {
                     // If the slot already contained a task, push it into the local task queue.
                     proc.worker.push(task);
+                    POOL.sleepers.notify_one();
                 }
             }
-            None => POOL.injector.push(task),
+            None => {
+                POOL.injector.push(task);
+                POOL.sleepers.notify_one();
+            }
         }
-
-        // Notify a sleeping worker that new work just came in.
-        POOL.sleepers.notify_one();
     })
 }
 
