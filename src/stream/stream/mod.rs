@@ -27,6 +27,7 @@ mod chain;
 mod cloned;
 mod cmp;
 mod copied;
+mod count;
 mod cycle;
 mod enumerate;
 mod eq;
@@ -67,6 +68,7 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
+use count::CountFuture;
 use cycle::Cycle;
 use enumerate::Enumerate;
 use eq::EqFuture;
@@ -910,6 +912,35 @@ extension_trait! {
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
         {
             MinByFuture::new(self, compare)
+        }
+
+        #[doc = r#"
+            Counting the number of elements and returning it.
+
+            # Examples
+
+            ```ignore
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1, 2, 3]);
+
+            let count = s.count().await;
+            assert_eq!(count, 3);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn count<F>(
+            self,
+        ) -> impl Future<Output = usize> [CountFuture<Self>]
+        where
+            Self: Sized,
+        {
+            CountFuture::new(self)
         }
 
         #[doc = r#"
