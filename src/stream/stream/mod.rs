@@ -44,6 +44,7 @@ mod last;
 mod le;
 mod lt;
 mod map;
+mod max;
 mod max_by;
 mod max_by_key;
 mod min;
@@ -80,6 +81,7 @@ use gt::GtFuture;
 use last::LastFuture;
 use le::LeFuture;
 use lt::LtFuture;
+use max::MaxFuture;
 use max_by::MaxByFuture;
 use max_by_key::MaxByKeyFuture;
 use min::MinFuture;
@@ -913,6 +915,39 @@ extension_trait! {
         }
 
         #[doc = r#"
+            Returns the element that gives the maximum value. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```ignore
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1usize, 2, 3]);
+
+            let max = s.clone().max().await;
+            assert_eq!(max, Some(3));
+
+            let max = stream::empty::<usize>().max().await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max<F>(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MaxFuture::new(self)
+        }
+
+                #[doc = r#"
             Returns the element that gives the minimum value. If several elements are equally minimum,
             the first element is returned. If the stream is empty, `None` is returned.
 
