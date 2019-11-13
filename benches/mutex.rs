@@ -41,7 +41,7 @@ mod async_std {
     }
 }
 
- mod std {
+mod std {
     extern crate test;
 
     use std::sync::{Arc, Mutex};
@@ -80,13 +80,13 @@ mod async_std {
             t.join().unwrap();
         }
     }
- }
+}
 
- mod parking_lot {
+mod parking_lot {
     extern crate test;
 
-    use std::sync::Arc;
     use parking_lot::Mutex;
+    use std::sync::Arc;
     use std::thread;
     use test::Bencher;
 
@@ -122,4 +122,4 @@ mod async_std {
             t.join().unwrap();
         }
     }
- }
+}
