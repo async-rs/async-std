@@ -369,7 +369,7 @@ mod tests {
     #[test]
     fn test_write_by_ref() -> io::Result<()> {
         crate::task::block_on(async {
-            let mut f = io::Cursor::new(vec![0u8; 5]);
+            let mut f = io::Cursor::new(vec![]);
 
             {
                 let reference = io::write::WriteExt::by_ref(&mut f);
@@ -377,8 +377,10 @@ mod tests {
                 reference.write_all(b"hello").await?;
             } // drop our &mut reference so we can use f again
 
+            assert_eq!(f.position(), 5);
             // original file still usable, read the rest
             f.write_all(b" world").await?;
+            assert_eq!(f.position(), 11);
             Ok(())
         })
     }
