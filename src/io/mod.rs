@@ -277,7 +277,7 @@ cfg_std! {
 
     pub use buf_read::{BufRead, Lines};
     pub use buf_reader::BufReader;
-    pub use buf_writer::BufWriter;
+    pub use buf_writer::{BufWriter, IntoInnerError};
     pub use copy::copy;
     pub use cursor::Cursor;
     pub use empty::{empty, Empty};

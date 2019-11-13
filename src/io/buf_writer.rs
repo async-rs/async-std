@@ -85,8 +85,32 @@ pin_project! {
     }
 }
 
+/// An error returned by `into_inner` which combines an error that
+/// happened while writing out the buffer, and the buffered writer object
+/// which may be used to recover from the condition.
+///
+/// # Examples
+///
+/// ```no_run
+/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+/// use async_std::io::BufWriter;
+/// use async_std::net::TcpStream;
+///
+/// let buf_writer = BufWriter::new(TcpStream::connect("127.0.0.1:34251").await?);
+///
+/// // unwrap the TcpStream and flush the buffer
+/// let stream = match buf_writer.into_inner().await {
+///     Ok(s) => s,
+///     Err(e) => {
+///         // Here, e is an IntoInnerError
+///         panic!("An error occurred");
+///     }
+/// };
+/// #
+/// # Ok(()) }) }
+///```
 #[derive(Debug)]
-pub struct IntoInnerError<W>(W, std::io::Error);
+pub struct IntoInnerError<W>(W, crate::io::Error);
 
 impl<W: Write> BufWriter<W> {
     /// Creates a new `BufWriter` with a default buffer capacity. The default is currently 8 KB,
