@@ -1,9 +1,8 @@
 use std::pin::Pin;
 use std::mem;
 
-use crate::future::Future;
 use crate::stream::Stream;
-use crate::task::{Context, Poll, ready};
+use crate::task::{Context, Poll};
 
 use pin_project_lite::pin_project;
 
@@ -18,11 +17,7 @@ use pin_project_lite::pin_project;
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::successors(Some(22), |&val| {
-///     async move {
-///         Some(val + 1)
-///     }
-/// });
+/// let s = stream::successors(Some(22), |&val| Some(val + 1) );
 ///
 /// pin_utils::pin_mut!(s);
 /// assert_eq!(s.next().await, Some(22));
@@ -30,30 +25,18 @@ use pin_project_lite::pin_project;
 /// assert_eq!(s.next().await, Some(24));
 /// assert_eq!(s.next().await, Some(25));
 ///
-///
-///let never = stream::successors(None, |_| {
-///     async move {
-///         Some(1)
-///     }
-/// });
-///
-/// pin_utils::pin_mut!(never);
-/// assert_eq!(never.next().await, None);
-/// assert_eq!(never.next().await, None);
 /// #
 /// # }) }
 ///
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub fn successors<F, Fut, T>(first: Option<T>, succ: F) -> Successors<F, Fut, T>
+pub fn successors<F, T>(first: Option<T>, succ: F) -> Successors<F, T>
 where
-    F: FnMut(&T) -> Fut,
-    Fut: Future<Output = Option<T>>,
+    F: FnMut(&T) -> Option<T>,
 {
     Successors {
-        succ: succ,
-        future: None,
+        succ,
         slot: first,
     }
 }
@@ -68,39 +51,29 @@ pin_project! {
     #[cfg(feature = "unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]
-    pub struct Successors<F, Fut, T>
+    pub struct Successors<F, T>
     where
-        Fut: Future<Output = Option<T>>,
+        F: FnMut(&T) -> Option<T>
     {
         succ: F,
-        #[pin]
-        future: Option<Fut>,
         slot: Option<T>,
     }
 }
 
-impl<F, Fut, T> Stream for Successors<F, Fut, T>
+impl<F, T> Stream for Successors<F, T>
 where
-    Fut: Future<Output = Option<T>>,
-    F: FnMut(&T) -> Fut,
+    F: FnMut(&T) -> Option<T>,
 {
     type Item = T;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut this = self.project();
+    fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
 
         if this.slot.is_none() {
             return Poll::Ready(None);
         }
 
-        if this.future.is_none() {
-            let fut = (this.succ)(this.slot.as_ref().unwrap());
-            this.future.set(Some(fut));
-        }
-
-        let mut next = ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
-
-        this.future.set(None);
+        let mut next = (this.succ)(&this.slot.as_ref().unwrap());
 
         // 'swapping' here means 'slot' will hold the next value and next will be th one from the previous iteration
         mem::swap(this.slot, &mut next);
