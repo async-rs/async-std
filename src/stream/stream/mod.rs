@@ -1824,7 +1824,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn count(self) -> impl Future<Output = Ordering> [CountFuture<Self>]
+        fn count(self) -> impl Future<Output = usize> [CountFuture<Self>]
         where
             Self: Sized,
         {
