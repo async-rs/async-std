@@ -123,11 +123,13 @@ cfg_unstable! {
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
+    pub use throttle::Throttle;
 
     mod merge;
     mod flatten;
     mod flat_map;
     mod timeout;
+    mod throttle;
 }
 
 extension_trait! {
@@ -311,6 +313,56 @@ extension_trait! {
             P: FnMut(&Self::Item) -> bool,
         {
             TakeWhile::new(self, predicate)
+        }
+
+        #[doc = r#"
+            Limit the amount of items yielded per timeslice in a stream.
+
+            This stream does not drop any items, but will only limit the rate at which items pass through.
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::time::{Duration, Instant};
+
+            let start = Instant::now();
+
+            // emit value every 5 milliseconds
+            let s = stream::interval(Duration::from_millis(5))
+                .enumerate()
+                .take(3);
+
+            // throttle for 10 milliseconds
+            let mut s = s.throttle(Duration::from_millis(10));
+
+            assert_eq!(s.next().await, Some((0, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 5);
+
+            assert_eq!(s.next().await, Some((1, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 15);
+
+            assert_eq!(s.next().await, Some((2, ())));
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 25);
+
+            assert_eq!(s.next().await, None);
+            let duration_ms = start.elapsed().as_millis();
+            assert!(duration_ms >= 35);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn throttle(self, d: Duration) -> Throttle<Self>
+        where
+            Self: Sized,
+        {
+            Throttle::new(self, d)
         }
 
         #[doc = r#"
