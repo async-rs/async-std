@@ -26,7 +26,6 @@ mod any;
 mod chain;
 mod cloned;
 mod cmp;
-mod count;
 mod copied;
 mod cycle;
 mod enumerate;
@@ -69,7 +68,6 @@ mod zip;
 use all::AllFuture;
 use any::AnyFuture;
 use cmp::CmpFuture;
-use count::CountFuture;
 use cycle::Cycle;
 use enumerate::Enumerate;
 use eq::EqFuture;
@@ -123,12 +121,14 @@ cfg_unstable! {
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
 
+    use count::CountFuture;
     pub use merge::Merge;
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
 
+    mod count;
     mod merge;
     mod flatten;
     mod flat_map;
@@ -1911,6 +1911,8 @@ extension_trait! {
             # }) }
             ```
         "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn count(self) -> impl Future<Output = usize> [CountFuture<Self>]
         where
             Self: Sized,
