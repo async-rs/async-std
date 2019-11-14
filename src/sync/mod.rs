@@ -187,7 +187,7 @@ cfg_unstable! {
     pub use channel::{channel, Sender, Receiver};
 
     mod barrier;
-    mod channel;
+    pub mod channel;
 }
 
 pub(crate) mod waker_set;
