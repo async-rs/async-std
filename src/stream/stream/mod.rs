@@ -327,6 +327,8 @@ extension_trait! {
             use async_std::stream;
             use std::time::{Duration, Instant};
 
+            let start = Instant::now();
+
             // emit value every 5 milliseconds
             let s = stream::interval(Duration::from_millis(5))
                 .enumerate()
@@ -335,7 +337,6 @@ extension_trait! {
             // throttle for 10 milliseconds
             let mut s = s.throttle(Duration::from_millis(10));
 
-            let start = Instant::now();
             assert_eq!(s.next().await, Some((0, ())));
             let duration_ms = start.elapsed().as_millis();
             assert!(duration_ms >= 5);
