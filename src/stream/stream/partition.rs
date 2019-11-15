@@ -1,14 +1,13 @@
+use pin_project_lite::pin_project;
+use std::default::Default;
 use std::future::Future;
 use std::pin::Pin;
-use std::default::Default;
-use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
 pin_project! {
     #[derive(Debug)]
-    #[allow(missing_debug_implementations)]
     #[cfg(all(feature = "default", feature = "unstable"))]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     pub struct PartitionFuture<S, F, B> {
@@ -46,10 +45,12 @@ where
             match next {
                 Some(v) => {
                     let mut res = this.res.take().unwrap();
-                    match (this.f)(&v) {
-                        true => res.0.extend(Some(v)),
-                        false => res.1.extend(Some(v)),
-                    };
+
+                    if (this.f)(&v) {
+                        res.0.extend(Some(v))
+                    } else {
+                        res.1.extend(Some(v))
+                    }
 
                     *this.res = Some(res);
                 }
