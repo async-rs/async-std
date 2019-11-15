@@ -45,13 +45,11 @@ where
 
             match next {
                 Some(v) => {
-                    let mut res = this.res.take().unwrap();
+                    let res = this.res.as_mut().unwrap();
                     match (this.f)(&v) {
                         true => res.0.extend(Some(v)),
                         false => res.1.extend(Some(v)),
                     };
-
-                    *this.res = Some(res);
                 }
                 None => return Poll::Ready(this.res.take().unwrap()),
             }
