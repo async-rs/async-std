@@ -71,6 +71,11 @@ pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 
 /// The sending side of a channel.
 ///
+/// This struct is created by the [`channel`] function. See its
+/// documentation for more.
+///
+/// [`channel`]: fn.channel.html
+///
 /// # Examples
 ///
 /// ```
@@ -298,8 +303,11 @@ impl<T> fmt::Debug for Sender<T> {
 
 /// The receiving side of a channel.
 ///
-/// This type implements the [`Stream`] trait, which means it can act as an asynchronous iterator.
+/// This type receives messages by calling `recv`. But it also implements the [`Stream`] trait,
+/// which means it can act as an asynchronous iterator. This struct is created by the [`channel`]
+/// function. See its documentation for more.
 ///
+/// [`channel`]: fn.channel.html
 /// [`Stream`]: ../stream/trait.Stream.html
 ///
 /// # Examples
