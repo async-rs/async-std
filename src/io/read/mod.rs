@@ -40,7 +40,7 @@ extension_trait! {
 
         [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
         [`futures::io::AsyncRead`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncRead.html
         [`poll_read`]: #tymethod.poll_read
         [`poll_read_vectored`]: #method.poll_read_vectored
         [`ReadExt`]: ../io/prelude/trait.ReadExt.html

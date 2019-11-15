@@ -34,7 +34,7 @@ extension_trait! {
 
         [`std::io::BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
         [`futures::io::AsyncBufRead`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncBufRead.html
         [provided methods]: #provided-methods
         [`BufReadExt`]: ../io/prelude/trait.BufReadExt.html
         [prelude]: ../prelude/index.html
