@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::mem;
+use std::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
@@ -17,9 +17,8 @@ use pin_project_lite::pin_project;
 /// use async_std::prelude::*;
 /// use async_std::stream;
 ///
-/// let s = stream::successors(Some(22), |&val| Some(val + 1) );
+/// let mut s = stream::successors(Some(22), |&val| Some(val + 1));
 ///
-/// pin_utils::pin_mut!(s);
 /// assert_eq!(s.next().await, Some(22));
 /// assert_eq!(s.next().await, Some(23));
 /// assert_eq!(s.next().await, Some(24));
@@ -27,7 +26,6 @@ use pin_project_lite::pin_project;
 ///
 /// #
 /// # }) }
-///
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -35,10 +33,7 @@ pub fn successors<F, T>(first: Option<T>, succ: F) -> Successors<F, T>
 where
     F: FnMut(&T) -> Option<T>,
 {
-    Successors {
-        succ,
-        slot: first,
-    }
+    Successors { succ, slot: first }
 }
 
 pin_project! {
