@@ -54,6 +54,7 @@ mod ne;
 mod next;
 mod nth;
 mod partial_cmp;
+mod partition;
 mod position;
 mod scan;
 mod skip;
@@ -91,6 +92,7 @@ use ne::NeFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
+use partition::PartitionFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
@@ -1306,6 +1308,42 @@ extension_trait! {
             F: FnMut(B, Self::Item) -> B,
         {
             FoldFuture::new(self, init, f)
+        }
+
+        #[doc = r#"
+            A combinator that applies a function to every element in a stream
+            creating two collections from it.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let (even, odd): (Vec<i32>, Vec<i32>) = stream::from_iter(vec![1, 2, 3])
+                .partition(|&n| n % 2 == 0).await;
+
+            assert_eq!(even, vec![2]);
+            assert_eq!(odd, vec![1, 3]);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn partition<B, F>(
+            self,
+            f: F,
+        ) -> impl Future<Output = (B, B)> [PartitionFuture<Self, F, B>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item) -> bool,
+            B: Default,
+        {
+            PartitionFuture::new(self, f)
         }
 
         #[doc = r#"
