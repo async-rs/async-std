@@ -1,8 +1,10 @@
 mod nth_back;
 mod rfind;
+mod rfold;
 
 use nth_back::NthBackFuture;
 use rfind::RFindFuture;
+use rfold::RFoldFuture;
 
 extension_trait! {
     use crate::stream::Stream;
@@ -67,5 +69,16 @@ extension_trait! {
             RFindFuture::new(self, p)
         }
 
+        fn rfold<B, F>(
+            self,
+            accum: B,
+            f: F,
+        ) -> impl Future<Output = Option<B>> [RFoldFuture<Self, F, B>]
+            where
+                Self: Sized,
+                F: FnMut(B, Self::Item) -> B,
+        {
+            RFoldFuture::new(self, accum, f)
+        }
     }
 }
