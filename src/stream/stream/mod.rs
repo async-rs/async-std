@@ -124,13 +124,13 @@ cfg_unstable! {
 
     use count::CountFuture;
     use partition::PartitionFuture;
+    use unzip::UnzipFuture;
 
     pub use merge::Merge;
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
-    pub use unzip::UnzipFuture;
 
     mod count;
     mod merge;
