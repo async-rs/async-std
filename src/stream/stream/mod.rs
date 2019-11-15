@@ -120,8 +120,11 @@ cfg_unstable! {
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
+    use crate::stream::Extend;
 
     use count::CountFuture;
+    use partition::PartitionFuture;
+
     pub use merge::Merge;
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
@@ -132,6 +135,7 @@ cfg_unstable! {
     mod merge;
     mod flatten;
     mod flat_map;
+    mod partition;
     mod timeout;
     mod throttle;
 }
@@ -1306,6 +1310,44 @@ extension_trait! {
             F: FnMut(B, Self::Item) -> B,
         {
             FoldFuture::new(self, init, f)
+        }
+
+        #[doc = r#"
+            A combinator that applies a function to every element in a stream
+            creating two collections from it.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let (even, odd): (Vec<i32>, Vec<i32>) = stream::from_iter(vec![1, 2, 3])
+                .partition(|&n| n % 2 == 0).await;
+
+            assert_eq!(even, vec![2]);
+            assert_eq!(odd, vec![1, 3]);
+
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn partition<B, F>(
+            self,
+            f: F,
+        ) -> impl Future<Output = (B, B)> [PartitionFuture<Self, F, B>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item) -> bool,
+            B: Default + Extend<Self::Item>,
+        {
+            PartitionFuture::new(self, f)
         }
 
         #[doc = r#"
