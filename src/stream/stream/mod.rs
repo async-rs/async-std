@@ -1446,6 +1446,8 @@ extension_trait! {
             # }) }
             ```
         "#]
+        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn by_ref(&mut self) -> &mut Self {
             self
         }
