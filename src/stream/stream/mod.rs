@@ -130,6 +130,7 @@ cfg_unstable! {
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
+    pub use unzip::UnzipFuture;
 
     mod count;
     mod merge;
@@ -138,6 +139,7 @@ cfg_unstable! {
     mod partition;
     mod timeout;
     mod throttle;
+    mod unzip;
 }
 
 extension_trait! {
@@ -1715,6 +1717,17 @@ extension_trait! {
             U: Stream,
         {
             Zip::new(self, other)
+        }
+
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn unzip<A, B, FromA, FromB>(self) -> impl Future<Output = (FromA, FromB)> [UnzipFuture<Self, FromA, FromB>]
+        where
+        FromA: Default + Extend<A>,
+        FromB: Default + Extend<B>,
+        Self: Stream<Item = (A, B)> + Sized,
+        {
+            UnzipFuture::new(self)
         }
 
         #[doc = r#"
