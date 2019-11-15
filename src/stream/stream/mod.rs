@@ -157,7 +157,7 @@ extension_trait! {
 
         [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
         [`futures::stream::Stream`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+        https://docs.rs/futures/0.3/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
         [`StreamExt`]: ../prelude/trait.StreamExt.html
         [prelude]: ../prelude/index.html

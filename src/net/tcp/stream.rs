@@ -22,9 +22,9 @@ use crate::task::{spawn_blocking, Context, Poll};
 /// [`connect`]: struct.TcpStream.html#method.connect
 /// [accepting]: struct.TcpListener.html#method.accept
 /// [listener]: struct.TcpListener.html
-/// [`AsyncRead`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
-/// [`AsyncWrite`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
-/// [`futures::io`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/index.html
+/// [`AsyncRead`]: https://docs.rs/futures/0.3/futures/io/trait.AsyncRead.html
+/// [`AsyncWrite`]: https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html
+/// [`futures::io`]: https://docs.rs/futures/0.3/futures/io/index.html
 /// [`shutdown`]: struct.TcpStream.html#method.shutdown
 /// [`std::net::TcpStream`]: https://doc.rust-lang.org/std/net/struct.TcpStream.html
 ///

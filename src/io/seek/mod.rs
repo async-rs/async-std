@@ -27,7 +27,7 @@ extension_trait! {
 
         [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
         [`futures::io::AsyncSeek`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncSeek.html
         [provided methods]: #provided-methods
         [`SeekExt`]: ../io/prelude/trait.SeekExt.html
         [prelude]: ../prelude/index.html

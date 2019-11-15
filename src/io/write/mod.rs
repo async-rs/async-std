@@ -35,7 +35,7 @@ extension_trait! {
 
         [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
         [`futures::io::AsyncWrite`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html
         [`poll_write`]: #tymethod.poll_write
         [`poll_write_vectored`]: #method.poll_write_vectored
         [`poll_flush`]: #tymethod.poll_flush
