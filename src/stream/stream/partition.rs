@@ -45,6 +45,7 @@ where
             match next {
                 Some(v) => {
                     let res = this.res.as_mut().unwrap();
+
                     if (this.f)(&v) {
                         res.0.extend(Some(v))
                     } else {
