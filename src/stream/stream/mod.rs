@@ -1405,6 +1405,52 @@ extension_trait! {
         }
 
         #[doc = r#"
+            Borrows an stream, rather than consuming it.
+
+            This is useful to allow applying stream adaptors while still retaining ownership of the original stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let a = vec![1isize, 2, 3];
+
+            let stream = stream::from_iter(a);
+
+            let sum: isize = stream.take(5).sum().await;
+
+            assert_eq!(sum, 6);
+
+            // if we try to use stream again, it won't work. The following line
+            // gives "error: use of moved value: `stream`
+            // assert_eq!(stream.next(), None);
+
+            // let's try that again
+            let a = vec![1isize, 2, 3];
+
+            let mut stream = stream::from_iter(a);
+
+            // instead, we add in a .by_ref()
+            let sum: isize = stream.by_ref().take(2).sum().await;
+
+            assert_eq!(sum, 3);
+
+            // now this is just fine:
+            assert_eq!(stream.next().await, Some(3));
+            assert_eq!(stream.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn by_ref(&mut self) -> &mut Self {
+            self
+        }
+
+        #[doc = r#"
             A stream adaptor similar to [`fold`] that holds internal state and produces a new
             stream.
 
