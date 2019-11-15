@@ -54,7 +54,6 @@ mod ne;
 mod next;
 mod nth;
 mod partial_cmp;
-mod partition;
 mod position;
 mod scan;
 mod skip;
@@ -92,7 +91,6 @@ use ne::NeFuture;
 use next::NextFuture;
 use nth::NthFuture;
 use partial_cmp::PartialCmpFuture;
-use partition::PartitionFuture;
 use position::PositionFuture;
 use try_fold::TryFoldFuture;
 use try_for_each::TryForEachFuture;
@@ -122,8 +120,11 @@ cfg_unstable! {
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
+    use crate::stream::Extend;
 
     use count::CountFuture;
+    use partition::PartitionFuture;
+
     pub use merge::Merge;
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
@@ -134,6 +135,7 @@ cfg_unstable! {
     mod merge;
     mod flatten;
     mod flat_map;
+    mod partition;
     mod timeout;
     mod throttle;
 }
@@ -1334,6 +1336,8 @@ extension_trait! {
             # }) }
             ```
         "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn partition<B, F>(
             self,
             f: F,
@@ -1341,7 +1345,7 @@ extension_trait! {
         where
             Self: Sized,
             F: FnMut(&Self::Item) -> bool,
-            B: Default,
+            B: Default + Extend<Self::Item>,
         {
             PartitionFuture::new(self, f)
         }

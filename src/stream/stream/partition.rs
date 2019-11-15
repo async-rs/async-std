@@ -8,6 +8,9 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     #[derive(Debug)]
+    #[allow(missing_debug_implementations)]
+    #[cfg(all(feature = "default", feature = "unstable"))]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     pub struct PartitionFuture<S, F, B> {
         #[pin]
         stream: S,
