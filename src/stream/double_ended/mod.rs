@@ -1,6 +1,8 @@
 mod nth_back;
+mod rfind;
 
 use nth_back::NthBackFuture;
+use rfind::RFindFuture;
 
 extension_trait! {
     use crate::stream::Stream;
@@ -53,5 +55,17 @@ extension_trait! {
         {
             NthBackFuture::new(self, n)
         }
+
+        fn rfind<P>(
+            &mut self,
+            p: P,
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [RFindFuture<'_, Self, P>]
+        where
+            Self: Unpin + Sized,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            RFindFuture::new(self, p)
+        }
+
     }
 }
