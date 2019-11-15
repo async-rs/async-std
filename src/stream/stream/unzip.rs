@@ -46,11 +46,9 @@ where
 
             match next {
                 Some((a, b)) => {
-                    let mut res = this.res.take().unwrap();
+                    let res = this.res.as_mut().unwrap();
                     res.0.extend(Some(a));
                     res.1.extend(Some(b));
-
-                    *this.res = Some(res);
                 }
                 None => return Poll::Ready(this.res.take().unwrap()),
             }
