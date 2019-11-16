@@ -14,7 +14,7 @@ pin_project! {
 
 impl<S> Copied<S> {
     pub(super) fn new(stream: S) -> Self {
-        Copied { stream }
+        Self { stream }
     }
 }
 

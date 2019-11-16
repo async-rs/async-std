@@ -13,7 +13,7 @@ pub struct FindMapFuture<'a, S, F> {
 
 impl<'a, S, F> FindMapFuture<'a, S, F> {
     pub(super) fn new(stream: &'a mut S, f: F) -> Self {
-        FindMapFuture { stream, f }
+        Self { stream, f }
     }
 }
 

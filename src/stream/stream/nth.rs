@@ -15,7 +15,7 @@ impl<S: Unpin> Unpin for NthFuture<'_, S> {}
 
 impl<'a, S> NthFuture<'a, S> {
     pub(crate) fn new(stream: &'a mut S, n: usize) -> Self {
-        NthFuture { stream, n }
+        Self { stream, n }
     }
 }
 

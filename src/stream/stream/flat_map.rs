@@ -30,8 +30,8 @@ where
     U: IntoStream,
     F: FnMut(S::Item) -> U,
 {
-    pub(super) fn new(stream: S, f: F) -> FlatMap<S, U, F> {
-        FlatMap {
+    pub(super) fn new(stream: S, f: F) -> Self {
+        Self {
             stream: stream.map(f),
             inner_stream: None,
         }

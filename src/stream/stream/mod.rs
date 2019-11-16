@@ -111,7 +111,6 @@ pub use take_while::TakeWhile;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
-use std::marker::PhantomData;
 
 cfg_unstable! {
     use std::future::Future;
@@ -288,10 +287,7 @@ extension_trait! {
         where
             Self: Sized,
         {
-            Take {
-                stream: self,
-                remaining: n,
-            }
+            Take::new(self, n)
         }
 
         #[doc = r#"
@@ -714,10 +710,7 @@ extension_trait! {
         where
             Self: Sized,
         {
-            Fuse {
-                stream: self,
-                done: false,
-            }
+            Fuse::new(self)
         }
 
         #[doc = r#"
@@ -1193,12 +1186,7 @@ extension_trait! {
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
         {
-            AllFuture {
-                stream: self,
-                result: true, // the default if the empty stream
-                _marker: PhantomData,
-                f,
-            }
+            AllFuture::new(self, f)
         }
 
         #[doc = r#"
@@ -1438,12 +1426,7 @@ extension_trait! {
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
         {
-            AnyFuture {
-                stream: self,
-                result: false, // the default if the empty stream
-                _marker: PhantomData,
-                f,
-            }
+            AnyFuture::new(self, f)
         }
 
         #[doc = r#"
@@ -1468,7 +1451,7 @@ extension_trait! {
             assert_eq!(sum, 6);
 
             // if we try to use stream again, it won't work. The following line
-            // gives "error: use of moved value: `stream`
+            // gives error: use of moved value: `stream`
             // assert_eq!(stream.next(), None);
 
             // let's try that again

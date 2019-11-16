@@ -15,7 +15,7 @@ impl<'a, S, F> Unpin for TryForEachFuture<'a, S, F> {}
 
 impl<'a, S, F> TryForEachFuture<'a, S, F> {
     pub(crate) fn new(stream: &'a mut S, f: F) -> Self {
-        TryForEachFuture { stream, f }
+        Self { stream, f }
     }
 }
 

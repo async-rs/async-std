@@ -20,7 +20,7 @@ pin_project! {
 
 impl<S, F, T> MinByFuture<S, F, T> {
     pub(super) fn new(stream: S, compare: F) -> Self {
-        MinByFuture {
+        Self {
             stream,
             compare,
             min: None,

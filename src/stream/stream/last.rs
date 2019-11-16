@@ -18,7 +18,7 @@ pin_project! {
 
 impl<S, T> LastFuture<S, T> {
     pub(crate) fn new(stream: S) -> Self {
-        LastFuture { stream, last: None }
+        Self { stream, last: None }
     }
 }
 

@@ -14,6 +14,17 @@ pub struct AnyFuture<'a, S, F, T> {
     pub(crate) _marker: PhantomData<T>,
 }
 
+impl<'a, S, F, T> AnyFuture<'a, S, F, T> {
+    pub(crate) fn new(stream: &'a mut S, f: F) -> Self {
+        Self {
+            stream,
+            f,
+            result: false, // the default if the empty stream
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl<S: Unpin, F, T> Unpin for AnyFuture<'_, S, F, T> {}
 
 impl<S, F> Future for AnyFuture<'_, S, F, S::Item>

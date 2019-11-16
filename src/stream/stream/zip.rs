@@ -34,7 +34,7 @@ impl<A: Stream + fmt::Debug, B: fmt::Debug> fmt::Debug for Zip<A, B> {
 
 impl<A: Stream, B> Zip<A, B> {
     pub(crate) fn new(first: A, second: B) -> Self {
-        Zip {
+        Self {
             item_slot: None,
             first,
             second,

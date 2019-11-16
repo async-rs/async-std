@@ -16,7 +16,7 @@ impl<'a, S, P> Unpin for PositionFuture<'a, S, P> {}
 
 impl<'a, S, P> PositionFuture<'a, S, P> {
     pub(super) fn new(stream: &'a mut S, predicate: P) -> Self {
-        PositionFuture {
+        Self {
             stream,
             predicate,
             index: 0,

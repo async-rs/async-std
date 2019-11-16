@@ -26,7 +26,7 @@ pin_project! {
 
 impl<L: Stream, R: Stream> CmpFuture<L, R> {
     pub(super) fn new(l: L, r: R) -> Self {
-        CmpFuture {
+        Self {
             l: l.fuse(),
             r: r.fuse(),
             l_cache: None,

@@ -24,7 +24,7 @@ pin_project! {
 
 impl<S> StepBy<S> {
     pub(crate) fn new(stream: S, step: usize) -> Self {
-        StepBy {
+        Self {
             stream,
             step: step.checked_sub(1).unwrap(),
             i: 0,

@@ -18,7 +18,7 @@ pin_project! {
 
 impl<S, F, B> FoldFuture<S, F, B> {
     pub(super) fn new(stream: S, init: B, f: F) -> Self {
-        FoldFuture {
+        Self {
             stream,
             f,
             acc: Some(init),

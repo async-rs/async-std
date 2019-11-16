@@ -16,7 +16,7 @@ impl<'a, S, F, T> Unpin for TryFoldFuture<'a, S, F, T> {}
 
 impl<'a, S, F, T> TryFoldFuture<'a, S, F, T> {
     pub(super) fn new(stream: &'a mut S, init: T, f: F) -> Self {
-        TryFoldFuture {
+        Self {
             stream,
             f,
             acc: Some(init),

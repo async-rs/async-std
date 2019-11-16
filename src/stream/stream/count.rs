@@ -20,7 +20,7 @@ pin_project! {
 
 impl<S> CountFuture<S> {
     pub(crate) fn new(stream: S) -> Self {
-        CountFuture { stream, count: 0 }
+        Self { stream, count: 0 }
     }
 }
 
