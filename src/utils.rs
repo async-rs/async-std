@@ -52,6 +52,14 @@ pub fn random(n: u32) -> u32 {
     })
 }
 
+/// Add additional context to errors
+///
+/// *Note for implementors:* The given closure must only be executed when
+/// `verbose-errors` feature is enabled for this crate!
+pub(crate) trait VerboseErrorExt {
+    fn verbose_context(self, message: impl Fn() -> String) -> Self;
+}
+
 /// Defers evaluation of a block of code until the end of the scope.
 #[cfg(feature = "default")]
 #[doc(hidden)]

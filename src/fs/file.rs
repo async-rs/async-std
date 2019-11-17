@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::fs::{Metadata, Permissions};
 use crate::future;
+use crate::utils::VerboseErrorExt;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::path::Path;
 use crate::prelude::*;
@@ -112,7 +113,11 @@ impl File {
     /// ```
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = spawn_blocking(move || std::fs::File::open(&path)).await?;
+        let file = spawn_blocking(move || {
+            std::fs::File::open(&path)
+                .verbose_context(|| format!("Could not open {}", path.display()))
+        })
+        .await?;
         Ok(File::new(file, true))
     }
 
@@ -147,7 +152,11 @@ impl File {
     /// ```
     pub async fn create<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
-        let file = spawn_blocking(move || std::fs::File::create(&path)).await?;
+        let file = spawn_blocking(move || {
+            std::fs::File::create(&path)
+                .verbose_context(|| format!("Could not create {}", path.display()))
+        })
+        .await?;
         Ok(File::new(file, true))
     }
 

@@ -64,6 +64,12 @@ jobs:
         command: test
         args: --all --features unstable
 
+    - name: tests with verbose errors
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all --features 'unstable verbose-errors'
+
   check_fmt_and_docs:
     name: Checking fmt and docs
     runs-on: ubuntu-latest
