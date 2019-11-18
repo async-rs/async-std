@@ -48,7 +48,6 @@ std = [
   "pin-utils",
   "slab",
 ]
-verbose-errors = []
 
 [dependencies]
 async-attributes = { version = "1.1.1", optional = true }
