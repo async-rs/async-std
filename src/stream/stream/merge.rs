@@ -45,25 +45,29 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
         if utils::random(1) == 1 {
-            match this.left.poll_next(cx) {
-                Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-                Poll::Ready(None) => this.right.poll_next(cx),
-                Poll::Pending => match this.right.poll_next(cx) {
-                    Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-                    Poll::Ready(None) => Poll::Pending,
-                    Poll::Pending => Poll::Pending,
-                },
-            }
+            poll_next_in_order(this.left, this.right, cx)
         } else {
-            match this.right.poll_next(cx) {
-                Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-                Poll::Ready(None) => this.left.poll_next(cx),
-                Poll::Pending => match this.left.poll_next(cx) {
-                    Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-                    Poll::Ready(None) => Poll::Pending,
-                    Poll::Pending => Poll::Pending,
-                },
-            }
+            poll_next_in_order(this.right, this.left, cx)
         }
+    }
+}
+
+fn poll_next_in_order<F, S, I>(
+    first: Pin<&mut F>,
+    second: Pin<&mut S>,
+    cx: &mut Context<'_>,
+) -> Poll<Option<I>>
+where
+    F: Stream<Item = I>,
+    S: Stream<Item = I>,
+{
+    match first.poll_next(cx) {
+        Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+        Poll::Ready(None) => second.poll_next(cx),
+        Poll::Pending => match second.poll_next(cx) {
+            Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
+            Poll::Ready(None) => Poll::Pending,
+            Poll::Pending => Poll::Pending,
+        },
     }
 }
