@@ -1839,18 +1839,17 @@ extension_trait! {
             ```
             # async_std::task::block_on(async {
             use async_std::prelude::*;
-            use async_std::stream;
+            use async_std::stream::{self, FromStream};
 
             let a = stream::once(1u8);
             let b = stream::once(2u8);
             let c = stream::once(3u8);
 
-            let mut s = a.merge(b).merge(c);
+            let s = a.merge(b).merge(c);
+            let mut lst = Vec::from_stream(s).await;
 
-            assert_eq!(s.next().await, Some(1u8));
-            assert_eq!(s.next().await, Some(2u8));
-            assert_eq!(s.next().await, Some(3u8));
-            assert_eq!(s.next().await, None);
+            lst.sort_unstable();
+            assert_eq!(&lst, &[1u8, 2u8, 3u8]);
             # });
             ```
         "#]
