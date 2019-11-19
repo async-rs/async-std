@@ -875,10 +875,10 @@ extension_trait! {
             use async_std::prelude::*;
             use async_std::stream;
 
-            let s = stream::from_iter(vec![1isize, 2, -3]);
+            let s = stream::from_iter(vec![-1isize, 2, -3]);
 
             let min = s.clone().min_by_key(|x| x.abs()).await;
-            assert_eq!(min, Some(1));
+            assert_eq!(min, Some(-1));
 
             let min = stream::empty::<isize>().min_by_key(|x| x.abs()).await;
             assert_eq!(min, None);
