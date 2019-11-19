@@ -62,12 +62,11 @@ where
     S: Stream<Item = I>,
 {
     match first.poll_next(cx) {
-        Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
         Poll::Ready(None) => second.poll_next(cx),
+        Poll::Ready(item) => Poll::Ready(item),
         Poll::Pending => match second.poll_next(cx) {
-            Poll::Ready(Some(item)) => Poll::Ready(Some(item)),
-            Poll::Ready(None) => Poll::Pending,
-            Poll::Pending => Poll::Pending,
+            Poll::Ready(None) | Poll::Pending => Poll::Pending,
+            Poll::Ready(item) => Poll::Ready(item),
         },
     }
 }
