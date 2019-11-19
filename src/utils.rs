@@ -221,6 +221,11 @@ macro_rules! extension_trait {
         $(#[cfg(feature = "docs")] $imp)*
     };
 
+    // Optimization: expand `$head` eagerly before starting a new method definition.
+    (@ext ($($head:tt)*) #[doc = $d:literal] $($tail:tt)*) => {
+        $($head)* extension_trait!(@ext (#[doc = $d]) $($tail)*);
+    };
+
     // Parse the return type in an extension method.
     (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
         extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
