@@ -916,7 +916,7 @@ extension_trait! {
             let max = s.clone().max_by_key(|x| x.abs()).await;
             assert_eq!(max, Some(3));
 
-            let max = stream::empty::<isize>().min_by_key(|x| x.abs()).await;
+            let max = stream::empty::<isize>().max_by_key(|x| x.abs()).await;
             assert_eq!(max, None);
             #
             # }) }
