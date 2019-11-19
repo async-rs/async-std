@@ -59,10 +59,7 @@ where
                 }
                 Poll::Pending
             }
-            None => Poll::Ready(match this.min.take() {
-                None => None,
-                Some(max) => Some(max.1),
-            }),
+            None => Poll::Ready(this.min.take().map(|min| min.1)),
         }
     }
 }

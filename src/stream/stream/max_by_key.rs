@@ -59,10 +59,7 @@ where
                 }
                 Poll::Pending
             }
-            None => Poll::Ready(match this.max.take() {
-                None => None,
-                Some(max) => Some(max.1),
-            }),
+            None => Poll::Ready(this.max.take().map(|max| max.1)),
         }
     }
 }
