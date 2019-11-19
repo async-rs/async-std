@@ -37,10 +37,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
+            use async_std::stream::Sample;
             use async_std::stream::double_ended::DoubleEndedStreamExt;
-            use async_std::stream;
 
-            let mut s = stream::from_iter(vec![1u8, 2, 3, 4, 5]);
+            let mut s = Sample::from(vec![1u8, 2, 3, 4, 5]);
 
             let second = s.nth_back(1).await;
             assert_eq!(second, Some(4));
@@ -58,6 +58,27 @@ extension_trait! {
             NthBackFuture::new(self, n)
         }
 
+        #[doc = r#"
+            Returns the the frist element from the right that matches the predicate.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream::Sample;
+            use async_std::stream::double_ended::DoubleEndedStreamExt;
+
+            let mut s = Sample::from(vec![1u8, 2, 3, 4, 5]);
+
+            let second = s.rfind(|v| v % 2 == 0).await;
+            assert_eq!(second, Some(4));
+            #
+            # }) }
+            ```
+        "#]
         fn rfind<P>(
             &mut self,
             p: P,
@@ -69,6 +90,26 @@ extension_trait! {
             RFindFuture::new(self, p)
         }
 
+        #[doc = r#"
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream::Sample;
+            use async_std::stream::double_ended::DoubleEndedStreamExt;
+
+            let s = Sample::from(vec![1, 2, 3, 4, 5]);
+
+            let second = s.rfold(0, |acc, v| v + acc).await;
+
+            assert_eq!(second, 15);
+            #
+            # }) }
+            ```
+        "#]
         fn rfold<B, F>(
             self,
             accum: B,
