@@ -39,7 +39,7 @@ pin_project! {
     }
 }
 
-impl<T: Unpin> Stream for Once<T> {
+impl<T> Stream for Once<T> {
     type Item = T;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<T>> {
