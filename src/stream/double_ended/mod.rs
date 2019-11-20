@@ -1,8 +1,10 @@
+mod next_back;
 mod nth_back;
 mod rfind;
 mod rfold;
 mod try_rfold;
 
+use next_back::NextBackFuture;
 use nth_back::NthBackFuture;
 use rfind::RFindFuture;
 use rfold::RFoldFuture;
@@ -28,6 +30,37 @@ extension_trait! {
         Something else
     "#]
     pub trait DoubleEndedStreamExt: crate::stream::DoubleEndedStream {
+        #[doc = r#"
+            Advances the stream and returns the next value.
+
+            Returns [`None`] when iteration is finished. Individual stream implementations may
+            choose to resume iteration, and so calling `next()` again may or may not eventually
+            start returning more values.
+
+            [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream::Sample;
+            use async_std::stream::double_ended::DoubleEndedStreamExt;
+
+            let mut s = Sample::from(vec![7u8]);
+
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn next(&mut self) -> impl Future<Output = Option<Self::Item>> + '_ [NextBackFuture<'_, Self>]
+            where
+                Self: Unpin,
+        {
+            NextBackFuture { stream: self }
+        }
 
         #[doc = r#"
             Returns the nth element from the back of the stream.
