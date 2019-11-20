@@ -1,10 +1,12 @@
 mod nth_back;
 mod rfind;
 mod rfold;
+mod try_rfold;
 
 use nth_back::NthBackFuture;
 use rfind::RFindFuture;
 use rfold::RFoldFuture;
+use try_rfold::TryRFoldFuture;
 
 extension_trait! {
     use crate::stream::Stream;
@@ -121,5 +123,46 @@ extension_trait! {
         {
             RFoldFuture::new(self, accum, f)
         }
+
+        #[doc = r#"
+            A combinator that applies a function as long as it returns successfully, producing a single, final value.
+            Immediately returns the error when the function returns unsuccessfully.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream::Sample;
+            use async_std::stream::double_ended::DoubleEndedStreamExt;
+
+            let s = Sample::from(vec![1, 2, 3, 4, 5]);
+            let sum = s.try_rfold(0, |acc, v| {
+                if (acc+v) % 2 == 1 {
+                    Ok(v+3)
+                } else {
+                    Err("fail")
+                }
+            }).await;
+
+            assert_eq!(sum, Err("fail"));
+            #
+            # }) }
+            ```
+        "#]
+        fn try_rfold<B, F, E>(
+            self,
+            accum: B,
+            f: F,
+        ) -> impl Future<Output = Option<B>> [TryRFoldFuture<Self, F, B>]
+            where
+                Self: Sized,
+                F: FnMut(B, Self::Item) -> Result<B, E>,
+       {
+           TryRFoldFuture::new(self, accum, f)
+       }
+
     }
 }
