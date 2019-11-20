@@ -3,3 +3,7 @@
 cfg_std! {
     pub mod io;
 }
+
+cfg_default! {
+    pub mod fs;
+}
