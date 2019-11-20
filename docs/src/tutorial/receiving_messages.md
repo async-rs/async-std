@@ -10,14 +10,18 @@ We need to:
 ```rust,edition2018
 # extern crate async_std;
 # use async_std::{
-#     io::BufReader,
-#     net::{TcpListener, TcpStream, ToSocketAddrs},
+#     net::{TcpListener, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
+use async_std::{
+    io::BufReader,
+    net::TcpStream,
+};
+
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener.incoming();
