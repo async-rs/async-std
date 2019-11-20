@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.1.0] - 2019-11-21
+
+[API Documentation](https://docs.rs/async-std/1.1.0/async-std)
+
+This patch introduces a faster scheduler algorithm, `Stream::throttle`, and
+stabilizes `task::yield_now`. Additionally we're introducing several more stream
+APIs, bringing us to almost complete parity with the standard library.
+
+Furthermore our `path` submodule now returns more context in errors. So if
+opening a file fails, async-std will tell you *which* file was failed to open,
+making it easier to write and debug programs.
+
+## Examples
+
+```rust
+let start = Instant::now();
+
+let mut s = stream::interval(Duration::from_millis(5))
+    .throttle(Duration::from_millis(10))
+    .take(2);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 5);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 15);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 25);
+```
+
+## Added
+
+- Added `Stream::throttle` as "unstable".
+- Added `Stream::count` as "unstable".
+- Added `Stream::max` as "unstable".
+- Added `Stream::successors` as "unstable".
+- Added `Stream::by_ref` as "unstable".
+- Added `Stream::partition` as "unstable".
+- Added contextual errors to the `path` submodule.
+- Added `os::windows::symlink_dir` as "unstable".
+- Added `os::windows::symlink_file` as "unstable".
+- Stabilized `task::yield_now`.
+
+## Fixes
+
+- We now ignore seek errors when rolling back failed `read` calls on `File`.
+- Fixed a bug where `Stream::max_by_key` was returning the wrong result.
+- Fixed a bug where `Stream::min_by_key` was returning the wrong result.
+
+## Changed
+
+- Applied various fixes to the tutorial.
+- Fixed an issue with Clippy.
+- Optimized an internal code generation macro, improving compilation speeds.
+- Removed an `Unpin` bound from `stream::Once`.
+- Removed various extra internal uses of `pin_mut!`.
+- Simplified `Stream::any` and `Stream::all`'s internals.
+- The `surf` example is now enabled again.
+- Tweaked some streams internals.
+- Updated `futures-timer` to 2.0.0, improving compilation speed.
+- Upgraded `async-macros` to 2.0.0.
+- `Stream::merge` now uses randomized ordering to reduce overall latency.
+- The scheduler is now more efficient by keeping a slot for the next task to
+  run. This is similar to Go's scheduler, and Tokio's scheduler.
+- Fixed the documentation of the `channel` types to link back to the `channel`
+  function.
+
 # [1.0.1] - 2019-11-12
 
 [API Documentation](https://docs.rs/async-std/1.0.1/async-std)
@@ -442,7 +510,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/async-rs/async-std/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/async-rs/async-std/compare/v0.99.12...v1.0.0
 [0.99.12]: https://github.com/async-rs/async-std/compare/v0.99.11...v0.99.12
