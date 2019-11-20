@@ -49,13 +49,13 @@ extension_trait! {
 
             let mut s = Sample::from(vec![7u8]);
 
-            assert_eq!(s.next().await, Some(7));
-            assert_eq!(s.next().await, None);
+            assert_eq!(s.next_back().await, Some(7));
+            assert_eq!(s.next_back().await, None);
             #
             # }) }
             ```
         "#]
-        fn next(&mut self) -> impl Future<Output = Option<Self::Item>> + '_ [NextBackFuture<'_, Self>]
+        fn next_back(&mut self) -> impl Future<Output = Option<Self::Item>> + '_ [NextBackFuture<'_, Self>]
             where
                 Self: Unpin,
         {
