@@ -269,13 +269,15 @@
 //! [`Result`]: https://doc.rust-lang.org/std/result/enum.Result.html
 //! [`.unwrap()`]: https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap
 
+const DEFAULT_BUF_SIZE: usize = 8 * 1024;
+
 cfg_std! {
     #[doc(inline)]
     pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
     pub use buf_read::{BufRead, Lines};
     pub use buf_reader::BufReader;
-    pub use buf_writer::BufWriter;
+    pub use buf_writer::{BufWriter, IntoInnerError};
     pub use copy::copy;
     pub use cursor::Cursor;
     pub use empty::{empty, Empty};

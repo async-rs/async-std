@@ -4,10 +4,8 @@ use std::{cmp, fmt};
 
 use pin_project_lite::pin_project;
 
-use crate::io::{self, BufRead, Read, Seek, SeekFrom};
+use crate::io::{self, BufRead, Read, Seek, SeekFrom, DEFAULT_BUF_SIZE};
 use crate::task::{Context, Poll};
-
-const DEFAULT_CAPACITY: usize = 8 * 1024;
 
 pin_project! {
     /// Adds buffering to any reader.
@@ -72,7 +70,7 @@ impl<R: io::Read> BufReader<R> {
     /// # Ok(()) }) }
     /// ```
     pub fn new(inner: R) -> BufReader<R> {
-        BufReader::with_capacity(DEFAULT_CAPACITY, inner)
+        BufReader::with_capacity(DEFAULT_BUF_SIZE, inner)
     }
 
     /// Creates a new buffered reader with the specified capacity.
