@@ -1,4 +1,4 @@
-//! TCP echo server, accepting connections both on both ipv4 and ipv6 sockets.
+//! TCP echo server, accepting connections both on both IPv4 and IPV6 sockets.
 //!
 //! To send messages, do:
 //!
@@ -25,12 +25,12 @@ fn main() -> io::Result<()> {
     task::block_on(async {
         let ipv4_listener = TcpListener::bind("127.0.0.1:8080").await?;
         println!("Listening on {}", ipv4_listener.local_addr()?);
+
         let ipv6_listener = TcpListener::bind("[::1]:8080").await?;
         println!("Listening on {}", ipv6_listener.local_addr()?);
 
         let ipv4_incoming = ipv4_listener.incoming();
         let ipv6_incoming = ipv6_listener.incoming();
-
         let mut incoming = ipv4_incoming.merge(ipv6_incoming);
 
         while let Some(stream) = incoming.next().await {

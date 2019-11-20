@@ -83,5 +83,9 @@ name = "stream"
 required-features = ["unstable"]
 
 [[example]]
+name = "ring-benchmark"
+required-features = ["unstable"]
+
+[[example]]
 name = "tcp-ipv4-and-6-echo"
 required-features = ["unstable"]
