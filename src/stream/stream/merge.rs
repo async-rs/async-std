@@ -44,7 +44,7 @@ where
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
-        if utils::random(1) == 1 {
+        if utils::random(2) == 0 {
             poll_next_in_order(this.left, this.right, cx)
         } else {
             poll_next_in_order(this.right, this.left, cx)
