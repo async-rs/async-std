@@ -4,6 +4,6 @@ cfg_std! {
     pub mod io;
 }
 
-cfg_default! {
+cfg_unstable! {
     pub mod fs;
 }
