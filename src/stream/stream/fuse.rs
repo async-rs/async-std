@@ -21,6 +21,15 @@ pin_project! {
     }
 }
 
+impl<S> Fuse<S> {
+    pub(super) fn new(stream: S) -> Self {
+        Self {
+            stream,
+            done: false,
+        }
+    }
+}
+
 impl<S: Stream> Stream for Fuse<S> {
     type Item = S::Item;
 

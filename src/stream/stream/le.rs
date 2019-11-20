@@ -25,7 +25,7 @@ where
     L::Item: PartialOrd<R::Item>,
 {
     pub(super) fn new(l: L, r: R) -> Self {
-        LeFuture {
+        Self {
             partial_cmp: l.partial_cmp(r),
         }
     }

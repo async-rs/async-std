@@ -25,7 +25,7 @@ pin_project! {
 
 impl<S: Stream, U: Stream> Chain<S, U> {
     pub(super) fn new(first: S, second: U) -> Self {
-        Chain {
+        Self {
             first: first.fuse(),
             second: second.fuse(),
         }

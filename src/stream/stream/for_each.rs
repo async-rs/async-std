@@ -18,7 +18,7 @@ pin_project! {
 
 impl<S, F> ForEachFuture<S, F> {
     pub(super) fn new(stream: S, f: F) -> Self {
-        ForEachFuture {
+        Self {
             stream,
             f,
         }

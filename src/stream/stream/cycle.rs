@@ -15,8 +15,8 @@ impl<S> Cycle<S>
 where
     S: Stream + Clone,
 {
-    pub fn new(source: S) -> Cycle<S> {
-        Cycle {
+    pub(crate) fn new(source: S) -> Self {
+        Self {
             orig: source.clone(),
             source: ManuallyDrop::new(source),
         }

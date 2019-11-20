@@ -23,7 +23,7 @@ pin_project! {
 
 impl<S> Skip<S> {
     pub(crate) fn new(stream: S, n: usize) -> Self {
-        Skip { stream, n }
+        Self { stream, n }
     }
 }
 

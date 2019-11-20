@@ -26,7 +26,7 @@ where
     L::Item: PartialEq<R::Item>,
 {
     pub(super) fn new(l: L, r: R) -> Self {
-        EqFuture {
+        Self {
             l: l.fuse(),
             r: r.fuse(),
         }

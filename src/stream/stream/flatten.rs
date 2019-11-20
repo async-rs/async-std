@@ -32,8 +32,8 @@ where
     S: Stream,
     S::Item: IntoStream,
 {
-    pub(super) fn new(stream: S) -> Flatten<S> {
-        Flatten {
+    pub(super) fn new(stream: S) -> Self {
+        Self {
             stream,
             inner_stream: None,
         }

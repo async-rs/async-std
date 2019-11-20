@@ -20,7 +20,7 @@ pin_project! {
 
 impl<S, T, K> MinByKeyFuture<S, T, K> {
     pub(super) fn new(stream: S, key_by: K) -> Self {
-        MinByKeyFuture {
+        Self {
             stream,
             min: None,
             key_by,

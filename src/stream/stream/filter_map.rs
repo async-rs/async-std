@@ -16,7 +16,7 @@ pin_project! {
 
 impl<S, F> FilterMap<S, F> {
     pub(crate) fn new(stream: S, f: F) -> Self {
-        FilterMap { stream, f }
+        Self { stream, f }
     }
 }
 

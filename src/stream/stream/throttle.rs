@@ -31,7 +31,7 @@ pin_project! {
 
 impl<S: Stream> Throttle<S> {
     pub(super) fn new(stream: S, duration: Duration) -> Self {
-        Throttle {
+        Self {
             stream,
             duration,
             blocked: false,

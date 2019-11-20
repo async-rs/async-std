@@ -16,7 +16,7 @@ pin_project! {
 
 impl<S> Enumerate<S> {
     pub(super) fn new(stream: S) -> Self {
-        Enumerate { stream, i: 0 }
+        Self { stream, i: 0 }
     }
 }
 
