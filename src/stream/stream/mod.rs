@@ -1722,7 +1722,7 @@ extension_trait! {
         #[doc = r#"
             Converts an stream of pairs into a pair of containers.
 
-            unzip() consumes an entire stream of pairs, producing two collections: one from the left elements of the pairs, and one from the right elements.
+            `unzip()` consumes an entire stream of pairs, producing two collections: one from the left elements of the pairs, and one from the right elements.
 
             This function is, in some sense, the opposite of [`zip`].
 
