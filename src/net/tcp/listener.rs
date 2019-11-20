@@ -1,5 +1,5 @@
-use std::net::SocketAddr;
 use std::future::Future;
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use crate::future;
@@ -8,6 +8,7 @@ use crate::net::driver::Watcher;
 use crate::net::{TcpStream, ToSocketAddrs};
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::utils::Context as _;
 
 /// A TCP socket server, listening for connections.
 ///
@@ -75,8 +76,12 @@ impl TcpListener {
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
+        let addrs = addrs
+            .to_socket_addrs()
+            .await
+            .context(|| String::from("could not resolve addresses"))?;
 
-        for addr in addrs.to_socket_addrs().await? {
+        for addr in addrs {
             match mio::net::TcpListener::bind(&addr) {
                 Ok(mio_listener) => {
                     return Ok(TcpListener {

@@ -7,6 +7,7 @@ use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
 use crate::task::{spawn_blocking, Context, Poll};
+use crate::utils::Context as _;
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -71,11 +72,17 @@ impl TcpStream {
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
         let mut last_err = None;
+        let addrs = addrs
+            .to_socket_addrs()
+            .await
+            .context(|| String::from("could not resolve addresses"))?;
 
-        for addr in addrs.to_socket_addrs().await? {
+        for addr in addrs {
             let res = spawn_blocking(move || {
-                let std_stream = std::net::TcpStream::connect(addr)?;
-                let mio_stream = mio::net::TcpStream::from_stream(std_stream)?;
+                let std_stream = std::net::TcpStream::connect(addr)
+                    .context(|| format!("could not connect to {}", addr))?;
+                let mio_stream = mio::net::TcpStream::from_stream(std_stream)
+                    .context(|| format!("could not open async connection to {}", addr))?;
                 Ok(TcpStream {
                     watcher: Watcher::new(mio_stream),
                 })

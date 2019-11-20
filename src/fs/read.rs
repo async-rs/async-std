@@ -1,6 +1,7 @@
 use crate::io;
 use crate::path::Path;
 use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Reads the entire contents of a file as raw bytes.
 ///
@@ -36,5 +37,8 @@ use crate::task::spawn_blocking;
 /// ```
 pub async fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
     let path = path.as_ref().to_owned();
-    spawn_blocking(move || std::fs::read(path)).await
+    spawn_blocking(move || {
+        std::fs::read(&path).context(|| format!("could not read file `{}`", path.display()))
+    })
+    .await
 }
