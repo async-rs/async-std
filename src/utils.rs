@@ -52,6 +52,11 @@ pub fn random(n: u32) -> u32 {
     })
 }
 
+/// Add additional context to errors
+pub(crate) trait Context {
+    fn context(self, message: impl Fn() -> String) -> Self;
+}
+
 /// Defers evaluation of a block of code until the end of the scope.
 #[cfg(feature = "default")]
 #[doc(hidden)]

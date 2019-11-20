@@ -291,6 +291,7 @@ cfg_std! {
     pub(crate) mod read;
     pub(crate) mod seek;
     pub(crate) mod write;
+    pub(crate) mod utils;
 
     mod buf_reader;
     mod buf_writer;
