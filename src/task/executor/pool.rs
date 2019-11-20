@@ -43,7 +43,7 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
             .name("async-std/executor".to_string())
             .spawn(|| {
                 let _ = PROCESSOR.with(|p| p.set(proc));
-                abort_on_panic(|| main_loop());
+                abort_on_panic(main_loop);
             })
             .expect("cannot start a thread driving tasks");
     }

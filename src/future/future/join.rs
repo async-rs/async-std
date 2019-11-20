@@ -45,16 +45,14 @@ where
         let mut left = this.left;
         let mut right = this.right;
 
-        if Future::poll(Pin::new(&mut left), cx).is_ready() {
-            if right.as_ref().output().is_some() {
-                return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
-            }
+        let is_left_ready = Future::poll(Pin::new(&mut left), cx).is_ready();
+        if is_left_ready && right.as_ref().output().is_some() {
+            return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
         }
 
-        if Future::poll(Pin::new(&mut right), cx).is_ready() {
-            if left.as_ref().output().is_some() {
-                return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
-            }
+        let is_right_ready = Future::poll(Pin::new(&mut right), cx).is_ready();
+        if is_right_ready && left.as_ref().output().is_some() {
+            return Poll::Ready((left.take().unwrap(), right.take().unwrap()));
         }
 
         Poll::Pending
