@@ -4,6 +4,8 @@ use std::pin::Pin;
 
 use crate::stream::DoubleEndedStream;
 
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct RFindFuture<'a, S, P> {
     stream: &'a mut S,
     p: P,

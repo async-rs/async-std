@@ -4,6 +4,8 @@ use std::task::{Context, Poll};
 
 use crate::stream::DoubleEndedStream;
 
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct NthBackFuture<'a, S> {
     stream: &'a mut S,
     n: usize,

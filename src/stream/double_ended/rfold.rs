@@ -7,6 +7,8 @@ use pin_project_lite::pin_project;
 use crate::stream::DoubleEndedStream;
 
 pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
     pub struct RFoldFuture<S, F, B> {
         #[pin]
         stream: S,
