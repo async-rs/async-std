@@ -18,16 +18,85 @@ extension_trait! {
 
 
     #[doc = r#"
-    Something fancy
+        A stream able to yield elements from both ends.
+
+        Something that implements `DoubleEndedStream` has one extra capability
+        over something that implements [`Stream`]: the ability to also take
+        `Item`s from the back, as well as the front.
+
+        It is important to note that both back and forth work on the same range,
+        and do not cross: iteration is over when they meet in the middle.
+
+        In a similar fashion to the [`Stream`] protocol, once a
+        `DoubleEndedStream` returns `None` from a `next_back()`, calling it again
+        may or may not ever return `Some` again. `next()` and `next_back()` are
+        interchangeable for this purpose.
+        ```
     "#]
     pub trait DoubleEndedStream {
+        #[doc = r#"
+            The type of items yielded by this stream.
+        "#]
         type Item;
 
+        #[doc = r#"
+            Attempts to receive the next item from the back of the stream.
+
+            There are several possible return values:
+
+            * `Poll::Pending` means this stream's next_back value is not ready yet.
+            * `Poll::Ready(None)` means this stream has been exhausted.
+            * `Poll::Ready(Some(item))` means `item` was received out of the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use std::pin::Pin;
+
+            use async_std::prelude::*;
+            use async_std::stream;
+            use async_std::task::{Context, Poll};
+
+            fn increment(
+                s: impl DoubleEndedStream<Item = i32> + Unpin,
+            ) -> impl DoubleEndedStream<Item = i32> + Unpin {
+                struct Increment<S>(S);
+
+                impl<S: DoubleEndedStream<Item = i32> + Unpin> Stream for Increment<S> {
+                    type Item = S::Item;
+
+                    fn poll_next_back(
+                        mut self: Pin<&mut Self>,
+                        cx: &mut Context<'_>,
+                    ) -> Poll<Option<Self::Item>> {
+                        match Pin::new(&mut self.0).poll_next_back(cx) {
+                            Poll::Pending => Poll::Pending,
+                            Poll::Ready(None) => Poll::Ready(None),
+                            Poll::Ready(Some(item)) => Poll::Ready(Some(item + 1)),
+                        }
+                    }
+                }
+
+                Increment(s)
+            }
+
+            let mut s = increment(stream::once(7)); // will need to implement DoubleEndedStream
+
+            assert_eq!(s.next_back().await, Some(8));
+            assert_eq!(s.next_back().await, None);
+            #
+            # }) }
+            ```
+        "#]
         fn poll_next_back(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
     }
 
     #[doc = r#"
-        Something else
+        Extension methods for [`DoubleEndedStreamExt`].
+
+        [`Stream`]: ../stream/trait.Stream.html
     "#]
     pub trait DoubleEndedStreamExt: crate::stream::DoubleEndedStream {
         #[doc = r#"
