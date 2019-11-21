@@ -71,14 +71,12 @@ We use the `select` macro for this purpose:
 # extern crate async_std;
 # extern crate futures;
 # use async_std::{net::TcpStream, prelude::*};
-use futures::channel::mpsc;
+# use futures::channel::mpsc;
 use futures::{select, FutureExt};
 # use std::sync::Arc;
-
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 # type Sender<T> = mpsc::UnboundedSender<T>;
-
 # #[derive(Debug)]
 # enum Void {} // 1
 
