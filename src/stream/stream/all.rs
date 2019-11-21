@@ -10,7 +10,6 @@ use crate::task::{Context, Poll};
 pub struct AllFuture<'a, S, F, T> {
     pub(crate) stream: &'a mut S,
     pub(crate) f: F,
-    pub(crate) result: bool,
     pub(crate) _marker: PhantomData<T>,
 }
 
@@ -19,7 +18,6 @@ impl<'a, S, F, T> AllFuture<'a, S, F, T> {
         Self {
             stream,
             f,
-            result: true, // the default if the empty stream
             _marker: PhantomData,
         }
     }
@@ -40,7 +38,6 @@ where
         match next {
             Some(v) => {
                 let result = (&mut self.f)(v);
-                self.result = result;
 
                 if result {
                     // don't forget to wake this task again to pull the next item from stream
@@ -50,7 +47,7 @@ where
                     Poll::Ready(false)
                 }
             }
-            None => Poll::Ready(self.result),
+            None => Poll::Ready(true),
         }
     }
 }
