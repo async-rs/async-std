@@ -12,7 +12,7 @@ use async_std::{
     task,
 };
 use futures::channel::mpsc;
-use futures::SinkExt;
+use futures::sink::SinkExt;
 use std::{
     collections::hash_map::{HashMap, Entry},
     sync::Arc,

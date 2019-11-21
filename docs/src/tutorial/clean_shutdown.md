@@ -30,7 +30,7 @@ Let's add waiting to the server:
 #     task,
 # };
 # use futures::channel::mpsc;
-# use futures::SinkExt;
+# use futures::sink::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
 #     sync::Arc,
@@ -163,7 +163,7 @@ And to the broker:
 #     task,
 # };
 # use futures::channel::mpsc;
-# use futures::SinkExt;
+# use futures::sink::SinkExt;
 # use std::{
 #     collections::hash_map::{HashMap, Entry},
 #     sync::Arc,
