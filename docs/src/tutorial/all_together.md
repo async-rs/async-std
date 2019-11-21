@@ -6,13 +6,13 @@ At this point, we only need to start the broker to get a fully-functioning (in t
 # extern crate async_std;
 # extern crate futures;
 use async_std::{
-    io::{self, BufReader},
+    io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
 use futures::channel::mpsc;
-use futures::SinkExt;
+use futures::sink::SinkExt;
 use std::{
     collections::hash_map::{HashMap, Entry},
     sync::Arc,

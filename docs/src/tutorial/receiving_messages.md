@@ -10,14 +10,18 @@ We need to:
 ```rust,edition2018
 # extern crate async_std;
 # use async_std::{
-#     io::BufReader,
-#     net::{TcpListener, TcpStream, ToSocketAddrs},
+#     net::{TcpListener, ToSocketAddrs},
 #     prelude::*,
 #     task,
 # };
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
+use async_std::{
+    io::BufReader,
+    net::TcpStream,
+};
+
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener.incoming();
@@ -46,7 +50,7 @@ async fn connection_loop(stream: TcpStream) -> Result<()> {
             Some(idx) => (&line[..idx], line[idx + 1 ..].trim()),
         };
         let dest: Vec<String> = dest.split(',').map(|name| name.trim().to_string()).collect();
-        let msg: String = msg.trim().to_string();
+        let msg: String = msg.to_string();
     }
     Ok(())
 }
@@ -130,7 +134,7 @@ So let's use a helper function for this:
 # };
 fn spawn_and_log_error<F>(fut: F) -> task::JoinHandle<()>
 where
-    F: Future<Output = io::Result<()>> + Send + 'static,
+    F: Future<Output = Result<()>> + Send + 'static,
 {
     task::spawn(async move {
         if let Err(e) = fut.await {
