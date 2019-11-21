@@ -131,17 +131,55 @@
 //!
 //! # Examples
 //!
-//! Spawn a task and block the current thread on its result:
+//! All examples require the [`"attributes"` feature](#features) to be enabled.
+//! This feature is not enabled by default because it significantly impacts
+//! compile times. See [`task::block_on`] for an alternative way to start
+//! executing tasks.
+//!
+//! Call an async function from the main function:
 //!
 //! ```
-//! use async_std::task;
+//! async fn say_hello() {
+//!     println!("Hello, world!");
+//! }
 //!
-//! fn main() {
-//!     task::block_on(async {
-//!         println!("Hello, world!");
-//!     })
+//! #[async_std::main]
+//! async fn main() {
+//!     say_hello().await;
 //! }
 //! ```
+//!
+//! Await two futures concurrently, and return a tuple of their output:
+//!
+//! ```
+//! #[async_std::main]
+//! async fn main() {
+//!     let a = async { 1u8 };
+//!     let b = async { 2u8 };
+//!     assert_eq!(a.join(b).await, (1u8, 2u8))
+//! }
+//! ```
+//!
+//! Create a UDP server that echoes back each received message to the sender:
+//!
+//! ```no_run
+//! use async_std::net::UdpSocket;
+//!
+//! #[async_std::main]
+//! async fn main() -> std::io::Result<()> {
+//!     let mut socket = UdpSocket::bind("127.0.0.1:8080")?;
+//!     println!("Listening on {}", socket.local_addr()?);
+//!
+//!     let mut buf = vec![0u8; 1024];
+//!
+//!     loop {
+//!         let (recv, peer) = socket.recv_from(&mut buf).await?;
+//!         let sent = socket.send_to(&buf[..recv], &peer).await?;
+//!         println!("Sent {} out of {} bytes to {}", sent, recv, peer);
+//!     }
+//! }
+//! ```
+//! [`task::block_on`]: task/fn.block_on.html
 //!
 //! # Features
 //!
