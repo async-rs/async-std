@@ -154,8 +154,8 @@
 //! ```
 //! #[async_std::main]
 //! async fn main() {
-//!     let a = || async move { 1u8 };
-//!     let b = || async move { 2u8 };
+//!     let a = async { 1u8 };
+//!     let b = async { 2u8 };
 //!     assert_eq!(a.join(b).await, (1u8, 2u8))
 //! }
 //! ```

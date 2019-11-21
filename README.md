@@ -74,6 +74,10 @@ syntax.
 
 ## Examples
 
+All examples require the [`"attributes"` feature] to be enabled.  This feature
+is not enabled by default because it significantly impacts compile times. See
+[`task::block_on`] for an alternative way to start executing tasks.
+
 ```rust
 async fn say_hello() {
     println!("Hello, world!");
@@ -90,6 +94,8 @@ More examples, including networking and file access, can be found in our
 
 [`examples`]: https://github.com/async-rs/async-std/tree/master/examples
 [documentation]: https://docs.rs/async-std#examples
+[`task::block_on`]: task/fn.block_on.html
+[`"attributes"` feature]: https://docs.rs/async-std/#features
 
 ## Philosophy
 
