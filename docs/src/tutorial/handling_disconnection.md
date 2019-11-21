@@ -60,8 +60,8 @@ async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> R
 }
 ```
 
-1. To enforce that no messages are send along the shutdown channel, we use an uninhabited type.
-2. We pass the shutdown channel to the writer task
+1. To enforce that no messages are sent along the shutdown channel, we use an uninhabited type.
+2. We pass the shutdown channel to the writer task.
 3. In the reader, we create a `_shutdown_sender` whose only purpose is to get dropped.
 
 In the `connection_writer_loop`, we now need to choose between shutdown and message channels.
@@ -110,7 +110,7 @@ async fn connection_writer_loop(
 
 Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
 To not lose these messages completely, we'll return the messages channel back to the broker.
-This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infailable.
+This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infallible.
 
 ## Final Code
 
