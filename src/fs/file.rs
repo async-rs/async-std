@@ -742,7 +742,10 @@ impl LockGuard<State> {
                 if n > 0 {
                     // Seek `n` bytes backwards. This call should not block because it only changes
                     // the internal offset into the file and doesn't touch the actual file on disk.
-                    (&*self.file).seek(SeekFrom::Current(-(n as i64)))?;
+                    //
+                    // We ignore errors here because special files like `/dev/random` are not
+                    // seekable.
+                    let _ = (&*self.file).seek(SeekFrom::Current(-(n as i64)));
                 }
 
                 // Switch to idle mode.
