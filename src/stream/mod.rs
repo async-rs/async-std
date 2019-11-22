@@ -307,7 +307,6 @@ pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
-pub use crate::stream::sample::Sample;
 
 pub mod stream;
 
@@ -317,7 +316,6 @@ mod from_iter;
 mod once;
 mod repeat;
 mod repeat_with;
-mod sample;
 
 cfg_unstable! {
     pub mod double_ended;
