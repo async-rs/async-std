@@ -15,6 +15,25 @@ pub struct FromIter<T> {
     inner: Vec<T>,
 }
 
+/// Converts an iterator into a double-ended stream.
+///
+/// # Examples
+///
+/// ```
+/// # async_std::task::block_on(async {
+/// #
+/// use async_std::stream::double_ended::{self, DoubleEndedStreamExt};
+///
+/// let mut s = double_ended::from_iter(vec![0, 1, 2, 3]);
+///
+/// assert_eq!(s.next_back().await, Some(3));
+/// assert_eq!(s.next_back().await, Some(2));
+/// assert_eq!(s.next_back().await, Some(1));
+/// assert_eq!(s.next_back().await, Some(0));
+/// assert_eq!(s.next_back().await, None);
+/// #
+/// # })
+/// ```
 pub fn from_iter<I: IntoIterator>(iter: I) -> FromIter<I::Item> {
     FromIter { inner: iter.into_iter().collect() }
 }
