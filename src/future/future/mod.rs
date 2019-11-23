@@ -304,7 +304,7 @@ extension_trait! {
         ) -> impl Future<Output = (<Self as std::future::Future>::Output, <F as std::future::Future>::Output)> [Join<Self, F>]
         where
             Self: std::future::Future + Sized,
-            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+            F: std::future::Future,
         {
             Join::new(self, other)
         }
