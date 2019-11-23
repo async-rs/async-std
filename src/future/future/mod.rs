@@ -289,10 +289,10 @@ extension_trait! {
             use async_std::future;
 
             let a = future::ready(1u8);
-            let b = future::ready(2u8);
+            let b = future::ready(2u16);
 
             let f = a.join(b);
-            assert_eq!(f.await, (1u8, 2u8));
+            assert_eq!(f.await, (1u8, 2u16));
             # });
             ```
         "#]
