@@ -15,6 +15,7 @@ cfg_unstable! {
     use try_race::TryRace;
     use join::Join;
     use try_join::TryJoin;
+    use crate::future::timeout::TimeoutFuture;
 }
 
 extension_trait! {
@@ -354,6 +355,18 @@ extension_trait! {
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
         {
             TryJoin::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for both the future and a timeout, if the timeout completes before
+            the future, it returns an TimeoutError.
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn timeout<F, T>(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
+            where Self: Sized
+        {
+            TimeoutFuture::new(self, dur)
         }
     }
 

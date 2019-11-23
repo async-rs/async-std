@@ -42,11 +42,17 @@ where
 
 pin_project! {
     /// A future that times out after a duration of time.
-    struct TimeoutFuture<F> {
+    pub struct TimeoutFuture<F> {
         #[pin]
         future: F,
         #[pin]
         delay: Delay,
+    }
+}
+
+impl<F> TimeoutFuture<F> {
+    pub fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
+        TimeoutFuture { future: future, delay: Delay::new(dur) }
     }
 }
 
