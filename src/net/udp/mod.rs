@@ -159,7 +159,7 @@ impl UdpSocket {
                 .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
         })
         .await
-        .context(|| format!("Could not send packet to {}", addr))
+        .context(|| format!("could not send packet to {}", addr))
     }
 
     /// Receives data from the socket.
@@ -190,7 +190,7 @@ impl UdpSocket {
         .context(|| {
             use std::fmt::Write;
 
-            let mut error = String::from("Could not receive data on ");
+            let mut error = String::from("could not receive data on ");
             if let Ok(addr) = self.local_addr() {
                 let _ = write!(&mut error, "{}", addr);
             } else {
@@ -277,7 +277,7 @@ impl UdpSocket {
             .context(|| {
                 use std::fmt::Write;
 
-                let mut error = String::from("Could not send data on ");
+                let mut error = String::from("could not send data on ");
                 if let Ok(addr) = self.local_addr() {
                     let _ = write!(&mut error, "{}", addr);
                 } else {
@@ -312,7 +312,7 @@ impl UdpSocket {
             .context(|| {
                 use std::fmt::Write;
 
-                let mut error = String::from("Could not receive data on ");
+                let mut error = String::from("could not receive data on ");
                 if let Ok(addr) = self.local_addr() {
                     let _ = write!(&mut error, "{}", addr);
                 } else {

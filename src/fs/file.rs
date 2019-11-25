@@ -114,7 +114,7 @@ impl File {
     pub async fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
         let path = path.as_ref().to_owned();
         let file = spawn_blocking(move || {
-            std::fs::File::open(&path).context(|| format!("Could not open `{}`", path.display()))
+            std::fs::File::open(&path).context(|| format!("could not open `{}`", path.display()))
         })
         .await?;
         Ok(File::new(file, true))
@@ -153,7 +153,7 @@ impl File {
         let path = path.as_ref().to_owned();
         let file = spawn_blocking(move || {
             std::fs::File::create(&path)
-                .context(|| format!("Could not create `{}`", path.display()))
+                .context(|| format!("could not create `{}`", path.display()))
         })
         .await?;
         Ok(File::new(file, true))

@@ -163,7 +163,7 @@ impl Stdin {
             }
         })
         .await
-        .context(|| String::from("Could not read line on stdin"))
+        .context(|| String::from("could not read line on stdin"))
     }
 
     /// Locks this handle to the standard input stream, returning a readable guard.
