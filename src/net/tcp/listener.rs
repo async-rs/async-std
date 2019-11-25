@@ -8,7 +8,6 @@ use crate::net::driver::Watcher;
 use crate::net::{TcpStream, ToSocketAddrs};
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
-use crate::utils::Context as _;
 
 /// A TCP socket server, listening for connections.
 ///
@@ -78,8 +77,7 @@ impl TcpListener {
         let mut last_err = None;
         let addrs = addrs
             .to_socket_addrs()
-            .await
-            .context(|| String::from("could not resolve addresses"))?;
+            .await?;
 
         for addr in addrs {
             match mio::net::TcpListener::bind(&addr) {

@@ -74,8 +74,7 @@ impl TcpStream {
         let mut last_err = None;
         let addrs = addrs
             .to_socket_addrs()
-            .await
-            .context(|| String::from("could not resolve addresses"))?;
+            .await?;
 
         for addr in addrs {
             let res = spawn_blocking(move || {

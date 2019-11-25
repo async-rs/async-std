@@ -71,8 +71,7 @@ impl UdpSocket {
         let mut last_err = None;
         let addrs = addrs
             .to_socket_addrs()
-            .await
-            .context(|| String::from("could not resolve addresses"))?;
+            .await?;
 
         for addr in addrs {
             match mio::net::UdpSocket::bind(&addr) {
