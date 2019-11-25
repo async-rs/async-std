@@ -123,6 +123,7 @@ cfg_unstable! {
 
     use count::CountFuture;
     use partition::PartitionFuture;
+    use unzip::UnzipFuture;
 
     pub use merge::Merge;
     pub use flatten::Flatten;
@@ -137,6 +138,7 @@ cfg_unstable! {
     mod partition;
     mod timeout;
     mod throttle;
+    mod unzip;
 }
 
 extension_trait! {
@@ -1746,6 +1748,44 @@ extension_trait! {
             U: Stream,
         {
             Zip::new(self, other)
+        }
+
+        #[doc = r#"
+            Converts an stream of pairs into a pair of containers.
+
+            `unzip()` consumes an entire stream of pairs, producing two collections: one from the left elements of the pairs, and one from the right elements.
+
+            This function is, in some sense, the opposite of [`zip`].
+
+            [`zip`]: trait.Stream.html#method.zip
+
+            # Example
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s  = stream::from_iter(vec![(1,2), (3,4)]);
+
+            let (left, right): (Vec<_>, Vec<_>) = s.unzip().await;
+
+            assert_eq!(left, [1, 3]);
+            assert_eq!(right, [2, 4]);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn unzip<A, B, FromA, FromB>(self) -> impl Future<Output = (FromA, FromB)> [UnzipFuture<Self, FromA, FromB>]
+        where
+        FromA: Default + Extend<A>,
+        FromB: Default + Extend<B>,
+        Self: Stream<Item = (A, B)> + Sized,
+        {
+            UnzipFuture::new(self)
         }
 
         #[doc = r#"
