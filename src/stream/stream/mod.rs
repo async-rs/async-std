@@ -587,16 +587,12 @@ extension_trait! {
             use async_std::stream;
             use std::time::Duration;
 
-            let a = stream::once(1).delay(Duration::from_millis(200));
-            let b = stream::once(2).delay(Duration::from_millis(100));
-            let c = stream::once(3).delay(Duration::from_millis(300));
+            let mut s = stream::from_iter(vec![0u8, 1, 2]).delay(Duration::from_millis(200));
 
-            let s = stream::join!(a, b, c);
-
-            assert_eq!(stream.next().await, Some(1));
-            assert_eq!(stream.next().await, Some(2));
-            assert_eq!(stream.next().await, Some(3));
-            assert_eq!(stream.next().await, None);
+            assert_eq!(s.next().await, Some(0));
+            assert_eq!(s.next().await, Some(1));
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, None);
             #
             # }) }
             ```
