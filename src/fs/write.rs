@@ -1,6 +1,7 @@
 use crate::io;
 use crate::path::Path;
 use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Writes a slice of bytes as the new contents of a file.
 ///
@@ -33,5 +34,9 @@ use crate::task::spawn_blocking;
 pub async fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
     let path = path.as_ref().to_owned();
     let contents = contents.as_ref().to_owned();
-    spawn_blocking(move || std::fs::write(path, contents)).await
+    spawn_blocking(move || {
+        std::fs::write(&path, contents)
+            .context(|| format!("could not write to file `{}`", path.display()))
+    })
+    .await
 }
