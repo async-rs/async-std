@@ -289,10 +289,10 @@ extension_trait! {
             use async_std::future;
 
             let a = future::ready(1u8);
-            let b = future::ready(2u8);
+            let b = future::ready(2u16);
 
             let f = a.join(b);
-            assert_eq!(f.await, (1u8, 2u8));
+            assert_eq!(f.await, (1u8, 2u16));
             # });
             ```
         "#]
@@ -304,7 +304,7 @@ extension_trait! {
         ) -> impl Future<Output = (<Self as std::future::Future>::Output, <F as std::future::Future>::Output)> [Join<Self, F>]
         where
             Self: std::future::Future + Sized,
-            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+            F: std::future::Future,
         {
             Join::new(self, other)
         }
@@ -328,30 +328,30 @@ extension_trait! {
             use async_std::prelude::*;
             use async_std::future;
 
-            let a = future::ready(Err("Error"));
+            let a = future::ready(Err::<u8, &str>("Error"));
             let b = future::ready(Ok(1u8));
 
             let f = a.try_join(b);
             assert_eq!(f.await, Err("Error"));
 
             let a = future::ready(Ok::<u8, String>(1u8));
-            let b = future::ready(Ok::<u8, String>(2u8));
+            let b = future::ready(Ok::<u16, String>(2u16));
 
             let f = a.try_join(b);
-            assert_eq!(f.await, Ok((1u8, 2u8)));
+            assert_eq!(f.await, Ok((1u8, 2u16)));
             #
             # Ok(()) }) }
             ```
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn try_join<F, T, E>(
+        fn try_join<F, A, B, E>(
             self,
             other: F
-        ) -> impl Future<Output = Result<(T, T), E>> [TryJoin<Self, F>]
+        ) -> impl Future<Output = Result<(A, B), E>> [TryJoin<Self, F>]
         where
-            Self: std::future::Future<Output = Result<T, E>> + Sized,
-            F: std::future::Future<Output = <Self as std::future::Future>::Output>,
+            Self: std::future::Future<Output = Result<A, E>> + Sized,
+            F: std::future::Future<Output = Result<B, E>>,
         {
             TryJoin::new(self, other)
         }
