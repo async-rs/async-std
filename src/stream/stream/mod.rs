@@ -336,28 +336,19 @@ extension_trait! {
             let start = Instant::now();
 
             // emit value every 5 milliseconds
-            let s = stream::interval(Duration::from_millis(5))
-                .enumerate()
-                .take(3);
+            let s = stream::interval(Duration::from_millis(5)).take(2);
 
             // throttle for 10 milliseconds
             let mut s = s.throttle(Duration::from_millis(10));
 
-            assert_eq!(s.next().await, Some((0, ())));
-            let duration_ms = start.elapsed().as_millis();
-            assert!(duration_ms >= 5);
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 5);
 
-            assert_eq!(s.next().await, Some((1, ())));
-            let duration_ms = start.elapsed().as_millis();
-            assert!(duration_ms >= 15);
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 15);
 
-            assert_eq!(s.next().await, Some((2, ())));
-            let duration_ms = start.elapsed().as_millis();
-            assert!(duration_ms >= 25);
-
-            assert_eq!(s.next().await, None);
-            let duration_ms = start.elapsed().as_millis();
-            assert!(duration_ms >= 35);
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 35);
             #
             # }) }
             ```

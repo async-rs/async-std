@@ -55,10 +55,7 @@ impl<S: Stream> Stream for Throttle<S> {
         }
 
         match this.stream.poll_next(cx) {
-            Poll::Pending => {
-                cx.waker().wake_by_ref(); // Continue driving even though emitting Pending
-                Poll::Pending
-            }
+            Poll::Pending => Poll::Pending,
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
                 *this.blocked = true;
