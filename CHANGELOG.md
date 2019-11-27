@@ -42,10 +42,13 @@ assert_eq!(right, [2, 4]);
 ## Changed
 
 - Enabled CI on master branch.
+- `Future::join` and `Future::try_join` can now join futures with different
+  output types.
 
 ## Fixed
 
 - Fixed the docs and `Debug` output of `BufWriter`.
+- Fixed a bug in `Stream::throttle` that made it consume too much CPU.
 
 # [1.1.0] - 2019-11-21
 
