@@ -1,7 +1,7 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::future::Future;
 
-use crate::future::Future;
 use crate::stream::Stream;
 
 #[doc(hidden)]
@@ -15,7 +15,7 @@ impl<S: Unpin> Unpin for NthFuture<'_, S> {}
 
 impl<'a, S> NthFuture<'a, S> {
     pub(crate) fn new(stream: &'a mut S, n: usize) -> Self {
-        NthFuture { stream, n }
+        Self { stream, n }
     }
 }
 

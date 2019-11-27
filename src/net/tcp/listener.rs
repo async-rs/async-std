@@ -1,13 +1,11 @@
+use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
-use super::TcpStream;
-use crate::future::{self, Future};
+use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
-use crate::net::ToSocketAddrs;
+use crate::net::{TcpStream, ToSocketAddrs};
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
@@ -77,8 +75,11 @@ impl TcpListener {
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
+        let addrs = addrs
+            .to_socket_addrs()
+            .await?;
 
-        for addr in addrs.to_socket_addrs().await? {
+        for addr in addrs {
             match mio::net::TcpListener::bind(&addr) {
                 Ok(mio_listener) => {
                     return Ok(TcpListener {
@@ -213,59 +214,46 @@ impl From<std::net::TcpListener> for TcpListener {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-        // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        // use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+cfg_unix! {
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl AsRawFd for TcpListener {
+        fn as_raw_fd(&self) -> RawFd {
+            self.watcher.get_ref().as_raw_fd()
+        }
     }
-}
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for TcpListener {
-            fn as_raw_fd(&self) -> RawFd {
-                self.watcher.get_ref().as_raw_fd()
-            }
+    impl FromRawFd for TcpListener {
+        unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
+            std::net::TcpListener::from_raw_fd(fd).into()
         }
+    }
 
-        impl FromRawFd for TcpListener {
-            unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
-                std::net::TcpListener::from_raw_fd(fd).into()
-            }
-        }
-
-        impl IntoRawFd for TcpListener {
-            fn into_raw_fd(self) -> RawFd {
-                self.watcher.into_inner().into_raw_fd()
-            }
+    impl IntoRawFd for TcpListener {
+        fn into_raw_fd(self) -> RawFd {
+            self.watcher.into_inner().into_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(windows)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        // impl AsRawSocket for TcpListener {
-        //     fn as_raw_socket(&self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-        //
-        // impl FromRawSocket for TcpListener {
-        //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpListener {
-        //         net::TcpListener::from_raw_socket(handle).try_into().unwrap()
-        //     }
-        // }
-        //
-        // impl IntoRawSocket for TcpListener {
-        //     fn into_raw_socket(self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-    }
+cfg_windows! {
+    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+    //
+    // impl AsRawSocket for TcpListener {
+    //     fn as_raw_socket(&self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
+    //
+    // impl FromRawSocket for TcpListener {
+    //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpListener {
+    //         net::TcpListener::from_raw_socket(handle).try_into().unwrap()
+    //     }
+    // }
+    //
+    // impl IntoRawSocket for TcpListener {
+    //     fn into_raw_socket(self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
 }

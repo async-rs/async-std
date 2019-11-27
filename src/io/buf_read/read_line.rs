@@ -1,9 +1,9 @@
 use std::mem;
 use std::pin::Pin;
 use std::str;
+use std::future::Future;
 
 use super::read_until_internal;
-use crate::future::Future;
 use crate::io::{self, BufRead};
 use crate::task::{Context, Poll};
 
@@ -37,8 +37,12 @@ impl<T: BufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
                 ))
             }))
         } else {
-            debug_assert!(buf.is_empty());
-            debug_assert_eq!(*read, 0);
+            #[allow(clippy::debug_assert_with_mut_call)]
+            {
+                debug_assert!(buf.is_empty());
+                debug_assert_eq!(*read, 0);
+            }
+
             // Safety: `bytes` is a valid UTF-8 because `str::from_utf8` returned `Ok`.
             mem::swap(unsafe { buf.as_mut_vec() }, bytes);
             Poll::Ready(ret)

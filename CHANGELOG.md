@@ -7,6 +7,333 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.1.0] - 2019-11-21
+
+[API Documentation](https://docs.rs/async-std/1.1.0/async-std)
+
+This patch introduces a faster scheduler algorithm, `Stream::throttle`, and
+stabilizes `task::yield_now`. Additionally we're introducing several more stream
+APIs, bringing us to almost complete parity with the standard library.
+
+Furthermore our `path` submodule now returns more context in errors. So if
+opening a file fails, async-std will tell you *which* file was failed to open,
+making it easier to write and debug programs.
+
+## Examples
+
+```rust
+let start = Instant::now();
+
+let mut s = stream::interval(Duration::from_millis(5))
+    .throttle(Duration::from_millis(10))
+    .take(2);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 5);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 15);
+
+s.next().await;
+assert!(start.elapsed().as_millis() >= 25);
+```
+
+## Added
+
+- Added `Stream::throttle` as "unstable".
+- Added `Stream::count` as "unstable".
+- Added `Stream::max` as "unstable".
+- Added `Stream::successors` as "unstable".
+- Added `Stream::by_ref` as "unstable".
+- Added `Stream::partition` as "unstable".
+- Added contextual errors to the `path` submodule.
+- Added `os::windows::symlink_dir` as "unstable".
+- Added `os::windows::symlink_file` as "unstable".
+- Stabilized `task::yield_now`.
+
+## Fixes
+
+- We now ignore seek errors when rolling back failed `read` calls on `File`.
+- Fixed a bug where `Stream::max_by_key` was returning the wrong result.
+- Fixed a bug where `Stream::min_by_key` was returning the wrong result.
+
+## Changed
+
+- Applied various fixes to the tutorial.
+- Fixed an issue with Clippy.
+- Optimized an internal code generation macro, improving compilation speeds.
+- Removed an `Unpin` bound from `stream::Once`.
+- Removed various extra internal uses of `pin_mut!`.
+- Simplified `Stream::any` and `Stream::all`'s internals.
+- The `surf` example is now enabled again.
+- Tweaked some streams internals.
+- Updated `futures-timer` to 2.0.0, improving compilation speed.
+- Upgraded `async-macros` to 2.0.0.
+- `Stream::merge` now uses randomized ordering to reduce overall latency.
+- The scheduler is now more efficient by keeping a slot for the next task to
+  run. This is similar to Go's scheduler, and Tokio's scheduler.
+- Fixed the documentation of the `channel` types to link back to the `channel`
+  function.
+
+# [1.0.1] - 2019-11-12
+
+[API Documentation](https://docs.rs/async-std/1.0.1/async-std)
+
+We were seeing a regression in our fs performance, caused by too many
+long-running tasks. This patch fixes that regression by being more proactive
+about closing down idle threads.
+
+## Changes
+
+- Improved thread startup/shutdown algorithm in `task::spawn_blocking`.
+- Fixed a typo in the tutorial.
+
+# [1.0.0] - 2019-11-11
+
+[API Documentation](https://docs.rs/async-std/1.0.0/async-std)
+
+This release marks the `1.0.0` release of async-std; a major milestone for our
+development. This release itself mostly includes quality of life improvements
+for all of modules, including more consistent API bounds for a lot of our
+submodules.
+
+The biggest change is that we're now using the full semver range,
+`major.minor.patch`, and any breaking changes to our "stable" APIs will require
+an update of the `major` number.
+
+We're excited we've hit this milestone together with you all. Thank you!
+
+## Added
+
+- Added `Future::join` as "unstable", replacing `future::join!`.
+- Added `Future::try_join` as "unstable", replacing `future::try_join!`.
+- Enabled `stable` and `beta` channel testing on CI.
+- Implemented `FromIterator` and `Extend` for `PathBuf`.
+- Implemented `FromStream` for `PathBuf`.
+- Loosened the trait bounds of `io::copy` on "unstable".
+
+## Changed
+
+- Added a `Sync` bound to `RwLock`, resolving a memory safety issue.
+- Fixed a bug in `Stream::take_while` where it could continue after it should've
+  ended.
+- Fixed a bug where our `attributes` Cargo feature wasn't working as intended.
+- Improved documentation of `Stream::merge`, documenting  ordering guarantees.
+- Update doc imports in examples to prefer async-std's types.
+- Various quality of life improvements to the `future` submodule.
+- Various quality of life improvements to the `path` submodule.
+- Various quality of life improvements to the `stream` submodule.
+
+## Removed
+
+- Removed `future::join!` in favor of `Future::join`.
+- Removed `future::try_join!` in favor of `Future::try_join`.
+
+# [0.99.12] - 2019-11-07
+
+[API Documentation](https://docs.rs/async-std/0.99.12/async-std)
+
+This patch upgrades us to `futures` 0.3, support for `async/await` on Rust
+Stable, performance improvements, and brand new module-level documentation.
+
+## Added
+
+- Added `Future::flatten` as "unstable".
+- Added `Future::race` as "unstable" (replaces `future::select!`).
+- Added `Future::try_race` as "unstable" (replaces `future::try_select!`).
+- Added `Stderr::lock` as "unstable".
+- Added `Stdin::lock` as "unstable".
+- Added `Stdout::lock` as "unstable".
+- Added `Stream::copied` as "unstable".
+- Added `Stream::eq` as "unstable".
+- Added `Stream::max_by_key` as "unstable".
+- Added `Stream::min` as "unstable".
+- Added `Stream::ne` as "unstable".
+- Added `Stream::position` as "unstable".
+- Added `StreamExt` and `FutureExt` as enumerable in the `prelude`.
+- Added `TcpListener` and `TcpStream` integration tests.
+- Added `stream::from_iter`.
+- Added `sync::WakerSet` for internal use.
+- Added an example to handle both `IP v4` and `IP v6` connections.
+- Added the `default` Cargo feature.
+- Added the `attributes` Cargo feature.
+- Added the `std` Cargo feature.
+
+## Changed
+
+- Fixed a bug in the blocking threadpool where it didn't spawn more than one thread.
+- Fixed a bug with `Stream::merge` where sometimes it ended too soon.
+- Fixed a bug with our GitHub actions setup.
+- Fixed an issue where our channels could spuriously deadlock.
+- Refactored the `task` module.
+- Removed a deprecated GitHub action.
+- Replaced `futures-preview` with `futures`.
+- Replaced `lazy_static` with `once_cell`.
+- Replaced all uses of `VecDequeue` in the examples with `stream::from_iter`.
+- Simplified `sync::RwLock` using the internal `sync::WakerSet` type.
+- Updated the `path` submodule documentation to match std.
+- Updated the mod-level documentation to match std.
+
+## Removed
+
+- Removed `future::select!` (replaced by `Future::race`).
+- Removed `future::try_select!` (replaced by `Future::try_race`).
+
+# [0.99.11] - 2019-10-29
+
+This patch introduces `async_std::sync::channel`, a novel asynchronous port of
+the ultra-fast Crossbeam channels. This has been one of the most anticipated
+features for async-std, and we're excited to be providing a first version of
+this!
+
+In addition to channels, this patch has the regular list of new methods, types,
+and doc fixes.
+
+## Examples
+
+__Send and receive items from a channel__
+```rust
+// Create a bounded channel with a max-size of 1
+let (s, r) = channel(1);
+
+// This call returns immediately because there is enough space in the channel.
+s.send(1).await;
+
+task::spawn(async move {
+    // This call blocks the current task because the channel is full.
+    // It will be able to complete only after the first message is received.
+    s.send(2).await;
+});
+
+// Receive items from the channel
+task::sleep(Duration::from_secs(1)).await;
+assert_eq!(r.recv().await, Some(1));
+assert_eq!(r.recv().await, Some(2));
+```
+
+## Added
+- Added `Future::delay` as "unstable"
+- Added `Stream::flat_map` as "unstable"
+- Added `Stream::flatten` as "unstable"
+- Added `Stream::product` as "unstable"
+- Added `Stream::sum` as "unstable"
+- Added `Stream::min_by_key`
+- Added `Stream::max_by`
+- Added `Stream::timeout` as "unstable"
+- Added `sync::channel` as "unstable".
+- Added doc links from instantiated structs to the methods that create them.
+- Implemented `Extend` + `FromStream` for `PathBuf`.
+
+## Changed
+- Fixed an issue with `block_on` so it works even when nested.
+- Fixed issues with our Clippy check on CI.
+- Replaced our uses of `cfg_if` with our own macros, simplifying the codebase.
+- Updated the homepage link in `Cargo.toml` to point to [async.rs](https://async.rs).
+- Updated the module-level documentation for `stream` and `sync`.
+- Various typos and grammar fixes.
+- Removed redundant file flushes, improving the performance of `File` operations
+
+## Removed
+Nothing was removed in this release.
+
+# [0.99.10] - 2019-10-16
+
+This patch stabilizes several core concurrency macros, introduces async versions
+of `Path` and `PathBuf`, and adds almost 100 other commits.
+
+## Examples
+
+__Asynchronously read directories from the filesystem__
+```rust
+use async_std::fs;
+use async_std::path::Path;
+use async_std::prelude::*;
+
+let path = Path::new("/laputa");
+let mut dir = fs::read_dir(&path).await.unwrap();
+while let Some(entry) = dir.next().await {
+    if let Ok(entry) = entry {
+        println!("{:?}", entry.path());
+    }
+}
+```
+
+__Cooperatively reschedule the current task on the executor__
+```rust
+use async_std::prelude::*;
+use async_std::task;
+
+task::spawn(async {
+    let x = fibonnacci(1000); // Do expensive work
+    task::yield_now().await;  // Allow other tasks to run
+    x + fibonnacci(100)       // Do more work
+})
+```
+
+__Create an interval stream__
+```rust
+use async_std::prelude::*;
+use async_std::stream;
+use std::time::Duration;
+
+let mut interval = stream::interval(Duration::from_secs(4));
+while let Some(_) = interval.next().await {
+    println!("prints every four seconds");
+}
+```
+
+## Added
+
+- Added `FutureExt` to the `prelude`, allowing us to extend `Future`
+- Added `Stream::cmp`
+- Added `Stream::ge`
+- Added `Stream::last`
+- Added `Stream::le`
+- Added `Stream::lt`
+- Added `Stream::merge` as "unstable", replacing `stream::join!`
+- Added `Stream::partial_cmp`
+- Added `Stream::take_while`
+- Added `Stream::try_fold`
+- Added `future::IntoFuture` as "unstable"
+- Added `io::BufRead::split`
+- Added `io::Write::write_fmt`
+- Added `print!`, `println!`, `eprint!`, `eprintln!` macros as "unstable"
+- Added `process` as "unstable", re-exporting std types only for now
+- Added `std::net` re-exports to the `net` submodule
+- Added `std::path::PathBuf` with all associated methods
+- Added `std::path::Path` with all associated methods
+- Added `stream::ExactSizeStream` as "unstable"
+- Added `stream::FusedStream` as "unstable"
+- Added `stream::Product`
+- Added `stream::Sum`
+- Added `stream::from_fn`
+- Added `stream::interval` as "unstable"
+- Added `stream::repeat_with`
+- Added `task::spawn_blocking` as "unstable", replacing `task::blocking`
+- Added `task::yield_now`
+- Added `write!` and `writeln!` macros as "unstable"
+- Stabilized `future::join!` and `future::try_join!`
+- Stabilized `future::timeout`
+- Stabilized `path`
+- Stabilized `task::ready!`
+
+## Changed
+
+- Fixed `BufWriter::into_inner` so it calls `flush` before yielding
+- Refactored `io::BufWriter` internals
+- Refactored `net::ToSocketAddrs` internals
+- Removed Travis CI entirely
+- Rewrote the README.md
+- Stabilized `io::Cursor`
+- Switched bors over to use GitHub actions
+- Updated the `io` documentation to match std's `io` docs
+- Updated the `task` documentation to match std's `thread` docs
+
+## Removed
+
+- Removed the "unstable" `stream::join!` in favor of `Stream::merge`
+- Removed the "unstable" `task::blocking` in favor of `task::spawn_blocking`
+
 # [0.99.9] - 2019-10-08
 
 This patch upgrades our `futures-rs` version, allowing us to build on the 1.39
@@ -183,7 +510,13 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v0.99.9...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/async-rs/async-std/compare/v1.0.1...v1.1.0
+[1.0.1]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/async-rs/async-std/compare/v0.99.12...v1.0.0
+[0.99.12]: https://github.com/async-rs/async-std/compare/v0.99.11...v0.99.12
+[0.99.11]: https://github.com/async-rs/async-std/compare/v0.99.10...v0.99.11
+[0.99.10]: https://github.com/async-rs/async-std/compare/v0.99.9...v0.99.10
 [0.99.9]: https://github.com/async-rs/async-std/compare/v0.99.8...v0.99.9
 [0.99.8]: https://github.com/async-rs/async-std/compare/v0.99.7...v0.99.8
 [0.99.7]: https://github.com/async-rs/async-std/compare/v0.99.6...v0.99.7

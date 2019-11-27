@@ -11,17 +11,12 @@ where
     /// elements are taken, and the `Err` is returned. Should no `Err`
     /// occur, a container with the values of each `Result` is returned.
     #[inline]
-    fn from_stream<'a, S: IntoStream<Item = Result<T, E>>>(
+    fn from_stream<'a, S: IntoStream<Item = Result<T, E>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn core::future::Future<Output = Self> + 'a>>
-    where
-        <S as IntoStream>::IntoStream: 'a,
-    {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            pin_utils::pin_mut!(stream);
-
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = None;

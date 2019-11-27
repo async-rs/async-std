@@ -1,21 +1,29 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 
-/// A stream to skip first n elements of another stream.
-#[derive(Debug)]
-pub struct Skip<S> {
-    stream: S,
-    n: usize,
+pin_project! {
+    /// A stream to skip first n elements of another stream.
+    ///
+    /// This `struct` is created by the [`skip`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`skip`]: trait.Stream.html#method.skip
+    /// [`Stream`]: trait.Stream.html
+    #[derive(Debug)]
+    pub struct Skip<S> {
+        #[pin]
+        stream: S,
+        n: usize,
+    }
 }
 
 impl<S> Skip<S> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(n: usize);
-
     pub(crate) fn new(stream: S, n: usize) -> Self {
-        Skip { stream, n }
+        Self { stream, n }
     }
 }
 
@@ -25,14 +33,15 @@ where
 {
     type Item = S::Item;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
         loop {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
             match next {
-                Some(v) => match self.n {
+                Some(v) => match *this.n {
                     0 => return Poll::Ready(Some(v)),
-                    _ => *self.as_mut().n() -= 1,
+                    _ => *this.n -= 1,
                 },
                 None => return Poll::Ready(None),
             }

@@ -1,42 +1,48 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
+
+use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that does something with each element of another stream.
-#[derive(Debug)]
-pub struct Inspect<S, F, T> {
-    stream: S,
-    f: F,
-    __t: PhantomData<T>,
+pin_project! {
+    /// A stream that does something with each element of another stream.
+    ///
+    /// This `struct` is created by the [`inspect`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`inspect`]: trait.Stream.html#method.inspect
+    /// [`Stream`]: trait.Stream.html
+    #[derive(Debug)]
+    pub struct Inspect<S, F> {
+        #[pin]
+        stream: S,
+        f: F,
+    }
 }
 
-impl<S, F, T> Inspect<S, F, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-
+impl<S, F> Inspect<S, F> {
     pub(super) fn new(stream: S, f: F) -> Self {
-        Inspect {
+        Self {
             stream,
             f,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, F> Stream for Inspect<S, F, S::Item>
+impl<S, F> Stream for Inspect<S, F>
 where
     S: Stream,
     F: FnMut(&S::Item),
 {
     type Item = S::Item;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
+        let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
         Poll::Ready(next.and_then(|x| {
-            (self.as_mut().f())(&x);
+            (this.f)(&x);
             Some(x)
         }))
     }

@@ -16,14 +16,14 @@ With async, we can just use the `select!` macro.
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_util;
+# extern crate futures;
 use async_std::{
     io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
-use futures_util::{select, FutureExt};
+use futures::{select, FutureExt};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 

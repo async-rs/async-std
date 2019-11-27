@@ -19,11 +19,10 @@ First, let's add a shutdown channel to the `connection_loop`:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::net::TcpStream;
-# use futures_channel::mpsc;
-# use futures_util::SinkExt;
+# use futures::channel::mpsc;
+# use futures::sink::SinkExt;
 # use std::sync::Arc;
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -61,8 +60,8 @@ async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> R
 }
 ```
 
-1. To enforce that no messages are send along the shutdown channel, we use an uninhabited type.
-2. We pass the shutdown channel to the writer task
+1. To enforce that no messages are sent along the shutdown channel, we use an uninhabited type.
+2. We pass the shutdown channel to the writer task.
 3. In the reader, we create a `_shutdown_sender` whose only purpose is to get dropped.
 
 In the `connection_writer_loop`, we now need to choose between shutdown and message channels.
@@ -70,17 +69,14 @@ We use the `select` macro for this purpose:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 # use async_std::{net::TcpStream, prelude::*};
-use futures_channel::mpsc;
-use futures_util::{select, FutureExt};
+# use futures::channel::mpsc;
+use futures::{select, FutureExt};
 # use std::sync::Arc;
-
 # type Receiver<T> = mpsc::UnboundedReceiver<T>;
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 # type Sender<T> = mpsc::UnboundedSender<T>;
-
 # #[derive(Debug)]
 # enum Void {} // 1
 
@@ -114,7 +110,7 @@ async fn connection_writer_loop(
 
 Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
 To not lose these messages completely, we'll return the messages channel back to the broker.
-This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infailable.
+This also allows us to establish a useful invariant that the message channel strictly outlives the peer in the `peers` map, and makes the broker itself infallible.
 
 ## Final Code
 
@@ -122,16 +118,16 @@ The final code looks like this:
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 use async_std::{
     io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
-use futures_channel::mpsc;
-use futures_util::{select, FutureExt, SinkExt};
+use futures::channel::mpsc;
+use futures::sink::SinkExt;
+use futures::{select, FutureExt};
 use std::{
     collections::hash_map::{Entry, HashMap},
     future::Future,
@@ -161,7 +157,7 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
         spawn_and_log_error(connection_loop(broker_sender.clone(), stream));
     }
     drop(broker_sender);
-    broker_handle.await;
+    broker_handle.await?;
     Ok(())
 }
 

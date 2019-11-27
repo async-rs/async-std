@@ -2,14 +2,12 @@ use std::io::{IoSlice, IoSliceMut, Read as _, Write as _};
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
 use crate::future;
 use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
-use crate::task::blocking;
-use crate::task::{Context, Poll};
+use crate::task::{spawn_blocking, Context, Poll};
+use crate::utils::Context as _;
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -25,9 +23,9 @@ use crate::task::{Context, Poll};
 /// [`connect`]: struct.TcpStream.html#method.connect
 /// [accepting]: struct.TcpListener.html#method.accept
 /// [listener]: struct.TcpListener.html
-/// [`AsyncRead`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncRead.html
-/// [`AsyncWrite`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
-/// [`futures::io`]: https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/index.html
+/// [`AsyncRead`]: https://docs.rs/futures/0.3/futures/io/trait.AsyncRead.html
+/// [`AsyncWrite`]: https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html
+/// [`futures::io`]: https://docs.rs/futures/0.3/futures/io/index.html
 /// [`shutdown`]: struct.TcpStream.html#method.shutdown
 /// [`std::net::TcpStream`]: https://doc.rust-lang.org/std/net/struct.TcpStream.html
 ///
@@ -74,11 +72,16 @@ impl TcpStream {
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
         let mut last_err = None;
+        let addrs = addrs
+            .to_socket_addrs()
+            .await?;
 
-        for addr in addrs.to_socket_addrs().await? {
-            let res = blocking::spawn(async move {
-                let std_stream = std::net::TcpStream::connect(addr)?;
-                let mio_stream = mio::net::TcpStream::from_stream(std_stream)?;
+        for addr in addrs {
+            let res = spawn_blocking(move || {
+                let std_stream = std::net::TcpStream::connect(addr)
+                    .context(|| format!("could not connect to {}", addr))?;
+                let mio_stream = mio::net::TcpStream::from_stream(std_stream)
+                    .context(|| format!("could not open async connection to {}", addr))?;
                 Ok(TcpStream {
                     watcher: Watcher::new(mio_stream),
                 })
@@ -367,59 +370,46 @@ impl From<std::net::TcpStream> for TcpStream {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-        // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    } else if #[cfg(unix)] {
-        use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-    } else if #[cfg(windows)] {
-        // use std::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+cfg_unix! {
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl AsRawFd for TcpStream {
+        fn as_raw_fd(&self) -> RawFd {
+            self.watcher.get_ref().as_raw_fd()
+        }
     }
-}
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl AsRawFd for TcpStream {
-            fn as_raw_fd(&self) -> RawFd {
-                self.watcher.get_ref().as_raw_fd()
-            }
+    impl FromRawFd for TcpStream {
+        unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
+            std::net::TcpStream::from_raw_fd(fd).into()
         }
+    }
 
-        impl FromRawFd for TcpStream {
-            unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
-                std::net::TcpStream::from_raw_fd(fd).into()
-            }
-        }
-
-        impl IntoRawFd for TcpStream {
-            fn into_raw_fd(self) -> RawFd {
-                self.watcher.into_inner().into_raw_fd()
-            }
+    impl IntoRawFd for TcpStream {
+        fn into_raw_fd(self) -> RawFd {
+            self.watcher.into_inner().into_raw_fd()
         }
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(windows)))]
-cfg_if! {
-    if #[cfg(any(windows, feature = "docs"))] {
-        // impl AsRawSocket for TcpStream {
-        //     fn as_raw_socket(&self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-        //
-        // impl FromRawSocket for TcpStream {
-        //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpStream {
-        //         net::TcpStream::from_raw_socket(handle).try_into().unwrap()
-        //     }
-        // }
-        //
-        // impl IntoRawSocket for TcpListener {
-        //     fn into_raw_socket(self) -> RawSocket {
-        //         self.raw_socket
-        //     }
-        // }
-    }
+cfg_windows! {
+    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+    //
+    // impl AsRawSocket for TcpStream {
+    //     fn as_raw_socket(&self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
+    //
+    // impl FromRawSocket for TcpStream {
+    //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpStream {
+    //         net::TcpStream::from_raw_socket(handle).try_into().unwrap()
+    //     }
+    // }
+    //
+    // impl IntoRawSocket for TcpListener {
+    //     fn into_raw_socket(self) -> RawSocket {
+    //         self.raw_socket
+    //     }
+    // }
 }

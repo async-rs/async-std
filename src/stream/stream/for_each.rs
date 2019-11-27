@@ -1,44 +1,44 @@
-use std::marker::PhantomData;
 use std::pin::Pin;
+use std::future::Future;
 
-use crate::future::Future;
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct ForEachFuture<S, F, T> {
-    stream: S,
-    f: F,
-    __t: PhantomData<T>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct ForEachFuture<S, F> {
+        #[pin]
+        stream: S,
+        f: F,
+    }
 }
 
-impl<S, F, T> ForEachFuture<S, F, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-
+impl<S, F> ForEachFuture<S, F> {
     pub(super) fn new(stream: S, f: F) -> Self {
-        ForEachFuture {
+        Self {
             stream,
             f,
-            __t: PhantomData,
         }
     }
 }
 
-impl<S, F> Future for ForEachFuture<S, F, S::Item>
+impl<S, F> Future for ForEachFuture<S, F>
 where
     S: Stream + Sized,
     F: FnMut(S::Item),
 {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
         loop {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
             match next {
-                Some(v) => (self.as_mut().f())(v),
+                Some(v) => (this.f)(v),
                 None => return Poll::Ready(()),
             }
         }

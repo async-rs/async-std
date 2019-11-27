@@ -1,19 +1,20 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::path::Path;
 use std::pin::Pin;
+use std::future::Future;
 
 use mio_uds;
 
 use super::SocketAddr;
 use super::UnixStream;
-use crate::future::{self, Future};
+use crate::future;
 use crate::io;
 use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+use crate::path::Path;
 use crate::stream::Stream;
-use crate::task::{blocking, Context, Poll};
+use crate::task::{spawn_blocking, Context, Poll};
 
 /// A Unix domain socket server, listening for connections.
 ///
@@ -68,7 +69,7 @@ impl UnixListener {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixListener> {
         let path = path.as_ref().to_owned();
-        let listener = blocking::spawn(async move { mio_uds::UnixListener::bind(path) }).await?;
+        let listener = spawn_blocking(move || mio_uds::UnixListener::bind(path)).await?;
 
         Ok(UnixListener {
             watcher: Watcher::new(listener),

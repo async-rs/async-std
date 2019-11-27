@@ -1,26 +1,25 @@
+use std::future::Future;
 use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
-use crate::future::Future;
 use crate::io;
-use crate::task::{blocking, Context, JoinHandle, Poll};
+use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+use crate::utils::Context as ErrorContext;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        #[doc(hidden)]
-        pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+cfg_not_docs! {
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
+    }
+}
 
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
-        }
-    } else {
-        macro_rules! ret {
-            (impl Future<Output = $out:ty>, $fut:ty) => ($fut);
-        }
+cfg_docs! {
+    #[doc(hidden)]
+    pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+
+    macro_rules! ret {
+        (impl Future<Output = $out:ty>, $fut:ty) => (ImplFuture<$out>);
     }
 }
 
@@ -69,6 +68,18 @@ pub enum ToSocketAddrsFuture<I> {
     Done,
 }
 
+/// Wrap `std::io::Error` with additional message
+///
+/// Keeps the original error kind and stores the original I/O error as `source`.
+impl<T> ErrorContext for ToSocketAddrsFuture<T> {
+    fn context(self, message: impl Fn() -> String) -> Self {
+        match self {
+            ToSocketAddrsFuture::Ready(res) => ToSocketAddrsFuture::Ready(res.context(message)),
+            x => x,
+        }
+    }
+}
+
 impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
     type Output = io::Result<I>;
 
@@ -112,7 +123,9 @@ impl ToSocketAddrs for SocketAddrV4 {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        SocketAddr::V4(*self).to_socket_addrs()
+        SocketAddr::V4(*self)
+            .to_socket_addrs()
+            .context(|| format!("could not resolve address `{}`", self))
     }
 }
 
@@ -125,7 +138,9 @@ impl ToSocketAddrs for SocketAddrV6 {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        SocketAddr::V6(*self).to_socket_addrs()
+        SocketAddr::V6(*self)
+            .to_socket_addrs()
+            .context(|| format!("could not resolve address `{}`", self))
     }
 }
 
@@ -196,8 +211,10 @@ impl ToSocketAddrs for (&str, u16) {
         }
 
         let host = host.to_string();
-        let task = blocking::spawn(async move {
-            std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port))
+        let task = spawn_blocking(move || {
+            let addr = (host.as_str(), port);
+            std::net::ToSocketAddrs::to_socket_addrs(&addr)
+                .context(|| format!("could not resolve address `{:?}`", addr))
         });
         ToSocketAddrsFuture::Resolving(task)
     }
@@ -212,13 +229,15 @@ impl ToSocketAddrs for str {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        if let Some(addr) = self.parse().ok() {
+        if let Ok(addr) = self.parse() {
             return ToSocketAddrsFuture::Ready(Ok(vec![addr].into_iter()));
         }
 
         let addr = self.to_string();
-        let task =
-            blocking::spawn(async move { std::net::ToSocketAddrs::to_socket_addrs(addr.as_str()) });
+        let task = spawn_blocking(move || {
+            std::net::ToSocketAddrs::to_socket_addrs(addr.as_str())
+                .context(|| format!("could not resolve address `{:?}`", addr))
+        });
         ToSocketAddrsFuture::Resolving(task)
     }
 }

@@ -1,33 +1,47 @@
 use std::pin::Pin;
 
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream that yields the first `n` items of another stream.
-#[derive(Clone, Debug)]
-pub struct Take<S> {
-    pub(crate) stream: S,
-    pub(crate) remaining: usize,
+pin_project! {
+    /// A stream that yields the first `n` items of another stream.
+    ///
+    /// This `struct` is created by the [`take`] method on [`Stream`]. See its
+    /// documentation for more.
+    ///
+    /// [`take`]: trait.Stream.html#method.take
+    /// [`Stream`]: trait.Stream.html
+    #[derive(Clone, Debug)]
+    pub struct Take<S> {
+        #[pin]
+        pub(crate) stream: S,
+        pub(crate) remaining: usize,
+    }
 }
 
-impl<S: Unpin> Unpin for Take<S> {}
-
-impl<S: Stream> Take<S> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(remaining: usize);
+impl<S> Take<S> {
+    pub(super) fn new(stream: S, remaining: usize) -> Self {
+        Self {
+            stream,
+            remaining,
+        }
+    }
 }
 
 impl<S: Stream> Stream for Take<S> {
     type Item = S::Item;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
-        if self.remaining == 0 {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<S::Item>> {
+        let this = self.project();
+        if *this.remaining == 0 {
             Poll::Ready(None)
         } else {
-            let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+            let next = futures_core::ready!(this.stream.poll_next(cx));
             match next {
-                Some(_) => *self.as_mut().remaining() -= 1,
-                None => *self.as_mut().remaining() = 0,
+                Some(_) => *this.remaining -= 1,
+                None => *this.remaining = 0,
             }
             Poll::Ready(next)
         }

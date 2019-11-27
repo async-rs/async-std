@@ -1,19 +1,16 @@
-use std::pin::Pin;
+mod seek;
 
-use cfg_if::cfg_if;
+use seek::SeekFuture;
 
-use crate::future::Future;
-use crate::io::{self, SeekFrom};
-use crate::task::{Context, Poll};
-use crate::utils::extension_trait;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
-    }
-}
+use crate::io::SeekFrom;
 
 extension_trait! {
+    use std::ops::{Deref, DerefMut};
+    use std::pin::Pin;
+
+    use crate::io;
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         Allows seeking through a byte stream.
 
@@ -21,7 +18,7 @@ extension_trait! {
         [`std::io::Seek`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`SeekExt`] the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -30,10 +27,12 @@ extension_trait! {
 
         [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
         [`futures::io::AsyncSeek`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncSeek.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncSeek.html
         [provided methods]: #provided-methods
+        [`SeekExt`]: ../io/prelude/trait.SeekExt.html
+        [prelude]: ../prelude/index.html
     "#]
-    pub trait Seek [SeekExt: futures_io::AsyncSeek] {
+    pub trait Seek {
         #[doc = r#"
             Attempt to seek to an offset, in bytes, in a stream.
         "#]
@@ -42,7 +41,14 @@ extension_trait! {
             cx: &mut Context<'_>,
             pos: SeekFrom,
         ) -> Poll<io::Result<u64>>;
+    }
 
+    #[doc = r#"
+        Extension methods for [`Seek`].
+
+        [`Seek`]: ../trait.Seek.html
+    "#]
+    pub trait SeekExt: futures_io::AsyncSeek {
         #[doc = r#"
             Seeks to a new position in a byte stream.
 
@@ -70,7 +76,7 @@ extension_trait! {
         fn seek(
             &mut self,
             pos: SeekFrom,
-        ) -> impl Future<Output = io::Result<u64>> [SeekFuture<'_, Self>]
+        ) -> impl Future<Output = io::Result<u64>> + '_ [SeekFuture<'_, Self>]
         where
             Self: Unpin,
         {
@@ -110,21 +116,5 @@ extension_trait! {
         ) -> Poll<io::Result<u64>> {
             unreachable!("this impl only appears in the rendered docs")
         }
-    }
-}
-
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct SeekFuture<'a, T: Unpin + ?Sized> {
-    seeker: &'a mut T,
-    pos: SeekFrom,
-}
-
-impl<T: SeekExt + Unpin + ?Sized> Future for SeekFuture<'_, T> {
-    type Output = io::Result<u64>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let pos = self.pos;
-        Pin::new(&mut *self.seeker).poll_seek(cx, pos)
     }
 }

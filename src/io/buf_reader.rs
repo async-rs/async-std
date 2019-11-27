@@ -2,51 +2,54 @@ use std::io::{IoSliceMut, Read as _};
 use std::pin::Pin;
 use std::{cmp, fmt};
 
-use crate::io::{self, BufRead, Read, Seek, SeekFrom};
+use pin_project_lite::pin_project;
+
+use crate::io::{self, BufRead, Read, Seek, SeekFrom, DEFAULT_BUF_SIZE};
 use crate::task::{Context, Poll};
 
-const DEFAULT_CAPACITY: usize = 8 * 1024;
-
-/// Adds buffering to any reader.
-///
-/// It can be excessively inefficient to work directly with a [`Read`] instance. A `BufReader`
-/// performs large, infrequent reads on the underlying [`Read`] and maintains an in-memory buffer
-/// of the incoming byte stream.
-///
-/// `BufReader` can improve the speed of programs that make *small* and *repeated* read calls to
-/// the same file or network socket. It does not help when reading very large amounts at once, or
-/// reading just one or a few times. It also provides no advantage when reading from a source that
-/// is already in memory, like a `Vec<u8>`.
-///
-/// When the `BufReader` is dropped, the contents of its buffer will be discarded. Creating
-/// multiple instances of a `BufReader` on the same stream can cause data loss.
-///
-/// This type is an async version of [`std::io::BufReader`].
-///
-/// [`Read`]: trait.Read.html
-/// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
-///
-/// # Examples
-///
-/// ```no_run
-/// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
-/// #
-/// use async_std::fs::File;
-/// use async_std::io::BufReader;
-/// use async_std::prelude::*;
-///
-/// let mut file = BufReader::new(File::open("a.txt").await?);
-///
-/// let mut line = String::new();
-/// file.read_line(&mut line).await?;
-/// #
-/// # Ok(()) }) }
-/// ```
-pub struct BufReader<R> {
-    inner: R,
-    buf: Box<[u8]>,
-    pos: usize,
-    cap: usize,
+pin_project! {
+    /// Adds buffering to any reader.
+    ///
+    /// It can be excessively inefficient to work directly with a [`Read`] instance. A `BufReader`
+    /// performs large, infrequent reads on the underlying [`Read`] and maintains an in-memory buffer
+    /// of the incoming byte stream.
+    ///
+    /// `BufReader` can improve the speed of programs that make *small* and *repeated* read calls to
+    /// the same file or network socket. It does not help when reading very large amounts at once, or
+    /// reading just one or a few times. It also provides no advantage when reading from a source that
+    /// is already in memory, like a `Vec<u8>`.
+    ///
+    /// When the `BufReader` is dropped, the contents of its buffer will be discarded. Creating
+    /// multiple instances of a `BufReader` on the same stream can cause data loss.
+    ///
+    /// This type is an async version of [`std::io::BufReader`].
+    ///
+    /// [`Read`]: trait.Read.html
+    /// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::fs::File;
+    /// use async_std::io::BufReader;
+    /// use async_std::prelude::*;
+    ///
+    /// let mut file = BufReader::new(File::open("a.txt").await?);
+    ///
+    /// let mut line = String::new();
+    /// file.read_line(&mut line).await?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub struct BufReader<R> {
+        #[pin]
+        inner: R,
+        buf: Box<[u8]>,
+        pos: usize,
+        cap: usize,
+    }
 }
 
 impl<R: io::Read> BufReader<R> {
@@ -67,7 +70,7 @@ impl<R: io::Read> BufReader<R> {
     /// # Ok(()) }) }
     /// ```
     pub fn new(inner: R) -> BufReader<R> {
-        BufReader::with_capacity(DEFAULT_CAPACITY, inner)
+        BufReader::with_capacity(DEFAULT_BUF_SIZE, inner)
     }
 
     /// Creates a new buffered reader with the specified capacity.
@@ -95,10 +98,6 @@ impl<R: io::Read> BufReader<R> {
 }
 
 impl<R> BufReader<R> {
-    pin_utils::unsafe_pinned!(inner: R);
-    pin_utils::unsafe_unpinned!(pos: usize);
-    pin_utils::unsafe_unpinned!(cap: usize);
-
     /// Gets a reference to the underlying reader.
     ///
     /// It is inadvisable to directly read from the underlying reader.
@@ -139,6 +138,13 @@ impl<R> BufReader<R> {
     /// ```
     pub fn get_mut(&mut self) -> &mut R {
         &mut self.inner
+    }
+
+    /// Gets a pinned mutable reference to the underlying reader.
+    ///
+    /// It is inadvisable to directly read from the underlying reader.
+    fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut R> {
+        self.project().inner
     }
 
     /// Returns a reference to the internal buffer.
@@ -185,9 +191,10 @@ impl<R> BufReader<R> {
 
     /// Invalidates all data in the internal buffer.
     #[inline]
-    fn discard_buffer(mut self: Pin<&mut Self>) {
-        *self.as_mut().pos() = 0;
-        *self.cap() = 0;
+    fn discard_buffer(self: Pin<&mut Self>) {
+        let this = self.project();
+        *this.pos = 0;
+        *this.cap = 0;
     }
 }
 
@@ -201,7 +208,7 @@ impl<R: Read> Read for BufReader<R> {
         // (larger than our internal buffer), bypass our internal buffer
         // entirely.
         if self.pos == self.cap && buf.len() >= self.buf.len() {
-            let res = futures_core::ready!(self.as_mut().inner().poll_read(cx, buf));
+            let res = futures_core::ready!(self.as_mut().get_pin_mut().poll_read(cx, buf));
             self.discard_buffer();
             return Poll::Ready(res);
         }
@@ -218,7 +225,8 @@ impl<R: Read> Read for BufReader<R> {
     ) -> Poll<io::Result<usize>> {
         let total_len = bufs.iter().map(|b| b.len()).sum::<usize>();
         if self.pos == self.cap && total_len >= self.buf.len() {
-            let res = futures_core::ready!(self.as_mut().inner().poll_read_vectored(cx, bufs));
+            let res =
+                futures_core::ready!(self.as_mut().get_pin_mut().poll_read_vectored(cx, bufs));
             self.discard_buffer();
             return Poll::Ready(res);
         }
@@ -234,28 +242,23 @@ impl<R: Read> BufRead for BufReader<R> {
         self: Pin<&'a mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<io::Result<&'a [u8]>> {
-        let Self {
-            inner,
-            buf,
-            cap,
-            pos,
-        } = unsafe { self.get_unchecked_mut() };
-        let mut inner = unsafe { Pin::new_unchecked(inner) };
+        let mut this = self.project();
 
         // If we've reached the end of our internal buffer then we need to fetch
         // some more data from the underlying reader.
         // Branch using `>=` instead of the more correct `==`
         // to tell the compiler that the pos..cap slice is always valid.
-        if *pos >= *cap {
-            debug_assert!(*pos == *cap);
-            *cap = futures_core::ready!(inner.as_mut().poll_read(cx, buf))?;
-            *pos = 0;
+        if *this.pos >= *this.cap {
+            debug_assert!(*this.pos == *this.cap);
+            *this.cap = futures_core::ready!(this.inner.as_mut().poll_read(cx, this.buf))?;
+            *this.pos = 0;
         }
-        Poll::Ready(Ok(&buf[*pos..*cap]))
+        Poll::Ready(Ok(&this.buf[*this.pos..*this.cap]))
     }
 
-    fn consume(mut self: Pin<&mut Self>, amt: usize) {
-        *self.as_mut().pos() = cmp::min(self.pos + amt, self.cap);
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        let this = self.project();
+        *this.pos = cmp::min(*this.pos + amt, *this.cap);
     }
 }
 
@@ -305,24 +308,26 @@ impl<R: Seek> Seek for BufReader<R> {
             if let Some(offset) = n.checked_sub(remainder) {
                 result = futures_core::ready!(
                     self.as_mut()
-                        .inner()
+                        .get_pin_mut()
                         .poll_seek(cx, SeekFrom::Current(offset))
                 )?;
             } else {
                 // seek backwards by our remainder, and then by the offset
                 futures_core::ready!(
                     self.as_mut()
-                        .inner()
+                        .get_pin_mut()
                         .poll_seek(cx, SeekFrom::Current(-remainder))
                 )?;
                 self.as_mut().discard_buffer();
                 result = futures_core::ready!(
-                    self.as_mut().inner().poll_seek(cx, SeekFrom::Current(n))
+                    self.as_mut()
+                        .get_pin_mut()
+                        .poll_seek(cx, SeekFrom::Current(n))
                 )?;
             }
         } else {
             // Seeking with Start/End doesn't care about our buffer length.
-            result = futures_core::ready!(self.as_mut().inner().poll_seek(cx, pos))?;
+            result = futures_core::ready!(self.as_mut().get_pin_mut().poll_seek(cx, pos))?;
         }
         self.discard_buffer();
         Poll::Ready(Ok(result))

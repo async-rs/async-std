@@ -1,7 +1,7 @@
-use std::path::Path;
-
 use crate::io;
-use crate::task::blocking;
+use crate::path::Path;
+use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Renames a file or directory to a new location.
 ///
@@ -35,5 +35,14 @@ use crate::task::blocking;
 pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
     let from = from.as_ref().to_owned();
     let to = to.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::rename(&from, &to) }).await
+    spawn_blocking(move || {
+        std::fs::rename(&from, &to).context(|| {
+            format!(
+                "could not rename `{}` to `{}`",
+                from.display(),
+                to.display()
+            )
+        })
+    })
+    .await
 }

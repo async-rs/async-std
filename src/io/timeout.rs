@@ -1,8 +1,11 @@
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use std::time::Duration;
+use std::future::Future;
 
-use futures_timer::TryFutureExt;
+use futures_timer::Delay;
+use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::io;
 
 /// Awaits an I/O future or times out after a duration of time.
@@ -33,5 +36,45 @@ pub async fn timeout<F, T>(dur: Duration, f: F) -> io::Result<T>
 where
     F: Future<Output = io::Result<T>>,
 {
-    f.timeout(dur).await
+    Timeout {
+        timeout: Delay::new(dur),
+        future: f,
+    }
+    .await
+}
+
+pin_project! {
+    /// Future returned by the `FutureExt::timeout` method.
+    #[derive(Debug)]
+    pub struct Timeout<F, T>
+    where
+        F: Future<Output = io::Result<T>>,
+    {
+        #[pin]
+        future: F,
+        #[pin]
+        timeout: Delay,
+    }
+}
+
+impl<F, T> Future for Timeout<F, T>
+where
+    F: Future<Output = io::Result<T>>,
+{
+    type Output = io::Result<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        match this.future.poll(cx) {
+            Poll::Pending => {}
+            other => return other,
+        }
+
+        if this.timeout.poll(cx).is_ready() {
+            let err = Err(io::Error::new(io::ErrorKind::TimedOut, "future timed out"));
+            Poll::Ready(err)
+        } else {
+            Poll::Pending
+        }
+    }
 }
