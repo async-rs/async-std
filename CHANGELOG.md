@@ -26,7 +26,7 @@ Unzip a stream of tuples into two collections:
 use async_std::prelude::*;
 use async_std::stream;
 
-let s  = stream::from_iter(vec![(1,2), (3,4)]);
+let s = stream::from_iter(vec![(1,2), (3,4)]);
 
 let (left, right): (Vec<_>, Vec<_>) = s.unzip().await;
 
