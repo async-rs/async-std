@@ -10,7 +10,7 @@ The future defined in the [futures-rs](https://docs.rs/futures/0.3/futures/prelu
 
 It is critical to understand the difference between `std::future::Future` and `futures::future::Future`, and the approach that `async-std` takes towards them. In itself, `std::future::Future` is not something you want to interact with as a user—except by calling `.await` on it. The inner workings of `std::future::Future` are mostly of interest to people implementing `Future`. Make no mistake—this is very useful! Most of the functionality that used to be defined on `Future` itself has been moved to an extension trait called [`FuturesExt`](https://docs.rs/futures/0.3/futures/future/trait.FutureExt.html). From this information, you might be able to infer that the `futures` library serves as an extension to the core Rust async features.
 
-In the same tradition as `futures`, `async-std` re-exports the core `std::future::Future` type. You can actively opt into the extensions provided by the `futures-preview` crate by adding it to your `Cargo.toml` and importing `FuturesExt`.
+In the same tradition as `futures`, `async-std` re-exports the core `std::future::Future` type. You can actively opt into the extensions provided by the `futures` crate by adding it to your `Cargo.toml` and importing `FuturesExt`.
 
 ## Interfaces and Stability
 
