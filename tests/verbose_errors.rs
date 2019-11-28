@@ -8,7 +8,7 @@ fn open_file() {
         match res {
             Ok(_) => panic!("Found file with random name: We live in a simulation"),
             Err(e) => assert_eq!(
-                "Could not open `/ashjudlkahasdasdsikdhajik/asdasdasdasdasdasd/fjuiklashdbflasas`",
+                "could not open `/ashjudlkahasdasdsikdhajik/asdasdasdasdasdasd/fjuiklashdbflasas`",
                 &format!("{}", e)
             ),
         }
