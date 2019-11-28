@@ -348,7 +348,7 @@ extension_trait! {
             assert!(start.elapsed().as_millis() >= 15);
 
             s.next().await;
-            assert!(start.elapsed().as_millis() >= 35);
+            assert!(start.elapsed().as_millis() >= 25);
             #
             # }) }
             ```
