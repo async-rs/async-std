@@ -28,7 +28,6 @@ mod cloned;
 mod cmp;
 mod copied;
 mod cycle;
-mod delay;
 mod enumerate;
 mod eq;
 mod filter;
@@ -99,7 +98,6 @@ use try_for_each::TryForEachFuture;
 pub use chain::Chain;
 pub use cloned::Cloned;
 pub use copied::Copied;
-pub use delay::Delay;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -132,6 +130,7 @@ cfg_unstable! {
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
+    pub use delay::Delay;
 
     mod count;
     mod merge;
@@ -140,6 +139,7 @@ cfg_unstable! {
     mod partition;
     mod timeout;
     mod throttle;
+    mod delay;
     mod unzip;
 }
 
