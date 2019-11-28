@@ -22,9 +22,9 @@ pub struct FromIter<T> {
 /// ```
 /// # async_std::task::block_on(async {
 /// #
-/// use async_std::stream::double_ended::{self, DoubleEndedStreamExt};
+/// use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
 ///
-/// let mut s = double_ended::from_iter(vec![0, 1, 2, 3]);
+/// let mut s = double_ended_stream::from_iter(vec![0, 1, 2, 3]);
 ///
 /// assert_eq!(s.next_back().await, Some(3));
 /// assert_eq!(s.next_back().await, Some(2));

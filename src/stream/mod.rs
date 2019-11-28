@@ -319,8 +319,7 @@ mod repeat_with;
 
 cfg_unstable! {
     #[doc(hidden)]
-    pub mod double_ended;
-    mod double_ended_stream;
+    pub mod double_ended_stream;
     mod exact_size_stream;
     mod extend;
     mod from_stream;
