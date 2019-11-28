@@ -585,14 +585,24 @@ extension_trait! {
             #
             use async_std::prelude::*;
             use async_std::stream;
-            use std::time::Duration;
+            use std::time::{Duration, Instant};
 
+            let start = Instant::now();
             let mut s = stream::from_iter(vec![0u8, 1, 2]).delay(Duration::from_millis(200));
 
             assert_eq!(s.next().await, Some(0));
+            // The first time will take more than 200ms due to delay.
+            assert!(start.elapsed().as_millis() >= 200);
+
             assert_eq!(s.next().await, Some(1));
+            // There will be no delay after the first time.
+            assert!(start.elapsed().as_millis() <= 210);
+
             assert_eq!(s.next().await, Some(2));
+            assert!(start.elapsed().as_millis() <= 210);
+
             assert_eq!(s.next().await, None);
+            assert!(start.elapsed().as_millis() <= 210);
             #
             # }) }
             ```
