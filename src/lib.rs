@@ -152,6 +152,8 @@
 //! Await two futures concurrently, and return a tuple of their output:
 //!
 //! ```
+//! use async_std::prelude::*;
+//!
 //! #[async_std::main]
 //! async fn main() {
 //!     let a = async { 1u8 };
@@ -167,7 +169,7 @@
 //!
 //! #[async_std::main]
 //! async fn main() -> std::io::Result<()> {
-//!     let mut socket = UdpSocket::bind("127.0.0.1:8080")?;
+//!     let socket = UdpSocket::bind("127.0.0.1:8080").await?;
 //!     println!("Listening on {}", socket.local_addr()?);
 //!
 //!     let mut buf = vec![0u8; 1024];
