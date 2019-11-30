@@ -113,7 +113,7 @@
 //! [`Builder::stack_size`]: struct.Builder.html#method.stack_size
 //! [`Builder::name`]: struct.Builder.html#method.name
 //! [`task::current`]: fn.current.html
-//! [`Task`]: struct.Thread.html
+//! [`Task`]: struct.Task.html
 //! [`Task::name`]: struct.Task.html#method.name
 //! [`task_local!`]: ../macro.task_local.html
 //! [`with`]: struct.LocalKey.html#method.with
