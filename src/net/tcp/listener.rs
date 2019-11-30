@@ -1,5 +1,5 @@
-use std::net::SocketAddr;
 use std::future::Future;
+use std::net::SocketAddr;
 use std::pin::Pin;
 
 use crate::future;
@@ -75,8 +75,11 @@ impl TcpListener {
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
+        let addrs = addrs
+            .to_socket_addrs()
+            .await?;
 
-        for addr in addrs.to_socket_addrs().await? {
+        for addr in addrs {
             match mio::net::TcpListener::bind(&addr) {
                 Ok(mio_listener) => {
                     return Ok(TcpListener {

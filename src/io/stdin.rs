@@ -1,10 +1,11 @@
+use std::future::Future;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::future::Future;
 
 use crate::future;
 use crate::io::{self, Read};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+use crate::utils::Context as _;
 
 cfg_unstable! {
     use once_cell::sync::Lazy;
@@ -162,6 +163,7 @@ impl Stdin {
             }
         })
         .await
+        .context(|| String::from("could not read line on stdin"))
     }
 
     /// Locks this handle to the standard input stream, returning a readable guard.

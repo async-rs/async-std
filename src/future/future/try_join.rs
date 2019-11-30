@@ -12,7 +12,7 @@ pin_project! {
     pub struct TryJoin<L, R>
     where
         L: Future,
-        R: Future<Output = L::Output>
+        R: Future,
     {
         #[pin] left: MaybeDone<L>,
         #[pin] right: MaybeDone<R>,
@@ -22,7 +22,7 @@ pin_project! {
 impl<L, R> TryJoin<L, R>
 where
     L: Future,
-    R: Future<Output = L::Output>,
+    R: Future,
 {
     pub(crate) fn new(left: L, right: R) -> Self {
         Self {
@@ -32,12 +32,12 @@ where
     }
 }
 
-impl<L, R, T, E> Future for TryJoin<L, R>
+impl<L, R, A, B, E> Future for TryJoin<L, R>
 where
-    L: Future<Output = Result<T, E>>,
-    R: Future<Output = L::Output>,
+    L: Future<Output = Result<A, E>>,
+    R: Future<Output = Result<B, E>>,
 {
-    type Output = Result<(T, T), E>;
+    type Output = Result<(A, B), E>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();

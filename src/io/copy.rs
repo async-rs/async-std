@@ -1,10 +1,11 @@
-use std::pin::Pin;
 use std::future::Future;
+use std::pin::Pin;
 
 use pin_project_lite::pin_project;
 
 use crate::io::{self, BufRead, BufReader, Read, Write};
 use crate::task::{Context, Poll};
+use crate::utils::Context as _;
 
 /// Copies the entire contents of a reader into a writer.
 ///
@@ -90,7 +91,7 @@ where
         writer,
         amt: 0,
     };
-    future.await
+    future.await.context(|| String::from("io::copy failed"))
 }
 
 /// Copies the entire contents of a reader into a writer.
@@ -177,5 +178,5 @@ where
         writer,
         amt: 0,
     };
-    future.await
+    future.await.context(|| String::from("io::copy failed"))
 }

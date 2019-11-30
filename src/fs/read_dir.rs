@@ -1,11 +1,12 @@
-use std::pin::Pin;
 use std::future::Future;
+use std::pin::Pin;
 
 use crate::fs::DirEntry;
 use crate::io;
 use crate::path::Path;
 use crate::stream::Stream;
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
+use crate::utils::Context as _;
 
 /// Returns a stream of entries in a directory.
 ///
@@ -45,9 +46,12 @@ use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 /// ```
 pub async fn read_dir<P: AsRef<Path>>(path: P) -> io::Result<ReadDir> {
     let path = path.as_ref().to_owned();
-    spawn_blocking(move || std::fs::read_dir(path))
-        .await
-        .map(ReadDir::new)
+    spawn_blocking(move || {
+        std::fs::read_dir(&path)
+            .context(|| format!("could not read directory `{}`", path.display()))
+    })
+    .await
+    .map(ReadDir::new)
 }
 
 /// A stream of entries in a directory.

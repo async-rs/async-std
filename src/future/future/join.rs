@@ -12,7 +12,7 @@ pin_project! {
     pub struct Join<L, R>
     where
         L: Future,
-        R: Future<Output = L::Output>
+        R: Future,
     {
         #[pin] left: MaybeDone<L>,
         #[pin] right: MaybeDone<R>,
@@ -22,7 +22,7 @@ pin_project! {
 impl<L, R> Join<L, R>
 where
     L: Future,
-    R: Future<Output = L::Output>,
+    R: Future,
 {
     pub(crate) fn new(left: L, right: R) -> Self {
         Self {
@@ -35,7 +35,7 @@ where
 impl<L, R> Future for Join<L, R>
 where
     L: Future,
-    R: Future<Output = L::Output>,
+    R: Future,
 {
     type Output = (L::Output, R::Output);
 

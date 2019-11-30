@@ -22,14 +22,14 @@ pin_project! {
     /// times. It also provides no advantage when writing to a destination that is
     /// in memory, like a `Vec<u8>`.
     ///
-    /// When the `BufWriter` is dropped, the contents of its buffer will be written
-    /// out. However, any errors that happen in the process of flushing the buffer
-    /// when the writer is dropped will be ignored. Code that wishes to handle such
-    /// errors must manually call [`flush`] before the writer is dropped.
+    /// Unlike the `BufWriter` type in `std`, this type does not write out the
+    /// contents of its buffer when it is dropped. Therefore, it is absolutely
+    /// critical that users explicitly flush the buffer before dropping a
+    /// `BufWriter`.
     ///
-    /// This type is an async version of [`std::io::BufReader`].
+    /// This type is an async version of [`std::io::BufWriter`].
     ///
-    /// [`std::io::BufReader`]: https://doc.rust-lang.org/std/io/struct.BufReader.html
+    /// [`std::io::BufWriter`]: https://doc.rust-lang.org/std/io/struct.BufWriter.html
     ///
     /// # Examples
     ///
@@ -61,10 +61,13 @@ pin_project! {
     /// use async_std::prelude::*;
     ///
     /// let mut stream = BufWriter::new(TcpStream::connect("127.0.0.1:34254").await?);
+    ///
     /// for i in 0..10 {
     ///     let arr = [i+1];
     ///     stream.write(&arr).await?;
     /// };
+    ///
+    /// stream.flush().await?;
     /// #
     /// # Ok(()) }) }
     /// ```
@@ -325,7 +328,7 @@ impl<W: Write> Write for BufWriter<W> {
 
 impl<W: Write + fmt::Debug> fmt::Debug for BufWriter<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BufReader")
+        f.debug_struct("BufWriter")
             .field("writer", &self.inner)
             .field("buf", &self.buf)
             .finish()

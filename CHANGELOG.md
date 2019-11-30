@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.2.0] - 2019-11-27
+
+[API Documentation](https://docs.rs/async-std/1.2.0/async-std)
+
+This patch includes some minor quality-of-life improvements, introduces a
+new `Stream::unzip` API, and adds verbose errors to our networking types.
+
+This means if you can't connect to a socket, you'll never have to wonder again
+*which* address it was you couldn't connect to, instead of having to go through
+the motions to debug what the address was.
+
+## Example
+
+Unzip a stream of tuples into two collections:
+
+```rust
+use async_std::prelude::*;
+use async_std::stream;
+
+let s = stream::from_iter(vec![(1,2), (3,4)]);
+
+let (left, right): (Vec<_>, Vec<_>) = s.unzip().await;
+
+assert_eq!(left, [1, 3]);
+assert_eq!(right, [2, 4]);
+```
+
+## Added
+
+- Added `Stream::unzip` as "unstable".
+- Added verbose errors to the networking types.
+
+## Changed
+
+- Enabled CI on master branch.
+- `Future::join` and `Future::try_join` can now join futures with different
+  output types.
+
+## Fixed
+
+- Fixed the docs and `Debug` output of `BufWriter`.
+- Fixed a bug in `Stream::throttle` that made it consume too much CPU.
+
 # [1.1.0] - 2019-11-21
 
 [API Documentation](https://docs.rs/async-std/1.1.0/async-std)
@@ -510,7 +553,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/async-rs/async-std/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/async-rs/async-std/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/async-rs/async-std/compare/v0.99.12...v1.0.0
