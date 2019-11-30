@@ -130,6 +130,7 @@ cfg_unstable! {
     pub use flat_map::FlatMap;
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
+    pub use delay::Delay;
 
     mod count;
     mod merge;
@@ -138,6 +139,7 @@ cfg_unstable! {
     mod partition;
     mod timeout;
     mod throttle;
+    mod delay;
     mod unzip;
 }
 
@@ -562,6 +564,47 @@ extension_trait! {
             Self: Sized,
         {
             Enumerate::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream that is delayed before it starts yielding items.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::time::{Duration, Instant};
+
+            let start = Instant::now();
+            let mut s = stream::from_iter(vec![0u8, 1, 2]).delay(Duration::from_millis(200));
+
+            assert_eq!(s.next().await, Some(0));
+            // The first time will take more than 200ms due to delay.
+            assert!(start.elapsed().as_millis() >= 200);
+
+            assert_eq!(s.next().await, Some(1));
+            // There will be no delay after the first time.
+            assert!(start.elapsed().as_millis() <= 210);
+
+            assert_eq!(s.next().await, Some(2));
+            assert!(start.elapsed().as_millis() <= 210);
+
+            assert_eq!(s.next().await, None);
+            assert!(start.elapsed().as_millis() <= 210);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn delay(self, dur: std::time::Duration) -> Delay<Self>
+        where
+            Self: Sized,
+        {
+            Delay::new(self, dur)
         }
 
         #[doc = r#"
