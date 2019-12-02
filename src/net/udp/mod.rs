@@ -298,10 +298,11 @@ impl UdpSocket {
     /// use async_std::net::UdpSocket;
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
+    /// socket.connect("127.0.0.1:8080").await?;
     ///
     /// let mut buf = vec![0; 1024];
-    /// let (n, peer) = socket.recv_from(&mut buf).await?;
-    /// println!("Received {} bytes from {}", n, peer);
+    /// let n = socket.recv(&mut buf).await?;
+    /// println!("Received {} bytes", n);
     /// #
     /// # Ok(()) }) }
     /// ```
