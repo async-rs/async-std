@@ -363,7 +363,7 @@ extension_trait! {
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn timeout<F, T>(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
+        fn timeout(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
             where Self: Sized
         {
             TimeoutFuture::new(self, dur)
