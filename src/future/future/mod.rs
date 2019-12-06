@@ -360,6 +360,21 @@ extension_trait! {
         #[doc = r#"
             Waits for both the future and a timeout, if the timeout completes before
             the future, it returns an TimeoutError.
+
+            # Example
+            ```
+            #async_std::task::block_on(async {        
+                    let fut = future::ready(0);
+                    let dur = Duration::from_millis(100);
+                    let res = fut.timeout(dur).await;
+                    assert!(res.is_ok());
+
+                    let fut = future::ready(0);
+                    let dur = Duration::from_millis(100);
+                    let res = fut.timeout(dur).await;
+                    assert!(res.is_ok())
+            # });
+            ```
         "#]
         #[cfg(any(feature = "unstable", feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
