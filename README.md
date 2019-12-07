@@ -94,7 +94,7 @@ More examples, including networking and file access, can be found in our
 
 [`examples`]: https://github.com/async-rs/async-std/tree/master/examples
 [documentation]: https://docs.rs/async-std#examples
-[`task::block_on`]: task/fn.block_on.html
+[`task::block_on`]: https://docs.rs/async-std/*/async_std/task/fn.block_on.html
 [`"attributes"` feature]: https://docs.rs/async-std/#features
 
 ## Philosophy
