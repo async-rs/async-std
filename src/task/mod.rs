@@ -58,7 +58,7 @@
 //! ## Configuring tasks
 //!
 //! A new task can be configured before it is spawned via the [`Builder`] type,
-//! which currently allows you to set the name and stack size for the child task:
+//! which currently allows you to set the name for the child task:
 //!
 //! ```
 //! # #![allow(unused_must_use)]
@@ -110,7 +110,6 @@
 //! [`join`]: struct.JoinHandle.html#method.join
 //! [`panic!`]: https://doc.rust-lang.org/std/macro.panic.html
 //! [`Builder`]: struct.Builder.html
-//! [`Builder::stack_size`]: struct.Builder.html#method.stack_size
 //! [`Builder::name`]: struct.Builder.html#method.name
 //! [`task::current`]: fn.current.html
 //! [`Task`]: struct.Task.html
