@@ -38,7 +38,6 @@ docs = ["attributes", "unstable"]
 unstable = ["default", "broadcaster"]
 attributes = ["async-attributes"]
 std = [
-  "async-macros",
   "crossbeam-utils",
   "futures-core",
   "futures-io",
@@ -51,7 +50,6 @@ std = [
 
 [dependencies]
 async-attributes = { version = "1.1.1", optional = true }
-async-macros = { version = "2.0.0", optional = true }
 async-task = { version = "1.0.0", optional = true }
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
 crossbeam-channel = { version = "0.4.0", optional = true }

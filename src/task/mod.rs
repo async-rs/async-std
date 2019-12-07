@@ -123,7 +123,7 @@ cfg_std! {
     pub use std::task::{Context, Poll, Waker};
 
     #[doc(inline)]
-    pub use async_macros::ready;
+    pub use futures_core::ready;
 
     pub use yield_now::yield_now;
     mod yield_now;

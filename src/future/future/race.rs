@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use async_macros::MaybeDone;
+use crate::future::MaybeDone;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
