@@ -15,8 +15,10 @@ use futures_core::ready;
 pub(crate) enum MaybeDone<Fut: Future> {
     /// A not-yet-completed future
     Future(Fut),
+
     /// The output of the completed future
     Done(Fut::Output),
+
     /// The empty variant after the result of a [`MaybeDone`] has been
     /// taken using the [`take`](MaybeDone::take) method.
     Gone,
@@ -41,20 +43,20 @@ impl<Fut: Future> MaybeDone<Fut> {
         }
     }
 
-    /// Returns an [`Option`] containing a mutable reference to the output of the future.
-    /// The output of this method will be [`Some`] if and only if the inner
-    /// future has been completed and [`take`](MaybeDone::take)
-    /// has not yet been called.
-    #[inline]
-    pub(crate) fn output_mut(self: Pin<&mut Self>) -> Option<&mut Fut::Output> {
-        unsafe {
-            let this = self.get_unchecked_mut();
-            match this {
-                MaybeDone::Done(res) => Some(res),
-                _ => None,
-            }
-        }
-    }
+//     /// Returns an [`Option`] containing a mutable reference to the output of the future.
+//     /// The output of this method will be [`Some`] if and only if the inner
+//     /// future has been completed and [`take`](MaybeDone::take)
+//     /// has not yet been called.
+//     #[inline]
+//     pub(crate) fn output_mut(self: Pin<&mut Self>) -> Option<&mut Fut::Output> {
+//         unsafe {
+//             let this = self.get_unchecked_mut();
+//             match this {
+//                 MaybeDone::Done(res) => Some(res),
+//                 _ => None,
+//             }
+//         }
+//     }
 
     /// Attempt to take the output of a `MaybeDone` without driving it
     /// towards completion.
@@ -73,8 +75,6 @@ impl<Fut: Future> MaybeDone<Fut> {
             }
         }
     }
-
-    // fn ok(self) -> Option<Fut::Output> {}
 }
 
 impl<Fut: Future> Future for MaybeDone<Fut> {

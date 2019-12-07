@@ -47,13 +47,11 @@
 //! [`Future::try_race`]: trait.Future.html#method.try_race
 
 pub use future::Future;
-pub(crate) use maybe_done::MaybeDone;
 pub use pending::pending;
 pub use poll_fn::poll_fn;
 pub use ready::ready;
 
 pub(crate) mod future;
-mod maybe_done;
 mod pending;
 mod poll_fn;
 mod ready;
@@ -65,5 +63,7 @@ cfg_default! {
 
 cfg_unstable! {
     pub use into_future::IntoFuture;
+    pub(crate) use maybe_done::MaybeDone;
     mod into_future;
+    mod maybe_done;
 }
