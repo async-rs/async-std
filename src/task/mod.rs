@@ -122,10 +122,9 @@ cfg_std! {
     #[doc(inline)]
     pub use std::task::{Context, Poll, Waker};
 
-    #[doc(inline)]
-    pub use futures_core::ready;
-
+    pub use ready::ready;
     pub use yield_now::yield_now;
+    mod ready;
     mod yield_now;
 }
 
