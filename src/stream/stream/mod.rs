@@ -114,6 +114,7 @@ use std::cmp::Ordering;
 
 cfg_unstable! {
     use std::future::Future;
+    use std::hash::Hash;
     use std::pin::Pin;
     use std::time::Duration;
 
@@ -131,6 +132,8 @@ cfg_unstable! {
     pub use timeout::{TimeoutError, Timeout};
     pub use throttle::Throttle;
     pub use delay::Delay;
+    pub use unique::Unique;
+    pub use unique_by::UniqueBy;
 
     mod count;
     mod merge;
@@ -140,6 +143,8 @@ cfg_unstable! {
     mod timeout;
     mod throttle;
     mod delay;
+    mod unique;
+    mod unique_by;
     mod unzip;
 }
 
@@ -1737,6 +1742,87 @@ extension_trait! {
             F: FnMut(Self::Item) -> Result<(), E>,
         {
             TryForEachFuture::new(self, f)
+        }
+
+        #[doc = r#"
+            Creates a stream that filters out duplicate items.
+            
+            Duplicates are detected using hash and equality. Produced values are
+            stored in a hash set in the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+    
+            let s = stream::from_iter(
+                vec![10, 20, 30, 20, 40, 10, 50]
+            ).unique();
+
+            assert_eq!(s.next().await, Some(10));
+            assert_eq!(s.next().await, Some(20));
+            assert_eq!(s.next().await, Some(30));
+            assert_eq!(s.next().await, Some(40));
+            assert_eq!(s.next().await, Some(50));
+            assert_eq!(s.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature="unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn unique(
+            self,
+        ) -> Unique<Self>
+        where
+            Self: Stream + Sized,
+            Self::Item: Hash + Eq + Clone
+        {
+            Unique::new(self)
+        }
+
+        #[doc = r#"
+            Create a stream that filters out duplicate items.
+            
+            Duplicates are detected by comparing the key they map to with the keying
+            function `f` by hash and equality. The keys are stored in a hash set in
+            the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(
+                vec![\"a\", \"bb\", \"aa\", \"c\", \"ccc\"]
+            ).unique_by(|x| x.len());
+            
+            assert_eq!(s.next().await, \"a\");
+            assert_eq!(s.next().await, \"bb\");
+            assert_eq!(s.next().await, \"ccc\");
+            assert_eq!(s.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature="unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn unique_by<V, F>(
+            self,
+            f: F
+        ) -> UniqueBy<Self, V, F>
+        where
+            Self: Stream + Sized,
+            V: Hash + Eq,
+            F: FnMut(&Self::Item) -> V
+        {
+            UniqueBy::new(self, f)
         }
 
         #[doc = r#"
