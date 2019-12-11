@@ -63,5 +63,7 @@ cfg_default! {
 
 cfg_unstable! {
     pub use into_future::IntoFuture;
+    pub(crate) use maybe_done::MaybeDone;
     mod into_future;
+    mod maybe_done;
 }
