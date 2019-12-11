@@ -1800,12 +1800,12 @@ extension_trait! {
             use async_std::stream;
 
             let s = stream::from_iter(
-                vec![\"a\", \"bb\", \"aa\", \"c\", \"ccc\"]
+                vec!["a", "bb", "aa", "c", "ccc"]
             ).unique_by(|x| x.len());
             
-            assert_eq!(s.next().await, \"a\");
-            assert_eq!(s.next().await, \"bb\");
-            assert_eq!(s.next().await, \"ccc\");
+            assert_eq!(s.next().await, "a\");
+            assert_eq!(s.next().await, "bb");
+            assert_eq!(s.next().await, "ccc");
             assert_eq!(s.next().await, None);
             #
             # }) }
