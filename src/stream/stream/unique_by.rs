@@ -14,10 +14,10 @@ pin_project! {
     /// function `f` by hash and equality. The keys are stored in a hash set in
     /// the stream.
     ///
-    /// This `struct` is created by the [`unique`] method on [`Stream`]. See its
+    /// This `struct` is created by the [`unique_by`] method on [`Stream`]. See its
     /// documentation for more.
     ///
-    /// [`unique`]: trait.Stream.html#method.unique
+    /// [`unique_by`]: trait.Stream.html#method.unique_by
     /// [`Stream`]: trait.Stream.html
     #[cfg(feature="unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
