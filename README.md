@@ -74,18 +74,15 @@ syntax.
 
 ## Examples
 
-All examples require the [`"attributes"` feature] to be enabled.  This feature
-is not enabled by default because it significantly impacts compile times. See
-[`task::block_on`] for an alternative way to start executing tasks.
-
 ```rust
+use async_std::task;
+
 async fn say_hello() {
     println!("Hello, world!");
 }
 
-#[async_std::main]
-async fn main() {
-    say_hello().await;
+fn main() {
+    task::block_on(say_hello())
 }
 ```
 
