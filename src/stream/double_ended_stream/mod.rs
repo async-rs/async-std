@@ -3,14 +3,12 @@ use crate::stream::Stream;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-mod from_iter;
 mod next_back;
 mod nth_back;
 mod rfind;
 mod rfold;
 mod try_rfold;
 
-pub use from_iter::{from_iter, FromIter};
 use next_back::NextBackFuture;
 use nth_back::NthBackFuture;
 use rfind::RFindFuture;
