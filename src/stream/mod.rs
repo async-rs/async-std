@@ -308,7 +308,7 @@ pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
 
-pub(crate) mod stream;
+pub mod stream;
 
 mod empty;
 mod from_fn;
@@ -318,7 +318,8 @@ mod repeat;
 mod repeat_with;
 
 cfg_unstable! {
-    mod double_ended_stream;
+    #[doc(hidden)]
+    pub mod double_ended_stream;
     mod exact_size_stream;
     mod extend;
     mod from_stream;

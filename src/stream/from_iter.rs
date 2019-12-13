@@ -3,6 +3,8 @@ use std::pin::Pin;
 use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
+#[cfg(feature = "unstable")]
+use crate::stream::double_ended_stream::DoubleEndedStream;
 use crate::task::{Context, Poll};
 
 pin_project! {
@@ -49,5 +51,12 @@ impl<I: Iterator> Stream for FromIter<I> {
 
     fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Poll::Ready(self.iter.next())
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl<T: DoubleEndedIterator> DoubleEndedStream for FromIter<T> {
+    fn poll_next_back(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<T::Item>> {
+        Poll::Ready(self.iter.next_back())
     }
 }
