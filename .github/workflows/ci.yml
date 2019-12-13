@@ -63,7 +63,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --all --features unstable attributes
+        args: --all --features "unstable attributes"
+
+    - name: documentation test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --doc --features "unstable attributes"
 
   check_fmt_and_docs:
     name: Checking fmt and docs
