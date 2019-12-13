@@ -36,7 +36,7 @@ pub trait DoubleEndedStream: Stream {
 
         # Examples
 
-        ```ignore
+        ```
         # fn main() { async_std::task::block_on(async {
         #
         use std::pin::Pin;
@@ -102,7 +102,7 @@ pub trait DoubleEndedStream: Stream {
 
             # Examples
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
@@ -130,7 +130,7 @@ pub trait DoubleEndedStream: Stream {
 
             Basic usage:
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
@@ -158,7 +158,7 @@ pub trait DoubleEndedStream: Stream {
 
             Basic usage:
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
@@ -185,7 +185,7 @@ pub trait DoubleEndedStream: Stream {
 
             Basic usage:
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
@@ -216,7 +216,7 @@ pub trait DoubleEndedStream: Stream {
 
             Basic usage:
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
