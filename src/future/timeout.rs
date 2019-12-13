@@ -51,7 +51,8 @@ pin_project! {
 }
 
 impl<F> TimeoutFuture<F> {
-    pub fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
+    #[allow(dead_code)]
+    pub(super) fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
         TimeoutFuture { future: future, delay: Delay::new(dur) }
     }
 }
