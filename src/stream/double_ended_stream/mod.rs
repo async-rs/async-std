@@ -105,9 +105,10 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
+            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::stream::from_iter;
 
-            let mut s = double_ended_stream::from_iter(vec![7u8]);
+            let mut s = from_iter(vec![7u8]);
 
             assert_eq!(s.next_back().await, Some(7));
             assert_eq!(s.next_back().await, None);
@@ -132,9 +133,10 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
+            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::stream::from_iter;
 
-            let mut s = double_ended_stream::from_iter(vec![1u8, 2, 3, 4, 5]);
+            let mut s = from_iter(vec![1u8, 2, 3, 4, 5]);
 
             let second = s.nth_back(1).await;
             assert_eq!(second, Some(4));
@@ -159,9 +161,10 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
+            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::stream::from_iter;
 
-            let mut s = double_ended_stream::from_iter(vec![1u8, 2, 3, 4, 5]);
+            let mut s = from_iter(vec![1u8, 2, 3, 4, 5]);
 
             let second = s.rfind(|v| v % 2 == 0).await;
             assert_eq!(second, Some(4));
@@ -185,11 +188,12 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
+            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::stream::from_iter;
 
-            let s = double_ended_stream::from_iter(vec![1u8, 2, 3, 4, 5]);
+            let s = from_iter(vec![1u8, 2, 3, 4, 5]);
 
-            let second = s.rfold(0, |acc, v| v + acc).await;
+            let second = s.rfold(0u8, |acc, v| v + acc).await;
 
             assert_eq!(second, 15);
             #
@@ -215,10 +219,11 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::{self, DoubleEndedStream};
+            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::stream::from_iter;
 
-            let s = double_ended_stream::from_iter(vec![1u8, 2, 3, 4, 5]);
-            let sum = s.try_rfold(0, |acc, v| {
+            let s = from_iter(vec![1u8, 2, 3, 4, 5]);
+            let sum = s.try_rfold(0u8, |acc, v| {
                 if (acc+v) % 2 == 1 {
                     Ok(v+3)
                 } else {
