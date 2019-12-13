@@ -105,7 +105,7 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::prelude::*;
             use async_std::stream::from_iter;
 
             let mut s = from_iter(vec![7u8]);
@@ -133,7 +133,7 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::prelude::*;
             use async_std::stream::from_iter;
 
             let mut s = from_iter(vec![1u8, 2, 3, 4, 5]);
@@ -161,7 +161,7 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::prelude::*;
             use async_std::stream::from_iter;
 
             let mut s = from_iter(vec![1u8, 2, 3, 4, 5]);
@@ -188,7 +188,7 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::prelude::*;
             use async_std::stream::from_iter;
 
             let s = from_iter(vec![1u8, 2, 3, 4, 5]);
@@ -219,7 +219,7 @@ pub trait DoubleEndedStream: Stream {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use async_std::stream::double_ended_stream::DoubleEndedStream;
+            use async_std::prelude::*;
             use async_std::stream::from_iter;
 
             let s = from_iter(vec![1u8, 2, 3, 4, 5]);
