@@ -587,13 +587,16 @@ extension_trait! {
 
             assert_eq!(s.next().await, Some(1));
             // There will be no delay after the first time.
-            assert!(start.elapsed().as_millis() <= 210);
+            println!("Elapsed time 1: {}", start.elapsed().as_millis());
+            assert!(start.elapsed().as_millis() <= 300);
 
             assert_eq!(s.next().await, Some(2));
-            assert!(start.elapsed().as_millis() <= 210);
+            println!("Elapsed time 2: {}", start.elapsed().as_millis());
+            assert!(start.elapsed().as_millis() <= 300);
 
             assert_eq!(s.next().await, None);
-            assert!(start.elapsed().as_millis() <= 210);
+            println!("Elapsed time 3: {}", start.elapsed().as_millis());
+            assert!(start.elapsed().as_millis() <= 300);
             #
             # }) }
             ```
