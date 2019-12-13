@@ -308,7 +308,7 @@ pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
 
-pub mod stream;
+pub(crate) mod stream;
 
 mod empty;
 mod from_fn;
