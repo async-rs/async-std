@@ -93,12 +93,12 @@ impl<T: ?Sized> Mutex<T> {
     /// # })
     /// ```
     pub async fn lock(&self) -> MutexGuard<'_, T> {
-        pub struct LockFuture<'a, T> {
+        pub struct LockFuture<'a, T: ?Sized> {
             mutex: &'a Mutex<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for LockFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for LockFuture<'a, T> {
             type Output = MutexGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -125,7 +125,7 @@ impl<T: ?Sized> Mutex<T> {
             }
         }
 
-        impl<T> Drop for LockFuture<'_, T> {
+        impl<T: ?Sized> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {

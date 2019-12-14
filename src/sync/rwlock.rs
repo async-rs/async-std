@@ -101,12 +101,12 @@ impl<T: ?Sized> RwLock<T> {
     /// # })
     /// ```
     pub async fn read(&self) -> RwLockReadGuard<'_, T> {
-        pub struct ReadFuture<'a, T> {
+        pub struct ReadFuture<'a, T: ?Sized> {
             lock: &'a RwLock<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for ReadFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for ReadFuture<'a, T> {
             type Output = RwLockReadGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -133,7 +133,7 @@ impl<T: ?Sized> RwLock<T> {
             }
         }
 
-        impl<T> Drop for ReadFuture<'_, T> {
+        impl<T: ?Sized> Drop for ReadFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
@@ -226,12 +226,12 @@ impl<T: ?Sized> RwLock<T> {
     /// # })
     /// ```
     pub async fn write(&self) -> RwLockWriteGuard<'_, T> {
-        pub struct WriteFuture<'a, T> {
+        pub struct WriteFuture<'a, T: ?Sized> {
             lock: &'a RwLock<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for WriteFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for WriteFuture<'a, T> {
             type Output = RwLockWriteGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -258,7 +258,7 @@ impl<T: ?Sized> RwLock<T> {
             }
         }
 
-        impl<T> Drop for WriteFuture<'_, T> {
+        impl<T: ?Sized> Drop for WriteFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
