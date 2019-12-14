@@ -98,6 +98,7 @@ impl Reactor {
     }
 
     /// Deregisters an I/O event source associated with a file descriptor.
+    #[cfg(feature = "unstable")]
     pub fn deregister_fd(&self, source: &dyn Evented, fd: c_int) -> io::Result<()> {
         // Deregister the I/O object from the mio instance.
         self.poller.deregister(source)?;
