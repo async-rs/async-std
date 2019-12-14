@@ -1,8 +1,8 @@
 #![cfg(all(unix, feature = "unstable"))]
 
-use async_std::os::unix::io::{register, unregister, Interest, IntoRawFd, FromRawFd};
 use async_std::future::poll_fn;
 use async_std::net::{TcpListener, TcpStream};
+use async_std::os::unix::io::{register, unregister, FromRawFd, Interest, IntoRawFd};
 use async_std::task::{self, block_on, Poll};
 
 #[test]
@@ -32,10 +32,13 @@ fn register_stream() {
 
                     Poll::Pending
                 }
-            }).await;
+            })
+            .await;
 
             t.await.unwrap();
-            unsafe { TcpStream::from_raw_fd(stream); }
+            unsafe {
+                TcpStream::from_raw_fd(stream);
+            }
         }
     });
 }
