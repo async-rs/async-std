@@ -1,5 +1,6 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
+use std::os::raw::c_int;
 
 use mio::{self, Evented};
 use once_cell::sync::Lazy;
@@ -11,19 +12,22 @@ use crate::utils::abort_on_panic;
 
 /// Data associated with a registered I/O handle.
 #[derive(Debug)]
-struct Entry {
+pub struct Entry {
     /// A unique identifier.
     token: mio::Token,
 
+    /// File descriptor.
+    fd: Option<c_int>,
+
     /// Tasks that are blocked on reading from this I/O handle.
-    readers: Mutex<Vec<Waker>>,
+    pub readers: Mutex<Vec<Waker>>,
 
     /// Thasks that are blocked on writing to this I/O handle.
-    writers: Mutex<Vec<Waker>>,
+    pub writers: Mutex<Vec<Waker>>,
 }
 
 /// The state of a networking driver.
-struct Reactor {
+pub struct Reactor {
     /// A mio instance that polls for new events.
     poller: mio::Poll,
 
@@ -51,14 +55,14 @@ impl Reactor {
         };
 
         // Register a dummy I/O handle for waking up the polling thread.
-        let entry = reactor.register(&reactor.notify_reg.0)?;
+        let entry = reactor.register(&reactor.notify_reg.0, None)?;
         reactor.notify_token = entry.token;
 
         Ok(reactor)
     }
 
     /// Registers an I/O event source and returns its associated entry.
-    fn register(&self, source: &dyn Evented) -> io::Result<Arc<Entry>> {
+    pub fn register(&self, source: &dyn Evented, fd: Option<c_int>) -> io::Result<Arc<Entry>> {
         let mut entries = self.entries.lock().unwrap();
 
         // Reserve a vacant spot in the slab and use its key as the token value.
@@ -68,6 +72,7 @@ impl Reactor {
         // Allocate an entry and insert it into the slab.
         let entry = Arc::new(Entry {
             token,
+            fd,
             readers: Mutex::new(Vec::new()),
             writers: Mutex::new(Vec::new()),
         });
@@ -82,12 +87,23 @@ impl Reactor {
     }
 
     /// Deregisters an I/O event source associated with an entry.
-    fn deregister(&self, source: &dyn Evented, entry: &Entry) -> io::Result<()> {
+    pub fn deregister(&self, source: &dyn Evented, entry: &Entry) -> io::Result<()> {
         // Deregister the I/O object from the mio instance.
         self.poller.deregister(source)?;
 
         // Remove the entry associated with the I/O object.
         self.entries.lock().unwrap().remove(entry.token.0);
+
+        Ok(())
+    }
+
+    /// Deregisters an I/O event source associated with a file descriptor.
+    pub fn deregister_fd(&self, source: &dyn Evented, fd: c_int) -> io::Result<()> {
+        // Deregister the I/O object from the mio instance.
+        self.poller.deregister(source)?;
+
+        // Remove the entry associated with the I/O object.
+        self.entries.lock().unwrap().retain(|_, e| e.fd != Some(fd));
 
         Ok(())
     }
@@ -101,7 +117,7 @@ impl Reactor {
 }
 
 /// The state of the global networking driver.
-static REACTOR: Lazy<Reactor> = Lazy::new(|| {
+pub static REACTOR: Lazy<Reactor> = Lazy::new(|| {
     // Spawn a thread that waits on the poller for new events and wakes up tasks blocked on I/O
     // handles.
     std::thread::Builder::new()
@@ -181,7 +197,7 @@ impl<T: Evented> Watcher<T> {
     pub fn new(source: T) -> Watcher<T> {
         Watcher {
             entry: REACTOR
-                .register(&source)
+                .register(&source, None)
                 .expect("cannot register an I/O event source"),
             source: Some(source),
         }

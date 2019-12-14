@@ -1,7 +1,39 @@
 //! Unix-specific I/O extensions.
 
+use crate::task::Context;
+use crate::io;
+
 cfg_not_docs! {
     pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+    use mio::unix::EventedFd;
+    use crate::net::driver::REACTOR;
+
+    /// Registers an I/O handle so that the current task gets woken up when it becomes ready.
+    #[cfg(feature = "unstable")]
+    pub fn register(cx: &mut Context<'_>, fd: RawFd, interest: Interest) -> io::Result<()> {
+        let evented = EventedFd(&fd);
+        let entry = REACTOR.register(&evented, Some(fd))?;
+        if interest == Interest::Read || interest == Interest::Both {
+            let mut list = entry.readers.lock().unwrap();
+            if list.iter().all(|w| !w.will_wake(cx.waker())) {
+                list.push(cx.waker().clone());
+            }
+        }
+        if interest == Interest::Write || interest == Interest::Both {
+            let mut list = entry.writers.lock().unwrap();
+            if list.iter().all(|w| !w.will_wake(cx.waker())) {
+                list.push(cx.waker().clone());
+            }
+        }
+        Ok(())
+    }
+
+    /// Unregisters an I/O handle.
+    #[cfg(feature = "unstable")]
+    pub fn unregister(fd: RawFd) -> io::Result<()> {
+        let evented = EventedFd(&fd);
+        REACTOR.deregister_fd(&evented, fd)
+    }
 }
 
 cfg_docs! {
@@ -50,5 +82,31 @@ cfg_docs! {
         /// to the caller. Callers are then the unique owners of the file descriptor
         /// and must close the descriptor once it's no longer needed.
         fn into_raw_fd(self) -> RawFd;
+    }
+
+    /// Registers an I/O handle so that the current task gets woken up when it becomes ready.
+    #[doc(cfg(unstable))]
+    pub fn register(cx: &mut Context<'_>, fd: RawFd, interest: Interest) -> io::Result<()> {
+        unreachable!()
+    }
+
+    /// Unregisters an I/O handle.
+    #[doc(cfg(unstable))]
+    pub fn unregister(fd: RawFd) -> io::Result<()> {
+        unreachable!()
+    }
+}
+
+cfg_unstable! {
+    /// Decides which possibility a task is interested in.
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub enum Interest {
+        /// A task is interested in reading from a file descriptor.
+        Read,
+        /// A task is interested in writing to a file descriptor.
+        Write,
+        /// A task is interested in either being able to write or being able to read from a file
+        /// descriptor.
+        Both,
     }
 }
