@@ -1,5 +1,9 @@
 //! Unix-specific I/O extensions.
 
+#[cfg(feature = "unstable")]
+use crate::task::Context;
+#[cfg(feature = "unstable")]
+use crate::io;
 
 cfg_not_docs! {
     pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
@@ -8,10 +12,6 @@ cfg_not_docs! {
     use mio::unix::EventedFd;
     #[cfg(feature = "unstable")]
     use crate::net::driver::REACTOR;
-    #[cfg(feature = "unstable")]
-    use crate::task::Context;
-    #[cfg(feature = "unstable")]
-    use crate::io;
 
     /// Registers an I/O handle so that the current task gets woken up when it becomes ready.
     #[cfg(feature = "unstable")]
