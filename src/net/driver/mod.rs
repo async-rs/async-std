@@ -13,6 +13,7 @@ use crate::utils::abort_on_panic;
 pub use std::os::unix::io::RawFd;
 
 #[cfg(not(unix))]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum RawFd {}
 
 /// Data associated with a registered I/O handle.
