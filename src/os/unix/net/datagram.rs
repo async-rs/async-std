@@ -8,7 +8,7 @@ use mio_uds;
 use super::SocketAddr;
 use crate::future;
 use crate::io;
-use crate::net::driver::Watcher;
+use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::task::spawn_blocking;

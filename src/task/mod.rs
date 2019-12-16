@@ -140,13 +140,12 @@ cfg_default! {
     pub use spawn::spawn;
     pub use task_local::{AccessError, LocalKey};
 
-    use builder::Runnable;
-    use task_local::LocalsMap;
+    pub(crate) use builder::Runnable;
+    pub(crate) use task_local::LocalsMap;
 
     mod block_on;
     mod builder;
     mod current;
-    mod executor;
     mod join_handle;
     mod sleep;
     mod spawn;

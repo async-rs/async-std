@@ -1,13 +1,13 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use mio::{self, Evented};
-use once_cell::sync::Lazy;
 use slab::Slab;
 
 use crate::io;
+use crate::rt::RUNTIME;
 use crate::task::{Context, Poll, Waker};
-use crate::utils::abort_on_panic;
 
 /// Data associated with a registered I/O handle.
 #[derive(Debug)]
@@ -18,14 +18,17 @@ struct Entry {
     /// Tasks that are blocked on reading from this I/O handle.
     readers: Mutex<Vec<Waker>>,
 
-    /// Thasks that are blocked on writing to this I/O handle.
+    /// Tasks that are blocked on writing to this I/O handle.
     writers: Mutex<Vec<Waker>>,
 }
 
 /// The state of a networking driver.
-struct Reactor {
+pub struct Reactor {
     /// A mio instance that polls for new events.
     poller: mio::Poll,
+
+    /// A list into which mio stores events.
+    events: Mutex<mio::Events>,
 
     /// A collection of registered I/O handles.
     entries: Mutex<Slab<Arc<Entry>>>,
@@ -39,12 +42,13 @@ struct Reactor {
 
 impl Reactor {
     /// Creates a new reactor for polling I/O events.
-    fn new() -> io::Result<Reactor> {
+    pub fn new() -> io::Result<Reactor> {
         let poller = mio::Poll::new()?;
         let notify_reg = mio::Registration::new2();
 
         let mut reactor = Reactor {
             poller,
+            events: Mutex::new(mio::Events::with_capacity(1000)),
             entries: Mutex::new(Slab::new()),
             notify_reg,
             notify_token: mio::Token(0),
@@ -92,50 +96,32 @@ impl Reactor {
         Ok(())
     }
 
-    // fn notify(&self) {
-    //     self.notify_reg
-    //         .1
-    //         .set_readiness(mio::Ready::readable())
-    //         .unwrap();
-    // }
-}
+    /// Notifies the reactor so that polling stops blocking.
+    pub fn notify(&self) -> io::Result<()> {
+        self.notify_reg.1.set_readiness(mio::Ready::readable())
+    }
 
-/// The state of the global networking driver.
-static REACTOR: Lazy<Reactor> = Lazy::new(|| {
-    // Spawn a thread that waits on the poller for new events and wakes up tasks blocked on I/O
-    // handles.
-    std::thread::Builder::new()
-        .name("async-std/net".to_string())
-        .spawn(move || {
-            // If the driver thread panics, there's not much we can do. It is not a
-            // recoverable error and there is no place to propagate it into so we just abort.
-            abort_on_panic(|| {
-                main_loop().expect("async networking thread has panicked");
-            })
-        })
-        .expect("cannot start a thread driving blocking tasks");
+    /// Waits on the poller for new events and wakes up tasks blocked on I/O handles.
+    ///
+    /// Returns `Ok(true)` if at least one new task was woken.
+    pub fn poll(&self, timeout: Option<Duration>) -> io::Result<bool> {
+        let mut events = self.events.lock().unwrap();
 
-    Reactor::new().expect("cannot initialize reactor")
-});
-
-/// Waits on the poller for new events and wakes up tasks blocked on I/O handles.
-fn main_loop() -> io::Result<()> {
-    let reactor = &REACTOR;
-    let mut events = mio::Events::with_capacity(1000);
-
-    loop {
         // Block on the poller until at least one new event comes in.
-        reactor.poller.poll(&mut events, None)?;
+        self.poller.poll(&mut events, timeout)?;
 
         // Lock the entire entry table while we're processing new events.
-        let entries = reactor.entries.lock().unwrap();
+        let entries = self.entries.lock().unwrap();
+
+        // The number of woken tasks.
+        let mut progress = false;
 
         for event in events.iter() {
             let token = event.token();
 
-            if token == reactor.notify_token {
+            if token == self.notify_token {
                 // If this is the notification token, we just need the notification state.
-                reactor.notify_reg.1.set_readiness(mio::Ready::empty())?;
+                self.notify_reg.1.set_readiness(mio::Ready::empty())?;
             } else {
                 // Otherwise, look for the entry associated with this token.
                 if let Some(entry) = entries.get(token.0) {
@@ -143,21 +129,27 @@ fn main_loop() -> io::Result<()> {
                     let readiness = event.readiness();
 
                     // Wake up reader tasks blocked on this I/O handle.
-                    if !(readiness & reader_interests()).is_empty() {
+                    let reader_interests = mio::Ready::all() - mio::Ready::writable();
+                    if !(readiness & reader_interests).is_empty() {
                         for w in entry.readers.lock().unwrap().drain(..) {
                             w.wake();
+                            progress = true;
                         }
                     }
 
                     // Wake up writer tasks blocked on this I/O handle.
-                    if !(readiness & writer_interests()).is_empty() {
+                    let writer_interests = mio::Ready::all() - mio::Ready::readable();
+                    if !(readiness & writer_interests).is_empty() {
                         for w in entry.writers.lock().unwrap().drain(..) {
                             w.wake();
+                            progress = true;
                         }
                     }
                 }
             }
         }
+
+        Ok(progress)
     }
 }
 
@@ -180,7 +172,8 @@ impl<T: Evented> Watcher<T> {
     /// lifetime of the returned I/O handle.
     pub fn new(source: T) -> Watcher<T> {
         Watcher {
-            entry: REACTOR
+            entry: RUNTIME
+                .reactor()
                 .register(&source)
                 .expect("cannot register an I/O event source"),
             source: Some(source),
@@ -264,7 +257,8 @@ impl<T: Evented> Watcher<T> {
     #[allow(dead_code)]
     pub fn into_inner(mut self) -> T {
         let source = self.source.take().unwrap();
-        REACTOR
+        RUNTIME
+            .reactor()
             .deregister(&source, &self.entry)
             .expect("cannot deregister I/O event source");
         source
@@ -274,7 +268,8 @@ impl<T: Evented> Watcher<T> {
 impl<T: Evented> Drop for Watcher<T> {
     fn drop(&mut self) {
         if let Some(ref source) = self.source {
-            REACTOR
+            RUNTIME
+                .reactor()
                 .deregister(source, &self.entry)
                 .expect("cannot deregister I/O event source");
         }
@@ -288,28 +283,4 @@ impl<T: Evented + fmt::Debug> fmt::Debug for Watcher<T> {
             .field("source", &self.source)
             .finish()
     }
-}
-
-/// Returns a mask containing flags that interest tasks reading from I/O handles.
-#[inline]
-fn reader_interests() -> mio::Ready {
-    mio::Ready::all() - mio::Ready::writable()
-}
-
-/// Returns a mask containing flags that interest tasks writing into I/O handles.
-#[inline]
-fn writer_interests() -> mio::Ready {
-    mio::Ready::writable() | hup()
-}
-
-/// Returns a flag containing the hangup status.
-#[inline]
-fn hup() -> mio::Ready {
-    #[cfg(unix)]
-    let ready = mio::unix::UnixReady::hup().into();
-
-    #[cfg(not(unix))]
-    let ready = mio::Ready::empty();
-
-    ready
 }

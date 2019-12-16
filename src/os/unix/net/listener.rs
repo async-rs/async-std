@@ -10,7 +10,7 @@ use super::SocketAddr;
 use super::UnixStream;
 use crate::future;
 use crate::io;
-use crate::net::driver::Watcher;
+use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::stream::Stream;

@@ -3,11 +3,9 @@ use std::future::Future;
 use std::mem::{self, ManuallyDrop};
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
-use std::thread;
 
 use crossbeam_utils::sync::Parker;
 use kv_log_macro::trace;
-use log::log_enabled;
 
 use crate::task::{Context, Poll, Task, Waker};
 
@@ -42,12 +40,10 @@ where
     let task = Task::new(None);
 
     // Log this `block_on` operation.
-    if log_enabled!(log::Level::Trace) {
-        trace!("block_on", {
-            task_id: task.id().0,
-            parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
-        });
-    }
+    trace!("block_on", {
+        task_id: task.id().0,
+        parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
+    });
 
     let future = async move {
         // Drop task-locals on exit.
@@ -57,13 +53,9 @@ where
 
         // Log completion on exit.
         defer! {
-            if log_enabled!(log::Level::Trace) {
-                Task::get_current(|t| {
-                    trace!("completed", {
-                        task_id: t.id().0,
-                    });
-                });
-            }
+            trace!("completed", {
+                task_id: Task::get_current(|t| t.id().0),
+            });
         }
 
         future.await
@@ -125,7 +117,6 @@ where
         let waker = unsafe { ManuallyDrop::new(Waker::from_raw(RawWaker::new(ptr, &VTABLE))) };
         let cx = &mut Context::from_waker(&waker);
 
-        let mut step = 0;
         loop {
             if let Poll::Ready(t) = future.as_mut().poll(cx) {
                 // Save the parker for the next invocation of `block`.
@@ -133,14 +124,7 @@ where
                 return t;
             }
 
-            // Yield a few times or park the current thread.
-            if step < 3 {
-                thread::yield_now();
-                step += 1;
-            } else {
-                arc_parker.park();
-                step = 0;
-            }
+            arc_parker.park();
         }
     })
 }

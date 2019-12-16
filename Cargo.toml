@@ -26,6 +26,7 @@ default = [
   "async-task",
   "crossbeam-channel",
   "crossbeam-deque",
+  "crossbeam-queue",
   "futures-timer",
   "kv-log-macro",
   "log",
@@ -56,6 +57,7 @@ async-task = { version = "1.0.0", optional = true }
 broadcaster = { version = "0.2.6", optional = true, default-features = false, features = ["default-channels"] }
 crossbeam-channel = { version = "0.4.0", optional = true }
 crossbeam-deque = { version = "0.7.2", optional = true }
+crossbeam-queue = { version = "0.2.0", optional = true }
 crossbeam-utils = { version = "0.7.0", optional = true }
 futures-core = { version = "0.3.1", optional = true }
 futures-io = { version = "0.3.1", optional = true }
