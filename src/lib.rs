@@ -246,14 +246,13 @@ cfg_std! {
     pub mod stream;
     pub mod sync;
     pub mod task;
-
-    pub(crate) mod rt;
 }
 
 cfg_default! {
     pub mod fs;
     pub mod path;
     pub mod net;
+    pub(crate) mod rt;
 }
 
 cfg_unstable! {

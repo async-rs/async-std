@@ -1,7 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::rt::RUNTIME;
 use crate::task::{Context, Poll};
 
 /// Cooperatively gives up a timeslice to the task scheduler.
@@ -44,7 +43,10 @@ impl Future for YieldNow {
         if !self.0 {
             self.0 = true;
             cx.waker().wake_by_ref();
-            RUNTIME.yield_now();
+
+            #[cfg(feature = "default")]
+            crate::rt::RUNTIME.yield_now();
+
             Poll::Pending
         } else {
             Poll::Ready(())
