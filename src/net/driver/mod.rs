@@ -1,6 +1,5 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
-use std::os::raw::c_int;
 
 use mio::{self, Evented};
 use once_cell::sync::Lazy;
@@ -10,6 +9,12 @@ use crate::io;
 use crate::task::{Context, Poll, Waker};
 use crate::utils::abort_on_panic;
 
+#[cfg(unix)]
+pub use std::os::unix::io::RawFd;
+
+#[cfg(not(unix))]
+pub enum RawFd {}
+
 /// Data associated with a registered I/O handle.
 #[derive(Debug)]
 pub struct Entry {
@@ -17,7 +22,7 @@ pub struct Entry {
     token: mio::Token,
 
     /// File descriptor.
-    fd: Option<c_int>,
+    fd: Option<RawFd>,
 
     /// Tasks that are blocked on reading from this I/O handle.
     pub readers: Mutex<Vec<Waker>>,
@@ -62,7 +67,7 @@ impl Reactor {
     }
 
     /// Registers an I/O event source and returns its associated entry.
-    pub fn register(&self, source: &dyn Evented, fd: Option<c_int>) -> io::Result<Arc<Entry>> {
+    pub fn register(&self, source: &dyn Evented, fd: Option<RawFd>) -> io::Result<Arc<Entry>> {
         let mut entries = self.entries.lock().unwrap();
 
         // Reserve a vacant spot in the slab and use its key as the token value.
@@ -98,8 +103,8 @@ impl Reactor {
     }
 
     /// Deregisters an I/O event source associated with a file descriptor.
-    #[cfg(feature = "unstable")]
-    pub fn deregister_fd(&self, source: &dyn Evented, fd: c_int) -> io::Result<()> {
+    #[cfg(all(feature = "unstable", unix))]
+    pub fn deregister_fd(&self, source: &dyn Evented, fd: RawFd) -> io::Result<()> {
         // Deregister the I/O object from the mio instance.
         self.poller.deregister(source)?;
 
