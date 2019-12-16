@@ -39,14 +39,14 @@ use crate::task::{Context, Poll};
 /// #
 /// # })
 /// ```
-pub struct Mutex<T> {
+pub struct Mutex<T: ?Sized> {
     locked: AtomicBool,
     wakers: WakerSet,
     value: UnsafeCell<T>,
 }
 
-unsafe impl<T: Send> Send for Mutex<T> {}
-unsafe impl<T: Send> Sync for Mutex<T> {}
+unsafe impl<T: ?Sized + Send> Send for Mutex<T> {}
+unsafe impl<T: ?Sized + Send> Sync for Mutex<T> {}
 
 impl<T> Mutex<T> {
     /// Creates a new mutex.
@@ -65,7 +65,9 @@ impl<T> Mutex<T> {
             value: UnsafeCell::new(t),
         }
     }
+}
 
+impl<T: ?Sized> Mutex<T> {
     /// Acquires the lock.
     ///
     /// Returns a guard that releases the lock when dropped.
@@ -91,12 +93,12 @@ impl<T> Mutex<T> {
     /// # })
     /// ```
     pub async fn lock(&self) -> MutexGuard<'_, T> {
-        pub struct LockFuture<'a, T> {
+        pub struct LockFuture<'a, T: ?Sized> {
             mutex: &'a Mutex<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for LockFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for LockFuture<'a, T> {
             type Output = MutexGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -123,7 +125,7 @@ impl<T> Mutex<T> {
             }
         }
 
-        impl<T> Drop for LockFuture<'_, T> {
+        impl<T: ?Sized> Drop for LockFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
@@ -189,7 +191,7 @@ impl<T> Mutex<T> {
     /// let mutex = Mutex::new(10);
     /// assert_eq!(mutex.into_inner(), 10);
     /// ```
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T where T: Sized {
         self.value.into_inner()
     }
 
@@ -216,7 +218,7 @@ impl<T> Mutex<T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for Mutex<T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Mutex<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         struct Locked;
         impl fmt::Debug for Locked {
@@ -238,19 +240,19 @@ impl<T> From<T> for Mutex<T> {
     }
 }
 
-impl<T: Default> Default for Mutex<T> {
+impl<T: ?Sized + Default> Default for Mutex<T> {
     fn default() -> Mutex<T> {
         Mutex::new(Default::default())
     }
 }
 
 /// A guard that releases the lock when dropped.
-pub struct MutexGuard<'a, T>(&'a Mutex<T>);
+pub struct MutexGuard<'a, T: ?Sized>(&'a Mutex<T>);
 
-unsafe impl<T: Send> Send for MutexGuard<'_, T> {}
-unsafe impl<T: Sync> Sync for MutexGuard<'_, T> {}
+unsafe impl<T: ?Sized + Send> Send for MutexGuard<'_, T> {}
+unsafe impl<T: ?Sized + Sync> Sync for MutexGuard<'_, T> {}
 
-impl<T> Drop for MutexGuard<'_, T> {
+impl<T: ?Sized> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
         // Use `SeqCst` ordering to synchronize with `WakerSet::insert()` and `WakerSet::update()`.
         self.0.locked.store(false, Ordering::SeqCst);
@@ -260,19 +262,19 @@ impl<T> Drop for MutexGuard<'_, T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for MutexGuard<'_, T> {
+impl<T: ?Sized +fmt::Debug> fmt::Debug for MutexGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
 }
 
-impl<T: fmt::Display> fmt::Display for MutexGuard<'_, T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for MutexGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
-impl<T> Deref for MutexGuard<'_, T> {
+impl<T: ?Sized> Deref for MutexGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -280,7 +282,7 @@ impl<T> Deref for MutexGuard<'_, T> {
     }
 }
 
-impl<T> DerefMut for MutexGuard<'_, T> {
+impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.0.value.get() }
     }

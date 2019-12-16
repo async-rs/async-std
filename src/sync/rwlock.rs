@@ -49,15 +49,15 @@ const READ_COUNT_MASK: usize = !(ONE_READ - 1);
 /// #
 /// # })
 /// ```
-pub struct RwLock<T> {
+pub struct RwLock<T: ?Sized> {
     state: AtomicUsize,
     read_wakers: WakerSet,
     write_wakers: WakerSet,
     value: UnsafeCell<T>,
 }
 
-unsafe impl<T: Send> Send for RwLock<T> {}
-unsafe impl<T: Send + Sync> Sync for RwLock<T> {}
+unsafe impl<T: ?Sized + Send> Send for RwLock<T> {}
+unsafe impl<T: ?Sized + Send + Sync> Sync for RwLock<T> {}
 
 impl<T> RwLock<T> {
     /// Creates a new reader-writer lock.
@@ -77,7 +77,9 @@ impl<T> RwLock<T> {
             value: UnsafeCell::new(t),
         }
     }
+}
 
+impl<T: ?Sized> RwLock<T> {
     /// Acquires a read lock.
     ///
     /// Returns a guard that releases the lock when dropped.
@@ -99,12 +101,12 @@ impl<T> RwLock<T> {
     /// # })
     /// ```
     pub async fn read(&self) -> RwLockReadGuard<'_, T> {
-        pub struct ReadFuture<'a, T> {
+        pub struct ReadFuture<'a, T: ?Sized> {
             lock: &'a RwLock<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for ReadFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for ReadFuture<'a, T> {
             type Output = RwLockReadGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -131,7 +133,7 @@ impl<T> RwLock<T> {
             }
         }
 
-        impl<T> Drop for ReadFuture<'_, T> {
+        impl<T: ?Sized> Drop for ReadFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
@@ -224,12 +226,12 @@ impl<T> RwLock<T> {
     /// # })
     /// ```
     pub async fn write(&self) -> RwLockWriteGuard<'_, T> {
-        pub struct WriteFuture<'a, T> {
+        pub struct WriteFuture<'a, T: ?Sized> {
             lock: &'a RwLock<T>,
             opt_key: Option<usize>,
         }
 
-        impl<'a, T> Future for WriteFuture<'a, T> {
+        impl<'a, T: ?Sized> Future for WriteFuture<'a, T> {
             type Output = RwLockWriteGuard<'a, T>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -256,7 +258,7 @@ impl<T> RwLock<T> {
             }
         }
 
-        impl<T> Drop for WriteFuture<'_, T> {
+        impl<T: ?Sized> Drop for WriteFuture<'_, T> {
             fn drop(&mut self) {
                 // If the current task is still in the set, that means it is being cancelled now.
                 if let Some(key) = self.opt_key {
@@ -316,7 +318,7 @@ impl<T> RwLock<T> {
     /// let lock = RwLock::new(10);
     /// assert_eq!(lock.into_inner(), 10);
     /// ```
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T where T: Sized {
         self.value.into_inner()
     }
 
@@ -343,7 +345,7 @@ impl<T> RwLock<T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for RwLock<T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for RwLock<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         struct Locked;
         impl fmt::Debug for Locked {
@@ -365,19 +367,19 @@ impl<T> From<T> for RwLock<T> {
     }
 }
 
-impl<T: Default> Default for RwLock<T> {
+impl<T: ?Sized + Default> Default for RwLock<T> {
     fn default() -> RwLock<T> {
         RwLock::new(Default::default())
     }
 }
 
 /// A guard that releases the read lock when dropped.
-pub struct RwLockReadGuard<'a, T>(&'a RwLock<T>);
+pub struct RwLockReadGuard<'a, T: ?Sized>(&'a RwLock<T>);
 
-unsafe impl<T: Send> Send for RwLockReadGuard<'_, T> {}
-unsafe impl<T: Sync> Sync for RwLockReadGuard<'_, T> {}
+unsafe impl<T: ?Sized + Send> Send for RwLockReadGuard<'_, T> {}
+unsafe impl<T: ?Sized + Sync> Sync for RwLockReadGuard<'_, T> {}
 
-impl<T> Drop for RwLockReadGuard<'_, T> {
+impl<T: ?Sized> Drop for RwLockReadGuard<'_, T> {
     fn drop(&mut self) {
         let state = self.0.state.fetch_sub(ONE_READ, Ordering::SeqCst);
 
@@ -388,19 +390,19 @@ impl<T> Drop for RwLockReadGuard<'_, T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for RwLockReadGuard<'_, T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for RwLockReadGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
 }
 
-impl<T: fmt::Display> fmt::Display for RwLockReadGuard<'_, T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for RwLockReadGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
-impl<T> Deref for RwLockReadGuard<'_, T> {
+impl<T: ?Sized> Deref for RwLockReadGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -409,12 +411,12 @@ impl<T> Deref for RwLockReadGuard<'_, T> {
 }
 
 /// A guard that releases the write lock when dropped.
-pub struct RwLockWriteGuard<'a, T>(&'a RwLock<T>);
+pub struct RwLockWriteGuard<'a, T: ?Sized>(&'a RwLock<T>);
 
-unsafe impl<T: Send> Send for RwLockWriteGuard<'_, T> {}
-unsafe impl<T: Sync> Sync for RwLockWriteGuard<'_, T> {}
+unsafe impl<T: ?Sized + Send> Send for RwLockWriteGuard<'_, T> {}
+unsafe impl<T: ?Sized + Sync> Sync for RwLockWriteGuard<'_, T> {}
 
-impl<T> Drop for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized> Drop for RwLockWriteGuard<'_, T> {
     fn drop(&mut self) {
         self.0.state.store(0, Ordering::SeqCst);
 
@@ -427,19 +429,19 @@ impl<T> Drop for RwLockWriteGuard<'_, T> {
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for RwLockWriteGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
 }
 
-impl<T: fmt::Display> fmt::Display for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for RwLockWriteGuard<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
-impl<T> Deref for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized> Deref for RwLockWriteGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -447,7 +449,7 @@ impl<T> Deref for RwLockWriteGuard<'_, T> {
     }
 }
 
-impl<T> DerefMut for RwLockWriteGuard<'_, T> {
+impl<T: ?Sized> DerefMut for RwLockWriteGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.0.value.get() }
     }
