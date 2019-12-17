@@ -17,6 +17,10 @@ use std::mem;
 
 use crate::io::IoSliceMut;
 
+pub use take::Take;
+pub use bytes::Bytes;
+pub use chain::Chain;
+
 extension_trait! {
     use std::pin::Pin;
     use std::ops::{Deref, DerefMut};
@@ -301,11 +305,11 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        fn take(self, limit: u64) -> take::Take<Self>
+        fn take(self, limit: u64) -> Take<Self>
         where
             Self: Sized,
         {
-            take::Take { inner: self, limit }
+            Take { inner: self, limit }
         }
 
         #[doc = r#"
@@ -377,8 +381,8 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        fn bytes(self) -> bytes::Bytes<Self> where Self: Sized {
-            bytes::Bytes { inner: self }
+        fn bytes(self) -> Bytes<Self> where Self: Sized {
+            Bytes { inner: self }
         }
 
         #[doc = r#"
@@ -413,8 +417,8 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        fn chain<R: Read>(self, next: R) -> chain::Chain<Self, R> where Self: Sized {
-            chain::Chain { first: self, second: next, done_first: false }
+        fn chain<R: Read>(self, next: R) -> Chain<Self, R> where Self: Sized {
+            Chain { first: self, second: next, done_first: false }
         }
 
     }
