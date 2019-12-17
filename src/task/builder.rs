@@ -1,3 +1,4 @@
+use kv_log_macro::trace;
 use log::log_enabled;
 use std::future::Future;
 
@@ -37,7 +38,7 @@ impl Builder {
 
         // Log this `spawn` operation.
         if log_enabled!(log::Level::Trace) {
-            log::trace!("spawn", {
+            trace!("spawn", {
                 task_id: task.id().0,
                 parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
             });
@@ -53,7 +54,7 @@ impl Builder {
             defer! {
                 if log_enabled!(log::Level::Trace) {
                     Task::get_current(|t| {
-                        log::trace!("completed", {
+                        trace!("completed", {
                             task_id: t.id().0,
                         });
                     });
