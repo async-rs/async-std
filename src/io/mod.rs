@@ -105,8 +105,8 @@
 //!
 //! ```no_run
 //! use async_std::fs::File;
-//! use async_std::io::BufWriter;
 //! use async_std::io::prelude::*;
+//! use async_std::io::BufWriter;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -116,8 +116,8 @@
 //!
 //!     // write a byte to the buffer
 //!     writer.write(&[42]).await?;
-//!
 //! } // the buffer is flushed once writer goes out of scope
+//! //
 //! #
 //! # Ok(()) }) }
 //! ```
@@ -281,7 +281,7 @@ cfg_std! {
     pub use copy::copy;
     pub use cursor::Cursor;
     pub use empty::{empty, Empty};
-    pub use read::Read;
+    pub use read::*;
     pub use repeat::{repeat, Repeat};
     pub use seek::Seek;
     pub use sink::{sink, Sink};
