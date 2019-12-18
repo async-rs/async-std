@@ -1,6 +1,6 @@
 use std::io;
-use std::net::SocketAddr;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::task::{Context, Poll};
 
 use crate::future;
 use crate::net::driver::Watcher;
@@ -69,9 +69,7 @@ impl UdpSocket {
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<UdpSocket> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
             match mio::net::UdpSocket::bind(&addr) {
@@ -118,6 +116,19 @@ impl UdpSocket {
 
     /// Sends data on the socket to the given address.
     ///
+    /// If this function returns `Poll::Ready(Ok(_))`, returns the number of bytes written.
+    pub fn poll_send_to(
+        &self,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+        addr: &SocketAddr,
+    ) -> Poll<io::Result<usize>> {
+        self.watcher
+            .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
+    }
+
+    /// Sends data on the socket to the given address.
+    ///
     /// On success, returns the number of bytes written.
     ///
     /// # Examples
@@ -153,12 +164,21 @@ impl UdpSocket {
             }
         };
 
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
-        })
-        .await
-        .context(|| format!("could not send packet to {}", addr))
+        future::poll_fn(|cx| self.poll_send_to(cx, buf, &addr))
+            .await
+            .context(|| format!("could not send packet to {}", addr))
+    }
+
+    /// Receives data from the socket.
+    ///
+    /// On success, returns the number of bytes read and the origin.
+    pub fn poll_recv_from(
+        &self,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<(usize, SocketAddr)>> {
+        self.watcher
+            .poll_read_with(cx, |inner| inner.recv_from(buf))
     }
 
     /// Receives data from the socket.
@@ -181,22 +201,19 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_read_with(cx, |inner| inner.recv_from(buf))
-        })
-        .await
-        .context(|| {
-            use std::fmt::Write;
+        future::poll_fn(|cx| self.poll_recv_from(cx, buf))
+            .await
+            .context(|| {
+                use std::fmt::Write;
 
-            let mut error = String::from("could not receive data on ");
-            if let Ok(addr) = self.local_addr() {
-                let _ = write!(&mut error, "{}", addr);
-            } else {
-                error.push_str("socket");
-            }
-            error
-        })
+                let mut error = String::from("could not receive data on ");
+                if let Ok(addr) = self.local_addr() {
+                    let _ = write!(&mut error, "{}", addr);
+                } else {
+                    error.push_str("socket");
+                }
+                error
+            })
     }
 
     /// Connects the UDP socket to a remote address.
