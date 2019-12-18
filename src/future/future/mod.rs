@@ -364,7 +364,10 @@ extension_trait! {
             # Example
             ```
             # async_std::task::block_on(async {  
-            #
+            #            
+            use async_std::prelude::*;
+            use async_std::future;
+
             let fut = future::ready(0);
             let dur = Duration::from_millis(100);
             let res = fut.timeout(dur).await;
