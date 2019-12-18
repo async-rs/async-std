@@ -375,10 +375,10 @@ extension_trait! {
             let res = fut.timeout(dur).await;
             assert!(res.is_ok());
 
-            let fut = future::ready(0);
+            let fut = future::pending::<()>();
             let dur = Duration::from_millis(100);
             let res = fut.timeout(dur).await;
-            assert!(res.is_ok())
+            assert!(res.is_err())
             #
             # });
             ```
