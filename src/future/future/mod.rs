@@ -369,7 +369,6 @@ extension_trait! {
 
             use async_std::prelude::*;
             use async_std::future;
-            use async_std::task;
             
             let fut = future::ready(0);
             let dur = Duration::from_millis(100);
