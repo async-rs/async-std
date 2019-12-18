@@ -363,16 +363,18 @@ extension_trait! {
 
             # Example
             ```
-            #async_std::task::block_on(async {        
-                    let fut = future::ready(0);
-                    let dur = Duration::from_millis(100);
-                    let res = fut.timeout(dur).await;
-                    assert!(res.is_ok());
+            # async_std::task::block_on(async {  
+            #
+            let fut = future::ready(0);
+            let dur = Duration::from_millis(100);
+            let res = fut.timeout(dur).await;
+            assert!(res.is_ok());
 
-                    let fut = future::ready(0);
-                    let dur = Duration::from_millis(100);
-                    let res = fut.timeout(dur).await;
-                    assert!(res.is_ok())
+            let fut = future::ready(0);
+            let dur = Duration::from_millis(100);
+            let res = fut.timeout(dur).await;
+            assert!(res.is_ok())
+            #
             # });
             ```
         "#]
