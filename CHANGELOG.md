@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.4.0] - 2019-12-20
+
+[API Documentation](https://docs.rs/async-std/1.4.0/async-std)
+
+This patch adds `Future::timeout`, providing a method counterpart to the
+`future::timeout` free function. And includes several bug fixes around missing
+APIs. Notably we're not shipping our new executor yet, first announced [on our
+blog](https://async.rs/blog/stop-worrying-about-blocking-the-new-async-std-runtime/).
+
+## Examples
+
+```rust
+use async_std::prelude::*;
+use async_std::future;
+use std::time::Duration;
+
+let fut = future::pending::<()>(); // This future will never resolve.
+let res = fut.timeout(Duration::from_millis(100)).await;
+assert!(res.is_err()); // The future timed out, returning an err.
+```
+
+## Added
+
+- Added `Future::timeout` as "unstable" [(#600)](https://github.com/async-rs/async-std/pull/600)
+
+## Fixes
+
+- Fixed a doc test and enabled it on CI [(#597)](https://github.com/async-rs/async-std/pull/597)
+- Fixed a rendering issue with the `stream` submodule documentation [(#621)](https://github.com/async-rs/async-std/pull/621)
+- `Write::write_fmt`'s future is now correctly marked as `#[must_use]` [(#628)](https://github.com/async-rs/async-std/pull/628)
+- Fixed the missing `io::Bytes` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+- Fixed the missing `io::Chain` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+- Fixed the missing `io::Take` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+
 # [1.3.0] - 2019-12-12
 
 [API Documentation](https://docs.rs/async-std/1.3.0/async-std)
@@ -604,6 +638,7 @@ task::blocking(async {
 - Initial beta release
 
 [Unreleased]: https://github.com/async-rs/async-std/compare/v1.3.0...HEAD
+[1.4.0]: https://github.com/async-rs/async-std/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/async-rs/async-std/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/async-rs/async-std/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/async-rs/async-std/compare/v1.0.1...v1.1.0
