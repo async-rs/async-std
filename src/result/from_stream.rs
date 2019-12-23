@@ -10,6 +10,23 @@ where
     /// Takes each element in the stream: if it is an `Err`, no further
     /// elements are taken, and the `Err` is returned. Should no `Err`
     /// occur, a container with the values of each `Result` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() { async_std::task::block_on(async {
+    /// #
+    /// use async_std::prelude::*;
+    /// use async_std::stream;
+    ///
+    /// let v = stream::from_iter(vec![1, 2]);
+    /// let res: Result<Vec<u32>, &'static str> = v.map(|x: u32|
+    ///     x.checked_add(1).ok_or("Overflow!")
+    /// ).collect().await;
+    /// assert_eq!(res, Ok(vec![2, 3]));
+    /// #
+    /// # }) }
+    /// ```
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = Result<T, E>> + 'a>(
         stream: S,
