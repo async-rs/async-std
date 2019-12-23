@@ -94,3 +94,25 @@ fn smoke_async_stream_to_std_listener() -> io::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn cloned_streams() -> io::Result<()> {
+    task::block_on(async {
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let addr = listener.local_addr()?;
+
+        let mut stream = TcpStream::connect(&addr).await?;
+        let mut cloned_stream = stream.try_clone()?;
+        let mut incoming = listener.incoming();
+        let mut write_stream = incoming.next().await.unwrap()?;
+        write_stream.write_all(b"Each your doing").await?;
+
+        let mut buf = [0; 15];
+        stream.read_exact(&mut buf[..8]).await?;
+        cloned_stream.read_exact(&mut buf[8..]).await?;
+
+        assert_eq!(&buf[..15], b"Each your doing");
+
+        Ok(())
+    })
+}

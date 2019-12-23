@@ -1,7 +1,4 @@
-use std::{
-    collections::hash_map::{Entry, HashMap},
-    sync::Arc,
-};
+use std::collections::hash_map::{Entry, HashMap};
 
 use futures::{channel::mpsc, select, FutureExt, SinkExt};
 
@@ -40,8 +37,7 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
 }
 
 async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result<()> {
-    let stream = Arc::new(stream);
-    let reader = BufReader::new(&*stream);
+    let reader = BufReader::new(&stream);
     let mut lines = reader.lines();
 
     let name = match lines.next().await {
@@ -52,7 +48,7 @@ async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result
     broker
         .send(Event::NewPeer {
             name: name.clone(),
-            stream: Arc::clone(&stream),
+            stream: stream.try_clone()?,
             shutdown: shutdown_receiver,
         })
         .await
@@ -85,10 +81,9 @@ async fn connection_loop(mut broker: Sender<Event>, stream: TcpStream) -> Result
 
 async fn connection_writer_loop(
     messages: &mut Receiver<String>,
-    stream: Arc<TcpStream>,
+    stream: &mut TcpStream,
     mut shutdown: Receiver<Void>,
 ) -> Result<()> {
-    let mut stream = &*stream;
     loop {
         select! {
             msg = messages.next().fuse() => match msg {
@@ -108,7 +103,7 @@ async fn connection_writer_loop(
 enum Event {
     NewPeer {
         name: String,
-        stream: Arc<TcpStream>,
+        stream: TcpStream,
         shutdown: Receiver<Void>,
     },
     Message {
@@ -146,7 +141,7 @@ async fn broker_loop(mut events: Receiver<Event>) {
             }
             Event::NewPeer {
                 name,
-                stream,
+                mut stream,
                 shutdown,
             } => match peers.entry(name.clone()) {
                 Entry::Occupied(..) => (),
@@ -156,7 +151,8 @@ async fn broker_loop(mut events: Receiver<Event>) {
                     let mut disconnect_sender = disconnect_sender.clone();
                     spawn_and_log_error(async move {
                         let res =
-                            connection_writer_loop(&mut client_receiver, stream, shutdown).await;
+                            connection_writer_loop(&mut client_receiver, &mut stream, shutdown)
+                                .await;
                         disconnect_sender
                             .send((name, client_receiver))
                             .await
