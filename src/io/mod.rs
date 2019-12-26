@@ -321,7 +321,7 @@ cfg_default! {
     mod stdout;
 }
 
-cfg_unstable! {
+cfg_unstable_default! {
     pub use stderr::StderrLock;
     pub use stdin::StdinLock;
     pub use stdout::StdoutLock;
