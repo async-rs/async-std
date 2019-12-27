@@ -288,7 +288,7 @@ impl UdpSocket {
 
     /// Receives data from the socket.
     ///
-    /// On success, returns the number of bytes read and the origin.
+    /// On success, returns the number of bytes read.
     ///
     /// # Examples
     ///
