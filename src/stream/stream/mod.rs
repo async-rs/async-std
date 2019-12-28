@@ -695,7 +695,7 @@ extension_trait! {
             # }) }
             ```
 
-            An empty stream will return `None:
+            An empty stream will return `None`:
             ```
             # fn main() { async_std::task::block_on(async {
             #
