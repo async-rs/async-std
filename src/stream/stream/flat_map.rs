@@ -41,7 +41,6 @@ where
 impl<S, U, F> Stream for FlatMap<S, U, F>
 where
     S: Stream,
-    S::Item: IntoStream<IntoStream = U, Item = U::Item>,
     U: Stream,
     F: FnMut(S::Item) -> U,
 {
