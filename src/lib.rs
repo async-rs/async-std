@@ -47,7 +47,7 @@
 //! encouraged to read it. The `async-std` source is generally high
 //! quality and a peek behind the curtains is often enlightening.
 //!
-//! Modules in this crate are organized in the same way as in `async-std`, except blocking
+//! Modules in this crate are organized in the same way as in `std`, except blocking
 //! functions have been replaced with async functions and threads have been replaced with
 //! lightweight tasks.
 //!
