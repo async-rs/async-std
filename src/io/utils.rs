@@ -1,5 +1,7 @@
 use crate::utils::Context;
 
+use std::{error::Error as StdError, fmt, io};
+
 /// Wrap `std::io::Error` with additional message
 ///
 /// Keeps the original error kind and stores the original I/O error as `source`.
@@ -8,8 +10,6 @@ impl<T> Context for Result<T, std::io::Error> {
         self.map_err(|e| VerboseError::wrap(e, message()))
     }
 }
-
-use std::{error::Error as StdError, fmt, io};
 
 #[derive(Debug)]
 pub(crate) struct VerboseError {
@@ -36,10 +36,6 @@ impl fmt::Display for VerboseError {
 }
 
 impl StdError for VerboseError {
-    fn description(&self) -> &str {
-        self.source.description()
-    }
-
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         Some(&self.source)
     }
