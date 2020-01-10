@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::prelude::*;
 use crate::stream::{self, FromStream, IntoStream};
 
-impl<T> FromStream<T> for Vec<T> {
+impl<T: Send> FromStream<T> for Vec<T> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T>>(
         stream: S,
@@ -24,7 +24,7 @@ impl<T> FromStream<T> for Vec<T> {
     }
 }
 
-impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
+impl<'b, T: Clone + Send> FromStream<T> for Cow<'b, [T]> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
@@ -37,7 +37,7 @@ impl<'b, T: Clone> FromStream<T> for Cow<'b, [T]> {
     }
 }
 
-impl<T> FromStream<T> for Box<[T]> {
+impl<T: Send> FromStream<T> for Box<[T]> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
@@ -50,7 +50,7 @@ impl<T> FromStream<T> for Box<[T]> {
     }
 }
 
-impl<T> FromStream<T> for Rc<[T]> {
+impl<T: Send> FromStream<T> for Rc<[T]> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
@@ -63,7 +63,7 @@ impl<T> FromStream<T> for Rc<[T]> {
     }
 }
 
-impl<T> FromStream<T> for Arc<[T]> {
+impl<T: Send> FromStream<T> for Arc<[T]> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,

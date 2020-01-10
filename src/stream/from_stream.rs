@@ -107,12 +107,12 @@ use crate::stream::IntoStream;
 /// assert_eq!(c.0, vec![5, 5, 5, 5, 5]);
 /// #
 /// # Ok(()) }) }
-///```
+/// ```
 ///
 /// [`IntoStream`]: trait.IntoStream.html
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub trait FromStream<T> {
+pub trait FromStream<T: Send> {
     /// Creates a value from a stream.
     ///
     /// # Examples

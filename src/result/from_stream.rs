@@ -5,6 +5,8 @@ use crate::stream::{FromStream, IntoStream};
 
 impl<T, E, V> FromStream<Result<T, E>> for Result<V, E>
 where
+    T: Send,
+    E: Send,
     V: FromStream<T>,
 {
     /// Takes each element in the stream: if it is an `Err`, no further

@@ -7,8 +7,9 @@ use crate::stream::{self, FromStream, IntoStream};
 
 impl<K, V, H> FromStream<(K, V)> for HashMap<K, V, H>
 where
-    K: Eq + Hash,
+    K: Eq + Hash + Send,
     H: BuildHasher + Default,
+    V: Send,
 {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = (K, V)> + 'a>(

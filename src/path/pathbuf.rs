@@ -337,7 +337,7 @@ impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
 }
 
 #[cfg(feature = "unstable")]
-impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
+impl<'b, P: AsRef<Path> + 'b + Send> FromStream<P> for PathBuf {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
         stream: S,

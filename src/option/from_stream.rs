@@ -4,7 +4,7 @@ use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
 use std::convert::identity;
 
-impl<T, V> FromStream<Option<T>> for Option<V>
+impl<T: Send, V> FromStream<Option<T>> for Option<V>
 where
     V: FromStream<T>,
 {

@@ -4,7 +4,7 @@ use std::pin::Pin;
 use crate::prelude::*;
 use crate::stream::{self, FromStream, IntoStream};
 
-impl<K: Ord, V> FromStream<(K, V)> for BTreeMap<K, V> {
+impl<K: Ord + Send, V: Send> FromStream<(K, V)> for BTreeMap<K, V> {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = (K, V)> + 'a>(
         stream: S,

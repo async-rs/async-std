@@ -7,7 +7,7 @@ use crate::stream::{self, FromStream, IntoStream};
 
 impl<T, H> FromStream<T> for HashSet<T, H>
 where
-    T: Eq + Hash,
+    T: Eq + Hash + Send,
     H: BuildHasher + Default,
 {
     #[inline]
