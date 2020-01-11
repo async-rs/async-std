@@ -266,7 +266,9 @@ cfg_unstable! {
     mod option;
     mod string;
     mod collections;
+}
 
+cfg_unstable_default! {
     #[doc(inline)]
     pub use std::{write, writeln};
 }

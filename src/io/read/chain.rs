@@ -165,7 +165,7 @@ impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, default))]
 mod tests {
     use crate::io;
     use crate::prelude::*;
