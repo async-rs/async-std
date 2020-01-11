@@ -19,7 +19,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 }
 
 /// Generates a random number in `0..n`.
-#[cfg(feature = "unstable")]
+#[cfg(any(feature = "unstable", feature = "default"))]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
