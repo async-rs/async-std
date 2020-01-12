@@ -31,23 +31,24 @@ where
         ```
     "#]
     fn sum<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Option<T>> + 'a>>
-        where S: Stream<Item = Option<U>> + 'a
+    where
+        S: Stream<Item = Option<U>> + 'a,
     {
         Box::pin(async move {
-            // Using `scan` here because it is able to stop the stream early
+            // Using `take_while` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_none = false;
-            let out = <T as Sum<U>>::sum(stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Some(elem) => Some(elem),
-                        None => {
+            let out = <T as Sum<U>>::sum(
+                stream
+                    .take_while(|elem| {
+                        elem.is_some() || {
                             found_none = true;
-                            // Stop processing the stream on error
-                            None
+                            false
                         }
-                    }
-                })).await;
+                    })
+                    .map(Option::unwrap),
+            )
+            .await;
 
             if found_none {
                 None

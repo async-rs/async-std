@@ -17,24 +17,25 @@ where
         let stream = stream.into_stream();
 
         Box::pin(async move {
-            // Using `scan` here because it is able to stop the stream early
+            // Using `take_while` here because it is able to stop the stream early
             // if a failure occurs
-            let mut found_error = false;
+            let mut found_none = false;
             let out: V = stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Some(elem) => Some(elem),
-                        None => {
-                            found_error = true;
-                            // Stop processing the stream on error
-                            None
-                        }
+                .take_while(|elem| {
+                    elem.is_some() || {
+                        found_none = true;
+                        false
                     }
                 })
+                .map(Option::unwrap)
                 .collect()
                 .await;
 
-            if found_error { None } else { Some(out) }
+            if found_none {
+                None
+            } else {
+                Some(out)
+            }
         })
     }
 }
