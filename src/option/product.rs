@@ -48,6 +48,7 @@ where
                     .take_while(|elem| {
                         elem.is_some() || {
                             found_none = true;
+                            // Stop processing the stream on `None`
                             false
                         }
                     })
