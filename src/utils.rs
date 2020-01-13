@@ -19,7 +19,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 }
 
 /// Generates a random number in `0..n`.
-#[cfg(feature = "default")]
+#[cfg(any(feature = "unstable", feature = "default"))]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
@@ -85,6 +85,18 @@ macro_rules! cfg_unstable {
         $(
             #[cfg(feature = "unstable")]
             #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+            $item
+        )*
+    }
+}
+
+/// Declares unstable and default items.
+#[doc(hidden)]
+macro_rules! cfg_unstable_default {
+    ($($item:item)*) => {
+        $(
+            #[cfg(all(feature = "default", feature = "unstable"))]
+            #[cfg_attr(feature = "docs", doc(unstable))]
             $item
         )*
     }

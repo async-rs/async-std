@@ -8,7 +8,7 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     #[derive(Debug)]
-    #[cfg(all(feature = "default", feature = "unstable"))]
+    #[cfg(feature = "unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     pub struct PartitionFuture<S, F, B> {
         #[pin]

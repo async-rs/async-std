@@ -37,7 +37,7 @@
 //! outlive its parent (the task that spawned it), unless this parent is the root task.
 //!
 //! The root task can also wait on the completion of the child task; a call to [`spawn`] produces a
-//! [`JoinHandle`], which provides implements `Future` and can be `await`ed:
+//! [`JoinHandle`], which implements `Future` and can be `await`ed:
 //!
 //! ```
 //! use async_std::task;
