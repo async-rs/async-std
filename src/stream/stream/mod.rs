@@ -791,18 +791,22 @@ extension_trait! {
             # async_std::task::block_on(async {
 
             use async_std::prelude::*;
-            use async_std::stream::IntoStream;
             use async_std::stream;
 
-            let inner1 = stream::from_iter(vec![1,2,3]);
-            let inner2 = stream::from_iter(vec![4,5,6]);
+            let words = stream::from_iter(&["alpha", "beta", "gamma"]);
 
-            let s = stream::from_iter(vec![inner1, inner2]);
+            let merged: String = words
+                .flat_map(|s| stream::from_iter(s.chars()))
+                .collect().await;
+                assert_eq!(merged, "alphabetagamma");
 
-            let v :Vec<_> = s.flat_map(|s| s.into_stream()).collect().await;
+            let d3 = stream::from_iter(&[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]);
+            let d1: Vec<_> = d3
+                .flat_map(|item| stream::from_iter(item))
+                .flat_map(|item| stream::from_iter(item))
+                .collect().await;
 
-            assert_eq!(v, vec![1,2,3,4,5,6]);
-
+            assert_eq!(d1, [&1, &2, &3, &4, &5, &6, &7, &8]);
             # });
             ```
         "#]
