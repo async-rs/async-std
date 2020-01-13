@@ -159,19 +159,23 @@ The crate [`async-listen`] have a helper to achieve this task:
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
-use async_listen::ListenExt;
+use async_listen::{ListenExt, error_hint};
 
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
 
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener
         .incoming()
-        .log_warnings(|e| eprintln!("Error: {}. Pausing for 500ms.", e)) // 1
+        .log_warnings(log_accept_error) // 1
         .handle_errors(Duration::from_millis(500));
     while let Some(socket) = incoming.next().await { // 2
         // body
     }
     Ok(())
+}
+
+fn log_accept_error(e: &io::Error) {
+    eprintln!("Error: {}. Listener paused for 0.5s. {}", e, error_hint(e)) // 3
 }
 ```
 
@@ -179,6 +183,9 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
    `log` crate or any other in your app this should go to the log.
 2. Stream yields sockets without `Result` wrapper after `handle_errors` because
    all errors are already handled.
+3. Together with the error we print a hint, which explains some errors for end
+   users. For example, it recommends increasing open file limit and gives
+   a link.
 
 [`async-listen`]: https://crates.io/crates/async-listen/
 
@@ -221,14 +228,14 @@ looks like the following:
 #
 # type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 #
-use async_listen::{ListenExt, Token};
+use async_listen::{ListenExt, Token, error_hint};
 
 async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
 
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener
         .incoming()
-        .log_warnings(|e| eprintln!("Error: {}. Pausing for 500ms.", e))
+        .log_warnings(log_accept_error)
         .handle_errors(Duration::from_millis(500)) // 1
         .backpressure(100);
     while let Some((token, socket)) = incoming.next().await { // 2
@@ -241,6 +248,9 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
 async fn connection_loop(_token: &Token, stream: TcpStream) { // 4
     // ...
 }
+# fn log_accept_error(e: &io::Error) {
+#     eprintln!("Error: {}. Listener paused for 0.5s. {}", e, error_hint(e));
+# }
 ```
 
 1. We need to handle errors first, because [`backpressure`] helper expects
