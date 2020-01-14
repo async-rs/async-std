@@ -60,18 +60,18 @@ futures-io = { version = "0.3.1", optional = true }
 futures-timer = { version = "2.0.2", optional = true }
 kv-log-macro = { version = "1.0.4", optional = true }
 log = { version = "0.4.8", features = ["kv_unstable"], optional = true }
-memchr = { version = "2.2.1", optional = true }
+memchr = { version = "2.3.0", optional = true }
 mio = { version = "0.6.19", optional = true }
 mio-uds = { version = "0.6.7", optional = true }
 num_cpus = { version = "1.11.1", optional = true }
 once_cell = { version = "1.2.0", optional = true }
-pin-project-lite = { version = "0.1.1", optional = true }
+pin-project-lite = { version = "0.1.2", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
 
 [dev-dependencies]
 femme = "1.3.0"
-rand = "0.7.2"
+rand = "0.7.3"
 surf = "1.0.3"
 tempdir = "0.3.7"
 futures = "0.3.1"
