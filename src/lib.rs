@@ -158,13 +158,13 @@
 //! async fn main() {
 //!     let a = async { 1u8 };
 //!     let b = async { 2u8 };
-//!     assert_eq!(a.join(b).await, (1u8, 2u8))
+//!     assert_eq!(a.join(b).await, (1u8, 2u8));
 //! }
 //! ```
 //!
 //! Create a UDP server that echoes back each received message to the sender:
 //!
-//! ```no_run
+//! ```norun
 //! use async_std::net::UdpSocket;
 //!
 //! #[async_std::main]
