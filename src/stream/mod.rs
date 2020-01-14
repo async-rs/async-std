@@ -325,6 +325,7 @@ cfg_unstable! {
     mod fused_stream;
     mod interval;
     mod into_stream;
+    mod pending;
     mod product;
     mod successors;
     mod sum;
@@ -336,6 +337,7 @@ cfg_unstable! {
     pub use fused_stream::FusedStream;
     pub use interval::{interval, Interval};
     pub use into_stream::IntoStream;
+    pub use pending::{pending, Pending};
     pub use product::Product;
     pub use stream::Merge;
     pub use successors::{successors, Successors};
