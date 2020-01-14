@@ -244,12 +244,9 @@ impl UdpSocket {
         }))
     }
 
-    /// Sends data on the socket to the remote address to which it is connected.
+    /// Sends data on the socket to the given address.
     ///
-    /// The [`connect`] method will connect this socket to a remote address.
-    /// This method will fail if the socket is not connected.
-    ///
-    /// [`connect`]: #method.connect
+    /// On success, returns the number of bytes written.
     ///
     /// # Examples
     ///
@@ -300,11 +297,12 @@ impl UdpSocket {
     /// #
     /// use async_std::net::UdpSocket;
     ///
-    /// let socket = UdpSocket::bind("127.0.0.1:7878").await?;
+    /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// socket.connect("127.0.0.1:8080").await?;
-    /// let bytes = socket.send(b"Hi there!").await?;
     ///
-    /// println!("Sent {} bytes", bytes);
+    /// let mut buf = vec![0; 1024];
+    /// let n = socket.recv(&mut buf).await?;
+    /// println!("Received {} bytes", n);
     /// #
     /// # Ok(()) }) }
     /// ```
