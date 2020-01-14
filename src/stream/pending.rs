@@ -18,6 +18,27 @@ pub struct Pending<T> {
 /// Creates a stream that never returns any items.
 ///
 /// The returned stream will always return `Pending` when polled.
+/// # Examples
+///
+/// ```
+/// # async_std::task::block_on(async {
+/// #
+/// use std::time::Duration;
+///
+/// use async_std::prelude::*;
+/// use async_std::stream;
+///
+/// let dur = Duration::from_millis(100);
+/// let mut s = stream::pending::<()>().timeout(dur);
+///
+/// let item = s.next().await;
+///
+/// assert!(item.is_some());
+/// assert!(item.unwrap().is_err());
+///
+/// #
+/// # })
+/// ```
 pub fn pending<T>() -> Pending<T> {
     Pending {
         _marker: PhantomData,
