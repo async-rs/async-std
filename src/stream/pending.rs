@@ -2,24 +2,26 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use crate::stream::{Stream, DoubleEndedStream, ExactSizeStream, FusedStream};
+use crate::stream::{DoubleEndedStream, ExactSizeStream, FusedStream, Stream};
 
 /// A stream that never returns any items.
-/// 
+///
 /// This stream is created by the [`pending`] function. See its
 /// documentation for more.
-/// 
+///
 /// [`pending`]: fn.pending.html
 #[derive(Debug)]
 pub struct Pending<T> {
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 /// Creates a stream that never returns any items.
-/// 
+///
 /// The returned stream will always return `Pending` when polled.
 pub fn pending<T>() -> Pending<T> {
-    Pending { _marker: PhantomData }
+    Pending {
+        _marker: PhantomData,
+    }
 }
 
 impl<T> Stream for Pending<T> {
