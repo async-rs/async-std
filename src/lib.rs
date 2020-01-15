@@ -138,7 +138,8 @@
 //!
 //! Call an async function from the main function:
 //!
-//! ```
+#![cfg_attr(feature = "attributes", doc = "```")]
+#![cfg_attr(not(feature = "attributes"), doc = "```rust,ignore")]
 //! async fn say_hello() {
 //!     println!("Hello, world!");
 //! }
@@ -151,7 +152,8 @@
 //!
 //! Await two futures concurrently, and return a tuple of their output:
 //!
-//! ```
+#![cfg_attr(all(feature = "unstable", feature = "attributes"), doc = "```")]
+#![cfg_attr(not(all(feature = "unstable", feature = "attributes")), doc = "```rust,ignore")]
 //! use async_std::prelude::*;
 //!
 //! #[async_std::main]
@@ -164,7 +166,8 @@
 //!
 //! Create a UDP server that echoes back each received message to the sender:
 //!
-//! ```no_run
+#![cfg_attr(feature = "attributes", doc = "```no_run")]
+#![cfg_attr(not(feature = "attributes"), doc = "```rust,ignore")]
 //! use async_std::net::UdpSocket;
 //!
 //! #[async_std::main]
