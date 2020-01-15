@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
+use crate::utils::identity;
 
 impl<T, V> FromStream<Option<T>> for Option<V>
 where
@@ -28,7 +29,7 @@ where
                         false
                     }
                 })
-                .map(Option::unwrap)
+                .filter_map(identity)
                 .collect()
                 .await;
 

@@ -36,26 +36,28 @@ where
         ```
     "#]
     fn sum<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Result<T, E>> + 'a>>
-        where S: Stream<Item = Result<U, E>> + 'a
+    where
+        S: Stream<Item = Result<U, E>> + 'a,
     {
         Box::pin(async move {
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = None;
-            let out = <T as Sum<U>>::sum(stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Ok(elem) => Some(elem),
-                        Err(err) => {
-                            found_error = Some(err);
-                            // Stop processing the stream on error
-                            None
-                        }
+            let out = <T as Sum<U>>::sum(stream.scan((), |(), elem| {
+                match elem {
+                    Ok(elem) => Some(elem),
+                    Err(err) => {
+                        found_error = Some(err);
+                        // Stop processing the stream on error
+                        None
                     }
-                })).await;
+                }
+            }))
+            .await;
+
             match found_error {
                 Some(err) => Err(err),
-                None => Ok(out)
+                None => Ok(out),
             }
         })
     }

@@ -21,7 +21,7 @@ where
             // if a failure occurs
             let mut found_error = None;
             let out: V = stream
-                .scan((), |_, elem| {
+                .scan((), |(), elem| {
                     match elem {
                         Ok(elem) => Some(elem),
                         Err(err) => {

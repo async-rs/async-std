@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Stream, Product};
+use crate::stream::{Product, Stream};
 
 impl<T, U, E> Product<Result<U, E>> for Result<T, E>
 where
@@ -36,26 +36,28 @@ where
         ```
     "#]
     fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Result<T, E>> + 'a>>
-        where S: Stream<Item = Result<U, E>> + 'a
+    where
+        S: Stream<Item = Result<U, E>> + 'a,
     {
         Box::pin(async move {
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = None;
-            let out = <T as Product<U>>::product(stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Ok(elem) => Some(elem),
-                        Err(err) => {
-                            found_error = Some(err);
-                            // Stop processing the stream on error
-                            None
-                        }
+            let out = <T as Product<U>>::product(stream.scan((), |(), elem| {
+                match elem {
+                    Ok(elem) => Some(elem),
+                    Err(err) => {
+                        found_error = Some(err);
+                        // Stop processing the stream on error
+                        None
                     }
-                })).await;
+                }
+            }))
+            .await;
+
             match found_error {
                 Some(err) => Err(err),
-                None => Ok(out)
+                None => Ok(out),
             }
         })
     }

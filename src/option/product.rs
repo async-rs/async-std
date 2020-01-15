@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Product, Stream};
+use crate::utils::identity;
 
 impl<T, U> Product<Option<U>> for Option<T>
 where
@@ -52,7 +53,7 @@ where
                             false
                         }
                     })
-                    .map(Option::unwrap),
+                    .filter_map(identity),
             )
             .await;
 

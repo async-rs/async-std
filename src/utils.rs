@@ -52,6 +52,14 @@ pub fn random(n: u32) -> u32 {
     })
 }
 
+/// Returns given argument without changes.
+#[allow(dead_code)]
+#[doc(hidden)]
+#[inline(always)]
+pub(crate) fn identity<T>(arg: T) -> T {
+    arg
+}
+
 /// Add additional context to errors
 pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
