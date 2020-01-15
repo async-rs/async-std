@@ -43,11 +43,11 @@ where
             // Using `scan` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_error = None;
-            let out = <T as Sum<U>>::sum(stream.scan((), |(), elem| {
+            let out = <T as Sum<U>>::sum(stream.scan(&mut found_error, |error, elem| {
                 match elem {
                     Ok(elem) => Some(elem),
                     Err(err) => {
-                        found_error = Some(err);
+                        **error = Some(err);
                         // Stop processing the stream on error
                         None
                     }

@@ -21,11 +21,11 @@ where
             // if a failure occurs
             let mut found_error = None;
             let out: V = stream
-                .scan((), |(), elem| {
+                .scan(&mut found_error, |error, elem| {
                     match elem {
                         Ok(elem) => Some(elem),
                         Err(err) => {
-                            found_error = Some(err);
+                            **error = Some(err);
                             // Stop processing the stream on error
                             None
                         }
