@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
-use crate::utils::identity;
+use std::convert::identity;
 
 impl<T, V> FromStream<Option<T>> for Option<V>
 where
@@ -33,11 +33,7 @@ where
                 .collect()
                 .await;
 
-            if found_none {
-                None
-            } else {
-                Some(out)
-            }
+            if found_none { None } else { Some(out) }
         })
     }
 }

@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Product, Stream};
-use crate::utils::identity;
+use std::convert::identity;
 
 impl<T, U> Product<Option<U>> for Option<T>
 where
@@ -57,11 +57,7 @@ where
             )
             .await;
 
-            if found_none {
-                None
-            } else {
-                Some(out)
-            }
+            if found_none { None } else { Some(out) }
         })
     }
 }
