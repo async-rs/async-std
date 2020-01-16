@@ -241,6 +241,10 @@ pub use async_attributes::{main, test};
 #[cfg(feature = "std")]
 mod macros;
 
+cfg_no_std! {
+    pub mod task;
+}
+
 cfg_std! {
     pub mod future;
     pub mod io;
@@ -248,7 +252,6 @@ cfg_std! {
     pub mod prelude;
     pub mod stream;
     pub mod sync;
-    pub mod task;
 }
 
 cfg_default! {

@@ -39,7 +39,6 @@ unstable = ["std", "broadcaster", "futures-timer"]
 attributes = ["async-attributes"]
 std = [
   "crossbeam-utils",
-  "futures-core",
   "futures-io",
   "memchr",
   "once_cell",
@@ -48,7 +47,9 @@ std = [
   "slab",
   "no-std",
 ]
-no-std = []
+no-std = [
+  "futures-core",
+]
 
 [dependencies]
 async-attributes = { version = "1.1.1", optional = true }

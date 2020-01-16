@@ -117,13 +117,16 @@
 //! [`task_local!`]: ../macro.task_local.html
 //! [`with`]: struct.LocalKey.html#method.with
 
-cfg_std! {
+cfg_no_std! {
     #[doc(inline)]
-    pub use std::task::{Context, Poll, Waker};
-
+    pub use core::task::{Context, Poll, Waker};
     pub use ready::ready;
-    pub use yield_now::yield_now;
+
     mod ready;
+}
+
+cfg_std! {
+    pub use yield_now::yield_now;
     mod yield_now;
 }
 
