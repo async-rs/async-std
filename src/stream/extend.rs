@@ -1,6 +1,6 @@
 use core::pin::Pin;
+use core::future::Future;
 
-use crate::future::Future;
 use crate::stream::IntoStream;
 
 /// Extends a collection with the contents of a stream.
