@@ -1,5 +1,5 @@
-use std::mem::ManuallyDrop;
-use std::pin::Pin;
+use core::mem::ManuallyDrop;
+use core::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};

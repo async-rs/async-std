@@ -244,13 +244,13 @@ mod macros;
 cfg_no_std! {
     pub mod task;
     pub mod future;
+    pub mod stream;
 }
 
 cfg_std! {
     pub mod io;
     pub mod os;
     pub mod prelude;
-    pub mod stream;
     pub mod sync;
 }
 

@@ -110,12 +110,12 @@ pub use take::Take;
 pub use take_while::TakeWhile;
 pub use zip::Zip;
 
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 
 cfg_unstable! {
-    use std::future::Future;
-    use std::pin::Pin;
-    use std::time::Duration;
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::time::Duration;
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};

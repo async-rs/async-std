@@ -1,5 +1,5 @@
 use crate::future::Future;
-use std::pin::Pin;
+use core::pin::Pin;
 use crate::task::{Context, Poll};
 
 use pin_project_lite::pin_project;

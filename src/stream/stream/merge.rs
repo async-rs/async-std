@@ -1,5 +1,5 @@
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use core::pin::Pin;
+use core::task::{Context, Poll};
 
 use pin_project_lite::pin_project;
 

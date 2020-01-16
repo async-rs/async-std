@@ -42,13 +42,13 @@ std = [
   "futures-io",
   "memchr",
   "once_cell",
-  "pin-project-lite",
   "pin-utils",
   "slab",
   "no-std",
 ]
 no-std = [
   "futures-core",
+  "pin-project-lite",
 ]
 
 [dependencies]
