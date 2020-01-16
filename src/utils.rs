@@ -1,3 +1,9 @@
+#[cfg(feature = "no-std")]
+extern crate alloc;
+
+#[cfg(feature = "no-std")]
+use alloc::string::String;
+
 /// Calls a function and aborts if it panics.
 ///
 /// This is useful in unsafe code where we can't recover from panics.
@@ -104,6 +110,7 @@ macro_rules! cfg_unstable_default {
 
 /// Declares Unix-specific items.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_unix {
     ($($item:item)*) => {
         $(
@@ -116,6 +123,7 @@ macro_rules! cfg_unix {
 
 /// Declares Windows-specific items.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_windows {
     ($($item:item)*) => {
         $(
@@ -128,6 +136,7 @@ macro_rules! cfg_windows {
 
 /// Declares items when the "docs" feature is enabled.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_docs {
     ($($item:item)*) => {
         $(
@@ -139,6 +148,7 @@ macro_rules! cfg_docs {
 
 /// Declares items when the "docs" feature is disabled.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_not_docs {
     ($($item:item)*) => {
         $(
@@ -155,6 +165,18 @@ macro_rules! cfg_std {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "std")]
+            $item
+        )*
+    }
+}
+
+/// Declares no-std items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_no_std {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "no-std")]
             $item
         )*
     }
@@ -180,6 +202,7 @@ macro_rules! cfg_default {
 ///
 /// Inside invocations of this macro, we write a definitions that looks similar to the final
 /// rendered docs, and the macro then generates all the boilerplate for us.
+#[allow(unused_macros)]
 #[doc(hidden)]
 macro_rules! extension_trait {
     (
@@ -204,14 +227,14 @@ macro_rules! extension_trait {
         #[allow(dead_code)]
         mod owned {
             #[doc(hidden)]
-            pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+            pub struct ImplFuture<T>(core::marker::PhantomData<T>);
         }
 
         // A fake `impl Future` type that borrows its environment.
         #[allow(dead_code)]
         mod borrowed {
             #[doc(hidden)]
-            pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
+            pub struct ImplFuture<'a, T>(core::marker::PhantomData<&'a T>);
         }
 
         // Render a fake trait combining the bodies of the base trait and the extension trait.
