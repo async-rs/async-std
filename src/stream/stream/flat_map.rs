@@ -2,8 +2,8 @@ use std::pin::Pin;
 
 use pin_project_lite::pin_project;
 
-use crate::prelude::*;
 use crate::stream::stream::map::Map;
+use crate::stream::stream::StreamExt;
 use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 

@@ -3,8 +3,9 @@ use std::task::{Context, Poll};
 
 use pin_project_lite::pin_project;
 
-use crate::prelude::*;
+use crate::stream::stream::StreamExt;
 use crate::stream::Fuse;
+use crate::stream::Stream;
 use crate::utils;
 
 pin_project! {
