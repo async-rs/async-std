@@ -40,6 +40,7 @@ jobs:
       with:
         command:  check
         args: --features unstable --all --bins --examples --tests
+
     - name: check bench
       uses: actions-rs/cargo@v1
       if: matrix.rust == 'nightly'
@@ -52,6 +53,12 @@ jobs:
       with:
         command:  check
         args: --no-default-features --features std
+
+    - name: check no_std
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --no-default-features --features no-std
 
     - name: check attributes
       uses: actions-rs/cargo@v1
