@@ -3,7 +3,6 @@ use std::future::Future;
 use std::mem::{self, ManuallyDrop};
 use std::sync::Arc;
 use std::task::{RawWaker, RawWakerVTable};
-use std::thread;
 
 use crossbeam_utils::sync::Parker;
 use kv_log_macro::trace;
@@ -125,7 +124,6 @@ where
         let waker = unsafe { ManuallyDrop::new(Waker::from_raw(RawWaker::new(ptr, &VTABLE))) };
         let cx = &mut Context::from_waker(&waker);
 
-        let mut step = 0;
         loop {
             if let Poll::Ready(t) = future.as_mut().poll(cx) {
                 // Save the parker for the next invocation of `block`.
@@ -133,14 +131,7 @@ where
                 return t;
             }
 
-            // Yield a few times or park the current thread.
-            if step < 3 {
-                thread::yield_now();
-                step += 1;
-            } else {
-                arc_parker.park();
-                step = 0;
-            }
+            arc_parker.park();
         }
     })
 }
