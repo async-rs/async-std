@@ -3,7 +3,6 @@ use std::time::Duration;
 use async_std::io;
 use async_std::task;
 
-#[cfg_attr(not(target_arch = "x86_64"), ignore)]
 #[test]
 #[should_panic(expected = "timed out")]
 fn io_timeout_timedout() {
