@@ -1645,6 +1645,13 @@ extension_trait! {
             while let Some(v) = s.next().await {
                 assert_eq!(v, Ok(1));
             }
+
+            // when timeout
+            let mut s = stream::pending::<()>().timeout(Duration::from_millis(10));
+            match s.next().await {
+                Some(item) => assert!(item.is_err()),
+                None => panic!()
+            };
             #
             # Ok(()) }) }
             ```
