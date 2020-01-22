@@ -1,6 +1,6 @@
 # Production-Ready Accept Loop
 
-Production-ready accept loop needs the following things:
+A production-ready accept loop needs the following things:
 1. Handling errors
 2. Limiting the number of simultanteous connections to avoid deny-of-service
    (DoS) attacks
@@ -8,15 +8,15 @@ Production-ready accept loop needs the following things:
 
 ## Handling errors
 
-There are two kinds of errors in accept loop:
-1. Per-connection errors. System uses them to notify that there was a
-   connection in the queue and it's dropped by peer. Subsequent connection
+There are two kinds of errors in an accept loop:
+1. Per-connection errors. The system uses them to notify that there was a
+   connection in the queue and it's dropped by the peer. Subsequent connections
    can be already queued so next connection must be accepted immediately.
 2. Resource shortages. When these are encountered it doesn't make sense to
-   accept next socket immediately. But listener stays active, so you server
+   accept the next socket immediately. But the listener stays active, so you server
    should try to accept socket later.
 
-Here is the example of per-connection error (printed in normal and debug mode):
+Here is the example of a per-connection error (printed in normal and debug mode):
 ```
 Error: Connection reset by peer (os error 104)
 Error: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
@@ -30,10 +30,10 @@ Error: Os { code: 24, kind: Other, message: "Too many open files" }
 
 ### Testing Application
 
-To test your application on these errors try the following (this works
+To test your application for these errors try the following (this works
 on unixes only).
 
-Lower limit and start the application:
+Lower limits and start the application:
 ```
 $ ulimit -n 100
 $ cargo run --example your_app
@@ -42,7 +42,7 @@ $ cargo run --example your_app
      Running `target/debug/examples/your_app`
 Server is listening on: http://127.0.0.1:1234
 ```
-Then in another console run [`wrk`] benchmark tool:
+Then in another console run the [`wrk`] benchmark tool:
 ```
 $ wrk -c 1000 http://127.0.0.1:1234
 Running 10s test @ http://localhost:8080/
@@ -54,13 +54,13 @@ Connected to localhost.
 
 Important is to check the following things:
 
-1. Application doesn't crash on error (but may log errors, see below)
+1. The application doesn't crash on error (but may log errors, see below)
 2. It's possible to connect to the application again once load is stopped
    (few seconds after `wrk`). This is what `telnet` does in example above,
    make sure it prints `Connected to <hostname>`.
 3. The `Too many open files` error is logged in the appropriate log. This
    requires to set "maximum number of simultaneous connections" parameter (see
-   below) of your application to a value greater that `100` for this example.
+   below) of your application to a value greater then `100` for this example.
 4. Check CPU usage of the app while doing a test. It should not occupy 100%
    of a single CPU core (it's unlikely that you can exhaust CPU by 1000
    connections in Rust, so this means error handling is not right).
@@ -68,12 +68,12 @@ Important is to check the following things:
 #### Testing non-HTTP applications
 
 If it's possible, use the appropriate benchmark tool and set the appropriate
-number of connections. For example `redis-benchmark` has `-c` parameter for
+number of connections. For example `redis-benchmark` has a `-c` parameter for
 that, if you implement redis protocol.
 
 Alternatively, can still use `wrk`, just make sure that connection is not
 immediately closed. If it is, put a temporary timeout before handing
-connection to the protocol handler, like this:
+the connection to the protocol handler, like this:
 
 ```rust,edition2018
 # extern crate async_std;
@@ -147,7 +147,7 @@ Be sure to [test your application](#testing-application).
 
 ### External Crates
 
-The crate [`async-listen`] have a helper to achieve this task:
+The crate [`async-listen`] has a helper to achieve this task:
 ```rust,edition2018
 # extern crate async_std;
 # extern crate async_listen;
@@ -200,7 +200,7 @@ Even if you've applied everything described in
 Let's imagine you have a server that needs to open a file to process
 client request. At some point, you might encounter the following situation:
 
-1. There are as much client connection as max file descriptors allowed for
+1. There are as many client connection as max file descriptors allowed for
    the application.
 2. Listener gets `Too many open files` error so it sleeps.
 3. Some client sends a request via the previously open connection.
@@ -257,7 +257,7 @@ async fn connection_loop(_token: &Token, stream: TcpStream) { // 4
    stream of `TcpStream` rather than `Result`.
 2. The token yielded by a new stream is what is counted by backpressure helper.
    I.e. if you drop a token, new connection can be established.
-3. We give connection loop a reference to token to bind token's lifetime to
+3. We give the connection loop a reference to token to bind token's lifetime to
    the lifetime of the connection.
 4. The token itsellf in the function can be ignored, hence `_token`
 
