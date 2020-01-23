@@ -16,10 +16,30 @@ struct Entry {
     token: mio::Token,
 
     /// Tasks that are blocked on reading from this I/O handle.
-    readers: Mutex<Vec<Waker>>,
+    readers: Mutex<Readers>,
 
     /// Thasks that are blocked on writing to this I/O handle.
-    writers: Mutex<Vec<Waker>>,
+    writers: Mutex<Writers>,
+}
+
+/// The set of `Waker`s interested in read readiness.
+#[derive(Debug)]
+struct Readers {
+    /// Flag indicating read readiness.
+    /// (cf. `Watcher::poll_read_ready`)
+    ready: bool,
+    /// The `Waker`s blocked on reading.
+    wakers: Vec<Waker>
+}
+
+/// The set of `Waker`s interested in write readiness.
+#[derive(Debug)]
+struct Writers {
+    /// Flag indicating write readiness.
+    /// (cf. `Watcher::poll_write_ready`)
+    ready: bool,
+    /// The `Waker`s blocked on writing.
+    wakers: Vec<Waker>
 }
 
 /// The state of a networking driver.
@@ -59,17 +79,6 @@ impl Reactor {
 
     /// Registers an I/O event source and returns its associated entry.
     fn register(&self, source: &dyn Evented) -> io::Result<Arc<Entry>> {
-        self.register_with(source, Interest::All, Vec::new(), Vec::new())
-    }
-
-    /// Registers an I/O event source and returns its associated entry.
-    fn register_with(
-        &self,
-        source: &dyn Evented,
-        interest: Interest,
-        readers: Vec<Waker>,
-        writers: Vec<Waker>
-    ) -> io::Result<Arc<Entry>> {
         let mut entries = self.entries.lock().unwrap();
 
         // Reserve a vacant spot in the slab and use its key as the token value.
@@ -79,21 +88,17 @@ impl Reactor {
         // Allocate an entry and insert it into the slab.
         let entry = Arc::new(Entry {
             token,
-            readers: Mutex::new(readers),
-            writers: Mutex::new(writers),
+            readers: Mutex::new(Readers { ready: false, wakers: Vec::new() }),
+            writers: Mutex::new(Writers { ready: false, wakers: Vec::new() }),
         });
         vacant.insert(entry.clone());
 
         // Register the I/O event source in the poller.
+        let interest = mio::Ready::all();
         let opts = mio::PollOpt::edge();
-        self.poller.register(source, token, interest.to_ready_set(), opts)?;
+        self.poller.register(source, token, interest, opts)?;
 
         Ok(entry)
-    }
-
-    /// Re-register a previously registered event source with the given interest.
-    fn reregister(&self, source: &dyn Evented, entry: &Entry, interest: Interest) -> io::Result<()> {
-        self.poller.reregister(source, entry.token, interest.to_ready_set(), mio::PollOpt::edge())
     }
 
     /// Deregisters an I/O event source associated with an entry.
@@ -159,41 +164,23 @@ fn main_loop() -> io::Result<()> {
 
                     // Wake up reader tasks blocked on this I/O handle.
                     if !(readiness & reader_interests()).is_empty() {
-                        for w in entry.readers.lock().unwrap().drain(..) {
+                        let mut readers = entry.readers.lock().unwrap();
+                        readers.ready = true;
+                        for w in readers.wakers.drain(..) {
                             w.wake();
                         }
                     }
 
                     // Wake up writer tasks blocked on this I/O handle.
                     if !(readiness & writer_interests()).is_empty() {
-                        for w in entry.writers.lock().unwrap().drain(..) {
+                        let mut writers = entry.writers.lock().unwrap();
+                        writers.ready = true;
+                        for w in writers.wakers.drain(..) {
                             w.wake();
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-/// The kind of readiness to be notified about.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Interest {
-    /// Notify about read readiness.
-    Read,
-    /// Notify about write readiness.
-    Write,
-    /// Notify about general readiness.
-    All
-}
-
-impl Interest {
-    /// Translate to mio's readiness set.
-    fn to_ready_set(self) -> mio::Ready {
-        match self {
-            Interest::Read => reader_interests(),
-            Interest::Write => writer_interests(),
-            Interest::All => mio::Ready::all()
         }
     }
 }
@@ -208,9 +195,6 @@ pub struct Watcher<T: Evented> {
 
     /// The I/O event source.
     source: Option<T>,
-
-    /// The interest of this watcher.
-    interest: Interest
 }
 
 impl<T: Evented> Watcher<T> {
@@ -219,40 +203,17 @@ impl<T: Evented> Watcher<T> {
     /// The provided I/O event source will be kept registered inside the reactor's poller for the
     /// lifetime of the returned I/O handle.
     pub fn new(source: T) -> Watcher<T> {
-        Watcher::new_with(source, Interest::All, None, None)
-    }
-
-    /// Creates a new Watcher.
-    ///
-    /// The provided I/O event source will be kept registered inside the reactor's poller for the
-    /// lifetime of the returned Watcher.
-    pub fn new_with(
-        source: T,
-        interest: Interest,
-        reader: Option<Waker>,
-        writer: Option<Waker>
-    ) -> Watcher<T> {
-        let readers = reader.map(|r| vec![r]).unwrap_or_default();
-        let writers = writer.map(|w| vec![w]).unwrap_or_default();
         Watcher {
             entry: REACTOR
-                .register_with(&source, interest, readers, writers)
+                .register(&source)
                 .expect("cannot register an I/O event source"),
             source: Some(source),
-            interest
         }
     }
 
     /// Returns a reference to the inner I/O event source.
     pub fn get_ref(&self) -> &T {
         self.source.as_ref().unwrap()
-    }
-
-    /// Change this Watcher's registration.
-    pub fn reconfigure(&mut self, interest: Interest) -> io::Result<()> {
-        REACTOR.reregister(self.get_ref(), self.entry.as_ref(), interest)?;
-        self.interest = interest;
-        Ok(())
     }
 
     /// Polls the inner I/O source for a non-blocking read operation.
@@ -263,8 +224,6 @@ impl<T: Evented> Watcher<T> {
     where
         F: FnMut(&'a T) -> io::Result<R>,
     {
-        debug_assert!(self.interest == Interest::Read || self.interest == Interest::All);
-
         // If the operation isn't blocked, return its result.
         match f(self.source.as_ref().unwrap()) {
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
@@ -272,7 +231,7 @@ impl<T: Evented> Watcher<T> {
         }
 
         // Lock the waker list.
-        let mut list = self.entry.readers.lock().unwrap();
+        let mut readers = self.entry.readers.lock().unwrap();
 
         // Try running the operation again.
         match f(self.source.as_ref().unwrap()) {
@@ -281,9 +240,11 @@ impl<T: Evented> Watcher<T> {
         }
 
         // Register the task if it isn't registered already.
-        if list.iter().all(|w| !w.will_wake(cx.waker())) {
-            list.push(cx.waker().clone());
+        if readers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            readers.wakers.push(cx.waker().clone());
         }
+
+        readers.ready = false;
 
         Poll::Pending
     }
@@ -300,8 +261,6 @@ impl<T: Evented> Watcher<T> {
     where
         F: FnMut(&'a T) -> io::Result<R>,
     {
-        debug_assert!(self.interest == Interest::Write || self.interest == Interest::All);
-
         // If the operation isn't blocked, return its result.
         match f(self.source.as_ref().unwrap()) {
             Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
@@ -309,7 +268,7 @@ impl<T: Evented> Watcher<T> {
         }
 
         // Lock the waker list.
-        let mut list = self.entry.writers.lock().unwrap();
+        let mut writers = self.entry.writers.lock().unwrap();
 
         // Try running the operation again.
         match f(self.source.as_ref().unwrap()) {
@@ -318,10 +277,49 @@ impl<T: Evented> Watcher<T> {
         }
 
         // Register the task if it isn't registered already.
-        if list.iter().all(|w| !w.will_wake(cx.waker())) {
-            list.push(cx.waker().clone());
+        if writers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            writers.wakers.push(cx.waker().clone());
         }
 
+        writers.ready = false;
+
+        Poll::Pending
+    }
+
+    /// Polls the inner I/O source until a non-blocking read can be performed.
+    ///
+    /// If non-blocking reads are currently not possible, the `Waker`
+    /// will be saved and notified when it can read non-blocking
+    /// again.
+    #[allow(dead_code)]
+    pub fn poll_read_ready(&self, cx: &mut Context<'_>) -> Poll<()> {
+        // Lock the waker list.
+        let mut readers = self.entry.readers.lock().unwrap();
+        if readers.ready {
+            return Poll::Ready(())
+        }
+        // Register the task if it isn't registered already.
+        if readers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            readers.wakers.push(cx.waker().clone());
+        }
+        Poll::Pending
+    }
+
+    /// Polls the inner I/O source until a non-blocking write can be performed.
+    ///
+    /// If non-blocking writes are currently not possible, the `Waker`
+    /// will be saved and notified when it can write non-blocking
+    /// again.
+    pub fn poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<()> {
+        // Lock the waker list.
+        let mut writers = self.entry.writers.lock().unwrap();
+        if writers.ready {
+            return Poll::Ready(())
+        }
+        // Register the task if it isn't registered already.
+        if writers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            writers.wakers.push(cx.waker().clone());
+        }
         Poll::Pending
     }
 

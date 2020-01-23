@@ -4,7 +4,7 @@ use std::pin::Pin;
 
 use crate::future;
 use crate::io::{self, Read, Write};
-use crate::net::driver::{Interest, Watcher};
+use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 
@@ -76,46 +76,19 @@ impl TcpStream {
             .await?;
 
         for addr in addrs {
-            let mut watcher = None;
-            let connected = future::poll_fn(|cx| {
-                match &mut watcher {
-                    None => {
-                        // mio's connect is non-blocking and may just be in progress when
-                        // it returns with `Ok`. We therefore register our write interest
-                        // and once writable we know the connection is either established
-                        // or there was an error which we check for afterwards.
-                        match mio::net::TcpStream::connect(&addr) {
-                            Ok(s) => {
-                                let waker = cx.waker().clone();
-                                watcher = Some(Watcher::new_with(s, Interest::Write, None, Some(waker)))
-                            }
-                            Err(e) => return Poll::Ready(Err(e))
-                        }
-                        Poll::Pending
-                    }
-                    Some(w) =>
-                        if let Err(e) = w.reconfigure(Interest::All) {
-                            Poll::Ready(Err(e))
-                        } else {
-                            Poll::Ready(Ok(()))
-                        }
-                }
-            })
-            .await;
-
-            if let Err(e) = connected {
-                last_err = Some(e);
-                continue
-            }
-
-            debug_assert!(watcher.is_some());
-
-            let watcher =
-                if let Some(w) = watcher {
-                    w
-                } else {
+            // mio's TcpStream::connect is non-blocking and may just be in progress
+            // when it returns with `Ok`. We therefore wait for write readiness to
+            // be sure the connection has either been established or there was an
+            // error which we check for afterwards.
+            let watcher = match mio::net::TcpStream::connect(&addr) {
+                Ok(s) => Watcher::new(s),
+                Err(e) => {
+                    last_err = Some(e);
                     continue
-                };
+                }
+            };
+
+            future::poll_fn(|cx| watcher.poll_write_ready(cx)).await;
 
             match watcher.get_ref().take_error() {
                 Ok(None) => return Ok(TcpStream { watcher }),
