@@ -90,7 +90,7 @@ the connection to the protocol handler, like this:
 #    let mut incoming = listener.incoming();
 while let Some(stream) = incoming.next().await {
     task::spawn(async {
-        task:sleep(Duration::from_secs(10)).await; // 1
+        task::sleep(Duration::from_secs(10)).await; // 1
         connection_loop(stream).await;
     });
 }
