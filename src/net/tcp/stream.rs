@@ -6,8 +6,7 @@ use crate::future;
 use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
-use crate::task::{spawn_blocking, Context, Poll};
-use crate::utils::Context as _;
+use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -77,20 +76,24 @@ impl TcpStream {
             .await?;
 
         for addr in addrs {
-            let res = spawn_blocking(move || {
-                let std_stream = std::net::TcpStream::connect(addr)
-                    .context(|| format!("could not connect to {}", addr))?;
-                let mio_stream = mio::net::TcpStream::from_stream(std_stream)
-                    .context(|| format!("could not open async connection to {}", addr))?;
-                Ok(TcpStream {
-                    watcher: Watcher::new(mio_stream),
-                })
-            })
-            .await;
+            // mio's TcpStream::connect is non-blocking and may just be in progress
+            // when it returns with `Ok`. We therefore wait for write readiness to
+            // be sure the connection has either been established or there was an
+            // error which we check for afterwards.
+            let watcher = match mio::net::TcpStream::connect(&addr) {
+                Ok(s) => Watcher::new(s),
+                Err(e) => {
+                    last_err = Some(e);
+                    continue
+                }
+            };
 
-            match res {
-                Ok(stream) => return Ok(stream),
-                Err(err) => last_err = Some(err),
+            future::poll_fn(|cx| watcher.poll_write_ready(cx)).await;
+
+            match watcher.get_ref().take_error() {
+                Ok(None) => return Ok(TcpStream { watcher }),
+                Ok(Some(e)) => last_err = Some(e),
+                Err(e) => last_err = Some(e)
             }
         }
 
