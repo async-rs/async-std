@@ -158,6 +158,12 @@ impl fmt::Debug for DirEntry {
     }
 }
 
+impl Clone for DirEntry {
+    fn clone(&self) -> Self {
+        DirEntry(self.0.clone())
+    }
+}
+
 cfg_unix! {
     use crate::os::unix::fs::DirEntryExt;
 
