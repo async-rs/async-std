@@ -1,6 +1,7 @@
 use std::io::{IoSlice, IoSliceMut, Read as _, Write as _};
 use std::net::SocketAddr;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use crate::future;
 use crate::io::{self, Read, Write};
@@ -44,9 +45,9 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TcpStream {
-    pub(super) watcher: Watcher<mio::net::TcpStream>,
+    pub(super) watcher: Arc<Watcher<mio::net::TcpStream>>,
 }
 
 impl TcpStream {
@@ -71,9 +72,7 @@ impl TcpStream {
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
             // mio's TcpStream::connect is non-blocking and may just be in progress
@@ -84,16 +83,20 @@ impl TcpStream {
                 Ok(s) => Watcher::new(s),
                 Err(e) => {
                     last_err = Some(e);
-                    continue
+                    continue;
                 }
             };
 
             future::poll_fn(|cx| watcher.poll_write_ready(cx)).await;
 
             match watcher.get_ref().take_error() {
-                Ok(None) => return Ok(TcpStream { watcher }),
+                Ok(None) => {
+                    return Ok(TcpStream {
+                        watcher: Arc::new(watcher),
+                    });
+                }
                 Ok(Some(e)) => last_err = Some(e),
-                Err(e) => last_err = Some(e)
+                Err(e) => last_err = Some(e),
             }
         }
 
@@ -369,7 +372,7 @@ impl From<std::net::TcpStream> for TcpStream {
     fn from(stream: std::net::TcpStream) -> TcpStream {
         let mio_stream = mio::net::TcpStream::from_stream(stream).unwrap();
         TcpStream {
-            watcher: Watcher::new(mio_stream),
+            watcher: Arc::new(Watcher::new(mio_stream)),
         }
     }
 }
@@ -391,7 +394,10 @@ cfg_unix! {
 
     impl IntoRawFd for TcpStream {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_inner().into_raw_fd()
+            // TODO(stjepang): This does not mean `RawFd` is now the sole owner of the file
+            // descriptor because it's possible that there are other clones of this `TcpStream`
+            // using it at the same time. We should probably document that behavior.
+            self.as_raw_fd()
         }
     }
 }
