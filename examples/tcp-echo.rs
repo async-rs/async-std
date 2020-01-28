@@ -14,8 +14,9 @@ use async_std::task;
 async fn process(stream: TcpStream) -> io::Result<()> {
     println!("Accepted from: {}", stream.peer_addr()?);
 
-    let (reader, writer) = &mut (&stream, &stream);
-    io::copy(reader, writer).await?;
+    let mut reader = stream.clone();
+    let mut writer = stream;
+    io::copy(&mut reader, &mut writer).await?;
 
     Ok(())
 }
