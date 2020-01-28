@@ -1,7 +1,7 @@
-#[cfg(feature = "no-std")]
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "no-std")]
+#[cfg(feature = "alloc")]
 use alloc::string::String;
 
 /// Calls a function and aborts if it panics.
@@ -173,10 +173,10 @@ macro_rules! cfg_std {
 /// Declares no-std items.
 #[allow(unused_macros)]
 #[doc(hidden)]
-macro_rules! cfg_no_std {
+macro_rules! cfg_alloc {
     ($($item:item)*) => {
         $(
-            #[cfg(feature = "no-std")]
+            #[cfg(feature = "alloc")]
             $item
         )*
     }

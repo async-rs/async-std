@@ -44,9 +44,9 @@ std = [
   "once_cell",
   "pin-utils",
   "slab",
-  "no-std",
+  "alloc",
 ]
-no-std = [
+alloc = [
   "futures-core",
   "pin-project-lite",
 ]

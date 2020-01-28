@@ -58,7 +58,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command:  check
-        args: --no-default-features --features no-std
+        args: --no-default-features --features alloc
 
     - name: check attributes
       uses: actions-rs/cargo@v1

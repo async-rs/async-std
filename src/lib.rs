@@ -241,7 +241,7 @@ pub use async_attributes::{main, test};
 #[cfg(feature = "std")]
 mod macros;
 
-cfg_no_std! {
+cfg_alloc! {
     pub mod task;
     pub mod future;
     pub mod stream;

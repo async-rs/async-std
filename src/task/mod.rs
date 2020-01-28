@@ -117,7 +117,7 @@
 //! [`task_local!`]: ../macro.task_local.html
 //! [`with`]: struct.LocalKey.html#method.with
 
-cfg_no_std! {
+cfg_alloc! {
     #[doc(inline)]
     pub use core::task::{Context, Poll, Waker};
     pub use ready::ready;

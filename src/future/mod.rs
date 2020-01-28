@@ -46,7 +46,7 @@
 //! [`Future::race`]: trait.Future.html#method.race
 //! [`Future::try_race`]: trait.Future.html#method.try_race
 
-cfg_no_std! {
+cfg_alloc! {
     pub use future::Future;
     pub(crate) mod future;
 }
