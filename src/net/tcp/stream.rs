@@ -264,6 +264,29 @@ impl TcpStream {
         self.watcher.get_ref().set_nodelay(nodelay)
     }
 
+    /// Creates a new independently owned handle to the underlying socket.
+    ///
+    /// The returned TcpStream is a reference to the same stream that this object references.
+    /// Both handles will read and write the same stream of data, and options set on one stream
+    /// will be propagated to the other stream.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::TcpStream;
+    ///
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await?;
+    /// let cloned_stream = stream.try_clone()?;
+    /// #
+    /// # Ok(()) }) }
+    pub fn try_clone(&self) -> io::Result<TcpStream> {
+        Ok(TcpStream {
+            watcher: Watcher::new(self.watcher.get_ref().try_clone()?)
+        })
+    }
+
     /// Shuts down the read, write, or both halves of this connection.
     ///
     /// This method will cause all pending and future I/O on the specified portions to return
