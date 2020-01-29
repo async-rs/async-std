@@ -10,6 +10,7 @@ use async_std::{
     net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
+    task::RuntimeConfig,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -20,6 +21,11 @@ type Receiver<T> = mpsc::UnboundedReceiver<T>;
 enum Void {}
 
 pub(crate) fn main() -> Result<()> {
+    let mut config = RuntimeConfig::new();
+    let num_threads = num_cpus::get() / 2;
+    config.num_thread(num_threads).thread_name("a-chat-server");
+    assert!(config.finalize().is_ok());
+
     task::block_on(accept_loop("127.0.0.1:8080"))
 }
 

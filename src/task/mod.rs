@@ -140,6 +140,7 @@ cfg_default! {
     pub use sleep::sleep;
     pub use spawn::spawn;
     pub use task_local::{AccessError, LocalKey};
+    pub use executor::RuntimeConfig;
 
     use builder::Runnable;
     use task_local::LocalsMap;

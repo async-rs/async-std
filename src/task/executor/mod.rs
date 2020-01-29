@@ -6,6 +6,7 @@
 //! * The only import is the `crate::task::Runnable` type.
 
 pub(crate) use pool::schedule;
+pub use pool::RuntimeConfig;
 
 use sleepers::Sleepers;
 

@@ -11,6 +11,50 @@ use crate::task::executor::Sleepers;
 use crate::task::Runnable;
 use crate::utils::{abort_on_panic, random};
 
+type SyncOnceCell<T> = once_cell::sync::OnceCell<T>;
+static RUNTIME_CONFIG: SyncOnceCell<RuntimeConfig> = SyncOnceCell::new();
+
+/// configuration parameters for executor
+#[derive(Debug)]
+pub struct RuntimeConfig {
+    /// Name given to created worker threads
+    pub thread_name: String,
+
+    /// Number of threads executor is allowed to create
+    pub num_threads: usize,
+}
+impl Default for RuntimeConfig {
+    fn default() -> Self {
+        Self {
+            thread_name: "async-std/executor".to_string(),
+            num_threads: num_cpus::get(),
+        }
+    }
+}
+impl RuntimeConfig {
+    /// Creates new config with predefined defaults
+    pub fn new() -> RuntimeConfig {
+        RuntimeConfig::default()
+    }
+
+    /// Configures name given to worker threads
+    pub fn thread_name(&mut self, thread_name: impl Into<String>) -> &mut Self {
+        self.thread_name = thread_name.into();
+        self
+    }
+
+    /// Configures number of worker threads
+    pub fn num_thread(&mut self, num_threads: usize) -> &mut Self {
+        self.num_threads = num_threads;
+        self
+    }
+
+    /// Sets `RUNTIME_CONFIG` with self
+    pub fn finalize(self) -> Result<(), RuntimeConfig> {
+        RUNTIME_CONFIG.set(self)
+    }
+}
+
 /// The state of an executor.
 struct Pool {
     /// The global queue of tasks.
@@ -25,7 +69,8 @@ struct Pool {
 
 /// Global executor that runs spawned tasks.
 static POOL: Lazy<Pool> = Lazy::new(|| {
-    let num_threads = num_cpus::get().max(1);
+    let runtime_config = RUNTIME_CONFIG.get_or_init(|| RuntimeConfig::default());
+    let num_threads = runtime_config.num_threads.max(1);
     let mut stealers = Vec::new();
 
     // Spawn worker threads.
@@ -40,7 +85,7 @@ static POOL: Lazy<Pool> = Lazy::new(|| {
         };
 
         thread::Builder::new()
-            .name("async-std/executor".to_string())
+            .name(runtime_config.thread_name.clone())
             .spawn(|| {
                 let _ = PROCESSOR.with(|p| p.set(proc));
                 abort_on_panic(main_loop);
