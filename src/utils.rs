@@ -1,7 +1,3 @@
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
-#[cfg(feature = "alloc")]
 use alloc::string::String;
 
 /// Calls a function and aborts if it panics.

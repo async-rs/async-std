@@ -230,6 +230,8 @@
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "2048"]
 
+extern crate alloc;
+
 #[macro_use]
 mod utils;
 
