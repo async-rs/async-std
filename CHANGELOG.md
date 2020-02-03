@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.5.0] - 2020-02-03
+
+[API Documentation](https://docs.rs/async-std/1.5.0/async-std)
+
+## Added
+
+- Added links to various ecosystem projects from the README ([#660](https://github.com/async-rs/async-std/pull/660))
+- Added an example on `FromStream` for `Result<T, E>` ([#643](https://github.com/async-rs/async-std/pull/643))
+- Added `stream::pending` as "unstable" ([#615](https://github.com/async-rs/async-std/pull/615))
+
+## Changed
+
+- Removed internal comment on `stream::Interval` ([#645](https://github.com/async-rs/async-std/pull/645))
+- The "unstable" feature can now be used without requiring the "default" feature ([#647](https://github.com/async-rs/async-std/pull/647))
+- Removed unnecessary trait bound on `stream::FlatMap` ([#651](https://github.com/async-rs/async-std/pull/651))
+- Updated the "broadcaster" dependency used by "unstable" to `1.0.0` ([#681](https://github.com/async-rs/async-std/pull/681))
+
+## Fixed
+
+- Fixed crate documentation typo ([#655](https://github.com/async-rs/async-std/pull/655))
+- Fixed documentation for `UdpSocket::recv` ([#648](https://github.com/async-rs/async-std/pull/648))
+- Fixed documentation for `UdpSocket::send` ([#671](https://github.com/async-rs/async-std/pull/671))
+- Fixed typo in stream documentation ([#650](https://github.com/async-rs/async-std/pull/650))
+- Fixed typo on `sync::JoinHandle` documentation ([#659](https://github.com/async-rs/async-std/pull/659))
+- Removed use of `std::error::Error::description` which failed CI ([#661](https://github.com/async-rs/async-std/pull/662))
+
 # [1.4.0] - 2019-12-20
 
 [API Documentation](https://docs.rs/async-std/1.4.0/async-std)
@@ -637,7 +663,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/async-rs/async-std/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/async-rs/async-std/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/async-rs/async-std/compare/v1.1.0...v1.2.0
