@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 [API Documentation](https://docs.rs/async-std/1.5.0/async-std)
 
+This patch includes various quality of life improvements to async-std.
+Including improved performance, stability, and the addition of various
+`Clone` impls that replace the use of `Arc` in many cases.
+
 ## Added
 
 - Added links to various ecosystem projects from the README ([#660](https://github.com/async-rs/async-std/pull/660))
