@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.5.0] - 2020-02-03
+
+[API Documentation](https://docs.rs/async-std/1.5.0/async-std)
+
+This patch includes various quality of life improvements to async-std.
+Including improved performance, stability, and the addition of various
+`Clone` impls that replace the use of `Arc` in many cases.
+
+## Added
+
+- Added links to various ecosystem projects from the README ([#660](https://github.com/async-rs/async-std/pull/660))
+- Added an example on `FromStream` for `Result<T, E>` ([#643](https://github.com/async-rs/async-std/pull/643))
+- Added `stream::pending` as "unstable" ([#615](https://github.com/async-rs/async-std/pull/615))
+- Added an example of `stream::timeout` to document the error flow ([#675](https://github.com/async-rs/async-std/pull/675))
+- Implement `Clone` for `DirEntry` ([#682](https://github.com/async-rs/async-std/pull/682))
+- Implement `Clone` for `TcpStream` ([#689](https://github.com/async-rs/async-std/pull/689))
+
+## Changed
+
+- Removed internal comment on `stream::Interval` ([#645](https://github.com/async-rs/async-std/pull/645))
+- The "unstable" feature can now be used without requiring the "default" feature ([#647](https://github.com/async-rs/async-std/pull/647))
+- Removed unnecessary trait bound on `stream::FlatMap` ([#651](https://github.com/async-rs/async-std/pull/651))
+- Updated the "broadcaster" dependency used by "unstable" to `1.0.0` ([#681](https://github.com/async-rs/async-std/pull/681))
+- Updated `async-task` to 1.2.1 ([#676](https://github.com/async-rs/async-std/pull/676))
+- `task::block_on` now parks after a single poll, improving performance in many cases ([#684](https://github.com/async-rs/async-std/pull/684))
+- Improved reading flow of the "client" part of the async-std tutorial ([#550](https://github.com/async-rs/async-std/pull/550))
+- Use `take_while` instead of `scan` in `impl` of `Product`, `Sum` and `FromStream` ([#667](https://github.com/async-rs/async-std/pull/667))
+- `TcpStream::connect` no longer uses a thread from the threadpool, improving performance ([#687](https://github.com/async-rs/async-std/pull/687))
+
+## Fixed
+
+- Fixed crate documentation typo ([#655](https://github.com/async-rs/async-std/pull/655))
+- Fixed documentation for `UdpSocket::recv` ([#648](https://github.com/async-rs/async-std/pull/648))
+- Fixed documentation for `UdpSocket::send` ([#671](https://github.com/async-rs/async-std/pull/671))
+- Fixed typo in stream documentation ([#650](https://github.com/async-rs/async-std/pull/650))
+- Fixed typo on `sync::JoinHandle` documentation ([#659](https://github.com/async-rs/async-std/pull/659))
+- Removed use of `std::error::Error::description` which failed CI ([#661](https://github.com/async-rs/async-std/pull/662))
+- Removed the use of rustfmt's unstable `format_code_in_doc_comments` option which failed CI ([#685](https://github.com/async-rs/async-std/pull/685))
+- Fixed a code typo in the `task::sleep` example ([#688](https://github.com/async-rs/async-std/pull/688))
+
 # [1.4.0] - 2019-12-20
 
 [API Documentation](https://docs.rs/async-std/1.4.0/async-std)
@@ -637,7 +677,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/async-rs/async-std/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/async-rs/async-std/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/async-rs/async-std/compare/v1.1.0...v1.2.0
