@@ -1,6 +1,6 @@
-use std::future::Future;
-use std::pin::Pin;
-use std::time::Duration;
+use core::future::Future;
+use core::pin::Pin;
+use core::time::Duration;
 
 use pin_project_lite::pin_project;
 

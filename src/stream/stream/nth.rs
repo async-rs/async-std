@@ -1,6 +1,6 @@
-use std::pin::Pin;
-use std::task::{Context, Poll};
-use std::future::Future;
+use core::pin::Pin;
+use core::task::{Context, Poll};
+use core::future::Future;
 
 use crate::stream::Stream;
 

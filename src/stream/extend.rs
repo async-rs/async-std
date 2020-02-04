@@ -1,6 +1,6 @@
-use std::pin::Pin;
+use core::pin::Pin;
+use core::future::Future;
 
-use crate::prelude::*;
 use crate::stream::IntoStream;
 
 /// Extends a collection with the contents of a stream.

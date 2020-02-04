@@ -221,6 +221,7 @@
 //! features = ["std"]
 //! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]
@@ -228,6 +229,8 @@
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "2048"]
+
+extern crate alloc;
 
 #[macro_use]
 mod utils;
@@ -240,14 +243,17 @@ pub use async_attributes::{main, test};
 #[cfg(feature = "std")]
 mod macros;
 
-cfg_std! {
+cfg_alloc! {
+    pub mod task;
     pub mod future;
+    pub mod stream;
+}
+
+cfg_std! {
     pub mod io;
     pub mod os;
     pub mod prelude;
-    pub mod stream;
     pub mod sync;
-    pub mod task;
 }
 
 cfg_default! {

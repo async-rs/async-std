@@ -46,15 +46,20 @@
 //! [`Future::race`]: trait.Future.html#method.race
 //! [`Future::try_race`]: trait.Future.html#method.try_race
 
-pub use future::Future;
-pub use pending::pending;
-pub use poll_fn::poll_fn;
-pub use ready::ready;
+cfg_alloc! {
+    pub use future::Future;
+    pub(crate) mod future;
+}
 
-pub(crate) mod future;
-mod pending;
-mod poll_fn;
-mod ready;
+cfg_std! {
+    pub use pending::pending;
+    pub use poll_fn::poll_fn;
+    pub use ready::ready;
+
+    mod pending;
+    mod poll_fn;
+    mod ready;
+}
 
 cfg_default! {
     pub use timeout::{timeout, TimeoutError};
