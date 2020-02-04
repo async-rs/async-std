@@ -48,17 +48,14 @@
 
 cfg_alloc! {
     pub use future::Future;
-    pub(crate) mod future;
-}
-
-cfg_std! {
+    pub use ready::ready;
     pub use pending::pending;
     pub use poll_fn::poll_fn;
-    pub use ready::ready;
 
+    pub(crate) mod future;
+    mod ready;
     mod pending;
     mod poll_fn;
-    mod ready;
 }
 
 cfg_default! {
