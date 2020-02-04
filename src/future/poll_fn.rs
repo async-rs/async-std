@@ -1,5 +1,5 @@
-use std::pin::Pin;
-use std::future::Future;
+use core::future::Future;
+use core::pin::Pin;
 
 use crate::task::{Context, Poll};
 
@@ -23,15 +23,18 @@ use crate::task::{Context, Poll};
 /// #
 /// # })
 /// ```
-pub async fn poll_fn<F, T>(f: F) -> T
+pub fn poll_fn<F, T>(f: F) -> PollFn<F>
 where
     F: FnMut(&mut Context<'_>) -> Poll<T>,
 {
-    let fut = PollFn { f };
-    fut.await
+    PollFn { f }
 }
 
-struct PollFn<F> {
+/// This future is constructed by the [`poll_fn`] function.
+///
+/// [`poll_fn`]: fn.poll_fn.html
+#[derive(Debug)]
+pub struct PollFn<F> {
     f: F,
 }
 
