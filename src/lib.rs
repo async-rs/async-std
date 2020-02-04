@@ -220,6 +220,16 @@
 //! default-features = false
 //! features = ["std"]
 //! ```
+//! 
+//! And to use async-std on `no_std` targets that only support `alloc` only
+//! enable the `core` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.0.0"
+//! default-features = false
+//! features = ["core"]
+//! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
