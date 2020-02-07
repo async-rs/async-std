@@ -126,12 +126,9 @@ fn flat_map_doesnt_poll_completed_inner_stream() {
             type Item = ();
 
             fn poll_next(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Option<Self::Item>> {
-                if !self.polled {
-                    self.polled = true;
-                    Poll::Ready(None)
-                } else {
-                    assert!(false, "Polled after completion!");
-                }
+                assert!(!self.polled, "Polled after completion!");
+                self.polled = true;
+                Poll::Ready(None)
             }
         }
 
