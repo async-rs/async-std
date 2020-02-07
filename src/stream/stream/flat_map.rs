@@ -51,14 +51,21 @@ where
         let mut this = self.project();
         loop {
             if let Some(inner) = this.inner_stream.as_mut().as_pin_mut() {
-                if let item @ Some(_) = futures_core::ready!(inner.poll_next(cx)) {
-                    return Poll::Ready(item);
+                let next_item = futures_core::ready!(inner.poll_next(cx));
+
+                if next_item.is_some() {
+                    return Poll::Ready(next_item);
+                } else {
+                    this.inner_stream.set(None);
                 }
             }
 
-            match futures_core::ready!(this.stream.as_mut().poll_next(cx)) {
-                None => return Poll::Ready(None),
-                Some(inner) => this.inner_stream.set(Some(inner.into_stream())),
+            let inner = futures_core::ready!(this.stream.as_mut().poll_next(cx));
+
+            if inner.is_some() {
+                this.inner_stream.set(inner.map(IntoStream::into_stream));
+            } else {
+                return Poll::Ready(None);
             }
         }
     }

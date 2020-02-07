@@ -98,3 +98,73 @@ fn merge_works_with_unfused_streams() {
     });
     assert_eq!(xs, vec![92, 92]);
 }
+
+#[test]
+fn flat_map_doesnt_poll_completed_inner_stream() {
+    async_std::task::block_on(async {
+        use async_std::prelude::*;
+        use async_std::task::*;
+        use std::convert::identity;
+        use std::marker::Unpin;
+        use std::pin::Pin;
+
+        struct S<T>(T);
+
+        impl<T: Stream + Unpin> Stream for S<T> {
+            type Item = T::Item;
+
+            fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Option<Self::Item>> {
+                unsafe { Pin::new_unchecked(&mut self.0) }.poll_next(ctx)
+            }
+        }
+
+        struct StrictOnce {
+            polled: bool,
+        };
+
+        impl Stream for StrictOnce {
+            type Item = ();
+
+            fn poll_next(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Option<Self::Item>> {
+                if !self.polled {
+                    self.polled = true;
+                    Poll::Ready(None)
+                } else {
+                    panic!("Polled after completion!");
+                }
+            }
+        }
+
+        struct Interchanger {
+            polled: bool,
+        };
+
+        impl Stream for Interchanger {
+            type Item = S<Box<dyn Stream<Item = ()> + Unpin>>;
+
+            fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Option<Self::Item>> {
+                if self.polled {
+                    let waker = ctx.waker().clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                        waker.wake_by_ref();
+                    });
+                    self.polled = false;
+                    Poll::Pending
+                } else {
+                    self.polled = true;
+                    Poll::Ready(Some(S(Box::new(StrictOnce { polled: false }))))
+                }
+            }
+        }
+
+        assert_eq!(
+            Interchanger { polled: false }
+                .take(2)
+                .flat_map(identity)
+                .count()
+                .await,
+            0
+        );
+    });
+}
