@@ -144,12 +144,8 @@ fn flat_map_doesnt_poll_completed_inner_stream() {
 
             fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Option<Self::Item>> {
                 if self.polled {
-                    let waker = ctx.waker().clone();
-                    std::thread::spawn(move || {
-                        std::thread::sleep(std::time::Duration::from_millis(10));
-                        waker.wake_by_ref();
-                    });
                     self.polled = false;
+                    ctx.waker().wake_by_ref();
                     Poll::Pending
                 } else {
                     self.polled = true;
