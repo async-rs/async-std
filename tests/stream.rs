@@ -130,7 +130,7 @@ fn flat_map_doesnt_poll_completed_inner_stream() {
                     self.polled = true;
                     Poll::Ready(None)
                 } else {
-                    panic!("Polled after completion!");
+                    assert!(false, "Polled after completion!");
                 }
             }
         }
