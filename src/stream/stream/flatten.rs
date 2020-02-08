@@ -1,5 +1,5 @@
-use core::fmt;
-use core::pin::Pin;
+use std::fmt;
+use std::pin::Pin;
 
 use pin_project_lite::pin_project;
 
