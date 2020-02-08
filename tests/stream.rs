@@ -144,6 +144,7 @@ impl Stream for Interchanger {
     }
 }
 
+// https://github.com/async-rs/async-std/pull/701
 #[test]
 fn flat_map_doesnt_poll_completed_inner_stream() {
     task::block_on(async {
@@ -158,6 +159,7 @@ fn flat_map_doesnt_poll_completed_inner_stream() {
     });
 }
 
+// https://github.com/async-rs/async-std/pull/701
 #[test]
 fn flatten_doesnt_poll_completed_inner_stream() {
     task::block_on(async {
