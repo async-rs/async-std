@@ -222,7 +222,7 @@
 //! ```
 //! 
 //! And to use async-std on `no_std` targets that only support `alloc` only
-//! enable the `core` Cargo feature:
+//! enable the `alloc` Cargo feature:
 //!
 //! ```toml
 //! [dependencies.async-std]
