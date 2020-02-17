@@ -228,7 +228,7 @@
 //! [dependencies.async-std]
 //! version = "1.0.0"
 //! default-features = false
-//! features = ["core"]
+//! features = ["alloc"]
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
