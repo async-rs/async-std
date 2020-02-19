@@ -134,6 +134,8 @@ documentation] on how to enable them.
 
  * [Surf](https://crates.io/crates/surf) — Surf the web. Surf is a friendly **HTTP client** built for casual Rustaceans and veterans alike.
  
+ * [Xactor](https://crates.io/crates/xactor) — Xactor is a rust actors framework based on async-std.
+ 
 ## License
 
 <sup>
