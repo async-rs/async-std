@@ -220,7 +220,7 @@
 //! default-features = false
 //! features = ["std"]
 //! ```
-//! 
+//!
 //! And to use async-std on `no_std` targets that only support `alloc` only
 //! enable the `alloc` Cargo feature:
 //!
