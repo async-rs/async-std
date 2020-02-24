@@ -58,6 +58,7 @@ use crate::sync::WakerSet;
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
+    assert!(cap >= 1);
     let channel = Arc::new(Channel::with_capacity(cap));
     let s = Sender {
         channel: channel.clone(),
