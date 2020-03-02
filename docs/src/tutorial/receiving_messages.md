@@ -111,7 +111,7 @@ We can "fix" it by waiting for the task to be joined, like this:
 #
 # async move |stream| {
 let handle = task::spawn(connection_loop(stream));
-handle.await
+handle.await?
 # };
 ```
 
