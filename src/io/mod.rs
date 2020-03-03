@@ -305,10 +305,6 @@ cfg_std! {
 }
 
 cfg_default! {
-    // For use in the print macros.
-    #[doc(hidden)]
-    pub use stdio::{_eprint, _print};
-
     pub use stderr::{stderr, Stderr, StderrLock};
     pub use stdin::{stdin, Stdin, StdinLock};
     pub use stdout::{stdout, Stdout, StdoutLock};
