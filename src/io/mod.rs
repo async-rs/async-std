@@ -309,9 +309,9 @@ cfg_default! {
     #[doc(hidden)]
     pub use stdio::{_eprint, _print};
 
-    pub use stderr::{stderr, Stderr};
-    pub use stdin::{stdin, Stdin};
-    pub use stdout::{stdout, Stdout};
+    pub use stderr::{stderr, Stderr, StderrLock};
+    pub use stdin::{stdin, Stdin, StdinLock};
+    pub use stdout::{stdout, Stdout, StdoutLock};
     pub use timeout::timeout;
 
     mod timeout;
@@ -319,10 +319,4 @@ cfg_default! {
     mod stdin;
     mod stdio;
     mod stdout;
-}
-
-cfg_unstable_default! {
-    pub use stderr::StderrLock;
-    pub use stdin::StdinLock;
-    pub use stdout::StdoutLock;
 }

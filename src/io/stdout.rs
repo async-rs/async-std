@@ -1,14 +1,12 @@
 use std::pin::Pin;
 use std::sync::Mutex;
 use std::future::Future;
+use std::io::Write as _;
 
 use crate::io::{self, Write};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
-cfg_unstable! {
-    use once_cell::sync::Lazy;
-    use std::io::Write as _;
-}
+use once_cell::sync::Lazy;
 
 /// Constructs a new handle to the standard output of the current process.
 ///
@@ -65,13 +63,9 @@ pub struct Stdout(Mutex<State>);
 ///
 /// [`Write`]: trait.Read.html
 /// [`Stdout::lock`]: struct.Stdout.html#method.lock
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct StdoutLock<'a>(std::io::StdoutLock<'a>);
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 unsafe impl Send for StdoutLock<'_> {}
 
 /// The state of the asynchronous stdout.
@@ -128,8 +122,6 @@ impl Stdout {
     /// #
     /// # Ok(()) }) }
     /// ```
-    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-    #[cfg(any(feature = "unstable", feature = "docs"))]
     pub async fn lock(&self) -> StdoutLock<'static> {
         static STDOUT: Lazy<std::io::Stdout> = Lazy::new(std::io::stdout);
 
@@ -240,8 +232,6 @@ cfg_windows! {
     }
 }
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl Write for StdoutLock<'_> {
     fn poll_write(
         mut self: Pin<&mut Self>,

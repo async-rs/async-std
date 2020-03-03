@@ -1,14 +1,12 @@
 use std::pin::Pin;
 use std::sync::Mutex;
 use std::future::Future;
+use std::io::Write as _;
 
 use crate::io::{self, Write};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 
-cfg_unstable! {
-    use once_cell::sync::Lazy;
-    use std::io::Write as _;
-}
+use once_cell::sync::Lazy;
 
 /// Constructs a new handle to the standard error of the current process.
 ///
@@ -65,13 +63,9 @@ pub struct Stderr(Mutex<State>);
 ///
 /// [`Write`]: trait.Read.html
 /// [`Stderr::lock`]: struct.Stderr.html#method.lock
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct StderrLock<'a>(std::io::StderrLock<'a>);
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 unsafe impl Send for StderrLock<'_> {}
 
 /// The state of the asynchronous stderr.
@@ -128,8 +122,6 @@ impl Stderr {
     /// #
     /// # Ok(()) }) }
     /// ```
-    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-    #[cfg(any(feature = "unstable", feature = "docs"))]
     pub async fn lock(&self) -> StderrLock<'static> {
         static STDERR: Lazy<std::io::Stderr> = Lazy::new(std::io::stderr);
 
@@ -240,8 +232,6 @@ cfg_windows! {
     }
 }
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl io::Write for StderrLock<'_> {
     fn poll_write(
         mut self: Pin<&mut Self>,

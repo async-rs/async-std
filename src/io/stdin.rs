@@ -1,16 +1,14 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Mutex;
+use std::io::Read as _;
 
 use crate::future;
 use crate::io::{self, Read};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 use crate::utils::Context as _;
 
-cfg_unstable! {
-    use once_cell::sync::Lazy;
-    use std::io::Read as _;
-}
+use once_cell::sync::Lazy;
 
 /// Constructs a new handle to the standard input of the current process.
 ///
@@ -67,13 +65,9 @@ pub struct Stdin(Mutex<State>);
 ///
 /// [`Read`]: trait.Read.html
 /// [`Stdin::lock`]: struct.Stdin.html#method.lock
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(feature = "unstable")]
 #[derive(Debug)]
 pub struct StdinLock<'a>(std::io::StdinLock<'a>);
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 unsafe impl Send for StdinLock<'_> {}
 
 /// The state of the asynchronous stdin.
@@ -187,8 +181,6 @@ impl Stdin {
     /// #
     /// # Ok(()) }) }
     /// ```
-    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-    #[cfg(any(feature = "unstable", feature = "docs"))]
     pub async fn lock(&self) -> StdinLock<'static> {
         static STDIN: Lazy<std::io::Stdin> = Lazy::new(std::io::stdin);
 
@@ -266,8 +258,6 @@ cfg_windows! {
     }
 }
 
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl Read for StdinLock<'_> {
     fn poll_read(
         mut self: Pin<&mut Self>,
