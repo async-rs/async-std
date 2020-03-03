@@ -35,7 +35,7 @@ default = [
   "pin-project-lite",
 ]
 docs = ["attributes", "unstable", "default"]
-unstable = ["std", "broadcaster", "futures-timer"]
+unstable = ["std", "broadcaster"]
 attributes = ["async-attributes"]
 std = [
   "alloc",

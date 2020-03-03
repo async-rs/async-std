@@ -1,7 +1,7 @@
 use crate::stream::Stream;
 
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use core::pin::Pin;
+use core::task::{Context, Poll};
 
 mod next_back;
 mod nth_back;
