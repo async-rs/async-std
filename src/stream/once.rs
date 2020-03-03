@@ -5,7 +5,6 @@ use pin_project_lite::pin_project;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[cfg(feature = "unstable")]
 use crate::stream::DoubleEndedStream;
 
 /// Creates a stream that yields a single item.
@@ -50,8 +49,7 @@ impl<T> Stream for Once<T> {
     }
 }
 
-#[cfg(feature = "unstable")]
-impl <T> DoubleEndedStream for Once<T> {
+impl<T> DoubleEndedStream for Once<T> {
     fn poll_next_back(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Poll::Ready(self.project().value.take())
     }

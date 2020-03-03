@@ -27,8 +27,6 @@ use crate::stream::IntoStream;
 /// #
 /// # })
 /// ```
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Extend<A> {
     /// Extends a collection with the contents of a stream.
     fn extend<'a, T: IntoStream<Item = A> + 'a>(
