@@ -1,13 +1,12 @@
 use futures::select;
 use futures::FutureExt;
-use std::io::{self, BufReader as StdBufReader, BufRead};
+use std::io::{self, BufRead, BufReader as StdBufReader};
 
 use async_std::{
-    io::{BufReader},
+    io::BufReader,
     net::{TcpStream, ToSocketAddrs},
     prelude::*,
-    stream,
-    task,
+    stream, task,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

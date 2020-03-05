@@ -1,8 +1,8 @@
 //! Echoes lines read on stdin to stdout.
 
-use std::io::Write;
 use async_std::io;
 use async_std::task;
+use std::io::Write;
 
 fn main() -> io::Result<()> {
     task::block_on(async {
