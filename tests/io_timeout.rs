@@ -8,9 +8,9 @@ use async_std::task;
 fn io_timeout_timedout() {
     task::block_on(async {
         io::timeout(Duration::from_secs(1), async {
-            let stdin = io::stdin();
+            let stdin = std::io::stdin();
             let mut line = String::new();
-            let _n = stdin.read_line(&mut line).await?;
+            let _n = stdin.read_line(&mut line)?;
             Ok(())
         })
         .await
