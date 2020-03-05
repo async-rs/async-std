@@ -32,13 +32,14 @@ use crate::utils::Context as _;
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
+/// use async_std::fs::File;
 ///
 /// let mut reader: &[u8] = b"hello";
-/// let mut writer = io::stdout();
+/// let mut writer = File::open("foo.txt").await?;
 ///
 /// io::copy(&mut reader, &mut writer).await?;
 /// #
@@ -119,13 +120,14 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 /// #
 /// use async_std::io;
+/// use async_std::fs::File;
 ///
 /// let mut reader: &[u8] = b"hello";
-/// let mut writer = io::stdout();
+/// let mut writer = File::open("foo.txt").await?;
 ///
 /// io::copy(&mut reader, &mut writer).await?;
 /// #
