@@ -21,7 +21,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 }
 
 /// Generates a random number in `0..n`.
-#[cfg(any(feature = "unstable", feature = "default"))]
+#[cfg(any(feature = "std", feature = "default"))]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
@@ -255,11 +255,6 @@ macro_rules! extension_trait {
 
         // Shim trait impls that only appear in docs.
         $(#[cfg(feature = "docs")] $imp)*
-    };
-
-    // Optimization: expand `$head` eagerly before starting a new method definition.
-    (@ext ($($head:tt)*) #[doc = $d:literal] $($tail:tt)*) => {
-        $($head)* extension_trait!(@ext (#[doc = $d]) $($tail)*);
     };
 
     // Parse the return type in an extension method.

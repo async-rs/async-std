@@ -14,8 +14,6 @@ use crate::stream::Stream;
 /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
 /// [`Stream::fuse`]: trait.Stream.html#method.fuse
 /// [`Fuse`]: struct.Fuse.html
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait FusedStream: Stream {}
 
 impl<S: FusedStream + ?Sized + Unpin> FusedStream for &mut S {}

@@ -76,8 +76,6 @@ pub use crate::stream::Stream;
 /// # });
 /// ```
 #[allow(clippy::len_without_is_empty)] // ExactSizeIterator::is_empty is unstable
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait ExactSizeStream: Stream {
     /// Returns the exact number of times the stream will iterate.
     ///

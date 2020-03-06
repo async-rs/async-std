@@ -1,5 +1,6 @@
-use core::pin::Pin;
+use alloc::boxed::Box;
 use core::future::Future;
+use core::pin::Pin;
 
 use crate::stream::Stream;
 
@@ -13,8 +14,6 @@ use crate::stream::Stream;
 /// [`product`]: trait.Product.html#tymethod.product
 /// [`FromStream`]: trait.FromStream.html
 /// [`Stream::product`]: trait.Stream.html#method.product
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Product<A = Self>: Sized {
     /// Method which takes a stream and generates `Self` from the elements by
     /// multiplying the items.
@@ -23,9 +22,9 @@ pub trait Product<A = Self>: Sized {
         S: Stream<Item = A> + 'a;
 }
 
-use core::ops::Mul;
-use core::num::Wrapping;
 use crate::stream::stream::StreamExt;
+use core::num::Wrapping;
+use core::ops::Mul;
 
 macro_rules! integer_product {
     (@impls $one: expr, $($a:ty)*) => ($(
@@ -75,5 +74,5 @@ macro_rules! float_product {
     );
 }
 
-integer_product!{ i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize }
-float_product!{ f32 f64 }
+integer_product! { i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize }
+float_product! { f32 f64 }

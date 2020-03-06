@@ -38,16 +38,14 @@ cfg_std! {
     pub use crate::io::prelude::SeekExt as _;
     #[doc(no_inline)]
     pub use crate::io::prelude::WriteExt as _;
+
+    #[doc(no_inline)]
+    pub use crate::stream::DoubleEndedStream;
+    #[doc(no_inline)]
+    pub use crate::stream::ExactSizeStream;
 }
 
 cfg_default! {
     #[doc(no_inline)]
     pub use crate::task_local;
-}
-
-cfg_unstable! {
-    #[doc(no_inline)]
-    pub use crate::stream::DoubleEndedStream;
-    #[doc(no_inline)]
-    pub use crate::stream::ExactSizeStream;
 }
