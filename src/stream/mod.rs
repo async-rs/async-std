@@ -300,40 +300,40 @@
 //! [`take`]: trait.Stream.html#method.take
 //! [`min`]: trait.Stream.html#method.min
 
+pub use double_ended_stream::DoubleEndedStream;
 pub use empty::{empty, Empty};
+pub use exact_size_stream::ExactSizeStream;
 pub use from_fn::{from_fn, FromFn};
 pub use from_iter::{from_iter, FromIter};
+pub use fused_stream::FusedStream;
 pub use once::{once, Once};
+pub use pending::{pending, Pending};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
+pub use successors::{successors, Successors};
 
 pub(crate) mod stream;
 
+mod double_ended_stream;
 mod empty;
+mod exact_size_stream;
 mod from_fn;
 mod from_iter;
+mod fused_stream;
 mod once;
+mod pending;
 mod repeat;
 mod repeat_with;
+mod successors;
 
 cfg_std! {
-    pub use double_ended_stream::DoubleEndedStream;
-    pub use exact_size_stream::ExactSizeStream;
-    pub use fused_stream::FusedStream;
     pub use interval::{interval, Interval};
-    pub use pending::{pending, Pending};
     pub use product::Product;
-    pub use successors::{successors, Successors};
     pub use sum::Sum;
 
-    mod double_ended_stream;
-    mod exact_size_stream;
-    mod fused_stream;
     mod interval;
-    mod pending;
     mod product;
-    mod successors;
     mod sum;
 }
 
