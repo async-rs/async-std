@@ -141,7 +141,7 @@ mod imp;
 
 mod kill;
 
-use kill::Kill;
+use kill::{ChildDropGuard, Kill};
 
 /// Representation of a running or exited child process.
 ///
@@ -149,14 +149,9 @@ use kill::Kill;
 /// process is created via the [`Command`] struct, which configures the
 /// spawning process and can itself be constructed using a builder-style
 /// interface.
-///
-/// There is no implementation of [`Drop`] for child processes,
-/// so if you do not ensure the `Child` has exited then it will continue to
-/// run, even after the `Child` handle to the child process has gone out of
-/// scope.
 #[derive(Debug)]
 pub struct Child {
-    child: imp::Child,
+    child: ChildDropGuard<imp::Child>,
 
     /// The handle for writing to the child's standard input (stdin), if it has
     /// been captured.
@@ -172,7 +167,7 @@ pub struct Child {
 impl Child {
     /// Returns the OS-assigned process identifier associated with this child.
     pub fn id(&self) -> u32 {
-        self.child.id()
+        self.child.inner.id()
     }
 
     /// Forces the child process to exit. If the child has already exited, an [`InvalidInput`]

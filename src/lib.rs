@@ -270,7 +270,6 @@ cfg_default! {
     pub mod fs;
     pub mod path;
     pub mod net;
-    pub mod process;
 }
 
 cfg_unstable! {
@@ -280,6 +279,7 @@ cfg_unstable! {
     mod option;
     mod string;
     mod collections;
+    pub mod process;
 }
 
 cfg_unstable_default! {

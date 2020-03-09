@@ -44,8 +44,9 @@ use self::{
 use crate::net::driver::Watcher;
 use crate::prelude::*;
 use crate::process::{
-    kill::Kill, Child as SpawnedChild, ChildStderr as SpawnedChildStderr,
-    ChildStdin as SpawnedChildStdin, ChildStdout as SpawnedChildStdout, ExitStatus,
+    kill::{ChildDropGuard, Kill},
+    Child as SpawnedChild, ChildStderr as SpawnedChildStderr, ChildStdin as SpawnedChildStdin,
+    ChildStdout as SpawnedChildStdout, ExitStatus,
 };
 
 lazy_static::lazy_static! {
@@ -111,9 +112,9 @@ pub(crate) fn spawn_child(cmd: &mut process::Command) -> io::Result<SpawnedChild
 
     let signal = Signals::new(&[libc::SIGCHLD])?;
     Ok(SpawnedChild {
-        child: Child {
+        child: ChildDropGuard::new(Child {
             inner: Reaper::new(child, GlobalOrphanQueue, signal),
-        },
+        }),
         stdin: stdin.map(|stdin| SpawnedChildStdin { inner: stdin }),
         stdout: stdout.map(|stdout| SpawnedChildStdout { inner: stdout }),
         stderr: stderr.map(|stderr| SpawnedChildStderr { inner: stderr }),

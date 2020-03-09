@@ -766,7 +766,7 @@ impl<T> Channel<T> {
     }
 
     /// Attempts to receive a message.
-    fn try_recv(&self) -> Result<T, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<T, TryRecvError> {
         let backoff = Backoff::new();
         let mut head = self.head.load(Ordering::Relaxed);
 

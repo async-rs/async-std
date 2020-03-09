@@ -7,8 +7,8 @@ use std::task::{Context, Poll};
 /// A drop guard which ensures the child process is killed on drop to maintain
 /// the contract of dropping a Future leads to "cancellation".
 #[derive(Debug)]
-pub(crate) struct ChildDropGuard<T: Kill> {
-    inner: T,
+pub(super) struct ChildDropGuard<T: Kill> {
+    pub(super) inner: T,
     kill_on_drop: bool,
 }
 
@@ -61,7 +61,7 @@ impl<T: Future + Kill + Unpin> Future for ChildDropGuard<T> {
 }
 
 /// An interface for killing a running process.
-pub(crate) trait Kill {
+pub(super) trait Kill {
     /// Forcefully kill the process.
     fn kill(&mut self) -> io::Result<()>;
 }
