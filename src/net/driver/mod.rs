@@ -29,7 +29,7 @@ struct Readers {
     /// (cf. `Watcher::poll_read_ready`)
     ready: bool,
     /// The `Waker`s blocked on reading.
-    wakers: Vec<Waker>
+    wakers: Vec<Waker>,
 }
 
 /// The set of `Waker`s interested in write readiness.
@@ -39,7 +39,7 @@ struct Writers {
     /// (cf. `Watcher::poll_write_ready`)
     ready: bool,
     /// The `Waker`s blocked on writing.
-    wakers: Vec<Waker>
+    wakers: Vec<Waker>,
 }
 
 /// The state of a networking driver.
@@ -88,8 +88,14 @@ impl Reactor {
         // Allocate an entry and insert it into the slab.
         let entry = Arc::new(Entry {
             token,
-            readers: Mutex::new(Readers { ready: false, wakers: Vec::new() }),
-            writers: Mutex::new(Writers { ready: false, wakers: Vec::new() }),
+            readers: Mutex::new(Readers {
+                ready: false,
+                wakers: Vec::new(),
+            }),
+            writers: Mutex::new(Writers {
+                ready: false,
+                wakers: Vec::new(),
+            }),
         });
         vacant.insert(entry.clone());
 
@@ -249,6 +255,43 @@ impl<T: Evented> Watcher<T> {
         Poll::Pending
     }
 
+    /// Polls the inner I/O source for a non-blocking read operation.
+    ///
+    /// If the operation returns an error of the `io::ErrorKind::WouldBlock` kind, the current task
+    /// will be registered for wakeup when the I/O source becomes readable.
+    pub fn poll_read_with_mut<'a, F, R>(
+        &'a mut self,
+        cx: &mut Context<'_>,
+        mut f: F,
+    ) -> Poll<io::Result<R>>
+    where
+        F: FnMut(&mut T) -> io::Result<R>,
+    {
+        // If the operation isn't blocked, return its result.
+        match f(self.source.as_mut().unwrap()) {
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            res => return Poll::Ready(res),
+        }
+
+        // Lock the waker list.
+        let mut readers = self.entry.readers.lock().unwrap();
+
+        // Try running the operation again.
+        match f(self.source.as_mut().unwrap()) {
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            res => return Poll::Ready(res),
+        }
+
+        // Register the task if it isn't registered already.
+        if readers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            readers.wakers.push(cx.waker().clone());
+        }
+
+        readers.ready = false;
+
+        Poll::Pending
+    }
+
     /// Polls the inner I/O source for a non-blocking write operation.
     ///
     /// If the operation returns an error of the `io::ErrorKind::WouldBlock` kind, the current task
@@ -286,6 +329,43 @@ impl<T: Evented> Watcher<T> {
         Poll::Pending
     }
 
+    /// Polls the inner I/O source for a non-blocking write operation.
+    ///
+    /// If the operation returns an error of the `io::ErrorKind::WouldBlock` kind, the current task
+    /// will be registered for wakeup when the I/O source becomes writable.
+    pub fn poll_write_with_mut<'a, F, R>(
+        &'a mut self,
+        cx: &mut Context<'_>,
+        mut f: F,
+    ) -> Poll<io::Result<R>>
+    where
+        F: FnMut(&mut T) -> io::Result<R>,
+    {
+        // If the operation isn't blocked, return its result.
+        match f(self.source.as_mut().unwrap()) {
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            res => return Poll::Ready(res),
+        }
+
+        // Lock the waker list.
+        let mut writers = self.entry.writers.lock().unwrap();
+
+        // Try running the operation again.
+        match f(self.source.as_mut().unwrap()) {
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
+            res => return Poll::Ready(res),
+        }
+
+        // Register the task if it isn't registered already.
+        if writers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
+            writers.wakers.push(cx.waker().clone());
+        }
+
+        writers.ready = false;
+
+        Poll::Pending
+    }
+
     /// Polls the inner I/O source until a non-blocking read can be performed.
     ///
     /// If non-blocking reads are currently not possible, the `Waker`
@@ -296,7 +376,7 @@ impl<T: Evented> Watcher<T> {
         // Lock the waker list.
         let mut readers = self.entry.readers.lock().unwrap();
         if readers.ready {
-            return Poll::Ready(())
+            return Poll::Ready(());
         }
         // Register the task if it isn't registered already.
         if readers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
@@ -314,7 +394,7 @@ impl<T: Evented> Watcher<T> {
         // Lock the waker list.
         let mut writers = self.entry.writers.lock().unwrap();
         if writers.ready {
-            return Poll::Ready(())
+            return Poll::Ready(());
         }
         // Register the task if it isn't registered already.
         if writers.wakers.iter().all(|w| !w.will_wake(cx.waker())) {
