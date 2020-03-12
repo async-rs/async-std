@@ -47,6 +47,8 @@ impl<S: Stream> Stream for Timeout<S> {
 }
 
 /// An error returned when a stream times out.
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[cfg(any(feature = "unstable", feature = "docs"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeoutError {
     _private: (),

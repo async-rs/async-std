@@ -23,9 +23,9 @@ use crate::io;
 /// use async_std::io;
 ///
 /// io::timeout(Duration::from_secs(5), async {
-///     let stdin = std::io::stdin();
+///     let stdin = io::stdin();
 ///     let mut line = String::new();
-///     let n = stdin.read_line(&mut line)?;
+///     let n = stdin.read_line(&mut line).await?;
 ///     Ok(())
 /// })
 /// .await?;

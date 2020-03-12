@@ -122,6 +122,56 @@
 //! # Ok(()) }) }
 //! ```
 //!
+//! ## Standard input and output
+//!
+//! A very common source of input is standard input:
+//!
+//! ```no_run
+//! use async_std::io;
+//!
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
+//! let mut input = String::new();
+//!
+//! io::stdin().read_line(&mut input).await?;
+//!
+//! println!("You typed: {}", input.trim());
+//! #
+//! # Ok(()) }) }
+//! ```
+//!
+//! Note that you cannot use the [`?` operator] in functions that do not return
+//! a [`Result<T, E>`][`Result`]. Instead, you can call [`.unwrap()`]
+//! or `match` on the return value to catch any possible errors:
+//!
+//! ```no_run
+//! use async_std::io;
+//!
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
+//! let mut input = String::new();
+//!
+//! io::stdin().read_line(&mut input).await.unwrap();
+//! #
+//! # Ok(()) }) }
+//! ```
+//!
+//! And a very common source of output is standard output:
+//!
+//! ```no_run
+//! use async_std::io;
+//! use async_std::io::prelude::*;
+//!
+//! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+//! #
+//! io::stdout().write(&[42]).await?;
+//! #
+//! # Ok(()) }) }
+//! ```
+//!
+//! Of course, using [`io::stdout`] directly is less common than something like
+//! [`println!`].
+//!
 //! ## Iterator types
 //!
 //! A large number of the structures provided by `std::io` are for various
@@ -154,14 +204,10 @@
 //!
 //! ```no_run
 //! use async_std::io;
-//! use async_std::fs::File;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
-//! let mut reader: &[u8] = b"hello";
-//! let mut writer = File::open("foo.txt").await?;
-//!
-//! io::copy(&mut reader, &mut writer).await?;
+//! io::copy(&mut io::stdin(), &mut io::stdout()).await?;
 //! #
 //! # Ok(()) }) }
 //! ```
@@ -178,14 +224,13 @@
 //! ```
 //! #![allow(dead_code)]
 //! use async_std::io;
-//! use std::time::Duration;
 //!
 //! async fn read_input() -> io::Result<()> {
-//!     let f = io::timeout(Duration::from_secs(5), async {
-//!         Ok(())
-//!     });
+//!     let mut input = String::new();
 //!
-//!     assert_eq!(f.await?, ());
+//!     io::stdin().read_line(&mut input).await?;
+//!
+//!     println!("You typed: {}", input.trim());
 //!
 //!     Ok(())
 //! }
@@ -215,6 +260,8 @@
 //! [`BufReader`]: struct.BufReader.html
 //! [`BufWriter`]: struct.BufWriter.html
 //! [`Write::write`]: trait.Write.html#tymethod.write
+//! [`io::stdout`]: fn.stdout.html
+//! [`println!`]: ../macro.println.html
 //! [`Lines`]: struct.Lines.html
 //! [`io::Result`]: type.Result.html
 //! [`?` operator]: https://doc.rust-lang.org/stable/book/appendix-02-operators.html
@@ -258,7 +305,24 @@ cfg_std! {
 }
 
 cfg_default! {
+    // For use in the print macros.
+    #[doc(hidden)]
+    pub use stdio::{_eprint, _print};
+
+    pub use stderr::{stderr, Stderr};
+    pub use stdin::{stdin, Stdin};
+    pub use stdout::{stdout, Stdout};
     pub use timeout::timeout;
 
     mod timeout;
+    mod stderr;
+    mod stdin;
+    mod stdio;
+    mod stdout;
+}
+
+cfg_unstable_default! {
+    pub use stderr::StderrLock;
+    pub use stdin::StdinLock;
+    pub use stdout::StdoutLock;
 }

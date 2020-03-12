@@ -27,6 +27,8 @@ use pin_project_lite::pin_project;
 /// #
 /// # }) }
 /// ```
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn successors<F, T>(first: Option<T>, succ: F) -> Successors<F, T>
 where
     F: FnMut(&T) -> Option<T>,
@@ -41,6 +43,8 @@ pin_project! {
     /// This stream is constructed by [`successors`] function
     ///
     /// [`successors`]: fn.succssors.html
+    #[cfg(feature = "unstable")]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]
     pub struct Successors<F, T>
     where

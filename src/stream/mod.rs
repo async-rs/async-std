@@ -317,32 +317,29 @@ mod once;
 mod repeat;
 mod repeat_with;
 
-cfg_std! {
-    pub use double_ended_stream::DoubleEndedStream;
-    pub use exact_size_stream::ExactSizeStream;
-    pub use fused_stream::FusedStream;
-    pub use interval::{interval, Interval};
-    pub use pending::{pending, Pending};
-    pub use product::Product;
-    pub use successors::{successors, Successors};
-    pub use sum::Sum;
-
+cfg_unstable! {
     mod double_ended_stream;
     mod exact_size_stream;
+    mod extend;
+    mod from_stream;
     mod fused_stream;
     mod interval;
+    mod into_stream;
     mod pending;
     mod product;
     mod successors;
     mod sum;
-}
 
-cfg_unstable! {
-    mod from_stream;
-    mod into_stream;
-    mod extend;
-
+    pub use double_ended_stream::DoubleEndedStream;
+    pub use exact_size_stream::ExactSizeStream;
     pub use extend::{extend, Extend};
     pub use from_stream::FromStream;
+    pub use fused_stream::FusedStream;
+    pub use interval::{interval, Interval};
     pub use into_stream::IntoStream;
+    pub use pending::{pending, Pending};
+    pub use product::Product;
+    pub use stream::Merge;
+    pub use successors::{successors, Successors};
+    pub use sum::Sum;
 }

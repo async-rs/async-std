@@ -1,7 +1,7 @@
 use crate::stream::Stream;
 
-use core::pin::Pin;
-use core::task::{Context, Poll};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 mod next_back;
 mod nth_back;
@@ -22,6 +22,8 @@ use try_rfold::TryRFoldFuture;
 /// `Item`s from the back, as well as the front.
 ///
 /// [`Stream`]: trait.Stream.html
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait DoubleEndedStream: Stream {
     #[doc = r#"
         Attempts to receive the next item from the back of the stream.

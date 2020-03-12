@@ -1,4 +1,3 @@
-use alloc::boxed::Box;
 use core::future::Future;
 use core::pin::Pin;
 
@@ -14,6 +13,8 @@ use crate::stream::Stream;
 /// [`sum`]: trait.Sum.html#tymethod.sum
 /// [`FromStream`]: trait.FromStream.html
 /// [`Stream::sum`]: trait.Stream.html#method.sum
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Sum<A = Self>: Sized {
     /// Method which takes a stream and generates `Self` from the elements by
     /// "summing up" the items.

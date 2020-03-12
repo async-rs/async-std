@@ -1,7 +1,6 @@
 //! Prints a file given as an argument to stdout.
 
 use std::env::args;
-use std::io::Write;
 
 use async_std::fs::File;
 use async_std::io;
@@ -15,7 +14,7 @@ fn main() -> io::Result<()> {
 
     task::block_on(async {
         let mut file = File::open(&path).await?;
-        let mut stdout = std::io::stdout();
+        let mut stdout = io::stdout();
         let mut buf = vec![0u8; LEN];
 
         loop {
@@ -24,12 +23,12 @@ fn main() -> io::Result<()> {
 
             // If this is the end of file, clean up and return.
             if n == 0 {
-                stdout.flush()?;
+                stdout.flush().await?;
                 return Ok(());
             }
 
             // Write the buffer into stdout.
-            stdout.write_all(&buf[..n])?;
+            stdout.write_all(&buf[..n]).await?;
         }
     })
 }

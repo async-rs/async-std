@@ -26,6 +26,7 @@ default = [
   "async-task",
   "crossbeam-channel",
   "crossbeam-deque",
+  "futures-timer",
   "kv-log-macro",
   "log",
   "mio",
@@ -34,14 +35,13 @@ default = [
   "pin-project-lite",
 ]
 docs = ["attributes", "unstable", "default"]
-unstable = ["std", "broadcaster"]
+unstable = ["std", "broadcaster", "futures-timer"]
 attributes = ["async-attributes"]
 std = [
   "alloc",
   "crossbeam-utils",
   "futures-core/std",
   "futures-io",
-  "futures-timer",
   "memchr",
   "once_cell",
   "pin-utils",

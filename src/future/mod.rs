@@ -63,14 +63,12 @@ cfg_std! {
 
 cfg_default! {
     pub use timeout::{timeout, TimeoutError};
-
     mod timeout;
 }
 
 cfg_unstable! {
     pub use into_future::IntoFuture;
     pub(crate) use maybe_done::MaybeDone;
-
     mod into_future;
     mod maybe_done;
 }
