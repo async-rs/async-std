@@ -41,7 +41,7 @@ use crate::sync::WakerSet;
 /// let (s, r) = channel(1);
 ///
 /// // This call returns immediately because there is enough space in the channel.
-/// s.send(1).await;
+/// s.send(1usize).await;
 ///
 /// task::spawn(async move {
 ///     // This call will have to wait because the channel is full.
@@ -323,7 +323,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// let (s, r) = channel(100);
 ///
 /// task::spawn(async move {
-///     s.send(1).await;
+///     s.send(1usize).await;
 ///     task::sleep(Duration::from_secs(1)).await;
 ///     s.send(2).await;
 /// });
@@ -346,7 +346,7 @@ pub struct Receiver<T> {
 impl<T> Receiver<T> {
     /// Receives a message from the channel.
     ///
-    /// If the channel is emtpy and still has senders, this method
+    /// If the channel is empty and still has senders, this method
     /// will wait until a message is sent into it. Once all senders
     /// have been dropped it will return `None`.
     ///
@@ -361,7 +361,7 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(1);
     ///
     /// task::spawn(async move {
-    ///     s.send(1).await;
+    ///     s.send(1usize).await;
     ///     s.send(2).await;
     ///     // Then we drop the sender
     /// });
