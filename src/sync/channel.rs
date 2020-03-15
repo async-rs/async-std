@@ -346,8 +346,9 @@ pub struct Receiver<T> {
 impl<T> Receiver<T> {
     /// Receives a message from the channel.
     ///
-    /// If the channel is empty and still has senders, this method will wait until a message is
-    /// sent into the channel or until all senders get dropped.
+    /// If the channel is emtpy and still has senders, this method
+    /// will wait until a message is sent into it. Once all senders
+    /// have been dropped it will return `None`.
     ///
     /// # Examples
     ///
@@ -362,10 +363,13 @@ impl<T> Receiver<T> {
     /// task::spawn(async move {
     ///     s.send(1).await;
     ///     s.send(2).await;
+    ///     // Then we drop the sender
     /// });
     ///
     /// assert_eq!(r.recv().await, Some(1));
     /// assert_eq!(r.recv().await, Some(2));
+    ///
+    /// // recv() returns `None`
     /// assert_eq!(r.recv().await, None);
     /// #
     /// # })
