@@ -32,6 +32,7 @@ use crate::sync::WakerSet;
 /// # Examples
 ///
 /// ```
+/// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
@@ -51,10 +52,11 @@ use crate::sync::WakerSet;
 /// });
 ///
 /// task::sleep(Duration::from_secs(1)).await;
-/// assert_eq!(r.recv().await, Some(1));
-/// assert_eq!(r.recv().await, Some(2));
+/// assert_eq!(r.recv().await?, 1);
+/// assert_eq!(r.recv().await?, 2);
+/// # Ok(())
 /// #
-/// # })
+/// # }) }
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -113,6 +115,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -125,11 +128,12 @@ impl<T> Sender<T> {
     ///     s.send(2).await;
     /// });
     ///
-    /// assert_eq!(r.recv().await, Some(1));
-    /// assert_eq!(r.recv().await, Some(2));
-    /// assert_eq!(r.recv().await, None);
+    /// assert_eq!(r.recv().await?, 1);
+    /// assert_eq!(r.recv().await?, 2);
+    /// assert!(r.recv().await.is_err());
     /// #
-    /// # })
+    /// # Ok(())
+    /// # }) }
     /// ```
     pub async fn send(&self, msg: T) {
         struct SendFuture<'a, T> {
@@ -335,6 +339,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// # Examples
 ///
 /// ```
+/// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
@@ -350,10 +355,11 @@ impl<T> fmt::Debug for Sender<T> {
 ///     s.send(2).await;
 /// });
 ///
-/// assert_eq!(r.recv().await, Some(1)); // Received immediately.
-/// assert_eq!(r.recv().await, Some(2)); // Received after 1 second.
+/// assert_eq!(r.recv().await?, 1); // Received immediately.
+/// assert_eq!(r.recv().await?, 2); // Received after 1 second.
 /// #
-/// # })
+/// # Ok(())
+/// # }) }
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -375,6 +381,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -388,11 +395,12 @@ impl<T> Receiver<T> {
     ///     // Then we drop the sender
     /// });
     ///
-    /// assert_eq!(r.recv().await, Ok(1));
-    /// assert_eq!(r.recv().await, Ok(2));
+    /// assert_eq!(r.recv().await?, 1);
+    /// assert_eq!(r.recv().await?, 2);
     /// assert!(r.recv().await.is_err());
     /// #
-    /// # })
+    /// # Ok(())
+    /// # }) }
     /// ```
     pub async fn recv(&self) -> Result<T, RecvError> {
         struct RecvFuture<'a, T> {
