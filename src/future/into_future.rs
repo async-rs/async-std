@@ -5,10 +5,9 @@ use std::future::Future;
 /// # Examples
 ///
 /// ```
-/// use std::pin::Pin;
-///
 /// use async_std::future::{Future, IntoFuture};
 /// use async_std::io;
+/// use async_std::pin::Pin;
 ///
 /// struct Client;
 ///

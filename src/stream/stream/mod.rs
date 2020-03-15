@@ -112,43 +112,35 @@ pub use zip::Zip;
 
 use core::cmp::Ordering;
 
-cfg_std! {
-    use core::time::Duration;
-    use crate::stream::{Product, Sum};
-    use alloc::boxed::Box;
+cfg_unstable! {
     use core::future::Future;
     use core::pin::Pin;
+    use core::time::Duration;
 
-    use unzip::UnzipFuture;
-    use count::CountFuture;
-
-    pub use throttle::Throttle;
-    pub use merge::Merge;
-    pub use delay::Delay;
-    pub use timeout::{Timeout, TimeoutError};
-
-    mod timeout;
-    mod throttle;
-    mod merge;
-    mod delay;
-    mod unzip;
-    mod count;
-}
-
-cfg_unstable! {
-    use crate::stream::FromStream;
     use crate::stream::into_stream::IntoStream;
+    use crate::stream::{FromStream, Product, Sum};
     use crate::stream::Extend;
 
+    use count::CountFuture;
     use partition::PartitionFuture;
+    use unzip::UnzipFuture;
 
+    pub use merge::Merge;
     pub use flatten::Flatten;
     pub use flat_map::FlatMap;
+    pub use timeout::{TimeoutError, Timeout};
+    pub use throttle::Throttle;
+    pub use delay::Delay;
 
-
+    mod count;
+    mod merge;
     mod flatten;
     mod flat_map;
     mod partition;
+    mod timeout;
+    mod throttle;
+    mod delay;
+    mod unzip;
 }
 
 extension_trait! {
@@ -363,7 +355,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn throttle(self, d: Duration) -> Throttle<Self>
         where
             Self: Sized,
@@ -605,7 +598,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn delay(self, dur: std::time::Duration) -> Delay<Self>
         where
             Self: Sized,
@@ -1517,6 +1511,8 @@ extension_trait! {
             # }) }
             ```
         "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn by_ref(&mut self) -> &mut Self {
             self
         }
@@ -1660,7 +1656,8 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn timeout(self, dur: Duration) -> Timeout<Self>
         where
             Self: Stream + Sized,
@@ -1825,7 +1822,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn unzip<A, B, FromA, FromB>(self) -> impl Future<Output = (FromA, FromB)> [UnzipFuture<Self, FromA, FromB>]
         where
         FromA: Default + Extend<A>,
@@ -1923,7 +1921,8 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn merge<U>(self, other: U) -> Merge<Self, U>
         where
             Self: Sized,
@@ -2069,7 +2068,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn count(self) -> impl Future<Output = usize> [CountFuture<Self>]
         where
             Self: Sized,
@@ -2330,7 +2330,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn sum<'a, S>(
             self,
         ) -> impl Future<Output = S> + 'a [Pin<Box<dyn Future<Output = S> + 'a>>]
@@ -2375,7 +2376,8 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(feature = "std")]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn product<'a, P>(
             self,
         ) -> impl Future<Output = P> + 'a [Pin<Box<dyn Future<Output = P> + 'a>>]

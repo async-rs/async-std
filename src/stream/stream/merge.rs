@@ -16,6 +16,8 @@ pin_project! {
     ///
     /// [`merge`]: trait.Stream.html#method.merge
     /// [`Stream`]: trait.Stream.html
+    #[cfg(feature = "unstable")]
+    #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]
     pub struct Merge<L, R> {
         #[pin]

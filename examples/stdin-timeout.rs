@@ -8,11 +8,11 @@ use async_std::task;
 fn main() -> io::Result<()> {
     // This async scope times out after 5 seconds.
     task::block_on(io::timeout(Duration::from_secs(5), async {
-        let stdin = std::io::stdin();
+        let stdin = io::stdin();
 
         // Read a line from the standard input and display it.
         let mut line = String::new();
-        stdin.read_line(&mut line)?;
+        stdin.read_line(&mut line).await?;
         dbg!(line);
 
         Ok(())
