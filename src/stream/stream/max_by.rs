@@ -1,6 +1,6 @@
-use std::cmp::Ordering;
-use std::pin::Pin;
-use std::future::Future;
+use core::cmp::Ordering;
+use core::pin::Pin;
+use core::future::Future;
 
 use pin_project_lite::pin_project;
 

@@ -105,8 +105,8 @@
 //!
 //! ```no_run
 //! use async_std::fs::File;
-//! use async_std::io::BufWriter;
 //! use async_std::io::prelude::*;
+//! use async_std::io::BufWriter;
 //!
 //! # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
 //! #
@@ -116,8 +116,8 @@
 //!
 //!     // write a byte to the buffer
 //!     writer.write(&[42]).await?;
-//!
 //! } // the buffer is flushed once writer goes out of scope
+//! //
 //! #
 //! # Ok(()) }) }
 //! ```
@@ -275,13 +275,13 @@ cfg_std! {
     #[doc(inline)]
     pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
-    pub use buf_read::{BufRead, Lines};
+    pub use buf_read::{BufRead, Lines, Split};
     pub use buf_reader::BufReader;
     pub use buf_writer::{BufWriter, IntoInnerError};
     pub use copy::copy;
     pub use cursor::Cursor;
     pub use empty::{empty, Empty};
-    pub use read::Read;
+    pub use read::*;
     pub use repeat::{repeat, Repeat};
     pub use seek::Seek;
     pub use sink::{sink, Sink};
@@ -321,7 +321,7 @@ cfg_default! {
     mod stdout;
 }
 
-cfg_unstable! {
+cfg_unstable_default! {
     pub use stderr::StderrLock;
     pub use stdin::StdinLock;
     pub use stdout::StdoutLock;

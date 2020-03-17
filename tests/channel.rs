@@ -18,13 +18,13 @@ fn smoke() {
         let (s, r) = channel(1);
 
         s.send(7).await;
-        assert_eq!(r.recv().await, Some(7));
+        assert_eq!(r.recv().await.unwrap(), 7);
 
         s.send(8).await;
-        assert_eq!(r.recv().await, Some(8));
+        assert_eq!(r.recv().await.unwrap(), 8);
 
         drop(s);
-        assert_eq!(r.recv().await, None);
+        assert!(r.recv().await.is_err());
     });
 
     task::block_on(async {
@@ -74,7 +74,7 @@ fn len_empty_full() {
         assert_eq!(r.is_empty(), false);
         assert_eq!(r.is_full(), true);
 
-        r.recv().await;
+        let _ = r.recv().await;
 
         assert_eq!(s.len(), 1);
         assert_eq!(s.is_empty(), false);
@@ -91,12 +91,12 @@ fn recv() {
         let (s, r) = channel(100);
 
         task::spawn(async move {
-            assert_eq!(r.recv().await, Some(7));
+            assert_eq!(r.recv().await.unwrap(), 7);
             task::sleep(ms(1000)).await;
-            assert_eq!(r.recv().await, Some(8));
+            assert_eq!(r.recv().await.unwrap(), 8);
             task::sleep(ms(1000)).await;
-            assert_eq!(r.recv().await, Some(9));
-            assert_eq!(r.recv().await, None);
+            assert_eq!(r.recv().await.unwrap(), 9);
+            assert!(r.recv().await.is_err());
         });
 
         task::sleep(ms(1500)).await;
@@ -122,9 +122,9 @@ fn send() {
         });
 
         task::sleep(ms(1500)).await;
-        assert_eq!(r.recv().await, Some(7));
-        assert_eq!(r.recv().await, Some(8));
-        assert_eq!(r.recv().await, Some(9));
+        assert_eq!(r.recv().await.unwrap(), 7);
+        assert_eq!(r.recv().await.unwrap(), 8);
+        assert_eq!(r.recv().await.unwrap(), 9);
     })
 }
 
@@ -139,10 +139,10 @@ fn recv_after_disconnect() {
 
         drop(s);
 
-        assert_eq!(r.recv().await, Some(1));
-        assert_eq!(r.recv().await, Some(2));
-        assert_eq!(r.recv().await, Some(3));
-        assert_eq!(r.recv().await, None);
+        assert_eq!(r.recv().await.unwrap(), 1);
+        assert_eq!(r.recv().await.unwrap(), 2);
+        assert_eq!(r.recv().await.unwrap(), 3);
+        assert!(r.recv().await.is_err());
     })
 }
 
@@ -164,7 +164,7 @@ fn len() {
             }
 
             for i in 0..50 {
-                r.recv().await;
+                let _ = r.recv().await;
                 assert_eq!(r.len(), 50 - i - 1);
             }
         }
@@ -188,7 +188,7 @@ fn len() {
             let r = r.clone();
             async move {
                 for i in 0..COUNT {
-                    assert_eq!(r.recv().await, Some(i));
+                    assert_eq!(r.recv().await.unwrap(), i);
                     let len = r.len();
                     assert!(len <= CAP);
                 }
@@ -214,7 +214,7 @@ fn disconnect_wakes_receiver() {
         let (s, r) = channel::<()>(1);
 
         let child = task::spawn(async move {
-            assert_eq!(r.recv().await, None);
+            assert!(r.recv().await.is_err());
         });
 
         task::sleep(ms(1000)).await;
@@ -233,9 +233,9 @@ fn spsc() {
 
         let child = task::spawn(async move {
             for i in 0..COUNT {
-                assert_eq!(r.recv().await, Some(i));
+                assert_eq!(r.recv().await.unwrap(), i);
             }
-            assert_eq!(r.recv().await, None);
+            assert!(r.recv().await.is_err());
         });
 
         for i in 0..COUNT {

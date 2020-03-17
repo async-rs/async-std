@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use crate::future;
 use crate::io;
@@ -75,9 +76,7 @@ impl TcpListener {
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
             match mio::net::TcpListener::bind(&addr) {
@@ -121,7 +120,7 @@ impl TcpListener {
 
         let mio_stream = mio::net::TcpStream::from_stream(io)?;
         let stream = TcpStream {
-            watcher: Watcher::new(mio_stream),
+            watcher: Arc::new(Watcher::new(mio_stream)),
         };
         Ok((stream, addr))
     }

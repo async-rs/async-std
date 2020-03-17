@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.5.0] - 2020-02-03
+
+[API Documentation](https://docs.rs/async-std/1.5.0/async-std)
+
+This patch includes various quality of life improvements to async-std.
+Including improved performance, stability, and the addition of various
+`Clone` impls that replace the use of `Arc` in many cases.
+
+## Added
+
+- Added links to various ecosystem projects from the README ([#660](https://github.com/async-rs/async-std/pull/660))
+- Added an example on `FromStream` for `Result<T, E>` ([#643](https://github.com/async-rs/async-std/pull/643))
+- Added `stream::pending` as "unstable" ([#615](https://github.com/async-rs/async-std/pull/615))
+- Added an example of `stream::timeout` to document the error flow ([#675](https://github.com/async-rs/async-std/pull/675))
+- Implement `Clone` for `DirEntry` ([#682](https://github.com/async-rs/async-std/pull/682))
+- Implement `Clone` for `TcpStream` ([#689](https://github.com/async-rs/async-std/pull/689))
+
+## Changed
+
+- Removed internal comment on `stream::Interval` ([#645](https://github.com/async-rs/async-std/pull/645))
+- The "unstable" feature can now be used without requiring the "default" feature ([#647](https://github.com/async-rs/async-std/pull/647))
+- Removed unnecessary trait bound on `stream::FlatMap` ([#651](https://github.com/async-rs/async-std/pull/651))
+- Updated the "broadcaster" dependency used by "unstable" to `1.0.0` ([#681](https://github.com/async-rs/async-std/pull/681))
+- Updated `async-task` to 1.2.1 ([#676](https://github.com/async-rs/async-std/pull/676))
+- `task::block_on` now parks after a single poll, improving performance in many cases ([#684](https://github.com/async-rs/async-std/pull/684))
+- Improved reading flow of the "client" part of the async-std tutorial ([#550](https://github.com/async-rs/async-std/pull/550))
+- Use `take_while` instead of `scan` in `impl` of `Product`, `Sum` and `FromStream` ([#667](https://github.com/async-rs/async-std/pull/667))
+- `TcpStream::connect` no longer uses a thread from the threadpool, improving performance ([#687](https://github.com/async-rs/async-std/pull/687))
+
+## Fixed
+
+- Fixed crate documentation typo ([#655](https://github.com/async-rs/async-std/pull/655))
+- Fixed documentation for `UdpSocket::recv` ([#648](https://github.com/async-rs/async-std/pull/648))
+- Fixed documentation for `UdpSocket::send` ([#671](https://github.com/async-rs/async-std/pull/671))
+- Fixed typo in stream documentation ([#650](https://github.com/async-rs/async-std/pull/650))
+- Fixed typo on `sync::JoinHandle` documentation ([#659](https://github.com/async-rs/async-std/pull/659))
+- Removed use of `std::error::Error::description` which failed CI ([#661](https://github.com/async-rs/async-std/pull/662))
+- Removed the use of rustfmt's unstable `format_code_in_doc_comments` option which failed CI ([#685](https://github.com/async-rs/async-std/pull/685))
+- Fixed a code typo in the `task::sleep` example ([#688](https://github.com/async-rs/async-std/pull/688))
+
+# [1.4.0] - 2019-12-20
+
+[API Documentation](https://docs.rs/async-std/1.4.0/async-std)
+
+This patch adds `Future::timeout`, providing a method counterpart to the
+`future::timeout` free function. And includes several bug fixes around missing
+APIs. Notably we're not shipping our new executor yet, first announced [on our
+blog](https://async.rs/blog/stop-worrying-about-blocking-the-new-async-std-runtime/).
+
+## Examples
+
+```rust
+use async_std::prelude::*;
+use async_std::future;
+use std::time::Duration;
+
+let fut = future::pending::<()>(); // This future will never resolve.
+let res = fut.timeout(Duration::from_millis(100)).await;
+assert!(res.is_err()); // The future timed out, returning an err.
+```
+
+## Added
+
+- Added `Future::timeout` as "unstable" [(#600)](https://github.com/async-rs/async-std/pull/600)
+
+## Fixes
+
+- Fixed a doc test and enabled it on CI [(#597)](https://github.com/async-rs/async-std/pull/597)
+- Fixed a rendering issue with the `stream` submodule documentation [(#621)](https://github.com/async-rs/async-std/pull/621)
+- `Write::write_fmt`'s future is now correctly marked as `#[must_use]` [(#628)](https://github.com/async-rs/async-std/pull/628)
+- Fixed the missing `io::Bytes` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+- Fixed the missing `io::Chain` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+- Fixed the missing `io::Take` export [(#633)](https://github.com/async-rs/async-std/pull/633)
+
+# [1.3.0] - 2019-12-12
+
+[API Documentation](https://docs.rs/async-std/1.3.0/async-std)
+
+This patch introduces `Stream::delay`, more methods on `DoubleEndedStream`,
+and improves compile times. `Stream::delay` is a new API that's similar to
+[`task::sleep`](https://docs.rs/async-std/1.2.0/async_std/task/fn.sleep.html),
+but can be passed as part of as stream, rather than as a separate block. This is
+useful for examples, or when manually debugging race conditions.
+
+## Examples
+
+```rust
+let start = Instant::now();
+let mut s = stream::from_iter(vec![0u8, 1]).delay(Duration::from_millis(200));
+
+// The first time will take more than 200ms due to delay.
+s.next().await;
+assert!(start.elapsed().as_millis() >= 200);
+
+// There will be no delay after the first time.
+s.next().await;
+assert!(start.elapsed().as_millis() <= 210);
+```
+
+## Added
+
+- Added `Stream::delay` as "unstable" [(#309)](https://github.com/async-rs/async-std/pull/309)
+- Added `DoubleEndedStream::next_back` as "unstable" [(#562)](https://github.com/async-rs/async-std/pull/562)
+- Added `DoubleEndedStream::nth_back` as "unstable" [(#562)](https://github.com/async-rs/async-std/pull/562)
+- Added `DoubleEndedStream::rfind` as "unstable" [(#562)](https://github.com/async-rs/async-std/pull/562)
+- Added `DoubleEndedStream::rfold` as "unstable" [(#562)](https://github.com/async-rs/async-std/pull/562)
+- Added `DoubleEndedStream::try_rfold` as "unstable" [(#562)](https://github.com/async-rs/async-std/pull/562)
+- `stream::Once` now implements `DoubleEndedStream` [(#562)](https://github.com/async-rs/async-std/pull/562)
+- `stream::FromIter` now implements `DoubleEndedStream` [(#562)](https://github.com/async-rs/async-std/pull/562)
+
+## Changed
+
+- Removed our dependency on `async-macros`, speeding up compilation [(#610)](https://github.com/async-rs/async-std/pull/610)
+
+## Fixes
+
+- Fixed a link in the task docs [(#598)](https://github.com/async-rs/async-std/pull/598)
+- Fixed the `UdpSocket::recv` example [(#603)](https://github.com/async-rs/async-std/pull/603)
+- Fixed a link to `task::block_on` [(#608)](https://github.com/async-rs/async-std/pull/608)
+- Fixed an incorrect API mention in `task::Builder` [(#612)](https://github.com/async-rs/async-std/pull/612)
+- Fixed leftover mentions of `futures-preview` [(#595)](https://github.com/async-rs/async-std/pull/595)
+- Fixed a typo in the tutorial [(#614)](https://github.com/async-rs/async-std/pull/614)
+- `<TcpStream as Write>::poll_close` now closes the write half of the stream [(#618)](https://github.com/async-rs/async-std/pull/618)
+
 # [1.2.0] - 2019-11-27
 
 [API Documentation](https://docs.rs/async-std/1.2.0/async-std)
@@ -553,7 +677,10 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/async-rs/async-std/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/async-rs/async-std/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/async-rs/async-std/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/async-rs/async-std/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/async-rs/async-std/compare/v1.0.0...v1.0.1

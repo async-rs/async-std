@@ -8,6 +8,6 @@ impl FromStream<()> for () {
     fn from_stream<'a, S: IntoStream<Item = ()> + 'a>(
         stream: S,
     ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
-        Box::pin(stream.into_stream().for_each(|_| ()))
+        Box::pin(stream.into_stream().for_each(drop))
     }
 }

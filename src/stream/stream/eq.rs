@@ -1,10 +1,10 @@
-use std::pin::Pin;
-use std::future::Future;
+use core::future::Future;
+use core::pin::Pin;
 
 use pin_project_lite::pin_project;
 
 use super::fuse::Fuse;
-use crate::prelude::*;
+use crate::stream::stream::StreamExt;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 

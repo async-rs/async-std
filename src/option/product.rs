@@ -1,7 +1,8 @@
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Stream, Product};
+use crate::stream::{Product, Stream};
+use std::convert::identity;
 
 impl<T, U> Product<Option<U>> for Option<T>
 where
@@ -36,29 +37,27 @@ where
         ```
     "#]
     fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Option<T>> + 'a>>
-        where S: Stream<Item = Option<U>> + 'a
+    where
+        S: Stream<Item = Option<U>> + 'a,
     {
         Box::pin(async move {
-            // Using `scan` here because it is able to stop the stream early
+            // Using `take_while` here because it is able to stop the stream early
             // if a failure occurs
             let mut found_none = false;
-            let out = <T as Product<U>>::product(stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Some(elem) => Some(elem),
-                        None => {
+            let out = <T as Product<U>>::product(
+                stream
+                    .take_while(|elem| {
+                        elem.is_some() || {
                             found_none = true;
-                            // Stop processing the stream on error
-                            None
+                            // Stop processing the stream on `None`
+                            false
                         }
-                    }
-                })).await;
+                    })
+                    .filter_map(identity),
+            )
+            .await;
 
-            if found_none {
-                None
-            } else {
-                Some(out)
-            }
+            if found_none { None } else { Some(out) }
         })
     }
 }

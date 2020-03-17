@@ -47,7 +47,7 @@
 //! encouraged to read it. The `async-std` source is generally high
 //! quality and a peek behind the curtains is often enlightening.
 //!
-//! Modules in this crate are organized in the same way as in `async-std`, except blocking
+//! Modules in this crate are organized in the same way as in `std`, except blocking
 //! functions have been replaced with async functions and threads have been replaced with
 //! lightweight tasks.
 //!
@@ -152,6 +152,8 @@
 //! Await two futures concurrently, and return a tuple of their output:
 //!
 //! ```
+//! use async_std::prelude::*;
+//!
 //! #[async_std::main]
 //! async fn main() {
 //!     let a = async { 1u8 };
@@ -167,7 +169,7 @@
 //!
 //! #[async_std::main]
 //! async fn main() -> std::io::Result<()> {
-//!     let mut socket = UdpSocket::bind("127.0.0.1:8080")?;
+//!     let socket = UdpSocket::bind("127.0.0.1:8080").await?;
 //!     println!("Listening on {}", socket.local_addr()?);
 //!
 //!     let mut buf = vec![0u8; 1024];
@@ -218,7 +220,18 @@
 //! default-features = false
 //! features = ["std"]
 //! ```
+//!
+//! And to use async-std on `no_std` targets that only support `alloc` only
+//! enable the `alloc` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.5.0"
+//! default-features = false
+//! features = ["alloc"]
+//! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]
@@ -226,6 +239,8 @@
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "2048"]
+
+extern crate alloc;
 
 #[macro_use]
 mod utils;
@@ -238,14 +253,17 @@ pub use async_attributes::{main, test};
 #[cfg(feature = "std")]
 mod macros;
 
-cfg_std! {
+cfg_alloc! {
+    pub mod task;
     pub mod future;
+    pub mod stream;
+}
+
+cfg_std! {
     pub mod io;
     pub mod os;
     pub mod prelude;
-    pub mod stream;
     pub mod sync;
-    pub mod task;
 }
 
 cfg_default! {
@@ -265,7 +283,9 @@ cfg_unstable! {
     mod option;
     mod string;
     mod collections;
+}
 
+cfg_unstable_default! {
     #[doc(inline)]
     pub use std::{write, writeln};
 }

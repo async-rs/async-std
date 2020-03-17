@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use core::pin::Pin;
 
 use crate::future::Future;
 use crate::stream::Stream;

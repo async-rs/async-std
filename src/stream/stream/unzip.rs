@@ -1,5 +1,5 @@
-use std::future::Future;
-use std::pin::Pin;
+use core::future::Future;
+use core::pin::Pin;
 
 use pin_project_lite::pin_project;
 
@@ -8,7 +8,7 @@ use crate::task::{Context, Poll};
 
 pin_project! {
     #[derive(Clone, Debug)]
-    #[cfg(all(feature = "default", feature = "unstable"))]
+    #[cfg(feature = "unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     pub struct UnzipFuture<S, FromA, FromB> {
         #[pin]

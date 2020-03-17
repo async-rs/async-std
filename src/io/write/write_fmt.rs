@@ -6,6 +6,7 @@ use crate::task::{Context, Poll};
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
+#[must_use]
 pub struct WriteFmtFuture<'a, T: Unpin + ?Sized> {
     pub(crate) writer: &'a mut T,
     pub(crate) res: Option<io::Result<Vec<u8>>>,

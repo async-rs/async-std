@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
-use std::pin::Pin;
+use core::marker::PhantomData;
+use core::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};

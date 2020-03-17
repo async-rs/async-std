@@ -7,7 +7,6 @@ cfg_unstable! {
     mod try_join;
 
     use std::time::Duration;
-
     use delay::DelayFuture;
     use flatten::FlattenFuture;
     use crate::future::IntoFuture;
@@ -17,9 +16,13 @@ cfg_unstable! {
     use try_join::TryJoin;
 }
 
+cfg_unstable_default! {
+    use crate::future::timeout::TimeoutFuture;
+}
+
 extension_trait! {
-    use std::pin::Pin;
-    use std::ops::{Deref, DerefMut};
+    use core::pin::Pin;
+    use core::ops::{Deref, DerefMut};
 
     use crate::task::{Context, Poll};
 
@@ -133,7 +136,7 @@ extension_trait! {
 
         [`Future`]: ../future/trait.Future.html
     "#]
-    pub trait FutureExt: std::future::Future {
+    pub trait FutureExt: core::future::Future {
         /// Returns a Future that delays execution for a specified time.
         ///
         /// # Examples
@@ -148,7 +151,7 @@ extension_trait! {
         /// dbg!(a.await);
         /// # })
         /// ```
-        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
         where
@@ -354,6 +357,40 @@ extension_trait! {
             F: std::future::Future<Output = Result<B, E>>,
         {
             TryJoin::new(self, other)
+        }
+
+        #[doc = r#"
+            Waits for both the future and a timeout, if the timeout completes before
+            the future, it returns an TimeoutError.
+
+            # Example
+            ```
+            # async_std::task::block_on(async {
+            #
+            use std::time::Duration;
+
+            use async_std::prelude::*;
+            use async_std::future;
+
+            let fut = future::ready(0);
+            let dur = Duration::from_millis(100);
+            let res = fut.timeout(dur).await;
+            assert!(res.is_ok());
+
+            let fut = future::pending::<()>();
+            let dur = Duration::from_millis(100);
+            let res = fut.timeout(dur).await;
+            assert!(res.is_err())
+            #
+            # });
+            ```
+        "#]
+        #[cfg(any(all(feature = "default", feature = "unstable"), feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn timeout(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
+            where Self: Sized
+        {
+            TimeoutFuture::new(self, dur)
         }
     }
 

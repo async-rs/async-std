@@ -1,9 +1,9 @@
-use std::pin::Pin;
+use core::pin::Pin;
 
 use pin_project_lite::pin_project;
 
-use crate::prelude::*;
 use crate::stream::stream::map::Map;
+use crate::stream::stream::StreamExt;
 use crate::stream::{IntoStream, Stream};
 use crate::task::{Context, Poll};
 
@@ -41,7 +41,6 @@ where
 impl<S, U, F> Stream for FlatMap<S, U, F>
 where
     S: Stream,
-    S::Item: IntoStream<IntoStream = U, Item = U::Item>,
     U: Stream,
     F: FnMut(S::Item) -> U,
 {

@@ -40,6 +40,7 @@ jobs:
       with:
         command:  check
         args: --features unstable --all --bins --examples --tests
+
     - name: check bench
       uses: actions-rs/cargo@v1
       if: matrix.rust == 'nightly'
@@ -63,7 +64,31 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --all --features unstable attributes
+        args: --all --features "unstable attributes"
+
+    - name: documentation test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --doc --features "unstable attributes"
+
+  build__with_no_std:
+    name: Build with no-std
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+
+    - name: setup
+      run: |
+        rustup default nightly
+        rustup target add thumbv7m-none-eabi
+
+    - name: check no_std
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --no-default-features --features alloc --target thumbv7m-none-eabi -Z avoid-dev-deps
 
   check_fmt_and_docs:
     name: Checking fmt and docs

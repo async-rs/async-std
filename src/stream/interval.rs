@@ -2,9 +2,9 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
+use crate::future::Future;
+use crate::stream::Stream;
 use futures_timer::Delay;
-
-use crate::prelude::*;
 
 /// Creates a new stream that yields at a set interval.
 ///
@@ -85,7 +85,7 @@ impl Stream for Interval {
 /// While technically for large duration it's impossible to represent any
 /// duration as nanoseconds, the largest duration we can represent is about
 /// 427_000 years. Large enough for any interval we would use or calculate in
-/// tokio.
+/// async-std.
 fn duration_to_nanos(dur: Duration) -> Option<u64> {
     dur.as_secs()
         .checked_mul(1_000_000_000)

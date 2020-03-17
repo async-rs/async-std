@@ -110,12 +110,12 @@ pub use take::Take;
 pub use take_while::TakeWhile;
 pub use zip::Zip;
 
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 
 cfg_unstable! {
-    use std::future::Future;
-    use std::pin::Pin;
-    use std::time::Duration;
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::time::Duration;
 
     use crate::stream::into_stream::IntoStream;
     use crate::stream::{FromStream, Product, Sum};
@@ -350,12 +350,12 @@ extension_trait! {
             assert!(start.elapsed().as_millis() >= 15);
 
             s.next().await;
-            assert!(start.elapsed().as_millis() >= 35);
+            assert!(start.elapsed().as_millis() >= 25);
             #
             # }) }
             ```
         "#]
-        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn throttle(self, d: Duration) -> Throttle<Self>
         where
@@ -587,13 +587,13 @@ extension_trait! {
 
             assert_eq!(s.next().await, Some(1));
             // There will be no delay after the first time.
-            assert!(start.elapsed().as_millis() <= 210);
+            assert!(start.elapsed().as_millis() < 400);
 
             assert_eq!(s.next().await, Some(2));
-            assert!(start.elapsed().as_millis() <= 210);
+            assert!(start.elapsed().as_millis() < 400);
 
             assert_eq!(s.next().await, None);
-            assert!(start.elapsed().as_millis() <= 210);
+            assert!(start.elapsed().as_millis() < 400);
             #
             # }) }
             ```
@@ -695,7 +695,7 @@ extension_trait! {
             # }) }
             ```
 
-            An empty stream will return `None:
+            An empty stream will return `None`:
             ```
             # fn main() { async_std::task::block_on(async {
             #
@@ -791,18 +791,22 @@ extension_trait! {
             # async_std::task::block_on(async {
 
             use async_std::prelude::*;
-            use async_std::stream::IntoStream;
             use async_std::stream;
 
-            let inner1 = stream::from_iter(vec![1,2,3]);
-            let inner2 = stream::from_iter(vec![4,5,6]);
+            let words = stream::from_iter(&["alpha", "beta", "gamma"]);
 
-            let s = stream::from_iter(vec![inner1, inner2]);
+            let merged: String = words
+                .flat_map(|s| stream::from_iter(s.chars()))
+                .collect().await;
+                assert_eq!(merged, "alphabetagamma");
 
-            let v :Vec<_> = s.flat_map(|s| s.into_stream()).collect().await;
+            let d3 = stream::from_iter(&[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]);
+            let d1: Vec<_> = d3
+                .flat_map(|item| stream::from_iter(item))
+                .flat_map(|item| stream::from_iter(item))
+                .collect().await;
 
-            assert_eq!(v, vec![1,2,3,4,5,6]);
-
+            assert_eq!(d1, [&1, &2, &3, &4, &5, &6, &7, &8]);
             # });
             ```
         "#]
@@ -1507,7 +1511,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        #[cfg(all(feature = "default", feature = "unstable"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn by_ref(&mut self) -> &mut Self {
             self
@@ -1641,6 +1645,13 @@ extension_trait! {
             while let Some(v) = s.next().await {
                 assert_eq!(v, Ok(1));
             }
+
+            // when timeout
+            let mut s = stream::pending::<()>().timeout(Duration::from_millis(10));
+            match s.next().await {
+                Some(item) => assert!(item.is_err()),
+                None => panic!()
+            };
             #
             # Ok(()) }) }
             ```

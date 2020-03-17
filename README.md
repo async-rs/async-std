@@ -74,18 +74,15 @@ syntax.
 
 ## Examples
 
-All examples require the [`"attributes"` feature] to be enabled.  This feature
-is not enabled by default because it significantly impacts compile times. See
-[`task::block_on`] for an alternative way to start executing tasks.
-
 ```rust
+use async_std::task;
+
 async fn say_hello() {
     println!("Hello, world!");
 }
 
-#[async_std::main]
-async fn main() {
-    say_hello().await;
+fn main() {
+    task::block_on(say_hello())
 }
 ```
 
@@ -123,6 +120,22 @@ documentation] on how to enable them.
 [cargo-add]: https://github.com/killercup/cargo-edit
 [features documentation]: https://docs.rs/async-std/#features
 
+## Ecosystem
+ 
+ * [async-tls](https://crates.io/crates/async-tls) — Async TLS/SSL streams using **Rustls**. 
+  
+ * [async-native-tls](https://crates.io/crates/async-native-tls) — **Native TLS** for Async. Native TLS for futures and async-std.
+ 
+ * [async-tungstenite](https://crates.io/crates/async-tungstenite) — Asynchronous **WebSockets** for async-std, tokio, gio and any std Futures runtime.
+ 
+ * [Tide](https://crates.io/crates/tide) — Serve the web. A modular **web framework** built around async/await.
+
+ * [SQLx](https://crates.io/crates/sqlx) — The Rust **SQL** Toolkit. SQLx is a 100% safe Rust library for Postgres and MySQL with compile-time checked queries.
+
+ * [Surf](https://crates.io/crates/surf) — Surf the web. Surf is a friendly **HTTP client** built for casual Rustaceans and veterans alike.
+ 
+ * [Xactor](https://crates.io/crates/xactor) — Xactor is a rust actors framework based on async-std.
+ 
 ## License
 
 <sup>

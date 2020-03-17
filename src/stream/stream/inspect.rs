@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use core::pin::Pin;
 
 use pin_project_lite::pin_project;
 
