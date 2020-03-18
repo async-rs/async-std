@@ -1011,7 +1011,7 @@ extension_trait! {
 
             # Examples
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
@@ -1044,7 +1044,7 @@ extension_trait! {
 
             # Examples
 
-            ```ignore
+            ```
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
