@@ -12,8 +12,9 @@ use crossbeam_utils::thread::scope;
 use once_cell::unsync::OnceCell;
 
 use crate::rt::Reactor;
+use crate::sync::Spinlock;
 use crate::task::Runnable;
-use crate::utils::{abort_on_panic, random, Spinlock};
+use crate::utils::{abort_on_panic, random};
 
 thread_local! {
     /// A reference to the current machine, if the current thread runs tasks.
