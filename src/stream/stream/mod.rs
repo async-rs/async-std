@@ -1028,12 +1028,12 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn max<F>(
+        fn max(
             self,
-        ) -> impl Future<Output = Option<Self::Item>> [MaxFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> [MaxFuture<Self, Self::Item>]
         where
             Self: Sized,
-            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+            Self::Item: Ord,
         {
             MaxFuture::new(self)
         }
@@ -1061,12 +1061,12 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn min<F>(
+        fn min(
             self,
-        ) -> impl Future<Output = Option<Self::Item>> [MinFuture<Self, F, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> [MinFuture<Self, Self::Item>]
         where
             Self: Sized,
-            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+            Self::Item: Ord,
         {
             MinFuture::new(self)
         }
