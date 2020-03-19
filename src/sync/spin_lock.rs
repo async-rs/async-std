@@ -31,7 +31,7 @@ use crossbeam_utils::Backoff;
 /// ```
 #[derive(Debug)]
 pub struct Spinlock<T> {
-    flag: AtomicBool,
+    locked: AtomicBool,
     value: UnsafeCell<T>,
 }
 
@@ -42,7 +42,7 @@ impl<T> Spinlock<T> {
     /// Returns a new spinlock initialized with `value`.
     pub const fn new(value: T) -> Spinlock<T> {
         Spinlock {
-            flag: AtomicBool::new(false),
+            locked: AtomicBool::new(false),
             value: UnsafeCell::new(value),
         }
     }
@@ -50,7 +50,7 @@ impl<T> Spinlock<T> {
     /// Locks the spinlock.
     pub fn lock(&self) -> SpinlockGuard<'_, T> {
         let backoff = Backoff::new();
-        while self.flag.swap(true, Ordering::Acquire) {
+        while self.locked.compare_and_swap(false, true, Ordering::Acquire) {
             backoff.snooze();
         }
         SpinlockGuard { parent: self }
@@ -58,7 +58,7 @@ impl<T> Spinlock<T> {
 
     /// Attempts to lock the spinlock.
     pub fn try_lock(&self) -> Option<SpinlockGuard<'_, T>> {
-        if self.flag.swap(true, Ordering::Acquire) {
+        if self.locked.swap(true, Ordering::Acquire) {
             None
         } else {
             Some(SpinlockGuard { parent: self })
@@ -77,7 +77,7 @@ unsafe impl<T: Sync> Sync for SpinlockGuard<'_, T> {}
 
 impl<'a, T> Drop for SpinlockGuard<'a, T> {
     fn drop(&mut self) {
-        self.parent.flag.store(false, Ordering::Release);
+        self.parent.locked.store(false, Ordering::Release);
     }
 }
 
