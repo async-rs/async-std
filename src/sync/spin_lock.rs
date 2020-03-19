@@ -5,30 +5,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crossbeam_utils::Backoff;
 
 /// A simple spinlock.
-///
-/// ```
-/// # async_std::task::block_on(async {
-/// #
-/// use async_std::sync::{Arc, Spinlock};
-/// use async_std::task;
-///
-/// let m = Arc::new(Spinlock::new(0));
-/// let mut tasks = vec![];
-///
-/// for _ in 0..10 {
-///     let m = m.clone();
-///     tasks.push(task::spawn(async move {
-///         *m.lock() += 1;
-///     }));
-/// }
-///
-/// for t in tasks {
-///     t.await;
-/// }
-/// assert_eq!(*m.lock(), 10);
-/// #
-/// # })
-/// ```
 #[derive(Debug)]
 pub struct Spinlock<T> {
     locked: AtomicBool,
@@ -93,4 +69,28 @@ impl<'a, T> DerefMut for SpinlockGuard<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.parent.value.get() }
     }
+}
+
+#[test]
+fn spinlock() {
+    crate::task::block_on(async {
+        use crate::sync::{Arc, Spinlock};
+        use crate::task;
+
+        let m = Arc::new(Spinlock::new(0));
+        let mut tasks = vec![];
+
+        for _ in 0..10 {
+            let m = m.clone();
+            tasks.push(task::spawn(async move {
+                *m.lock() += 1;
+            }));
+        }
+
+        for t in tasks {
+            t.await;
+        }
+        assert_eq!(*m.lock(), 10);
+
+    })
 }
