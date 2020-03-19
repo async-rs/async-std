@@ -4,8 +4,6 @@ use std::fmt;
 use std::pin::Pin;
 use std::future::Future;
 
-use mio_uds;
-
 use super::SocketAddr;
 use super::UnixStream;
 use crate::future;

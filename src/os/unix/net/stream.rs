@@ -5,8 +5,6 @@ use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
 use std::pin::Pin;
 
-use mio_uds;
-
 use super::SocketAddr;
 use crate::io::{self, Read, Write};
 use crate::net::driver::Watcher;

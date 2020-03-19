@@ -3,8 +3,6 @@
 use std::fmt;
 use std::net::Shutdown;
 
-use mio_uds;
-
 use super::SocketAddr;
 use crate::future;
 use crate::io;
