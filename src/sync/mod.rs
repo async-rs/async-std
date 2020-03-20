@@ -178,11 +178,9 @@ pub use std::sync::{Arc, Weak};
 
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-pub(crate) use spin_lock::Spinlock;
 
 mod mutex;
 mod rwlock;
-mod spin_lock;
 
 cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};
