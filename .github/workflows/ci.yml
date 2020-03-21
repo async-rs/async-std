@@ -66,12 +66,6 @@ jobs:
         command: test
         args: --all --features "unstable attributes"
 
-    - name: documentation test
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --doc --features "unstable attributes"
-
   build__with_no_std:
     name: Build with no-std
     runs-on: ubuntu-latest
