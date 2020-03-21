@@ -133,19 +133,6 @@ impl Runtime {
         }
         Ok(false)
     }
-
-    fn poll(&self) -> io::Result<bool> {
-        let mut sched = self.sched.lock().unwrap();
-        sched.polling = true;
-        drop(sched);
-
-        let result = self.reactor.poll(None);
-
-        let mut sched = self.sched.lock().unwrap();
-        sched.polling = false;
-
-        result
-    }
 }
 
 /// A thread running a processor.
@@ -270,7 +257,20 @@ impl Machine {
                 continue;
             }
 
-            rt.poll().unwrap();
+            let mut sched = rt.sched.lock().unwrap();
+
+            if sched.polling {
+                thread::sleep(Duration::from_micros(10));
+                continue;
+            }
+
+            sched.polling = true;
+            drop(sched);
+
+            rt.reactor.poll(None).unwrap();
+
+            let mut sched = rt.sched.lock().unwrap();
+            sched.polling = false;
 
             runs = 0;
             fails = 0;
