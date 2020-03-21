@@ -136,6 +136,8 @@ documentation] on how to enable them.
  
  * [Xactor](https://crates.io/crates/xactor) — Xactor is a rust actors framework based on async-std.
  
+ * [async-graphql](https://crates.io/crates/async-graphql) — The GraphQL server library implemented by rust, fully support async/await.
+ 
 ## License
 
 <sup>
