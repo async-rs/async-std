@@ -61,7 +61,7 @@ crossbeam-deque = { version = "0.7.3", optional = true }
 crossbeam-utils = { version = "0.7.2", optional = true }
 futures-core = { version = "0.3.4", optional = true, default-features = false }
 futures-io = { version = "0.3.4", optional = true }
-futures-timer = { version = "2.0.2", optional = true }
+futures-timer = { version = "3.0.2", optional = true }
 kv-log-macro = { version = "1.0.4", optional = true }
 log = { version = "0.4.8", features = ["kv_unstable"], optional = true }
 memchr = { version = "2.3.3", optional = true }

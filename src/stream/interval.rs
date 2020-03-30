@@ -71,9 +71,8 @@ impl Stream for Interval {
         if Pin::new(&mut self.delay).poll(cx).is_pending() {
             return Poll::Pending;
         }
-        let when = Instant::now();
-        let next = next_interval(when, Instant::now(), self.interval);
-        self.delay.reset(next);
+        let dur = self.interval;
+        self.delay.reset(dur);
         Poll::Ready(Some(()))
     }
 }
