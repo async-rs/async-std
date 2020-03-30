@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use futures_timer::Delay;
 use pin_project_lite::pin_project;
@@ -59,7 +59,7 @@ impl<S: Stream> Stream for Throttle<S> {
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
                 *this.blocked = true;
-                this.delay.reset(Instant::now() + *this.duration);
+                this.delay.reset(*this.duration);
                 Poll::Ready(Some(v))
             }
         }
