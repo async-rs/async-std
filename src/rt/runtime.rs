@@ -219,7 +219,7 @@ impl Machine {
                 runs = 0;
                 rt.quick_poll().unwrap();
 
-                let p = self.processor.lock();
+                let mut p = self.processor.lock();
                 if let Steal::Success(task) = p.steal_from_global(rt) {
                     p.schedule(rt, task);
                 }
@@ -284,7 +284,7 @@ struct Processor {
     worker: Worker<Runnable>,
 
     /// Contains the next task to run as an optimization that skips the queue.
-    slot: Cell<Option<Runnable>>,
+    slot: Option<Runnable>,
 }
 
 impl Processor {
@@ -292,13 +292,13 @@ impl Processor {
     fn new() -> Processor {
         Processor {
             worker: Worker::new_fifo(),
-            slot: Cell::new(None),
+            slot: None,
         }
     }
 
     /// Schedules a task to run on this processor.
-    fn schedule(&self, rt: &Runtime, task: Runnable) {
-        match self.slot.replace(Some(task)) {
+    fn schedule(&mut self, rt: &Runtime, task: Runnable) {
+        match self.slot.replace(task) {
             None => {}
             Some(task) => {
                 self.worker.push(task);
@@ -308,7 +308,7 @@ impl Processor {
     }
 
     /// Flushes a task from the slot into the local queue.
-    fn flush_slot(&self, rt: &Runtime) {
+    fn flush_slot(&mut self, rt: &Runtime) {
         if let Some(task) = self.slot.take() {
             self.worker.push(task);
             rt.notify();
@@ -316,7 +316,7 @@ impl Processor {
     }
 
     /// Pops a task from this processor.
-    fn pop_task(&self) -> Option<Runnable> {
+    fn pop_task(&mut self) -> Option<Runnable> {
         self.slot.take().or_else(|| self.worker.pop())
     }
 
