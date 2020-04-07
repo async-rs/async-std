@@ -1,5 +1,5 @@
-use std::pin::Pin;
 use std::future::Future;
+use std::pin::Pin;
 
 use crate::task::{Context, Poll};
 
@@ -43,6 +43,10 @@ impl Future for YieldNow {
         if !self.0 {
             self.0 = true;
             cx.waker().wake_by_ref();
+
+            #[cfg(feature = "default")]
+            crate::rt::RUNTIME.yield_now();
+
             Poll::Pending
         } else {
             Poll::Ready(())

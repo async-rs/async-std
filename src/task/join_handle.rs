@@ -14,9 +14,6 @@ use crate::task::{Context, Poll, Task};
 #[derive(Debug)]
 pub struct JoinHandle<T>(async_task::JoinHandle<T, Task>);
 
-unsafe impl<T> Send for JoinHandle<T> {}
-unsafe impl<T> Sync for JoinHandle<T> {}
-
 impl<T> JoinHandle<T> {
     /// Creates a new `JoinHandle`.
     pub(crate) fn new(inner: async_task::JoinHandle<T, Task>) -> JoinHandle<T> {

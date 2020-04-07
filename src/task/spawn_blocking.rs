@@ -31,7 +31,8 @@ use crate::utils::abort_on_panic;
 ///
 /// task::spawn_blocking(|| {
 ///     println!("long-running task here");
-/// }).await;
+/// })
+/// .await;
 /// #
 /// # })
 /// ```
@@ -50,13 +51,13 @@ where
 
 type Runnable = async_task::Task<Task>;
 
-/// The number of sleeping worker threads.
-static SLEEPING: AtomicUsize = AtomicUsize::new(0);
-
 struct Pool {
     sender: Sender<Runnable>,
     receiver: Receiver<Runnable>,
 }
+
+/// The number of sleeping worker threads.
+static SLEEPING: AtomicUsize = AtomicUsize::new(0);
 
 static POOL: Lazy<Pool> = Lazy::new(|| {
     // Start a single worker thread waiting for the first task.

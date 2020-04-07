@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::future;
 use crate::io::{self, Read, Write};
-use crate::net::driver::Watcher;
+use crate::rt::Watcher;
 use crate::net::ToSocketAddrs;
 use crate::task::{Context, Poll};
 

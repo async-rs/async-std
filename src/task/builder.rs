@@ -1,9 +1,9 @@
-use kv_log_macro::trace;
-use log::log_enabled;
 use std::future::Future;
 
+use kv_log_macro::trace;
+
 use crate::io;
-use crate::task::executor;
+use crate::rt::RUNTIME;
 use crate::task::{JoinHandle, Task};
 use crate::utils::abort_on_panic;
 
@@ -37,12 +37,10 @@ impl Builder {
         let task = Task::new(self.name);
 
         // Log this `spawn` operation.
-        if log_enabled!(log::Level::Trace) {
-            trace!("spawn", {
-                task_id: task.id().0,
-                parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
-            });
-        }
+        trace!("spawn", {
+            task_id: task.id().0,
+            parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
+        });
 
         let future = async move {
             // Drop task-locals on exit.
@@ -52,19 +50,15 @@ impl Builder {
 
             // Log completion on exit.
             defer! {
-                if log_enabled!(log::Level::Trace) {
-                    Task::get_current(|t| {
-                        trace!("completed", {
-                            task_id: t.id().0,
-                        });
-                    });
-                }
+                trace!("completed", {
+                    task_id: Task::get_current(|t| t.id().0),
+                });
             }
 
             future.await
         };
 
-        let schedule = move |t| executor::schedule(Runnable(t));
+        let schedule = move |t| RUNTIME.schedule(Runnable(t));
         let (task, handle) = async_task::spawn(future, schedule, task);
         task.schedule();
         Ok(JoinHandle::new(handle))
@@ -72,7 +66,7 @@ impl Builder {
 }
 
 /// A runnable task.
-pub(crate) struct Runnable(async_task::Task<Task>);
+pub struct Runnable(async_task::Task<Task>);
 
 impl Runnable {
     /// Runs the task by polling its future once.

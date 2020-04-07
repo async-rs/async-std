@@ -9,7 +9,7 @@ use mio_uds;
 
 use super::SocketAddr;
 use crate::io::{self, Read, Write};
-use crate::net::driver::Watcher;
+use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::task::{spawn_blocking, Context, Poll};

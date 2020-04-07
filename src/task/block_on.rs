@@ -6,7 +6,6 @@ use std::task::{RawWaker, RawWakerVTable};
 
 use crossbeam_utils::sync::Parker;
 use kv_log_macro::trace;
-use log::log_enabled;
 
 use crate::task::{Context, Poll, Task, Waker};
 
@@ -41,12 +40,10 @@ where
     let task = Task::new(None);
 
     // Log this `block_on` operation.
-    if log_enabled!(log::Level::Trace) {
-        trace!("block_on", {
-            task_id: task.id().0,
-            parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
-        });
-    }
+    trace!("block_on", {
+        task_id: task.id().0,
+        parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
+    });
 
     let future = async move {
         // Drop task-locals on exit.
@@ -56,13 +53,9 @@ where
 
         // Log completion on exit.
         defer! {
-            if log_enabled!(log::Level::Trace) {
-                Task::get_current(|t| {
-                    trace!("completed", {
-                        task_id: t.id().0,
-                    });
-                });
-            }
+            trace!("completed", {
+                task_id: Task::get_current(|t| t.id().0),
+            });
         }
 
         future.await

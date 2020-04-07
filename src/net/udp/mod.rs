@@ -3,8 +3,8 @@ use std::net::SocketAddr;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::future;
-use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
+use crate::rt::Watcher;
 use crate::utils::Context as _;
 
 /// A UDP socket.
@@ -102,7 +102,7 @@ impl UdpSocket {
     /// ```no_run
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    ///	use async_std::net::UdpSocket;
+    /// use async_std::net::UdpSocket;
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// let addr = socket.local_addr()?;
