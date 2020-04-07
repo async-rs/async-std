@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.0-alpha.0] - 2020-04-07
+
+[API Documentation](https://docs.rs/async-std/1.6.0-alpha.0/async-std)
+
+This release includes the stable part of previously announced  rewritten scheduler. [1](https://github.com/async-rs/async-std/pull/733), [2](https://github.com/async-rs/async-std/pull/631), [3](https://async.rs/blog/stop-worrying-about-blocking-the-new-async-std-runtime/). 
+
+
+## Added
+
+TODO
+
+## Changed
+
+TODO
+
+## Fixed
+
+TODO
+
+
+
 # [1.5.0] - 2020-02-03
 
 [API Documentation](https://docs.rs/async-std/1.5.0/async-std)
