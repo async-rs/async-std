@@ -31,6 +31,7 @@ default = [
   "kv-log-macro",
   "log",
   "mio",
+  "mio/os-poll",
   "mio/tcp",
   "mio/udp",
   "mio/uds",
