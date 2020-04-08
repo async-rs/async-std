@@ -3,7 +3,6 @@
 use std::fmt;
 use std::net::Shutdown;
 
-use super::SocketAddr;
 use crate::future;
 use crate::io;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};

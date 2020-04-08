@@ -5,7 +5,6 @@ use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
 use std::pin::Pin;
 
-use super::SocketAddr;
 use crate::future;
 use crate::io::{self, Read, Write};
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
