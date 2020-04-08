@@ -370,6 +370,11 @@ impl Write for &TcpStream {
 impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
     fn from(stream: std::net::TcpStream) -> TcpStream {
+        // Make sure we are in nonblocking mode.
+        stream
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_stream = mio::net::TcpStream::from_std(stream);
         TcpStream {
             watcher: Arc::new(Watcher::new(mio_stream)),

@@ -313,6 +313,11 @@ impl fmt::Debug for UnixDatagram {
 impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
     /// Converts a `std::os::unix::net::UnixDatagram` into its asynchronous equivalent.
     fn from(datagram: std::os::unix::net::UnixDatagram) -> UnixDatagram {
+        // Make sure we are in nonblocking mode.
+        datagram
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_datagram = mio::net::UnixDatagram::from_std(datagram);
         UnixDatagram {
             watcher: Watcher::new(mio_datagram),

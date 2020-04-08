@@ -195,6 +195,11 @@ impl Stream for Incoming<'_> {
 impl From<std::os::unix::net::UnixListener> for UnixListener {
     /// Converts a `std::os::unix::net::UnixListener` into its asynchronous equivalent.
     fn from(listener: std::os::unix::net::UnixListener) -> UnixListener {
+        // Make sure we are in nonblocking mode.
+        listener
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_listener = mio::net::UnixListener::from_std(listener);
         UnixListener {
             watcher: Watcher::new(mio_listener),

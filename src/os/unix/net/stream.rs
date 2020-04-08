@@ -235,6 +235,11 @@ impl fmt::Debug for UnixStream {
 impl From<std::os::unix::net::UnixStream> for UnixStream {
     /// Converts a `std::os::unix::net::UnixStream` into its asynchronous equivalent.
     fn from(stream: std::os::unix::net::UnixStream) -> UnixStream {
+        // Make sure we are in nonblocking mode.
+        stream
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_stream = mio::net::UnixStream::from_std(stream);
         UnixStream {
             watcher: Watcher::new(mio_stream),

@@ -496,6 +496,11 @@ impl UdpSocket {
 impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
     fn from(socket: std::net::UdpSocket) -> UdpSocket {
+        // Make sure we are in nonblocking mode.
+        socket
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_socket = mio::net::UdpSocket::from_std(socket);
         UdpSocket {
             watcher: Watcher::new(mio_socket),

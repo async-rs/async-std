@@ -204,6 +204,11 @@ impl<'a> Stream for Incoming<'a> {
 impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
     fn from(listener: std::net::TcpListener) -> TcpListener {
+        // Make sure we are in nonblocking mode.
+        listener
+            .set_nonblocking(true)
+            .expect("failed to set nonblocking mode");
+
         let mio_listener = mio::net::TcpListener::from_std(listener);
         TcpListener {
             watcher: Watcher::new(mio_listener),
