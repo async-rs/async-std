@@ -9,7 +9,6 @@ use crate::io;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::rt::Watcher;
-use crate::task::spawn_blocking;
 
 /// A Unix datagram socket.
 ///
@@ -65,8 +64,8 @@ impl UnixDatagram {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
-        let socket = spawn_blocking(move || mio::net::UnixDatagram::bind(path)).await?;
-        Ok(UnixDatagram::new(socket))
+        let mio_socket = mio::net::UnixDatagram::bind(path)?;
+        Ok(UnixDatagram::new(mio_socket))
     }
 
     /// Creates a Unix datagram which is not bound to any address.

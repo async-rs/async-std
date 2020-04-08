@@ -67,15 +67,29 @@ impl Reactor {
     /// Creates a new reactor for polling I/O events.
     pub fn new() -> io::Result<Reactor> {
         let poller = mio::Poll::new()?;
+        let mut entries = Slab::new();
 
         // Register a waker for waking up the polling thread.
-        let notify_token = mio::Token(0); // TODO: is this being 0 okay?
+        let vacant = entries.vacant_entry();
+        let notify_token = mio::Token(vacant.key());
         let notify_waker = mio::Waker::new(poller.registry(), notify_token)?;
+        // dumy entry to avoid reusing the same token
+        vacant.insert(Arc::new(Entry {
+            token: notify_token.clone(),
+            readers: Mutex::new(Readers {
+                ready: false,
+                wakers: Vec::new(),
+            }),
+            writers: Mutex::new(Writers {
+                ready: false,
+                wakers: Vec::new(),
+            }),
+        }));
 
         let reactor = Reactor {
             poller: Mutex::new(poller),
             events: Mutex::new(mio::Events::with_capacity(1000)),
-            entries: Mutex::new(Slab::new()),
+            entries: Mutex::new(entries),
             notify_waker,
             notify_token,
         };

@@ -211,6 +211,7 @@ impl Write for &UnixStream {
     }
 
     fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.shutdown(std::net::Shutdown::Write)?;
         Poll::Ready(Ok(()))
     }
 }
