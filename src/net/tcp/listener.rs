@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use crate::future;
 use crate::io;
-use crate::rt::Watcher;
 use crate::net::{TcpStream, ToSocketAddrs};
+use crate::rt::Watcher;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
@@ -79,7 +79,7 @@ impl TcpListener {
         let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match mio::net::TcpListener::bind(&addr) {
+            match mio::net::TcpListener::bind(addr) {
                 Ok(mio_listener) => {
                     return Ok(TcpListener {
                         watcher: Watcher::new(mio_listener),
@@ -114,11 +114,9 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        let (io, addr) =
-            future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.accept_std()))
-                .await?;
+        let (mio_stream, addr) =
+            future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.accept())).await?;
 
-        let mio_stream = mio::net::TcpStream::from_stream(io)?;
         let stream = TcpStream {
             watcher: Arc::new(Watcher::new(mio_stream)),
         };
@@ -206,7 +204,7 @@ impl<'a> Stream for Incoming<'a> {
 impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
     fn from(listener: std::net::TcpListener) -> TcpListener {
-        let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
+        let mio_listener = mio::net::TcpListener::from_std(listener);
         TcpListener {
             watcher: Watcher::new(mio_listener),
         }

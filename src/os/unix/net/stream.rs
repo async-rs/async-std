@@ -5,14 +5,13 @@ use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
 use std::pin::Pin;
 
-use mio_uds;
-
 use super::SocketAddr;
+use crate::future;
 use crate::io::{self, Read, Write};
-use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
-use crate::task::{spawn_blocking, Context, Poll};
+use crate::rt::Watcher;
+use crate::task::{Context, Poll};
 
 /// A Unix stream socket.
 ///
@@ -38,7 +37,7 @@ use crate::task::{spawn_blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixStream {
-    pub(super) watcher: Watcher<mio_uds::UnixStream>,
+    pub(super) watcher: Watcher<mio::net::UnixStream>,
 }
 
 impl UnixStream {
@@ -58,14 +57,20 @@ impl UnixStream {
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         let path = path.as_ref().to_owned();
 
-        spawn_blocking(move || {
-            let std_stream = std::os::unix::net::UnixStream::connect(path)?;
-            let mio_stream = mio_uds::UnixStream::from_stream(std_stream)?;
-            Ok(UnixStream {
-                watcher: Watcher::new(mio_stream),
-            })
-        })
-        .await
+        // mio's UnixStream::connect is non-blocking and may just be in progress
+        // when it returns with `Ok`. We therefore wait for write readiness to
+        // be sure the connection has either been established or there was an
+        // error which we check for afterwards.
+        let mio_stream = mio::net::UnixStream::connect(path)?;
+        let watcher = Watcher::new(mio_stream);
+
+        future::poll_fn(|cx| watcher.poll_write_ready(cx)).await;
+
+        match watcher.get_ref().take_error() {
+            Ok(None) => Ok(UnixStream { watcher }),
+            Ok(Some(e)) => Err(e),
+            Err(e) => Err(e),
+        }
     }
 
     /// Creates an unnamed pair of connected sockets.
@@ -84,7 +89,7 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
-        let (a, b) = mio_uds::UnixStream::pair()?;
+        let (a, b) = mio::net::UnixStream::pair()?;
         let a = UnixStream {
             watcher: Watcher::new(a),
         };
@@ -108,7 +113,7 @@ impl UnixStream {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&self) -> io::Result<mio::net::SocketAddr> {
         self.watcher.get_ref().local_addr()
     }
 
@@ -126,7 +131,7 @@ impl UnixStream {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+    pub fn peer_addr(&self) -> io::Result<mio::net::SocketAddr> {
         self.watcher.get_ref().peer_addr()
     }
 
@@ -230,7 +235,7 @@ impl fmt::Debug for UnixStream {
 impl From<std::os::unix::net::UnixStream> for UnixStream {
     /// Converts a `std::os::unix::net::UnixStream` into its asynchronous equivalent.
     fn from(stream: std::os::unix::net::UnixStream) -> UnixStream {
-        let mio_stream = mio_uds::UnixStream::from_stream(stream).unwrap();
+        let mio_stream = mio::net::UnixStream::from_std(stream);
         UnixStream {
             watcher: Watcher::new(mio_stream),
         }

@@ -3,14 +3,12 @@
 use std::fmt;
 use std::net::Shutdown;
 
-use mio_uds;
-
 use super::SocketAddr;
 use crate::future;
 use crate::io;
-use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
+use crate::rt::Watcher;
 use crate::task::spawn_blocking;
 
 /// A Unix datagram socket.
@@ -42,11 +40,11 @@ use crate::task::spawn_blocking;
 /// # Ok(()) }) }
 /// ```
 pub struct UnixDatagram {
-    watcher: Watcher<mio_uds::UnixDatagram>,
+    watcher: Watcher<mio::net::UnixDatagram>,
 }
 
 impl UnixDatagram {
-    fn new(socket: mio_uds::UnixDatagram) -> UnixDatagram {
+    fn new(socket: mio::net::UnixDatagram) -> UnixDatagram {
         UnixDatagram {
             watcher: Watcher::new(socket),
         }
@@ -67,7 +65,7 @@ impl UnixDatagram {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
-        let socket = spawn_blocking(move || mio_uds::UnixDatagram::bind(path)).await?;
+        let socket = spawn_blocking(move || mio::net::UnixDatagram::bind(path)).await?;
         Ok(UnixDatagram::new(socket))
     }
 
@@ -85,7 +83,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn unbound() -> io::Result<UnixDatagram> {
-        let socket = mio_uds::UnixDatagram::unbound()?;
+        let socket = mio::net::UnixDatagram::unbound()?;
         Ok(UnixDatagram::new(socket))
     }
 
@@ -105,7 +103,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixDatagram, UnixDatagram)> {
-        let (a, b) = mio_uds::UnixDatagram::pair()?;
+        let (a, b) = mio::net::UnixDatagram::pair()?;
         let a = UnixDatagram::new(a);
         let b = UnixDatagram::new(b);
         Ok((a, b))
@@ -152,7 +150,7 @@ impl UnixDatagram {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&self) -> io::Result<mio::net::SocketAddr> {
         self.watcher.get_ref().local_addr()
     }
 
@@ -175,7 +173,7 @@ impl UnixDatagram {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+    pub fn peer_addr(&self) -> io::Result<mio::net::SocketAddr> {
         self.watcher.get_ref().peer_addr()
     }
 
@@ -196,7 +194,7 @@ impl UnixDatagram {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+    pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, mio::net::SocketAddr)> {
         future::poll_fn(|cx| {
             self.watcher
                 .poll_read_with(cx, |inner| inner.recv_from(buf))
@@ -315,7 +313,7 @@ impl fmt::Debug for UnixDatagram {
 impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
     /// Converts a `std::os::unix::net::UnixDatagram` into its asynchronous equivalent.
     fn from(datagram: std::os::unix::net::UnixDatagram) -> UnixDatagram {
-        let mio_datagram = mio_uds::UnixDatagram::from_datagram(datagram).unwrap();
+        let mio_datagram = mio::net::UnixDatagram::from_std(datagram);
         UnixDatagram {
             watcher: Watcher::new(mio_datagram),
         }

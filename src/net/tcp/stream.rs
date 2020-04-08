@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use crate::future;
 use crate::io::{self, Read, Write};
-use crate::rt::Watcher;
 use crate::net::ToSocketAddrs;
+use crate::rt::Watcher;
 use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
@@ -79,7 +79,7 @@ impl TcpStream {
             // when it returns with `Ok`. We therefore wait for write readiness to
             // be sure the connection has either been established or there was an
             // error which we check for afterwards.
-            let watcher = match mio::net::TcpStream::connect(&addr) {
+            let watcher = match mio::net::TcpStream::connect(addr) {
                 Ok(s) => Watcher::new(s),
                 Err(e) => {
                     last_err = Some(e);
@@ -370,7 +370,7 @@ impl Write for &TcpStream {
 impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
     fn from(stream: std::net::TcpStream) -> TcpStream {
-        let mio_stream = mio::net::TcpStream::from_stream(stream).unwrap();
+        let mio_stream = mio::net::TcpStream::from_std(stream);
         TcpStream {
             watcher: Arc::new(Watcher::new(mio_stream)),
         }

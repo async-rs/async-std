@@ -69,12 +69,10 @@ impl UdpSocket {
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<UdpSocket> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match mio::net::UdpSocket::bind(&addr) {
+            match mio::net::UdpSocket::bind(addr) {
                 Ok(mio_socket) => {
                     return Ok(UdpSocket {
                         watcher: Watcher::new(mio_socket),
@@ -155,7 +153,7 @@ impl UdpSocket {
 
         future::poll_fn(|cx| {
             self.watcher
-                .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
+                .poll_write_with(cx, |inner| inner.send_to(buf, addr))
         })
         .await
         .context(|| format!("could not send packet to {}", addr))
@@ -498,7 +496,7 @@ impl UdpSocket {
 impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
     fn from(socket: std::net::UdpSocket) -> UdpSocket {
-        let mio_socket = mio::net::UdpSocket::from_socket(socket).unwrap();
+        let mio_socket = mio::net::UdpSocket::from_std(socket);
         UdpSocket {
             watcher: Watcher::new(mio_socket),
         }

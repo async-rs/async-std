@@ -1,18 +1,16 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::pin::Pin;
 use std::future::Future;
-
-use mio_uds;
+use std::pin::Pin;
 
 use super::SocketAddr;
 use super::UnixStream;
 use crate::future;
 use crate::io;
-use crate::rt::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
+use crate::rt::Watcher;
 use crate::stream::Stream;
 use crate::task::{spawn_blocking, Context, Poll};
 
@@ -50,7 +48,7 @@ use crate::task::{spawn_blocking, Context, Poll};
 /// # Ok(()) }) }
 /// ```
 pub struct UnixListener {
-    watcher: Watcher<mio_uds::UnixListener>,
+    watcher: Watcher<mio::net::UnixListener>,
 }
 
 impl UnixListener {
@@ -69,7 +67,7 @@ impl UnixListener {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixListener> {
         let path = path.as_ref().to_owned();
-        let listener = spawn_blocking(move || mio_uds::UnixListener::bind(path)).await?;
+        let listener = spawn_blocking(move || mio::net::UnixListener::bind(path)).await?;
 
         Ok(UnixListener {
             watcher: Watcher::new(listener),
@@ -92,28 +90,16 @@ impl UnixListener {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
+    pub async fn accept(&self) -> io::Result<(UnixStream, mio::net::SocketAddr)> {
         future::poll_fn(|cx| {
-            let res = futures_core::ready!(self.watcher.poll_read_with(cx, |inner| {
-                match inner.accept_std() {
-                    // Converting to `WouldBlock` so that the watcher will
-                    // add the waker of this task to a list of readers.
-                    Ok(None) => Err(io::ErrorKind::WouldBlock.into()),
-                    res => res,
-                }
-            }));
+            let res =
+                futures_core::ready!(self.watcher.poll_read_with(cx, |inner| { inner.accept() }));
 
-            match res? {
-                Some((io, addr)) => {
-                    let mio_stream = mio_uds::UnixStream::from_stream(io)?;
-                    let stream = UnixStream {
-                        watcher: Watcher::new(mio_stream),
-                    };
-                    Poll::Ready(Ok((stream, addr)))
-                }
-                // This should never happen since `None` is converted to `WouldBlock`
-                None => unreachable!(),
-            }
+            let (mio_stream, addr) = res?;
+            let stream = UnixStream {
+                watcher: Watcher::new(mio_stream),
+            };
+            Poll::Ready(Ok((stream, addr)))
         })
         .await
     }
@@ -162,7 +148,7 @@ impl UnixListener {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&self) -> io::Result<mio::net::SocketAddr> {
         self.watcher.get_ref().local_addr()
     }
 }
@@ -209,7 +195,7 @@ impl Stream for Incoming<'_> {
 impl From<std::os::unix::net::UnixListener> for UnixListener {
     /// Converts a `std::os::unix::net::UnixListener` into its asynchronous equivalent.
     fn from(listener: std::os::unix::net::UnixListener) -> UnixListener {
-        let mio_listener = mio_uds::UnixListener::from_listener(listener).unwrap();
+        let mio_listener = mio::net::UnixListener::from_std(listener);
         UnixListener {
             watcher: Watcher::new(mio_listener),
         }
