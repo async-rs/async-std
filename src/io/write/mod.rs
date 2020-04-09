@@ -1,29 +1,23 @@
 mod flush;
 mod write;
 mod write_all;
+mod write_fmt;
 mod write_vectored;
 
 use flush::FlushFuture;
 use write::WriteFuture;
 use write_all::WriteAllFuture;
+use write_fmt::WriteFmtFuture;
 use write_vectored::WriteVectoredFuture;
 
-use cfg_if::cfg_if;
-
-use crate::io::IoSlice;
-use crate::utils::extension_trait;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::pin::Pin;
-        use std::ops::{Deref, DerefMut};
-
-        use crate::io;
-        use crate::task::{Context, Poll};
-    }
-}
+use crate::io::{self, IoSlice};
 
 extension_trait! {
+    use std::pin::Pin;
+    use std::ops::{Deref, DerefMut};
+
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         Allows writing to a byte stream.
 
@@ -32,7 +26,7 @@ extension_trait! {
 
         Methods other than [`poll_write`], [`poll_write_vectored`], [`poll_flush`], and
         [`poll_close`] do not really exist in the trait itself, but they become available when
-        the prelude is imported:
+        [`WriteExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -41,13 +35,15 @@ extension_trait! {
 
         [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
         [`futures::io::AsyncWrite`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncWrite.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html
         [`poll_write`]: #tymethod.poll_write
         [`poll_write_vectored`]: #method.poll_write_vectored
         [`poll_flush`]: #tymethod.poll_flush
         [`poll_close`]: #tymethod.poll_close
+        [`WriteExt`]: ../io/prelude/trait.WriteExt.html
+        [prelude]: ../prelude/index.html
     "#]
-    pub trait Write [WriteExt: futures_io::AsyncWrite] {
+    pub trait Write {
         #[doc = r#"
             Attempt to write bytes from `buf` into the object.
         "#]
@@ -78,7 +74,14 @@ extension_trait! {
             Attempt to close the object.
         "#]
         fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
+    }
 
+    #[doc = r#"
+        Extension methods for [`Write`].
+
+        [`Write`]: ../trait.Write.html
+    "#]
+    pub trait WriteExt: futures_io::AsyncWrite {
         #[doc = r#"
             Writes some bytes into the byte stream.
 
@@ -196,6 +199,50 @@ extension_trait! {
             Self: Unpin,
         {
             WriteAllFuture { writer: self, buf }
+        }
+
+        #[doc = r#"
+            Writes a formatted string into this writer, returning any error encountered.
+
+            This method will continuously call [`write`] until there is no more data to be
+            written or an error is returned. This future will not resolve until the entire
+            buffer has been successfully written or such an error occurs.
+
+            [`write`]: #tymethod.write
+
+            # Examples
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::io::prelude::*;
+            use async_std::fs::File;
+
+            let mut buffer = File::create("foo.txt").await?;
+
+            // this call
+            write!(buffer, "{:.*}", 2, 1.234567).await?;
+            // turns into this:
+            buffer.write_fmt(format_args!("{:.*}", 2, 1.234567)).await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn write_fmt<'a>(
+            &'a mut self,
+            fmt: std::fmt::Arguments<'_>,
+        ) -> impl Future<Output = io::Result<()>> + 'a [WriteFmtFuture<'a, Self>]
+        where
+            Self: Unpin,
+        {
+            // In order to not have to implement an async version of `fmt` including private types
+            // and all, we convert `Arguments` to a `Result<Vec<u8>>` and pass that to the Future.
+            // Doing an owned conversion saves us from juggling references.
+            let mut string = String::new();
+            let res = std::fmt::write(&mut string, fmt)
+                .map(|_| string.into_bytes())
+                .map_err(|_| io::Error::new(io::ErrorKind::Other, "formatter error"));
+            WriteFmtFuture { writer: self, res: Some(res), buffer: None, amt: 0 }
         }
     }
 

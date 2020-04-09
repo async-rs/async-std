@@ -1,7 +1,7 @@
-use std::path::Path;
-
 use crate::io;
-use crate::task::blocking;
+use crate::path::Path;
+use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Removes a directory and all of its contents.
 ///
@@ -30,5 +30,9 @@ use crate::task::blocking;
 /// ```
 pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::remove_dir_all(path) }).await
+    spawn_blocking(move || {
+        std::fs::remove_dir_all(&path)
+            .context(|| format!("could not remove directory `{}`", path.display()))
+    })
+    .await
 }

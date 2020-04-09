@@ -12,7 +12,7 @@ After that, the client can send messages to other clients using the following sy
 login1, login2, ... loginN: message
 ```
 
-Each of the specified clients than receives a `from login: message` message.
+Each of the specified clients then receives a `from login: message` message.
 
 A possible session might look like this
 
@@ -38,18 +38,10 @@ $ cargo new a-chat
 $ cd a-chat
 ```
 
-At the moment `async-std` requires Rust nightly, so let's add a rustup override for convenience:
-
-```bash
-$ rustup override add nightly
-$ rustc --version
-rustc 1.38.0-nightly (c4715198b 2019-08-05)
-```
-
 Add the following lines to `Cargo.toml`:
 
 ```toml
 [dependencies]
-futures-preview = { version = "0.3.0-alpha.19", features = [ "async-await" ] }
-async-std = "0.99"
+futures = "0.3.0"
+async-std = "1"
 ```

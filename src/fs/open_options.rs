@@ -1,11 +1,9 @@
-use std::path::Path;
-
-use cfg_if::cfg_if;
+use std::future::Future;
 
 use crate::fs::File;
-use crate::future::Future;
 use crate::io;
-use crate::task::blocking;
+use crate::path::Path;
+use crate::task::spawn_blocking;
 
 /// A builder for opening files with configurable options.
 ///
@@ -286,7 +284,10 @@ impl OpenOptions {
     pub fn open<P: AsRef<Path>>(&self, path: P) -> impl Future<Output = io::Result<File>> {
         let path = path.as_ref().to_owned();
         let options = self.0.clone();
-        async move { blocking::spawn(async move { options.open(path).map(|f| f.into()) }).await }
+        async move {
+            let file = spawn_blocking(move || options.open(path)).await?;
+            Ok(File::new(file, true))
+        }
     }
 }
 
@@ -296,27 +297,18 @@ impl Default for OpenOptions {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::fs::OpenOptionsExt;
-    } else if #[cfg(unix)] {
-        use std::os::unix::fs::OpenOptionsExt;
-    }
-}
+cfg_unix! {
+    use crate::os::unix::fs::OpenOptionsExt;
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl OpenOptionsExt for OpenOptions {
-            fn mode(&mut self, mode: u32) -> &mut Self {
-                self.0.mode(mode);
-                self
-            }
+    impl OpenOptionsExt for OpenOptions {
+        fn mode(&mut self, mode: u32) -> &mut Self {
+            self.0.mode(mode);
+            self
+        }
 
-            fn custom_flags(&mut self, flags: i32) -> &mut Self {
-                self.0.custom_flags(flags);
-                self
-            }
+        fn custom_flags(&mut self, flags: i32) -> &mut Self {
+            self.0.custom_flags(flags);
+            self
         }
     }
 }

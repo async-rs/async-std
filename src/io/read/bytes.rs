@@ -32,7 +32,7 @@ impl<T: Read + Unpin> Stream for Bytes<T> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, default))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

@@ -24,11 +24,7 @@ To sum up: Rust gives us the ability to safely abstract over important propertie
 
 ## An easy view of computation
 
-While computation is a subject to write a whole [book](https://computationbook.com/) about, a very simplified view suffices for us:
-
-- computation is a sequence of composable operations
-- they can branch based on a decision
-- they either run to succession and yield a result, or they can yield an error
+While computation is a subject to write a whole [book](https://computationbook.com/) about, a very simplified view suffices for us: A sequence of composable operations which can branch based on a decision, run to succession and yield a result or yield an error
 
 ## Deferring computation
 
@@ -136,11 +132,11 @@ When executing 2 or more of these functions at the same time, our runtime system
 
 ## Conclusion
 
-Working from values, we searched for something that expresses *working towards a value available sometime later*. From there, we talked about the concept of polling.
+Working from values, we searched for something that expresses *working towards a value available later*. From there, we talked about the concept of polling.
 
 A `Future` is any data type that does not represent a value, but the ability to *produce a value at some point in the future*. Implementations of this are very varied and detailed depending on use-case, but the interface is simple.
 
-Next, we will introduce you to `tasks`, which we need to actually *run* Futures.
+Next, we will introduce you to `tasks`, which we will use to actually *run* Futures.
 
 [^1]: Two parties reading while it is guaranteed that no one is writing is always safe.
 

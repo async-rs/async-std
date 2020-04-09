@@ -1,29 +1,27 @@
 ## Implementing a client
 
-Let's now implement the client for the chat.
-Because the protocol is line-based, the implementation is pretty straightforward:
+Since the protocol is line-based, implementing a client for the chat is straightforward:
 
 * Lines read from stdin should be sent over the socket.
 * Lines read from the socket should be echoed to stdout.
 
-Unlike the server, the client needs only limited concurrency, as it interacts with only a single user.
-For this reason, async doesn't bring a lot of performance benefits in this case.
+Although async does not significantly affect client performance (as unlike the server, the client interacts solely with one user and only needs limited concurrency), async is still useful for managing concurrency!
 
-However, async is still useful for managing concurrency!
-Specifically, the client should *simultaneously* read from stdin and from the socket.
-Programming this with threads is cumbersome, especially when implementing clean shutdown.
-With async, we can just use the `select!` macro.
+The client has to read from stdin and the socket *simultaneously*.
+Programming this with threads is cumbersome, especially when implementing a clean shutdown.
+With async, the `select!` macro is all that is needed.
+
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_util;
+# extern crate futures;
 use async_std::{
     io::{stdin, BufReader},
     net::{TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
-use futures_util::{select, FutureExt};
+use futures::{select, FutureExt};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 

@@ -3,11 +3,13 @@
 //! This module is an async version of [`std::fs`].
 //!
 //! [`os::unix::fs`]: ../os/unix/fs/index.html
+//! [`os::windows::fs`]: ../os/windows/fs/index.html
 //! [`std::fs`]: https://doc.rust-lang.org/std/fs/index.html
 //!
 //! # Platform-specific extensions
 //!
 //! * Unix: use the [`os::unix::fs`] module.
+//! * Windows: use the [`os::windows::fs`] module.
 //!
 //! # Examples
 //!

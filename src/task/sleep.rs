@@ -11,10 +11,14 @@ use crate::io;
 ///
 /// [`std::thread::sleep`]: https://doc.rust-lang.org/std/thread/fn.sleep.html
 ///
+/// See also: [`stream::interval`].
+///
+/// [`stream::interval`]: ../stream/fn.interval.html
+///
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
 ///
@@ -22,7 +26,7 @@ use crate::io;
 ///
 /// task::sleep(Duration::from_secs(1)).await;
 /// #
-/// # }) }
+/// # })
 /// ```
 pub async fn sleep(dur: Duration) {
     let _: io::Result<()> = io::timeout(dur, future::pending()).await;

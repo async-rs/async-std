@@ -1,7 +1,7 @@
-use std::marker::PhantomData;
-use std::pin::Pin;
+use core::marker::PhantomData;
+use core::pin::Pin;
+use core::future::Future;
 
-use crate::future::Future;
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
@@ -19,6 +19,16 @@ impl<'a, S, F, Fut, T> AnyFuture<'a, S, F, Fut, T> {
     pin_utils::unsafe_unpinned!(f: F);
     pin_utils::unsafe_pinned!(future: Option<Fut>);
     pin_utils::unsafe_pinned!(stream: &'a mut S);
+
+    pub(crate) fn new(stream: &'a mut S, f: F) -> Self {
+        Self {
+            stream,
+            f,
+			result: false,
+			future: None,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<S, F, Fut> Future for AnyFuture<'_, S, F, Fut, S::Item>

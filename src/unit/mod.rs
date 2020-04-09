@@ -4,3 +4,4 @@
 //! asynchronously with values of type `()`.
 
 mod from_stream;
+mod extend;

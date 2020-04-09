@@ -1,20 +1,25 @@
-use crate::io::IoSliceMut;
 use std::fmt;
 use std::pin::Pin;
 
-use crate::io::{self, BufRead, Read};
+use pin_project_lite::pin_project;
+
+use crate::io::{self, BufRead, IoSliceMut, Read};
 use crate::task::{Context, Poll};
 
-/// Adaptor to chain together two readers.
-///
-/// This struct is generally created by calling [`chain`] on a reader.
-/// Please see the documentation of [`chain`] for more details.
-///
-/// [`chain`]: trait.Read.html#method.chain
-pub struct Chain<T, U> {
-    pub(crate) first: T,
-    pub(crate) second: U,
-    pub(crate) done_first: bool,
+pin_project! {
+    /// Adaptor to chain together two readers.
+    ///
+    /// This struct is generally created by calling [`chain`] on a reader.
+    /// Please see the documentation of [`chain`] for more details.
+    ///
+    /// [`chain`]: trait.Read.html#method.chain
+    pub struct Chain<T, U> {
+        #[pin]
+        pub(crate) first: T,
+        #[pin]
+        pub(crate) second: U,
+        pub(crate) done_first: bool,
+    }
 }
 
 impl<T, U> Chain<T, U> {
@@ -98,81 +103,69 @@ impl<T: fmt::Debug, U: fmt::Debug> fmt::Debug for Chain<T, U> {
     }
 }
 
-impl<T: Read + Unpin, U: Read + Unpin> Read for Chain<T, U> {
+impl<T: Read, U: Read> Read for Chain<T, U> {
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        if !self.done_first {
-            let rd = Pin::new(&mut self.first);
-
-            match futures_core::ready!(rd.poll_read(cx, buf)) {
-                Ok(0) if !buf.is_empty() => self.done_first = true,
+        let this = self.project();
+        if !*this.done_first {
+            match futures_core::ready!(this.first.poll_read(cx, buf)) {
+                Ok(0) if !buf.is_empty() => *this.done_first = true,
                 Ok(n) => return Poll::Ready(Ok(n)),
                 Err(err) => return Poll::Ready(Err(err)),
             }
         }
 
-        let rd = Pin::new(&mut self.second);
-        rd.poll_read(cx, buf)
+        this.second.poll_read(cx, buf)
     }
 
     fn poll_read_vectored(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         bufs: &mut [IoSliceMut<'_>],
     ) -> Poll<io::Result<usize>> {
-        if !self.done_first {
-            let rd = Pin::new(&mut self.first);
-
-            match futures_core::ready!(rd.poll_read_vectored(cx, bufs)) {
-                Ok(0) if !bufs.is_empty() => self.done_first = true,
+        let this = self.project();
+        if !*this.done_first {
+            match futures_core::ready!(this.first.poll_read_vectored(cx, bufs)) {
+                Ok(0) if !bufs.is_empty() => *this.done_first = true,
                 Ok(n) => return Poll::Ready(Ok(n)),
                 Err(err) => return Poll::Ready(Err(err)),
             }
         }
 
-        let rd = Pin::new(&mut self.second);
-        rd.poll_read_vectored(cx, bufs)
+        this.second.poll_read_vectored(cx, bufs)
     }
 }
 
-impl<T: BufRead + Unpin, U: BufRead + Unpin> BufRead for Chain<T, U> {
+impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
     fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
-        let Self {
-            first,
-            second,
-            done_first,
-        } = unsafe { self.get_unchecked_mut() };
-
-        if !*done_first {
-            let first = unsafe { Pin::new_unchecked(first) };
-            match futures_core::ready!(first.poll_fill_buf(cx)) {
+        let this = self.project();
+        if !*this.done_first {
+            match futures_core::ready!(this.first.poll_fill_buf(cx)) {
                 Ok(buf) if buf.is_empty() => {
-                    *done_first = true;
+                    *this.done_first = true;
                 }
                 Ok(buf) => return Poll::Ready(Ok(buf)),
                 Err(err) => return Poll::Ready(Err(err)),
             }
         }
 
-        let second = unsafe { Pin::new_unchecked(second) };
-        second.poll_fill_buf(cx)
+        this.second.poll_fill_buf(cx)
     }
 
-    fn consume(mut self: Pin<&mut Self>, amt: usize) {
-        if !self.done_first {
-            let rd = Pin::new(&mut self.first);
-            rd.consume(amt)
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        let this = self.project();
+        if !*this.done_first {
+            this.first.consume(amt)
         } else {
-            let rd = Pin::new(&mut self.second);
-            rd.consume(amt)
+            this.second.consume(amt)
         }
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, default))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

@@ -1,7 +1,7 @@
-use std::path::Path;
-
 use crate::io;
-use crate::task::blocking;
+use crate::path::Path;
+use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Removes a file.
 ///
@@ -30,5 +30,9 @@ use crate::task::blocking;
 /// ```
 pub async fn remove_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let path = path.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::remove_file(path) }).await
+    spawn_blocking(move || {
+        std::fs::remove_file(&path)
+            .context(|| format!("could not remove file `{}`", path.display()))
+    })
+    .await
 }

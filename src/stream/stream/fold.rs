@@ -1,33 +1,33 @@
-use std::marker::PhantomData;
-use std::pin::Pin;
+use core::marker::PhantomData;
+use core::future::Future;
+use core::pin::Pin;
 
-use crate::future::Future;
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct FoldFuture<S, F, Fut, T, B> {
-    stream: S,
-    f: F,
-    future: Option<Fut>,
-    acc: Option<B>,
-    __t: PhantomData<T>,
+pin_project! {
+    #[derive(Debug)]
+    pub struct FoldFuture<S, F, Fut, T, B> {
+        #[pin]
+        stream: S,
+        f: F,
+		#[pin]
+		future: Option<Fut>,
+        acc: Option<B>,
+		__t: PhantomData<T>,
+    }
 }
 
 impl<S, F, Fut, T, B> FoldFuture<S, F, Fut, T, B> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(f: F);
-    pin_utils::unsafe_unpinned!(acc: Option<B>);
-    pin_utils::unsafe_pinned!(future: Option<Fut>);
-
     pub(super) fn new(stream: S, init: B, f: F) -> Self {
-        FoldFuture {
+        Self {
             stream,
             f,
             future: None,
             acc: Some(init),
-            __t: PhantomData,
+			__t: PhantomData,
         }
     }
 }
@@ -40,26 +40,27 @@ where
 {
     type Output = B;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
         loop {
-            match self.future.is_some() {
+            match this.future.is_some() {
                 false => {
-                    let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+                    let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
                     match next {
                         Some(v) => {
-                            let old = self.as_mut().acc().take().unwrap();
-                            let fut = (self.as_mut().f())(old, v);
-                            self.as_mut().future().set(Some(fut));
+                            let old = this.acc.take().unwrap();
+                            let fut = (this.f)(old, v);
+                            this.future.as_mut().set(Some(fut));
                         }
-                        None => return Poll::Ready(self.as_mut().acc().take().unwrap()),
+                        None => return Poll::Ready(this.acc.take().unwrap()),
                     }
                 }
                 true => {
                     let res =
-                        futures_core::ready!(self.as_mut().future().as_pin_mut().unwrap().poll(cx));
-                    self.as_mut().future().set(None);
-                    *self.as_mut().acc() = Some(res);
+                        futures_core::ready!(this.future.as_mut().as_pin_mut().unwrap().poll(cx));
+                    this.future.as_mut().set(None);
+                    *this.acc = Some(res);
                 }
             }
         }

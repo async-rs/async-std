@@ -2,50 +2,55 @@ use std::mem;
 use std::pin::Pin;
 use std::str;
 
+use pin_project_lite::pin_project;
+
 use super::read_until_internal;
 use crate::io::{self, BufRead};
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-/// A stream of lines in a byte stream.
-///
-/// This stream is created by the [`lines`] method on types that implement [`BufRead`].
-///
-/// This type is an async version of [`std::io::Lines`].
-///
-/// [`lines`]: trait.BufRead.html#method.lines
-/// [`BufRead`]: trait.BufRead.html
-/// [`std::io::Lines`]: https://doc.rust-lang.org/std/io/struct.Lines.html
-#[derive(Debug)]
-pub struct Lines<R> {
-    pub(crate) reader: R,
-    pub(crate) buf: String,
-    pub(crate) bytes: Vec<u8>,
-    pub(crate) read: usize,
+pin_project! {
+    /// A stream of lines in a byte stream.
+    ///
+    /// This stream is created by the [`lines`] method on types that implement [`BufRead`].
+    ///
+    /// This type is an async version of [`std::io::Lines`].
+    ///
+    /// [`lines`]: trait.BufRead.html#method.lines
+    /// [`BufRead`]: trait.BufRead.html
+    /// [`std::io::Lines`]: https://doc.rust-lang.org/std/io/struct.Lines.html
+    #[derive(Debug)]
+    pub struct Lines<R> {
+        #[pin]
+        pub(crate) reader: R,
+        pub(crate) buf: String,
+        pub(crate) bytes: Vec<u8>,
+        pub(crate) read: usize,
+    }
 }
 
 impl<R: BufRead> Stream for Lines<R> {
     type Item = io::Result<String>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let Self {
-            reader,
-            buf,
-            bytes,
-            read,
-        } = unsafe { self.get_unchecked_mut() };
-        let reader = unsafe { Pin::new_unchecked(reader) };
-        let n = futures_core::ready!(read_line_internal(reader, cx, buf, bytes, read))?;
-        if n == 0 && buf.is_empty() {
+        let this = self.project();
+        let n = futures_core::ready!(read_line_internal(
+            this.reader,
+            cx,
+            this.buf,
+            this.bytes,
+            this.read
+        ))?;
+        if n == 0 && this.buf.is_empty() {
             return Poll::Ready(None);
         }
-        if buf.ends_with('\n') {
-            buf.pop();
-            if buf.ends_with('\r') {
-                buf.pop();
+        if this.buf.ends_with('\n') {
+            this.buf.pop();
+            if this.buf.ends_with('\r') {
+                this.buf.pop();
             }
         }
-        Poll::Ready(Some(Ok(mem::replace(buf, String::new()))))
+        Poll::Ready(Some(Ok(mem::replace(this.buf, String::new()))))
     }
 }
 

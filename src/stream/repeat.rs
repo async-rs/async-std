@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use core::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
@@ -8,7 +8,7 @@ use crate::task::{Context, Poll};
 /// # Examples
 ///
 /// ```
-/// # fn main() { async_std::task::block_on(async {
+/// # async_std::task::block_on(async {
 /// #
 /// use async_std::prelude::*;
 /// use async_std::stream;
@@ -18,7 +18,7 @@ use crate::task::{Context, Poll};
 /// assert_eq!(s.next().await, Some(7));
 /// assert_eq!(s.next().await, Some(7));
 /// #
-/// # }) }
+/// # })
 /// ```
 pub fn repeat<T>(item: T) -> Repeat<T>
 where
@@ -29,10 +29,11 @@ where
 
 /// A stream that yields the same item repeatedly.
 ///
-/// This stream is constructed by the [`repeat`] function.
+/// This stream is created by the [`repeat`] function. See its
+/// documentation for more.
 ///
 /// [`repeat`]: fn.repeat.html
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Repeat<T> {
     item: T,
 }

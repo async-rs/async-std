@@ -1,27 +1,23 @@
 mod lines;
 mod read_line;
 mod read_until;
+mod split;
 
 pub use lines::Lines;
+pub use split::Split;
+
 use read_line::ReadLineFuture;
 use read_until::ReadUntilFuture;
 
 use std::mem;
 use std::pin::Pin;
 
-use cfg_if::cfg_if;
-
 use crate::io;
 use crate::task::{Context, Poll};
-use crate::utils::extension_trait;
-
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
-    }
-}
 
 extension_trait! {
+    use std::ops::{Deref, DerefMut};
+
     #[doc = r#"
         Allows reading from a buffered byte stream.
 
@@ -29,7 +25,7 @@ extension_trait! {
         [`std::io::BufRead`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`BufReadExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -38,10 +34,12 @@ extension_trait! {
 
         [`std::io::BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
         [`futures::io::AsyncBufRead`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/io/trait.AsyncBufRead.html
+        https://docs.rs/futures/0.3/futures/io/trait.AsyncBufRead.html
         [provided methods]: #provided-methods
+        [`BufReadExt`]: ../io/prelude/trait.BufReadExt.html
+        [prelude]: ../prelude/index.html
     "#]
-    pub trait BufRead [BufReadExt: futures_io::AsyncBufRead] {
+    pub trait BufRead {
         #[doc = r#"
             Returns the contents of the internal buffer, filling it with more data from the
             inner reader if it is empty.
@@ -64,7 +62,14 @@ extension_trait! {
             should no longer be returned in calls to `read`.
         "#]
         fn consume(self: Pin<&mut Self>, amt: usize);
+    }
 
+    #[doc = r#"
+        Extension methods for [`BufRead`].
+
+        [`BufRead`]: ../trait.BufRead.html
+    "#]
+    pub trait BufReadExt: futures_io::AsyncBufRead {
         #[doc = r#"
             Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
 
@@ -223,6 +228,58 @@ extension_trait! {
                 reader: self,
                 buf: String::new(),
                 bytes: Vec::new(),
+                read: 0,
+            }
+        }
+
+        #[doc = r#"
+            Returns a stream over the contents of this reader split on the byte `byte`.
+
+            The stream returned from this function will return instances of
+            [`io::Result`]`<`[`Vec<u8>`]`>`. Each vector returned will *not* have
+            the delimiter byte at the end.
+
+            This function will yield errors whenever [`read_until`] would have
+            also yielded an error.
+
+            [`io::Result`]: type.Result.html
+            [`Vec<u8>`]: ../vec/struct.Vec.html
+            [`read_until`]: #method.read_until
+
+            # Examples
+
+            [`std::io::Cursor`][`Cursor`] is a type that implements `BufRead`. In
+            this example, we use [`Cursor`] to iterate over all hyphen delimited
+            segments in a byte slice
+
+            [`Cursor`]: struct.Cursor.html
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::io;
+
+            let cursor = io::Cursor::new(b"lorem-ipsum-dolor");
+
+            let split_iter = cursor.split(b'-').map(|l| async move { l.unwrap() });
+            pin_utils::pin_mut!(split_iter);
+            assert_eq!(split_iter.next().await, Some(b"lorem".to_vec()));
+            assert_eq!(split_iter.next().await, Some(b"ipsum".to_vec()));
+            assert_eq!(split_iter.next().await, Some(b"dolor".to_vec()));
+            assert_eq!(split_iter.next().await, None);
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn split(self, byte: u8) -> Split<Self>
+        where
+            Self: Sized,
+        {
+            Split {
+                reader: self,
+                buf: Vec::new(),
+                delim: byte,
                 read: 0,
             }
         }

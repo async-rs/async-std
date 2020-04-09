@@ -1,5 +1,10 @@
 //! Platform-specific extensions for Unix platforms.
 
-pub mod fs;
-pub mod io;
-pub mod net;
+cfg_std! {
+    pub mod io;
+}
+
+cfg_default! {
+    pub mod fs;
+    pub mod net;
+}

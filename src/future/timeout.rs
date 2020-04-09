@@ -2,10 +2,11 @@ use std::error::Error;
 use std::fmt;
 use std::pin::Pin;
 use std::time::Duration;
+use std::future::Future;
 
 use futures_timer::Delay;
+use pin_project_lite::pin_project;
 
-use crate::future::Future;
 use crate::task::{Context, Poll};
 
 /// Awaits a future or times out after a duration of time.
@@ -28,8 +29,6 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 pub async fn timeout<F, T>(dur: Duration, f: F) -> Result<T, TimeoutError>
 where
     F: Future<Output = T>,
@@ -41,26 +40,31 @@ where
     f.await
 }
 
-/// A future that times out after a duration of time.
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-struct TimeoutFuture<F> {
-    future: F,
-    delay: Delay,
+pin_project! {
+    /// A future that times out after a duration of time.
+    pub struct TimeoutFuture<F> {
+        #[pin]
+        future: F,
+        #[pin]
+        delay: Delay,
+    }
 }
 
 impl<F> TimeoutFuture<F> {
-    pin_utils::unsafe_pinned!(future: F);
-    pin_utils::unsafe_pinned!(delay: Delay);
+    #[allow(dead_code)]
+    pub(super) fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
+        TimeoutFuture { future: future, delay: Delay::new(dur) }
+    }
 }
 
 impl<F: Future> Future for TimeoutFuture<F> {
     type Output = Result<F::Output, TimeoutError>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.as_mut().future().poll(cx) {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        match this.future.poll(cx) {
             Poll::Ready(v) => Poll::Ready(Ok(v)),
-            Poll::Pending => match self.delay().poll(cx) {
+            Poll::Pending => match this.delay.poll(cx) {
                 Poll::Ready(_) => Poll::Ready(Err(TimeoutError { _private: () })),
                 Poll::Pending => Poll::Pending,
             },
@@ -69,8 +73,6 @@ impl<F: Future> Future for TimeoutFuture<F> {
 }
 
 /// An error returned when a future times out.
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[cfg(any(feature = "unstable", feature = "docs"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeoutError {
     _private: (),

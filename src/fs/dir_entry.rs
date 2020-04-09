@@ -1,13 +1,11 @@
 use std::ffi::OsString;
 use std::fmt;
-use std::path::PathBuf;
 use std::sync::Arc;
-
-use cfg_if::cfg_if;
 
 use crate::fs::{FileType, Metadata};
 use crate::io;
-use crate::task::blocking;
+use crate::path::PathBuf;
+use crate::task::spawn_blocking;
 
 /// An entry in a directory.
 ///
@@ -50,7 +48,7 @@ impl DirEntry {
     /// # Ok(()) }) }
     /// ```
     pub fn path(&self) -> PathBuf {
-        self.0.path()
+        self.0.path().into()
     }
 
     /// Reads the metadata for this entry.
@@ -89,7 +87,7 @@ impl DirEntry {
     /// ```
     pub async fn metadata(&self) -> io::Result<Metadata> {
         let inner = self.0.clone();
-        blocking::spawn(async move { inner.metadata() }).await
+        spawn_blocking(move || inner.metadata()).await
     }
 
     /// Reads the file type for this entry.
@@ -127,7 +125,7 @@ impl DirEntry {
     /// ```
     pub async fn file_type(&self) -> io::Result<FileType> {
         let inner = self.0.clone();
-        blocking::spawn(async move { inner.file_type() }).await
+        spawn_blocking(move || inner.file_type()).await
     }
 
     /// Returns the bare name of this entry without the leading path.
@@ -160,21 +158,18 @@ impl fmt::Debug for DirEntry {
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use crate::os::unix::fs::DirEntryExt;
-    } else if #[cfg(unix)] {
-        use std::os::unix::fs::DirEntryExt;
+impl Clone for DirEntry {
+    fn clone(&self) -> Self {
+        DirEntry(self.0.clone())
     }
 }
 
-#[cfg_attr(feature = "docs", doc(cfg(unix)))]
-cfg_if! {
-    if #[cfg(any(unix, feature = "docs"))] {
-        impl DirEntryExt for DirEntry {
-            fn ino(&self) -> u64 {
-                self.0.ino()
-            }
+cfg_unix! {
+    use crate::os::unix::fs::DirEntryExt;
+
+    impl DirEntryExt for DirEntry {
+        fn ino(&self) -> u64 {
+            self.0.ino()
         }
     }
 }

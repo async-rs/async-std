@@ -1,7 +1,7 @@
-use std::path::Path;
-
 use crate::io;
-use crate::task::blocking;
+use crate::path::Path;
+use crate::task::spawn_blocking;
+use crate::utils::Context as _;
 
 /// Creates a hard link on the filesystem.
 ///
@@ -33,5 +33,14 @@ use crate::task::blocking;
 pub async fn hard_link<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> io::Result<()> {
     let from = from.as_ref().to_owned();
     let to = to.as_ref().to_owned();
-    blocking::spawn(async move { std::fs::hard_link(&from, &to) }).await
+    spawn_blocking(move || {
+        std::fs::hard_link(&from, &to).context(|| {
+            format!(
+                "could not create a hard link from `{}` to `{}`",
+                from.display(),
+                to.display()
+            )
+        })
+    })
+    .await
 }

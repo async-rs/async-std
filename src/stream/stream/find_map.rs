@@ -1,8 +1,8 @@
-use std::marker::PhantomData;
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use core::future::Future;
+use core::marker::PhantomData;
+use core::pin::Pin;
+use core::task::{Context, Poll};
 
-use crate::future::Future;
 use crate::stream::Stream;
 
 #[doc(hidden)]
@@ -33,7 +33,7 @@ impl<'a, S, F, Fut, T, B> FindMapFuture<'a, S, F, Fut, T, B> {
 
 impl<S: Unpin, F, Fut: Unpin, T, B> Unpin for FindMapFuture<'_, S, F, Fut, T, B> {}
 
-impl<'a, S, B, F, Fut> Future for FindMapFuture<'a, S, F, Fut, S::Item, B>
+impl<'a, S, F, Fut, B> Future for FindMapFuture<'a, S, F, Fut, S::Item, B>
 where
     S: Stream + Unpin + Sized,
     F: FnMut(S::Item) -> Fut,

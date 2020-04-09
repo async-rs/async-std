@@ -4,16 +4,15 @@ At this point, we only need to start the broker to get a fully-functioning (in t
 
 ```rust,edition2018
 # extern crate async_std;
-# extern crate futures_channel;
-# extern crate futures_util;
+# extern crate futures;
 use async_std::{
-    io::{self, BufReader},
+    io::BufReader,
     net::{TcpListener, TcpStream, ToSocketAddrs},
     prelude::*,
     task,
 };
-use futures_channel::mpsc;
-use futures_util::SinkExt;
+use futures::channel::mpsc;
+use futures::sink::SinkExt;
 use std::{
     collections::hash_map::{HashMap, Entry},
     sync::Arc,

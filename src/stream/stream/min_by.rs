@@ -1,25 +1,26 @@
-use std::cmp::Ordering;
-use std::pin::Pin;
+use core::cmp::Ordering;
+use core::pin::Pin;
+use core::future::Future;
 
-use crate::future::Future;
+use pin_project_lite::pin_project;
+
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct MinByFuture<S, F, T> {
-    stream: S,
-    compare: F,
-    min: Option<T>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct MinByFuture<S, F, T> {
+        #[pin]
+        stream: S,
+        compare: F,
+        min: Option<T>,
+    }
 }
 
 impl<S, F, T> MinByFuture<S, F, T> {
-    pin_utils::unsafe_pinned!(stream: S);
-    pin_utils::unsafe_unpinned!(compare: F);
-    pin_utils::unsafe_unpinned!(min: Option<T>);
-
     pub(super) fn new(stream: S, compare: F) -> Self {
-        MinByFuture {
+        Self {
             stream,
             compare,
             min: None,
@@ -35,22 +36,23 @@ where
 {
     type Output = Option<S::Item>;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let next = futures_core::ready!(self.as_mut().stream().poll_next(cx));
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        let next = futures_core::ready!(this.stream.poll_next(cx));
 
         match next {
             Some(new) => {
                 cx.waker().wake_by_ref();
-                match self.as_mut().min().take() {
-                    None => *self.as_mut().min() = Some(new),
-                    Some(old) => match (&mut self.as_mut().compare())(&new, &old) {
-                        Ordering::Less => *self.as_mut().min() = Some(new),
-                        _ => *self.as_mut().min() = Some(old),
+                match this.min.take() {
+                    None => *this.min = Some(new),
+                    Some(old) => match (this.compare)(&new, &old) {
+                        Ordering::Less => *this.min = Some(new),
+                        _ => *this.min = Some(old),
                     },
                 }
                 Poll::Pending
             }
-            None => Poll::Ready(self.min),
+            None => Poll::Ready(*this.min),
         }
     }
 }

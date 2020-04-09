@@ -7,7 +7,7 @@
 //! # Examples
 //!
 //! ```
-//! # fn main() { async_std::task::block_on(async {
+//! # async_std::task::block_on(async {
 //! #
 //! use async_std::prelude::*;
 //! use async_std::stream;
@@ -18,13 +18,18 @@
 //!     assert_eq!(v, 9);
 //! }
 //! #
-//! # }) }
+//! # })
 //! ```
 
 mod all;
 mod any;
 mod chain;
+mod cloned;
+mod cmp;
+mod copied;
+mod cycle;
 mod enumerate;
+mod eq;
 mod filter;
 mod filter_map;
 mod find;
@@ -32,33 +37,67 @@ mod find_map;
 mod fold;
 mod for_each;
 mod fuse;
+mod ge;
+mod gt;
 mod inspect;
+mod last;
+mod le;
+mod lt;
 mod map;
+mod max;
+mod max_by;
+mod max_by_key;
+mod min;
 mod min_by;
+mod min_by_key;
+mod ne;
 mod next;
 mod nth;
+mod partial_cmp;
+mod position;
 mod scan;
 mod skip;
 mod skip_while;
 mod step_by;
 mod take;
+mod take_while;
+mod try_fold;
 mod try_for_each;
 mod zip;
 
 use all::AllFuture;
 use any::AnyFuture;
+use cmp::CmpFuture;
+use cycle::Cycle;
 use enumerate::Enumerate;
+use eq::EqFuture;
 use filter_map::FilterMap;
 use find::FindFuture;
 use find_map::FindMapFuture;
 use fold::FoldFuture;
 use for_each::ForEachFuture;
+use ge::GeFuture;
+use gt::GtFuture;
+use last::LastFuture;
+use le::LeFuture;
+use lt::LtFuture;
+use max::MaxFuture;
+use max_by::MaxByFuture;
+use max_by_key::MaxByKeyFuture;
+use min::MinFuture;
 use min_by::MinByFuture;
+use min_by_key::MinByKeyFuture;
+use ne::NeFuture;
 use next::NextFuture;
 use nth::NthFuture;
-use try_for_each::TryForEeachFuture;
+use partial_cmp::PartialCmpFuture;
+use position::PositionFuture;
+use try_fold::TryFoldFuture;
+use try_for_each::TryForEachFuture;
 
 pub use chain::Chain;
+pub use cloned::Cloned;
+pub use copied::Copied;
 pub use filter::Filter;
 pub use fuse::Fuse;
 pub use inspect::Inspect;
@@ -68,33 +107,48 @@ pub use skip::Skip;
 pub use skip_while::SkipWhile;
 pub use step_by::StepBy;
 pub use take::Take;
+pub use take_while::TakeWhile;
 pub use zip::Zip;
 
 use std::cmp::Ordering;
-use std::marker::PhantomData;
-
-use cfg_if::cfg_if;
-
 use crate::future::Future;
-use crate::utils::extension_trait;
 
-cfg_if! {
-    if #[cfg(feature = "docs")] {
-        use std::ops::{Deref, DerefMut};
+cfg_unstable! {
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::time::Duration;
 
-        use crate::task::{Context, Poll};
-    }
-}
+    use crate::stream::into_stream::IntoStream;
+    use crate::stream::{FromStream, Product, Sum};
+    use crate::stream::Extend;
 
-cfg_if! {
-    if #[cfg(any(feature = "unstable", feature = "docs"))] {
-        use std::pin::Pin;
+    use count::CountFuture;
+    use partition::PartitionFuture;
+    use unzip::UnzipFuture;
 
-        use crate::stream::FromStream;
-    }
+    pub use merge::Merge;
+    pub use flatten::Flatten;
+    pub use flat_map::FlatMap;
+    pub use timeout::{TimeoutError, Timeout};
+    pub use throttle::Throttle;
+    pub use delay::Delay;
+
+    mod count;
+    mod merge;
+    mod flatten;
+    mod flat_map;
+    mod partition;
+    mod timeout;
+    mod throttle;
+    mod delay;
+    mod unzip;
 }
 
 extension_trait! {
+    use std::ops::{Deref, DerefMut};
+
+    use crate::task::{Context, Poll};
+
     #[doc = r#"
         An asynchronous stream of values.
 
@@ -102,7 +156,7 @@ extension_trait! {
         [`std::iter::Iterator`].
 
         The [provided methods] do not really exist in the trait itself, but they become
-        available when the prelude is imported:
+        available when [`StreamExt`] from the [prelude] is imported:
 
         ```
         # #[allow(unused_imports)]
@@ -111,10 +165,12 @@ extension_trait! {
 
         [`std::iter::Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
         [`futures::stream::Stream`]:
-        https://docs.rs/futures-preview/0.3.0-alpha.17/futures/stream/trait.Stream.html
+        https://docs.rs/futures/0.3/futures/stream/trait.Stream.html
         [provided methods]: #provided-methods
+        [`StreamExt`]: ../prelude/trait.StreamExt.html
+        [prelude]: ../prelude/index.html
     "#]
-    pub trait Stream [StreamExt: futures_core::stream::Stream] {
+    pub trait Stream {
         #[doc = r#"
             The type of items yielded by this stream.
         "#]
@@ -172,7 +228,14 @@ extension_trait! {
             ```
         "#]
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
+    }
 
+    #[doc = r#"
+        Extension methods for [`Stream`].
+
+        [`Stream`]: ../stream/trait.Stream.html
+    "#]
+    pub trait StreamExt: futures_core::stream::Stream {
         #[doc = r#"
             Advances the stream and returns the next value.
 
@@ -229,10 +292,77 @@ extension_trait! {
         where
             Self: Sized,
         {
-            Take {
-                stream: self,
-                remaining: n,
-            }
+            Take::new(self, n)
+        }
+
+        #[doc = r#"
+            Creates a stream that yields elements based on a predicate.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1, 2, 3, 4]);
+            let mut s = s.take_while(|x| x < &3 );
+
+            assert_eq!(s.next().await, Some(1));
+            assert_eq!(s.next().await, Some(2));
+            assert_eq!(s.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P>
+        where
+            Self: Sized,
+            P: FnMut(&Self::Item) -> bool,
+        {
+            TakeWhile::new(self, predicate)
+        }
+
+        #[doc = r#"
+            Limit the amount of items yielded per timeslice in a stream.
+
+            This stream does not drop any items, but will only limit the rate at which items pass through.
+            # Examples
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::time::{Duration, Instant};
+
+            let start = Instant::now();
+
+            // emit value every 5 milliseconds
+            let s = stream::interval(Duration::from_millis(5)).take(2);
+
+            // throttle for 10 milliseconds
+            let mut s = s.throttle(Duration::from_millis(10));
+
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 5);
+
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 15);
+
+            s.next().await;
+            assert!(start.elapsed().as_millis() >= 25);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn throttle(self, d: Duration) -> Throttle<Self>
+        where
+            Self: Sized,
+        {
+            Throttle::new(self, d)
         }
 
         #[doc = r#"
@@ -250,9 +380,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s: VecDeque<_> = vec![0u8, 1, 2, 3, 4].into_iter().collect();
+            let s = stream::from_iter(vec![0u8, 1, 2, 3, 4]);
             let mut stepped = s.step_by(2);
 
             assert_eq!(stepped.next().await, Some(0));
@@ -282,10 +412,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let first: VecDeque<_> = vec![0u8, 1].into_iter().collect();
-            let second: VecDeque<_> = vec![2, 3].into_iter().collect();
+            let first = stream::from_iter(vec![0u8, 1]);
+            let second = stream::from_iter(vec![2, 3]);
             let mut c = first.chain(second);
 
             assert_eq!(c.next().await, Some(0));
@@ -306,6 +436,104 @@ extension_trait! {
             Chain::new(self, other)
         }
 
+            #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let v = stream::from_iter(vec![&1, &2, &3]);
+
+            let mut v_cloned = v.cloned();
+
+            assert_eq!(v_cloned.next().await, Some(1));
+            assert_eq!(v_cloned.next().await, Some(2));
+            assert_eq!(v_cloned.next().await, Some(3));
+            assert_eq!(v_cloned.next().await, None);
+
+            #
+            # }) }
+            ```
+        "#]
+        fn cloned<'a, T>(self) -> Cloned<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T: Clone + 'a,
+        {
+            Cloned::new(self)
+        }
+
+
+        #[doc = r#"
+            Creates an stream which copies all of its elements.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![&1, &2, &3]);
+            let mut s_copied  = s.copied();
+
+            assert_eq!(s_copied.next().await, Some(1));
+            assert_eq!(s_copied.next().await, Some(2));
+            assert_eq!(s_copied.next().await, Some(3));
+            assert_eq!(s_copied.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn copied<'a, T>(self) -> Copied<Self>
+        where
+            Self: Sized + Stream<Item = &'a T>,
+            T: Copy + 'a,
+        {
+            Copied::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream that yields the provided values infinitely and in order.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let mut s = stream::once(7).cycle();
+
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            assert_eq!(s.next().await, Some(7));
+            #
+            # })
+            ```
+        "#]
+        fn cycle(self) -> Cycle<Self>
+        where
+            Self: Clone + Sized,
+        {
+            Cycle::new(self)
+        }
+
         #[doc = r#"
             Creates a stream that gives the current element's count as well as the next value.
 
@@ -319,16 +547,15 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s: VecDeque<_> = vec!['a', 'b', 'c'].into_iter().collect();
+            let s = stream::from_iter(vec!['a', 'b', 'c']);
             let mut s = s.enumerate();
 
             assert_eq!(s.next().await, Some((0, 'a')));
             assert_eq!(s.next().await, Some((1, 'b')));
             assert_eq!(s.next().await, Some((2, 'c')));
             assert_eq!(s.next().await, None);
-
             #
             # }) }
             ```
@@ -341,6 +568,47 @@ extension_trait! {
         }
 
         #[doc = r#"
+            Creates a stream that is delayed before it starts yielding items.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::time::{Duration, Instant};
+
+            let start = Instant::now();
+            let mut s = stream::from_iter(vec![0u8, 1, 2]).delay(Duration::from_millis(200));
+
+            assert_eq!(s.next().await, Some(0));
+            // The first time will take more than 200ms due to delay.
+            assert!(start.elapsed().as_millis() >= 200);
+
+            assert_eq!(s.next().await, Some(1));
+            // There will be no delay after the first time.
+            assert!(start.elapsed().as_millis() < 400);
+
+            assert_eq!(s.next().await, Some(2));
+            assert!(start.elapsed().as_millis() < 400);
+
+            assert_eq!(s.next().await, None);
+            assert!(start.elapsed().as_millis() < 400);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn delay(self, dur: std::time::Duration) -> Delay<Self>
+        where
+            Self: Sized,
+        {
+            Delay::new(self, dur)
+        }
+
+        #[doc = r#"
             Takes a closure and creates a stream that calls that closure on every element of this stream.
 
             # Examples
@@ -349,9 +617,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
+            let s = stream::from_iter(vec![1u8, 2, 3]);
             let s = s.map(|x| async move { 2 * x });
             pin_utils::pin_mut!(s);
 
@@ -385,21 +653,23 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let a: VecDeque<_> = vec![1u8, 2, 3, 4, 5].into_iter().collect();
-            let sum = a
-                    .inspect(|x| println!("about to filter {}", x))
-                    .filter(|x| x % 2 == 0)
-                    .inspect(|x| println!("made it through filter: {}", x))
-                    .fold(0, |sum, i|  async move { sum + i }).await;
+            let s = stream::from_iter(vec![1, 2, 3, 4, 5]);
+
+            let sum = s
+               .inspect(|x| println!("about to filter {}", x))
+               .filter(|x| x % 2 == 0)
+               .inspect(|x| println!("made it through filter: {}", x))
+               .fold(0, |sum, i| async move { sum + i })
+               .await;
 
             assert_eq!(sum, 6);
             #
             # }) }
             ```
         "#]
-        fn inspect<F>(self, f: F) -> Inspect<Self, F, Self::Item>
+        fn inspect<F>(self, f: F) -> Inspect<Self, F>
         where
             Self: Sized,
             F: FnMut(&Self::Item),
@@ -408,9 +678,56 @@ extension_trait! {
         }
 
         #[doc = r#"
-            Transforms this `Stream` into a "fused" `Stream` such that after the first time
-            `poll` returns `Poll::Ready(None)`, all future calls to `poll` will also return
-            `Poll::Ready(None)`.
+            Returns the last element of the stream.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1, 2, 3]);
+
+            let last  = s.last().await;
+            assert_eq!(last, Some(3));
+            #
+            # }) }
+            ```
+
+            An empty stream will return `None`:
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::stream;
+            use crate::async_std::prelude::*;
+
+            let s = stream::empty::<()>();
+
+            let last  = s.last().await;
+            assert_eq!(last, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn last(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [LastFuture<Self, Self::Item>]
+        where
+            Self: Sized,
+        {
+            LastFuture::new(self)
+        }
+
+        #[doc = r#"
+            Creates a stream which ends after the first `None`.
+
+            After a stream returns `None`, future calls may or may not yield `Some(T)` again.
+            `fuse()` adapts an iterator, ensuring that after a `None` is given, it will always
+            return `None` forever.
 
             # Examples
 
@@ -432,10 +749,7 @@ extension_trait! {
         where
             Self: Sized,
         {
-            Fuse {
-                stream: self,
-                done: false,
-            }
+            Fuse::new(self)
         }
 
         #[doc = r#"
@@ -448,11 +762,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let s: VecDeque<usize> = vec![1, 2, 3, 4].into_iter().collect();
+            let s = stream::from_iter(vec![1, 2, 3, 4]);
             let mut s = s.filter(|i| i % 2 == 0);
 
             assert_eq!(s.next().await, Some(2));
@@ -462,12 +775,86 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn filter<P>(self, predicate: P) -> Filter<Self, P, Self::Item>
+        fn filter<P>(self, predicate: P) -> Filter<Self, P>
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
         {
             Filter::new(self, predicate)
+        }
+
+        #[doc= r#"
+            Creates an stream that works like map, but flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let words = stream::from_iter(&["alpha", "beta", "gamma"]);
+
+            let merged: String = words
+                .flat_map(|s| stream::from_iter(s.chars()))
+                .collect().await;
+                assert_eq!(merged, "alphabetagamma");
+
+            let d3 = stream::from_iter(&[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]);
+            let d1: Vec<_> = d3
+                .flat_map(|item| stream::from_iter(item))
+                .flat_map(|item| stream::from_iter(item))
+                .collect().await;
+
+            assert_eq!(d1, [&1, &2, &3, &4, &5, &6, &7, &8]);
+            # });
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
+            where
+                Self: Sized,
+                U: IntoStream,
+                F: FnMut(Self::Item) -> U,
+        {
+            FlatMap::new(self, f)
+        }
+
+        #[doc = r#"
+            Creates an stream that flattens nested structure.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # async_std::task::block_on(async {
+
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let inner1 = stream::from_iter(vec![1u8,2,3]);
+            let inner2 = stream::from_iter(vec![4u8,5,6]);
+            let s  = stream::from_iter(vec![inner1, inner2]);
+
+            let v: Vec<_> = s.flatten().collect().await;
+
+            assert_eq!(v, vec![1,2,3,4,5,6]);
+
+            # });
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn flatten(self) -> Flatten<Self>
+        where
+            Self: Sized,
+            Self::Item: IntoStream,
+        {
+            Flatten::new(self)
         }
 
         #[doc = r#"
@@ -480,11 +867,11 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
 
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let s: VecDeque<&str> = vec!["1", "lol", "3", "NaN", "5"].into_iter().collect();
+            let s = stream::from_iter(vec!["1", "lol", "3", "NaN", "5"]);
 
             let parsed = s.filter_map(|a|
                 async move {
@@ -519,6 +906,78 @@ extension_trait! {
 
         #[doc = r#"
             Returns the element that gives the minimum value with respect to the
+            specified key function. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![-1isize, 2, -3]);
+
+            let min = s.clone().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, Some(-1));
+
+            let min = stream::empty::<isize>().min_by_key(|x| x.abs()).await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min_by_key<B, F>(
+            self,
+            key_by: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MinByKeyFuture<Self, Self::Item, F>]
+        where
+            Self: Sized,
+            B: Ord,
+            F: FnMut(&Self::Item) -> B,
+        {
+            MinByKeyFuture::new(self, key_by)
+        }
+
+        #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified key function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![-3_i32, 0, 1, 5, -10]);
+
+            let max = s.clone().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, Some(-10));
+
+            let max = stream::empty::<isize>().max_by_key(|x| x.abs()).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by_key<B, F>(
+            self,
+            key_by: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByKeyFuture<Self, Self::Item, F>]
+        where
+            Self: Sized,
+            B: Ord,
+            F: FnMut(&Self::Item) -> B,
+        {
+            MaxByKeyFuture::new(self, key_by)
+        }
+
+        #[doc = r#"
+            Returns the element that gives the minimum value with respect to the
             specified comparison function. If several elements are equally minimum,
             the first element is returned. If the stream is empty, `None` is returned.
 
@@ -527,11 +986,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let s = stream::from_iter(vec![1u8, 2, 3]);
 
             let min = s.clone().min_by(|x, y| x.cmp(y)).await;
             assert_eq!(min, Some(1));
@@ -539,7 +997,7 @@ extension_trait! {
             let min = s.min_by(|x, y| y.cmp(x)).await;
             assert_eq!(min, Some(3));
 
-            let min = VecDeque::<usize>::new().min_by(|x, y| x.cmp(y)).await;
+            let min = stream::empty::<u8>().min_by(|x, y| x.cmp(y)).await;
             assert_eq!(min, None);
             #
             # }) }
@@ -557,6 +1015,110 @@ extension_trait! {
         }
 
         #[doc = r#"
+            Returns the element that gives the maximum value. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```ignore
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1usize, 2, 3]);
+
+            let max = s.clone().max().await;
+            assert_eq!(max, Some(3));
+
+            let max = stream::empty::<usize>().max().await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max<F>(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MaxFuture::new(self)
+        }
+
+                #[doc = r#"
+            Returns the element that gives the minimum value. If several elements are equally minimum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```ignore
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1usize, 2, 3]);
+
+            let min = s.clone().min().await;
+            assert_eq!(min, Some(1));
+
+            let min = stream::empty::<usize>().min().await;
+            assert_eq!(min, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn min<F>(
+            self,
+        ) -> impl Future<Output = Option<Self::Item>> [MinFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MinFuture::new(self)
+        }
+
+         #[doc = r#"
+            Returns the element that gives the maximum value with respect to the
+            specified comparison function. If several elements are equally maximum,
+            the first element is returned. If the stream is empty, `None` is returned.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1u8, 2, 3]);
+
+            let max = s.clone().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, Some(3));
+
+            let max = s.max_by(|x, y| y.cmp(x)).await;
+            assert_eq!(max, Some(1));
+
+            let max = stream::empty::<usize>().max_by(|x, y| x.cmp(y)).await;
+            assert_eq!(max, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn max_by<F>(
+            self,
+            compare: F,
+        ) -> impl Future<Output = Option<Self::Item>> [MaxByFuture<Self, F, Self::Item>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item, &Self::Item) -> Ordering,
+        {
+            MaxByFuture::new(self, compare)
+        }
+
+        #[doc = r#"
             Returns the nth element of the stream.
 
             # Examples
@@ -566,11 +1128,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s = stream::from_iter(vec![1u8, 2, 3]);
 
             let second = s.nth(1).await;
             assert_eq!(second, Some(2));
@@ -582,11 +1143,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
+            use async_std::stream;
             use async_std::prelude::*;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s = stream::from_iter(vec![1u8, 2, 3]);
 
             let second = s.nth(0).await;
             assert_eq!(second, Some(1));
@@ -600,11 +1160,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s  = stream::from_iter(vec![1u8, 2, 3]);
 
             let fourth = s.nth(4).await;
             assert_eq!(fourth, None);
@@ -617,7 +1176,7 @@ extension_trait! {
             n: usize,
         ) -> impl Future<Output = Option<Self::Item>> + '_ [NthFuture<'_, Self>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
         {
             NthFuture::new(self, n)
         }
@@ -677,13 +1236,7 @@ extension_trait! {
             F: FnMut(Self::Item) -> Fut,
             Fut: Future<Output = bool>,
         {
-            AllFuture {
-                stream: self,
-                result: true, // the default if the empty stream
-                future: None,
-                _marker: PhantomData,
-                f,
-            }
+            AllFuture::new(self, f)
         }
 
         #[doc = r#"
@@ -697,9 +1250,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s = stream::from_iter(vec![1u8, 2, 3]);
             let res = s.find(|x| *x == 2).await;
             assert_eq!(res, Some(2));
             #
@@ -712,9 +1265,9 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let mut s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s= stream::from_iter(vec![1, 2, 3]);
             let res = s.find(|x| *x == 2).await;
             assert_eq!(res, Some(2));
 
@@ -727,9 +1280,9 @@ extension_trait! {
         fn find<P>(
             &mut self,
             p: P,
-        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P, Self::Item>]
+        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             P: FnMut(&Self::Item) -> bool,
         {
             FindFuture::new(self, p)
@@ -742,14 +1295,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s: VecDeque<&str> = vec!["lol", "NaN", "2", "5"].into_iter().collect();
-            pin_utils::pin_mut!(s);
-
-            let first_number = s.find_map(|s| async move {
-                s.parse().ok()
-            }).await;
+            let mut s = stream::from_iter(vec!["lol", "NaN", "2", "5"]);
+            let first_number = s.find_map(|s| async move { s.parse().ok()}).await;
 
             assert_eq!(first_number, Some(2u8));
             #
@@ -761,7 +1310,7 @@ extension_trait! {
             f: F,
         ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F, Fut, Self::Item, B>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Fut,
             Fut: Future<Output = Option<B>>,
         {
@@ -780,13 +1329,10 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
 
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
-            pin_utils::pin_mut!(s);
-            let sum = s.fold(0, |acc, x| async move {
-                acc + x
-            }).await;
+            let s = stream::from_iter(vec![1u8, 2, 3]);
+            let sum = s.fold(0, |acc, x| async move { acc + x }).await;
 
             assert_eq!(sum, 6);
             #
@@ -807,6 +1353,44 @@ extension_trait! {
         }
 
         #[doc = r#"
+            A combinator that applies a function to every element in a stream
+            creating two collections from it.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let (even, odd): (Vec<i32>, Vec<i32>) = stream::from_iter(vec![1, 2, 3])
+                .partition(|&n| n % 2 == 0).await;
+
+            assert_eq!(even, vec![2]);
+            assert_eq!(odd, vec![1, 3]);
+
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn partition<B, F>(
+            self,
+            f: F,
+        ) -> impl Future<Output = (B, B)> [PartitionFuture<Self, F, B>]
+        where
+            Self: Sized,
+            F: FnMut(&Self::Item) -> bool,
+            B: Default + Extend<Self::Item>,
+        {
+            PartitionFuture::new(self, f)
+        }
+
+        #[doc = r#"
             Call a closure on each element of the stream.
 
             # Examples
@@ -815,16 +1399,17 @@ extension_trait! {
             # fn main() { async_std::task::block_on(async {
             #
             use async_std::prelude::*;
-            use std::collections::VecDeque;
+            use async_std::stream;
+            use std::sync::mpsc::channel;
 
-            let mut x = 0;
-            let s: VecDeque<_> = vec![1u8, 2, 3].into_iter().collect();
-            s.for_each(|item| {
-                x += item;
-                futures::future::ready(())
-            }).await;
+            let (tx, rx) = channel();
 
-            assert_eq!(x, 6);
+            let s = stream::from_iter(vec![1usize, 2, 3]);
+            let sum = s.for_each(move |x| { tx.clone().send(x).unwrap(); async {} }).await;
+
+            let v: Vec<_> = rx.iter().collect();
+
+            assert_eq!(v, vec![1, 2, 3]);
             #
             # }) }
             ```
@@ -895,13 +1480,55 @@ extension_trait! {
             F: FnMut(Self::Item) -> Fut,
             Fut: Future<Output = bool>,
         {
-            AnyFuture {
-                stream: self,
-                result: false, // the default if the empty stream
-                future: None,
-                _marker: PhantomData,
-                f,
-            }
+            AnyFuture::new(self, f)
+        }
+
+        #[doc = r#"
+            Borrows an stream, rather than consuming it.
+
+            This is useful to allow applying stream adaptors while still retaining ownership of the original stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let a = vec![1isize, 2, 3];
+
+            let stream = stream::from_iter(a);
+
+            let sum: isize = stream.take(5).sum().await;
+
+            assert_eq!(sum, 6);
+
+            // if we try to use stream again, it won't work. The following line
+            // gives error: use of moved value: `stream`
+            // assert_eq!(stream.next(), None);
+
+            // let's try that again
+            let a = vec![1isize, 2, 3];
+
+            let mut stream = stream::from_iter(a);
+
+            // instead, we add in a .by_ref()
+            let sum: isize = stream.by_ref().take(2).sum().await;
+
+            assert_eq!(sum, 3);
+
+            // now this is just fine:
+            assert_eq!(stream.next().await, Some(3));
+            assert_eq!(stream.next().await, None);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn by_ref(&mut self) -> &mut Self {
+            self
         }
 
         #[doc = r#"
@@ -923,11 +1550,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let s: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
+            let s = stream::from_iter(vec![1isize, 2, 3]);
             let mut s = s.scan(1, |state, x| {
                 *state = *state * x;
                 Some(-*state)
@@ -964,11 +1590,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let a: VecDeque<_> = vec![-1i32, 0, 1].into_iter().collect();
+            let a = stream::from_iter(vec![-1i32, 0, 1]);
             let mut s = a.skip_while(|x| x.is_negative());
 
             assert_eq!(s.next().await, Some(0));
@@ -978,7 +1603,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn skip_while<P>(self, predicate: P) -> SkipWhile<Self, P, Self::Item>
+        fn skip_while<P>(self, predicate: P) -> SkipWhile<Self, P>
         where
             Self: Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -994,11 +1619,10 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let s = stream::from_iter(vec![1u8, 2, 3]);
             let mut skipped = s.skip(2);
 
             assert_eq!(skipped.next().await, Some(3));
@@ -1014,6 +1638,87 @@ extension_trait! {
             Skip::new(self, n)
         }
 
+        #[doc=r#"
+            Await a stream or times out after a duration of time.
+
+            If you want to await an I/O future consider using
+            [`io::timeout`](../io/fn.timeout.html) instead.
+
+            # Examples
+
+            ```
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use std::time::Duration;
+
+            use async_std::stream;
+            use async_std::prelude::*;
+
+            let mut s = stream::repeat(1).take(3).timeout(Duration::from_secs(1));
+
+            while let Some(v) = s.next().await {
+                assert_eq!(v, Ok(1));
+            }
+
+            // when timeout
+            let mut s = stream::pending::<()>().timeout(Duration::from_millis(10));
+            match s.next().await {
+                Some(item) => assert!(item.is_err()),
+                None => panic!()
+            };
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn timeout(self, dur: Duration) -> Timeout<Self>
+        where
+            Self: Stream + Sized,
+        {
+            Timeout::new(self, dur)
+        }
+
+        #[doc = r#"
+            A combinator that applies a function as long as it returns successfully, producing a single, final value.
+            Immediately returns the error when the function returns unsuccessfully.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let mut s = stream::from_iter(vec![1usize, 2, 3]);
+            let sum = s.try_fold(0, |acc, v| {
+                if (acc+v) % 2 == 1 {
+                    Ok(v+3)
+                } else {
+                    Err("fail")
+                }
+            }).await;
+
+            assert_eq!(sum, Err("fail"));
+            #
+            # }) }
+            ```
+        "#]
+        fn try_fold<B, F, T, E>(
+            &mut self,
+            init: T,
+            f: F,
+        ) -> impl Future<Output = Result<T, E>> + '_ [TryFoldFuture<'_, Self, F, T>]
+        where
+            Self: Unpin + Sized,
+            F: FnMut(B, Self::Item) -> Result<T, E>,
+        {
+            TryFoldFuture::new(self, init, f)
+        }
+
         #[doc = r#"
             Applies a falliable function to each element in a stream, stopping at first error and returning it.
 
@@ -1022,13 +1727,13 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
             use std::sync::mpsc::channel;
             use async_std::prelude::*;
+            use async_std::stream;
 
             let (tx, rx) = channel();
 
-            let s: VecDeque<usize> = vec![1, 2, 3].into_iter().collect();
+            let mut s = stream::from_iter(vec![1u8, 2, 3]);
             let s = s.try_for_each(|v| {
                 if v % 2 == 1 {
                     tx.clone().send(v).unwrap();
@@ -1049,14 +1754,14 @@ extension_trait! {
             ```
         "#]
         fn try_for_each<F, E>(
-            self,
+            &mut self,
             f: F,
-        ) -> impl Future<Output = E> [TryForEeachFuture<Self, F, Self::Item, E>]
+        ) -> impl Future<Output = E> + 'a [TryForEachFuture<'_, Self, F>]
         where
-            Self: Sized,
+            Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
         {
-            TryForEeachFuture::new(self, f)
+            TryForEachFuture::new(self, f)
         }
 
         #[doc = r#"
@@ -1080,12 +1785,11 @@ extension_trait! {
             ```
             # fn main() { async_std::task::block_on(async {
             #
-            use std::collections::VecDeque;
-
             use async_std::prelude::*;
+            use async_std::stream;
 
-            let l: VecDeque<isize> = vec![1, 2, 3].into_iter().collect();
-            let r: VecDeque<isize> = vec![4, 5, 6, 7].into_iter().collect();
+            let l = stream::from_iter(vec![1u8, 2, 3]);
+            let r = stream::from_iter(vec![4u8, 5, 6, 7]);
             let mut s = l.zip(r);
 
             assert_eq!(s.next().await, Some((1, 4)));
@@ -1099,10 +1803,48 @@ extension_trait! {
         #[inline]
         fn zip<U>(self, other: U) -> Zip<Self, U>
         where
-            Self: Sized + Stream,
+            Self: Sized,
             U: Stream,
         {
             Zip::new(self, other)
+        }
+
+        #[doc = r#"
+            Converts an stream of pairs into a pair of containers.
+
+            `unzip()` consumes an entire stream of pairs, producing two collections: one from the left elements of the pairs, and one from the right elements.
+
+            This function is, in some sense, the opposite of [`zip`].
+
+            [`zip`]: trait.Stream.html#method.zip
+
+            # Example
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s  = stream::from_iter(vec![(1,2), (3,4)]);
+
+            let (left, right): (Vec<_>, Vec<_>) = s.unzip().await;
+
+            assert_eq!(left, [1, 3]);
+            assert_eq!(right, [2, 4]);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn unzip<A, B, FromA, FromB>(self) -> impl Future<Output = (FromA, FromB)> [UnzipFuture<Self, FromA, FromB>]
+        where
+        FromA: Default + Extend<A>,
+        FromB: Default + Extend<B>,
+        Self: Stream<Item = (A, B)> + Sized,
+        {
+            UnzipFuture::new(self)
         }
 
         #[doc = r#"
@@ -1113,7 +1855,7 @@ extension_trait! {
             standard library, used in a variety of contexts.
 
             The most basic pattern in which `collect()` is used is to turn one
-            collection into another. You take a collection, call [`stream`] on it,
+            collection into another. You take a collection, call [`into_stream`] on it,
             do a bunch of transformations, and then `collect()` at the end.
 
             Because `collect()` is so general, it can cause problems with type
@@ -1154,11 +1896,10 @@ extension_trait! {
             # }) }
             ```
 
-            [`stream`]: trait.Stream.html#tymethod.next
+            [`into_stream`]: trait.IntoStream.html#tymethod.into_stream
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
+        #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        #[must_use = "if you really need to exhaust the iterator, consider `.for_each(drop)` instead (TODO)"]
         fn collect<'a, B>(
             self,
         ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a>>]
@@ -1167,6 +1908,498 @@ extension_trait! {
             B: FromStream<Self::Item>,
         {
             FromStream::from_stream(self)
+        }
+
+        #[doc = r#"
+            Combines multiple streams into a single stream of all their outputs.
+
+            Items are yielded as soon as they're received, and the stream continues yield until
+            both streams have been exhausted. The output ordering between streams is not guaranteed.
+
+            # Examples
+
+            ```
+            # async_std::task::block_on(async {
+            use async_std::prelude::*;
+            use async_std::stream::{self, FromStream};
+
+            let a = stream::once(1u8);
+            let b = stream::once(2u8);
+            let c = stream::once(3u8);
+
+            let s = a.merge(b).merge(c);
+            let mut lst = Vec::from_stream(s).await;
+
+            lst.sort_unstable();
+            assert_eq!(&lst, &[1u8, 2u8, 3u8]);
+            # });
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn merge<U>(self, other: U) -> Merge<Self, U>
+        where
+            Self: Sized,
+            U: Stream<Item = Self::Item> + Sized,
+        {
+            Merge::new(self, other)
+        }
+
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            use std::cmp::Ordering;
+
+            let s1 = stream::from_iter(vec![1]);
+            let s2 = stream::from_iter(vec![1, 2]);
+            let s3 = stream::from_iter(vec![1, 2, 3]);
+            let s4 = stream::from_iter(vec![1, 2, 4]);
+            assert_eq!(s1.clone().partial_cmp(s1.clone()).await, Some(Ordering::Equal));
+            assert_eq!(s1.clone().partial_cmp(s2.clone()).await, Some(Ordering::Less));
+            assert_eq!(s2.clone().partial_cmp(s1.clone()).await, Some(Ordering::Greater));
+            assert_eq!(s3.clone().partial_cmp(s4.clone()).await, Some(Ordering::Less));
+            assert_eq!(s4.clone().partial_cmp(s3.clone()).await, Some(Ordering::Greater));
+            #
+            # }) }
+            ```
+        "#]
+        fn partial_cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Option<Ordering>>  [PartialCmpFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            PartialCmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Searches for an element in a Stream that satisfies a predicate, returning
+            its index.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![1usize, 2, 3]);
+            let res = s.clone().position(|x| x == 1).await;
+            assert_eq!(res, Some(0));
+
+            let res = s.clone().position(|x| x == 2).await;
+            assert_eq!(res, Some(1));
+
+            let res = s.clone().position(|x| x == 3).await;
+            assert_eq!(res, Some(2));
+
+            let res = s.clone().position(|x| x == 4).await;
+            assert_eq!(res, None);
+            #
+            # }) }
+            ```
+        "#]
+        fn position<P>(
+           &mut self,
+           predicate: P,
+        ) -> impl Future<Output = Option<usize>> + '_ [PositionFuture<'_, Self, P>]
+        where
+            Self: Unpin + Sized,
+            P: FnMut(Self::Item) -> bool,
+        {
+            PositionFuture::new(self, predicate)
+        }
+
+        #[doc = r#"
+            Lexicographically compares the elements of this `Stream` with those
+            of another using 'Ord'.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+            use std::cmp::Ordering;
+
+            let s1 = stream::from_iter(vec![1]);
+            let s2 = stream::from_iter(vec![1, 2]);
+            let s3 = stream::from_iter(vec![1, 2, 3]);
+            let s4 = stream::from_iter(vec![1, 2, 4]);
+
+            assert_eq!(s1.clone().cmp(s1.clone()).await, Ordering::Equal);
+            assert_eq!(s1.clone().cmp(s2.clone()).await, Ordering::Less);
+            assert_eq!(s2.clone().cmp(s1.clone()).await, Ordering::Greater);
+            assert_eq!(s3.clone().cmp(s4.clone()).await, Ordering::Less);
+            assert_eq!(s4.clone().cmp(s3.clone()).await, Ordering::Greater);
+            #
+            # }) }
+            ```
+        "#]
+        fn cmp<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = Ordering> [CmpFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: Ord
+        {
+            CmpFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Counts the number of elements in the stream.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s1 = stream::from_iter(vec![0]);
+            let s2 = stream::from_iter(vec![1, 2, 3]);
+
+            assert_eq!(s1.count().await, 1);
+            assert_eq!(s2.count().await, 3);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn count(self) -> impl Future<Output = usize> [CountFuture<Self>]
+        where
+            Self: Sized,
+        {
+            CountFuture::new(self)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            not equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single     = stream::from_iter(vec![1usize]);
+            let single_ne  = stream::from_iter(vec![10usize]);
+            let multi      = stream::from_iter(vec![1usize,2]);
+            let multi_ne   = stream::from_iter(vec![1usize,5]);
+
+            assert_eq!(single.clone().ne(single.clone()).await, false);
+            assert_eq!(single_ne.clone().ne(single.clone()).await, true);
+            assert_eq!(multi.clone().ne(single_ne.clone()).await, true);
+            assert_eq!(multi_ne.clone().ne(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ne<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [NeFuture<Self, S>]
+        where
+            Self: Sized,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            NeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than or equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single    = stream::from_iter(vec![1]);
+            let single_gt = stream::from_iter(vec![10]);
+            let multi     = stream::from_iter(vec![1,2]);
+            let multi_gt  = stream::from_iter(vec![1,5]);
+
+            assert_eq!(single.clone().ge(single.clone()).await, true);
+            assert_eq!(single_gt.clone().ge(single.clone()).await, true);
+            assert_eq!(multi.clone().ge(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().ge(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn ge<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [GeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            GeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single     = stream::from_iter(vec![1]);
+            let single_eq  = stream::from_iter(vec![10]);
+            let multi      = stream::from_iter(vec![1,2]);
+            let multi_eq   = stream::from_iter(vec![1,5]);
+
+            assert_eq!(single.clone().eq(single.clone()).await, true);
+            assert_eq!(single_eq.clone().eq(single.clone()).await, false);
+            assert_eq!(multi.clone().eq(single_eq.clone()).await, false);
+            assert_eq!(multi_eq.clone().eq(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn eq<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [EqFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Sized + Stream,
+            <Self as Stream>::Item: PartialEq<S::Item>,
+        {
+            EqFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            greater than those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single = stream::from_iter(vec![1]);
+            let single_gt = stream::from_iter(vec![10]);
+            let multi = stream::from_iter(vec![1,2]);
+            let multi_gt = stream::from_iter(vec![1,5]);
+
+            assert_eq!(single.clone().gt(single.clone()).await, false);
+            assert_eq!(single_gt.clone().gt(single.clone()).await, true);
+            assert_eq!(multi.clone().gt(single_gt.clone()).await, false);
+            assert_eq!(multi_gt.clone().gt(multi.clone()).await, true);
+            #
+            # }) }
+            ```
+        "#]
+        fn gt<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [GtFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            GtFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less or equal to those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single = stream::from_iter(vec![1]);
+            let single_gt = stream::from_iter(vec![10]);
+            let multi = stream::from_iter(vec![1,2]);
+            let multi_gt = stream::from_iter(vec![1,5]);
+
+            assert_eq!(single.clone().le(single.clone()).await, true);
+            assert_eq!(single.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().le(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().le(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn le<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [LeFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            LeFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Determines if the elements of this `Stream` are lexicographically
+            less than those of another.
+
+            # Examples
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let single = stream::from_iter(vec![1]);
+            let single_gt = stream::from_iter(vec![10]);
+            let multi = stream::from_iter(vec![1,2]);
+            let multi_gt = stream::from_iter(vec![1,5]);
+
+            assert_eq!(single.clone().lt(single.clone()).await, false);
+            assert_eq!(single.clone().lt(single_gt.clone()).await, true);
+            assert_eq!(multi.clone().lt(single_gt.clone()).await, true);
+            assert_eq!(multi_gt.clone().lt(multi.clone()).await, false);
+            #
+            # }) }
+            ```
+        "#]
+        fn lt<S>(
+           self,
+           other: S
+        ) -> impl Future<Output = bool> [LtFuture<Self, S>]
+        where
+            Self: Sized + Stream,
+            S: Stream,
+            <Self as Stream>::Item: PartialOrd<S::Item>,
+        {
+            LtFuture::new(self, other)
+        }
+
+        #[doc = r#"
+            Sums the elements of a stream.
+
+            Takes each element, adds them together, and returns the result.
+
+            An empty streams returns the zero value of the type.
+
+            # Panics
+
+            When calling `sum()` and a primitive integer type is being returned, this
+            method will panic if the computation overflows and debug assertions are
+            enabled.
+
+            # Examples
+
+            Basic usage:
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            use async_std::prelude::*;
+            use async_std::stream;
+
+            let s = stream::from_iter(vec![0u8, 1, 2, 3, 4]);
+            let sum: u8 = s.sum().await;
+
+            assert_eq!(sum, 10);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn sum<'a, S>(
+            self,
+        ) -> impl Future<Output = S> + 'a [Pin<Box<dyn Future<Output = S> + 'a>>]
+        where
+            Self: Sized + Stream<Item = S> + 'a,
+            S: Sum<Self::Item>,
+        {
+            Sum::sum(self)
+        }
+
+        #[doc = r#"
+            Multiplies all elements of the stream.
+
+            An empty stream returns the one value of the type.
+
+            # Panics
+
+            When calling `product()` and a primitive integer type is being returned,
+            method will panic if the computation overflows and debug assertions are
+            enabled.
+
+            # Examples
+
+            This example calculates the factorial of n (i.e. the product of the numbers from 1 to
+            n, inclusive):
+
+            ```
+            # fn main() { async_std::task::block_on(async {
+            #
+            async fn factorial(n: u32) -> u32 {
+                use async_std::prelude::*;
+                use async_std::stream;
+
+                let s = stream::from_iter(1..=n);
+                s.product().await
+            }
+
+            assert_eq!(factorial(0).await, 1);
+            assert_eq!(factorial(1).await, 1);
+            assert_eq!(factorial(5).await, 120);
+            #
+            # }) }
+            ```
+        "#]
+        #[cfg(feature = "unstable")]
+        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        fn product<'a, P>(
+            self,
+        ) -> impl Future<Output = P> + 'a [Pin<Box<dyn Future<Output = P> + 'a>>]
+        where
+            Self: Sized + Stream<Item = P> + 'a,
+            P: Product,
+        {
+            Product::product(self)
         }
     }
 
@@ -1192,14 +2425,6 @@ extension_trait! {
         <P as Deref>::Target: Stream,
     {
         type Item = <<P as Deref>::Target as Stream>::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: Unpin> Stream for std::collections::VecDeque<T> {
-        type Item = T;
 
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
             unreachable!("this impl only appears in the rendered docs")
