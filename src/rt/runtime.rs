@@ -12,6 +12,7 @@ use crossbeam_deque::{Injector, Steal, Stealer, Worker};
 use crossbeam_utils::thread::{scope, Scope};
 use once_cell::unsync::OnceCell;
 
+use crate::rt::monitor;
 use crate::rt::Reactor;
 use crate::sync::Spinlock;
 use crate::task::Runnable;
@@ -40,7 +41,6 @@ enum Task {
 enum Action {
     ScaleUp,
     ScaleDown,
-    Terminate,
 }
 
 /// An async runtime.
@@ -138,6 +138,16 @@ impl Runtime {
         scope(|s| {
             (0..self.min_worker).for_each(|_| self.start_new_thread(s));
 
+            s.builder()
+                .name("async-std/monitor".to_string())
+                .spawn(move |_| {
+                    abort_on_panic(|| {
+                        monitor::run();
+                        panic!("Monitor function must not return");
+                    })
+                })
+                .expect("cannot start a monitor thread");
+
             loop {
                 match self.reciever.recv().unwrap() {
                     Action::ScaleUp => self.start_new_thread(s),
@@ -146,7 +156,6 @@ impl Runtime {
                         // and terminate itself
                         self.injector.push(Task::Terminate)
                     }
-                    Action::Terminate => return,
                 }
             }
         })
@@ -179,9 +188,6 @@ impl Runtime {
         }
         if let Some(index) = index {
             stealers.remove(index);
-            if stealers.is_empty() {
-                self.sender.send(Action::Terminate).unwrap();
-            }
         }
     }
 

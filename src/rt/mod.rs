@@ -9,6 +9,7 @@ use crate::utils::abort_on_panic;
 pub use reactor::{Reactor, Watcher};
 pub use runtime::Runtime;
 
+mod monitor;
 mod reactor;
 mod runtime;
 
@@ -21,3 +22,11 @@ pub static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
 
     Runtime::new()
 });
+
+pub fn scale_up() {
+    RUNTIME.scale_up();
+}
+
+pub fn scale_down() {
+    RUNTIME.scale_down();
+}
