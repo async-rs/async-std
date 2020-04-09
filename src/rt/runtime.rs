@@ -249,6 +249,8 @@ impl Machine {
                 continue;
             }
 
+            let mut sched = rt.sched.lock().unwrap();
+
             // One final check for available tasks while the scheduler is locked.
             if let Some(task) = iter::repeat_with(|| self.find_task(rt))
                 .find(|s| !s.is_retry())
@@ -258,19 +260,19 @@ impl Machine {
                 continue;
             }
 
-            let mut sched = rt.sched.lock().unwrap();
-
+            // If another thread is already blocked on the reactor, there is no point in keeping
+            // the current thread around since there is too little work to do.
             if sched.polling {
-                thread::sleep(Duration::from_micros(10));
-                continue;
+                break;
             }
 
+            // Unlock the schedule poll the reactor until new I/O events arrive.
             sched.polling = true;
             drop(sched);
-
             rt.reactor.poll(None).unwrap();
 
-            let mut sched = rt.sched.lock().unwrap();
+            // Lock the scheduler again and re-register the machine.
+            sched = rt.sched.lock().unwrap();
             sched.polling = false;
 
             runs = 0;
