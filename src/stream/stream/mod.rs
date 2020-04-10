@@ -114,7 +114,6 @@ use std::cmp::Ordering;
 use crate::future::Future;
 
 cfg_unstable! {
-    use core::future::Future;
     use core::pin::Pin;
     use core::time::Duration;
 
@@ -799,27 +798,28 @@ extension_trait! {
             let words = stream::from_iter(&["alpha", "beta", "gamma"]);
 
             let merged: String = words
-                .flat_map(|s| stream::from_iter(s.chars()))
+                .flat_map(|s| async move { stream::from_iter(s.chars()) })
                 .collect().await;
                 assert_eq!(merged, "alphabetagamma");
 
-            let d3 = stream::from_iter(&[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]);
+            let d3 = stream::from_iter(&[[[1u8, 2], [3, 4]], [[5, 6], [7, 8]]]);
             let d1: Vec<_> = d3
-                .flat_map(|item| stream::from_iter(item))
-                .flat_map(|item| stream::from_iter(item))
+                .flat_map(|item| async move { stream::from_iter(item) })
+                .flat_map(|item| async move { stream::from_iter(item) })
                 .collect().await;
 
-            assert_eq!(d1, [&1, &2, &3, &4, &5, &6, &7, &8]);
+            assert_eq!(d1, [&1u8, &2, &3, &4, &5, &6, &7, &8]);
             # });
             ```
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
+        fn flat_map<U, F, Fut>(self, f: F) -> FlatMap<Self, U, F, Self::Item, Fut>
             where
                 Self: Sized,
                 U: IntoStream,
-                F: FnMut(Self::Item) -> U,
+                F: FnMut(Self::Item) -> Fut,
+				Fut: Future<Output  = U>,
         {
             FlatMap::new(self, f)
         }

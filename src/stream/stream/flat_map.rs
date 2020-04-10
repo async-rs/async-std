@@ -1,7 +1,9 @@
 use core::pin::Pin;
+use core::marker::PhantomData;
 
 use pin_project_lite::pin_project;
 
+use crate::future::Future;
 use crate::stream::stream::map::Map;
 use crate::stream::stream::StreamExt;
 use crate::stream::{IntoStream, Stream};
@@ -16,33 +18,39 @@ pin_project! {
     ///
     /// [`flat_map`]: trait.Stream.html#method.flat_map
     /// [`Stream`]: trait.Stream.html
-    pub struct FlatMap<S, U, F> {
+    pub struct FlatMap<S, U, F, T, Fut> {
         #[pin]
-        stream: Map<S, F>,
+        stream: Map<S, F, T, Fut, U>,
         #[pin]
         inner_stream: Option<U>,
+		__fut: PhantomData<Fut>,
+		__from: PhantomData<T>,
     }
 }
 
-impl<S, U, F> FlatMap<S, U, F>
+impl<S, U, F, Fut> FlatMap<S, U, F, S::Item, Fut>
 where
     S: Stream,
     U: IntoStream,
-    F: FnMut(S::Item) -> U,
+    F: FnMut(S::Item) -> Fut,
+	Fut: Future<Output = U>,
 {
     pub(super) fn new(stream: S, f: F) -> Self {
         Self {
             stream: stream.map(f),
             inner_stream: None,
+			__fut: PhantomData,
+			__from: PhantomData,
         }
     }
 }
 
-impl<S, U, F> Stream for FlatMap<S, U, F>
+impl<S, U, F, Fut> Stream for FlatMap<S, U, F, S::Item, Fut>
 where
     S: Stream,
     U: Stream,
-    F: FnMut(S::Item) -> U,
+    F: FnMut(S::Item) -> Fut,
+    Fut: Future<Output = U>,
 {
     type Item = U::Item;
 

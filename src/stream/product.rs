@@ -23,7 +23,6 @@ pub trait Product<A = Self>: Sized {
         S: Stream<Item = A> + 'a;
 }
 
-use core::ops::Mul;
 use core::num::Wrapping;
 use crate::stream::stream::StreamExt;
 
@@ -34,7 +33,7 @@ macro_rules! integer_product {
             where
                 S: Stream<Item = $a> + 'a,
             {
-                Box::pin(async move { stream.fold($one, Mul::mul).await } )
+                Box::pin(async move { stream.fold($one, |a, b| async move { a * b }).await } )
             }
         }
         impl<'a> Product<&'a $a> for $a {
@@ -42,7 +41,7 @@ macro_rules! integer_product {
             where
                 S: Stream<Item = &'a $a> + 'b,
             {
-                Box::pin(async move { stream.fold($one, Mul::mul).await } )
+                Box::pin(async move { stream.fold($one, |a, b| async move { a * b }).await } )
             }
         }
     )*);
@@ -58,14 +57,14 @@ macro_rules! float_product {
             fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'a>>
                 where S: Stream<Item = $a> + 'a,
             {
-                Box::pin(async move { stream.fold(1.0, |a, b| a * b).await } )
+                Box::pin(async move { stream.fold(1.0, |a, b| async move { a * b }).await } )
             }
         }
         impl<'a> Product<&'a $a> for $a {
             fn product<'b, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'b>>
                 where S: Stream<Item = &'a $a> + 'b,
             {
-                Box::pin(async move { stream.fold(1.0, |a, b| a * b).await } )
+                Box::pin(async move { stream.fold(1.0, |a, b| async move { a * b }).await } )
             }
         }
     )*);

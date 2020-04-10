@@ -24,11 +24,12 @@ where
         use async_std::stream;
 
         let v = stream::from_iter(vec![1, 2, 4]);
-        let res: Result<i32, &'static str> = v.map(|x|
-            if x < 0 {
-                Err("Negative element found")
-            } else {
-                Ok(x)
+        let res: Result<i32, &'static str> = v.map(|x| async move {
+                if x < 0 {
+                    Err("Negative element found")
+                } else {
+                    Ok(x)
+                }
             }).product().await;
         assert_eq!(res, Ok(8));
         #
@@ -55,12 +56,15 @@ where
                                 true
                             })
                     })
-                    .filter_map(|elem| match elem {
-                        Ok(value) => Some(value),
-                        Err(err) => {
-                            found_error = Some(err);
-                            None
-                        }
+                    .filter_map(|elem| {
+                        let res = match elem {
+                            Ok(value) => Some(value),
+                            Err(err) => {
+                                found_error = Some(err);
+                                None
+                            }
+                        };
+                        async { res }
                     }),
             )
             .await;

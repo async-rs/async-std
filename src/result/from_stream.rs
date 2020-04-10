@@ -20,9 +20,9 @@ where
     /// use async_std::stream;
     ///
     /// let v = stream::from_iter(vec![1, 2]);
-    /// let res: Result<Vec<u32>, &'static str> = v.map(|x: u32|
+    /// let res: Result<Vec<u32>, &'static str> = v.map(|x: u32| async move {
     ///     x.checked_add(1).ok_or("Overflow!")
-    /// ).collect().await;
+    /// }).collect().await;
     /// assert_eq!(res, Ok(vec![2, 3]));
     /// #
     /// # }) }
@@ -48,12 +48,15 @@ where
                             true
                         })
                 })
-                .filter_map(|elem| match elem {
+                .filter_map(|elem| {
+					let res = match elem {
                     Ok(value) => Some(value),
                     Err(err) => {
                         found_error = Some(err);
                         None
-                    }
+                    },
+					};
+					async { res }
                 })
                 .collect()
                 .await;

@@ -25,7 +25,7 @@ where
         use async_std::stream;
 
         let words = stream::from_iter(vec!["have", "a", "great", "day"]);
-        let total: Option<usize> = words.map(|w| w.find('a')).sum().await;
+        let total: Option<usize> = words.map(|w| async move { w.find('a') }).sum().await;
         assert_eq!(total, Some(5));
         #
         # }) }
@@ -48,7 +48,7 @@ where
                             false
                         }
                     })
-                    .filter_map(identity),
+                    .filter_map(|a| async move { identity(a) }),
             )
             .await;
 

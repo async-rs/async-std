@@ -34,7 +34,7 @@ macro_rules! integer_sum {
             where
                 S: Stream<Item = $a> + 'a,
             {
-                Box::pin(async move { stream.fold($zero, Add::add).await } )
+                Box::pin(async move { stream.fold($zero, |a, b| async move { a + b }).await } )
             }
         }
         impl<'a> Sum<&'a $a> for $a {
@@ -42,7 +42,7 @@ macro_rules! integer_sum {
             where
                 S: Stream<Item = &'a $a> + 'b,
             {
-                Box::pin(async move { stream.fold($zero, Add::add).await } )
+                Box::pin(async move { stream.fold($zero, |a, b| async move { a + b }).await } )
             }
         }
     )*);
@@ -58,14 +58,14 @@ macro_rules! float_sum {
             fn sum<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self> + 'a>>
                 where S: Stream<Item = $a> + 'a,
             {
-                Box::pin(async move { stream.fold(0.0, |a, b| a + b).await } )
+                Box::pin(async move { stream.fold(0.0, |a, b| async move { a + b }).await } )
             }
         }
         impl<'a> Sum<&'a $a> for $a {
             fn sum<'b, S>(stream: S) -> Pin<Box<dyn Future<Output = Self> + 'b>>
                 where S: Stream<Item = &'a $a> + 'b,
             {
-                Box::pin(async move { stream.fold(0.0, |a, b| a + b).await } )
+                Box::pin(async move { stream.fold(0.0, |a, b| async move { a + b }).await } )
             }
         }
     )*);

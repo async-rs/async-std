@@ -25,12 +25,13 @@ where
         use async_std::stream;
 
         let v = stream::from_iter(vec![1, 2, 4]);
-        let prod: Option<i32> = v.map(|x|
+        let prod: Option<i32> = v.map(|x| async move {
             if x < 0 {
                 None
             } else {
                 Some(x)
-            }).product().await;
+            }
+        }).product().await;
         assert_eq!(prod, Some(8));
         #
         # }) }
@@ -53,7 +54,7 @@ where
                             false
                         }
                     })
-                    .filter_map(identity),
+                    .filter_map(|a| async move { identity(a) }),
             )
             .await;
 

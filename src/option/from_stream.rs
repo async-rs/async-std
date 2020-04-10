@@ -29,7 +29,7 @@ where
                         false
                     }
                 })
-                .filter_map(identity)
+                .filter_map(|a| async move { identity(a) })
                 .collect()
                 .await;
 
