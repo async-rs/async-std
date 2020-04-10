@@ -25,7 +25,6 @@ pub trait Sum<A = Self>: Sized {
 
 use crate::stream::stream::StreamExt;
 use core::num::Wrapping;
-use core::ops::Add;
 
 macro_rules! integer_sum {
     (@impls $zero: expr, $($a:ty)*) => ($(
