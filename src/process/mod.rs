@@ -507,27 +507,485 @@ async fn read_to_end<T: AsyncRead + Unpin>(source: Option<T>) -> io::Result<Vec<
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    use super::{Command, Output, Stdio};
+    use crate::io::prelude::*;
+    use crate::io::ErrorKind;
     use crate::task;
 
+    use std::str;
+
     #[test]
-    fn test_simple() -> io::Result<()> {
-        // TODO: windows
+    fn smoke() {
         task::block_on(async {
-            let res = Command::new("echo").arg("hello").output().await?;
-
-            let stdout_str = std::str::from_utf8(&res.stdout).unwrap();
-
-            assert!(res.status.success());
-            assert_eq!(stdout_str.trim().to_string(), "hello");
-            assert_eq!(&res.stderr, &Vec::new());
-            println!(
-                "got output: {:?} {:?} {:?}",
-                res.status, stdout_str, &res.stderr
-            );
-
-            Ok(())
+            let p = if cfg!(target_os = "windows") {
+                Command::new("cmd").args(&["/C", "exit 0"]).spawn()
+            } else {
+                Command::new("true").spawn()
+            };
+            assert!(p.is_ok());
+            let p = p.unwrap();
+            assert!(p.await.unwrap().success());
         })
+    }
+
+    #[test]
+    fn smoke_failure() {
+        task::block_on(async {
+            match Command::new("if-this-is-a-binary-then-the-world-has-ended").spawn() {
+                Ok(..) => panic!(),
+                Err(..) => {}
+            }
+        })
+    }
+
+    #[test]
+    fn exit_reported_right() {
+        task::block_on(async {
+            let p = if cfg!(target_os = "windows") {
+                Command::new("cmd").args(&["/C", "exit 1"]).spawn()
+            } else {
+                Command::new("false").spawn()
+            };
+            assert!(p.is_ok());
+            let p = p.unwrap();
+            assert!(p.await.unwrap().code() == Some(1));
+        })
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn signal_reported_right() {
+        use crate::os::unix::process::ExitStatusExt;
+
+        task::block_on(async {
+            let mut p = Command::new("/bin/sh")
+                .arg("-c")
+                .arg("read a")
+                .stdin(Stdio::piped())
+                .spawn()
+                .unwrap();
+            p.kill().unwrap();
+            match p.await.unwrap().signal() {
+                Some(9) => {}
+                result => panic!("not terminated by signal 9 (instead, {:?})", result),
+            }
+        })
+    }
+
+    pub async fn run_output(mut cmd: Command) -> String {
+        let p = cmd.spawn();
+        assert!(p.is_ok());
+        let mut p = p.unwrap();
+        assert!(p.stdout.is_some());
+        let mut ret = String::new();
+        p.stdout
+            .as_mut()
+            .unwrap()
+            .read_to_string(&mut ret)
+            .await
+            .unwrap();
+        assert!(p.await.unwrap().success());
+        return ret;
+    }
+
+    #[test]
+    fn stdout_works() {
+        task::block_on(async {
+            if cfg!(target_os = "windows") {
+                let mut cmd = Command::new("cmd");
+                cmd.args(&["/C", "echo foobar"]).stdout(Stdio::piped());
+                assert_eq!(run_output(cmd).await, "foobar\r\n");
+            } else {
+                let mut cmd = Command::new("echo");
+                cmd.arg("foobar").stdout(Stdio::piped());
+                assert_eq!(run_output(cmd).await, "foobar\n");
+            }
+        });
+    }
+
+    #[test]
+    #[cfg_attr(any(windows), ignore)]
+    fn set_current_dir_works() {
+        task::block_on(async {
+            let mut cmd = Command::new("/bin/sh");
+            cmd.arg("-c")
+                .arg("pwd")
+                .current_dir("/")
+                .stdout(Stdio::piped());
+            assert_eq!(run_output(cmd).await, "/\n");
+        });
+    }
+
+    #[test]
+    #[cfg_attr(any(windows), ignore)]
+    fn stdin_works() {
+        task::block_on(async {
+            let mut p = Command::new("/bin/sh")
+                .arg("-c")
+                .arg("read line; echo $line")
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .spawn()
+                .unwrap();
+            p.stdin
+                .as_mut()
+                .unwrap()
+                .write("foobar".as_bytes())
+                .await
+                .unwrap();
+            drop(p.stdin.take());
+            let mut out = String::new();
+            p.stdout
+                .as_mut()
+                .unwrap()
+                .read_to_string(&mut out)
+                .await
+                .unwrap();
+            assert!(p.await.unwrap().success());
+            assert_eq!(out, "foobar\n");
+        });
+    }
+
+    #[test]
+    fn test_process_status() {
+        task::block_on(async {
+            let mut status = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(&["/C", "exit 1"])
+                    .status()
+                    .await
+                    .unwrap()
+            } else {
+                Command::new("false").status().await.unwrap()
+            };
+            assert!(status.code() == Some(1));
+
+            status = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(&["/C", "exit 0"])
+                    .status()
+                    .await
+                    .unwrap()
+            } else {
+                Command::new("true").status().await.unwrap()
+            };
+            assert!(status.success());
+        });
+    }
+
+    #[test]
+    fn test_process_output_fail_to_start() {
+        task::block_on(async {
+            match Command::new("/no-binary-by-this-name-should-exist")
+                .output()
+                .await
+            {
+                Err(e) => assert_eq!(e.kind(), ErrorKind::NotFound),
+                Ok(..) => panic!(),
+            }
+        });
+    }
+
+    #[test]
+    fn test_process_output_output() {
+        task::block_on(async {
+            let Output {
+                status,
+                stdout,
+                stderr,
+            } = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(&["/C", "echo hello"])
+                    .output()
+                    .await
+                    .unwrap()
+            } else {
+                Command::new("echo").arg("hello").output().await.unwrap()
+            };
+            let output_str = str::from_utf8(&stdout).unwrap();
+
+            assert!(status.success());
+            assert_eq!(output_str.trim().to_string(), "hello");
+            assert_eq!(stderr, Vec::new());
+        });
+    }
+
+    #[test]
+    fn test_process_output_error() {
+        task::block_on(async {
+            let Output {
+                status,
+                stdout,
+                stderr,
+            } = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(&["/C", "mkdir ."])
+                    .output()
+                    .await
+                    .unwrap()
+            } else {
+                Command::new("mkdir").arg("./").output().await.unwrap()
+            };
+
+            assert!(status.code() == Some(1));
+            assert_eq!(stdout, Vec::new());
+            assert!(!stderr.is_empty());
+        });
+    }
+
+    #[test]
+    fn test_finish_once() {
+        task::block_on(async {
+            let prog = if cfg!(target_os = "windows") {
+                Command::new("cmd").args(&["/C", "exit 1"]).spawn().unwrap()
+            } else {
+                Command::new("false").spawn().unwrap()
+            };
+            assert!(prog.await.unwrap().code() == Some(1));
+        });
+    }
+
+    #[test]
+    fn test_wait_with_output_once() {
+        task::block_on(async {
+            let prog = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(&["/C", "echo hello"])
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .unwrap()
+            } else {
+                Command::new("echo")
+                    .arg("hello")
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .unwrap()
+            };
+
+            let Output {
+                status,
+                stdout,
+                stderr,
+            } = prog.wait_with_output().unwrap();
+            let output_str = str::from_utf8(&stdout).unwrap();
+
+            assert!(status.success());
+            assert_eq!(output_str.trim().to_string(), "hello");
+            assert_eq!(stderr, Vec::new());
+        });
+    }
+
+    #[cfg(all(unix, not(target_os = "android")))]
+    pub fn env_cmd() -> Command {
+        Command::new("env")
+    }
+    #[cfg(target_os = "android")]
+    pub fn env_cmd() -> Command {
+        let mut cmd = Command::new("/system/bin/sh");
+        cmd.arg("-c").arg("set");
+        cmd
+    }
+
+    #[cfg(windows)]
+    pub fn env_cmd() -> Command {
+        let mut cmd = Command::new("cmd");
+        cmd.arg("/c").arg("set");
+        cmd
+    }
+
+    #[test]
+    fn test_override_env() {
+        use std::env;
+
+        // In some build environments (such as chrooted Nix builds), `env` can
+        // only be found in the explicitly-provided PATH env variable, not in
+        // default places such as /bin or /usr/bin. So we need to pass through
+        // PATH to our sub-process.
+        task::block_on(async {
+            let mut cmd = env_cmd();
+            cmd.env_clear().env("RUN_TEST_NEW_ENV", "123");
+            if let Some(p) = env::var_os("PATH") {
+                cmd.env("PATH", &p);
+            }
+            let result = cmd.output().await.unwrap();
+            let output = String::from_utf8_lossy(&result.stdout).to_string();
+
+            assert!(
+                output.contains("RUN_TEST_NEW_ENV=123"),
+                "didn't find RUN_TEST_NEW_ENV inside of:\n\n{}",
+                output
+            );
+        });
+    }
+
+    #[test]
+    fn test_add_to_env() {
+        task::block_on(async {
+            let result = env_cmd()
+                .env("RUN_TEST_NEW_ENV", "123")
+                .output()
+                .await
+                .unwrap();
+            let output = String::from_utf8_lossy(&result.stdout).to_string();
+
+            assert!(
+                output.contains("RUN_TEST_NEW_ENV=123"),
+                "didn't find RUN_TEST_NEW_ENV inside of:\n\n{}",
+                output
+            );
+        });
+    }
+
+    #[test]
+    fn test_capture_env_at_spawn() {
+        use std::env;
+
+        task::block_on(async {
+            let mut cmd = env_cmd();
+            cmd.env("RUN_TEST_NEW_ENV1", "123");
+
+            // This variable will not be present if the environment has already
+            // been captured above.
+            env::set_var("RUN_TEST_NEW_ENV2", "456");
+            let result = cmd.output().await.unwrap();
+            env::remove_var("RUN_TEST_NEW_ENV2");
+
+            let output = String::from_utf8_lossy(&result.stdout).to_string();
+
+            assert!(
+                output.contains("RUN_TEST_NEW_ENV1=123"),
+                "didn't find RUN_TEST_NEW_ENV1 inside of:\n\n{}",
+                output
+            );
+            assert!(
+                output.contains("RUN_TEST_NEW_ENV2=456"),
+                "didn't find RUN_TEST_NEW_ENV2 inside of:\n\n{}",
+                output
+            );
+        });
+    }
+
+    #[test]
+    fn test_interior_nul_in_progname_is_error() {
+        match Command::new("has-some-\0\0s-inside").spawn() {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_interior_nul_in_arg_is_error() {
+        match Command::new("echo").arg("has-some-\0\0s-inside").spawn() {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_interior_nul_in_args_is_error() {
+        match Command::new("echo")
+            .args(&["has-some-\0\0s-inside"])
+            .spawn()
+        {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_interior_nul_in_current_dir_is_error() {
+        match Command::new("echo")
+            .current_dir("has-some-\0\0s-inside")
+            .spawn()
+        {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_interior_nul_in_env_key_is_error() {
+        match env_cmd().env("has-some-\0\0s-inside", "value").spawn() {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn test_interior_nul_in_env_value_is_error() {
+        match env_cmd().env("key", "has-some-\0\0s-inside").spawn() {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::InvalidInput),
+            Ok(_) => panic!(),
+        }
+    }
+
+    /// Tests that process creation flags work by debugging a process.
+    /// Other creation flags make it hard or impossible to detect
+    /// behavioral changes in the process.
+    #[test]
+    #[cfg(windows)]
+    fn test_creation_flags() {
+        use crate::os::windows::process::CommandExt;
+        use crate::sys::c::{BOOL, DWORD, INFINITE};
+        #[repr(C, packed)]
+        struct DEBUG_EVENT {
+            pub event_code: DWORD,
+            pub process_id: DWORD,
+            pub thread_id: DWORD,
+            // This is a union in the real struct, but we don't
+            // need this data for the purposes of this test.
+            pub _junk: [u8; 164],
+        }
+
+        extern "system" {
+            fn WaitForDebugEvent(lpDebugEvent: *mut DEBUG_EVENT, dwMilliseconds: DWORD) -> BOOL;
+            fn ContinueDebugEvent(
+                dwProcessId: DWORD,
+                dwThreadId: DWORD,
+                dwContinueStatus: DWORD,
+            ) -> BOOL;
+        }
+
+        const DEBUG_PROCESS: DWORD = 1;
+        const EXIT_PROCESS_DEBUG_EVENT: DWORD = 5;
+        const DBG_EXCEPTION_NOT_HANDLED: DWORD = 0x80010001;
+
+        let mut child = Command::new("cmd")
+            .creation_flags(DEBUG_PROCESS)
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child.stdin.take().unwrap().write_all(b"exit\r\n").unwrap();
+        let mut events = 0;
+        let mut event = DEBUG_EVENT {
+            event_code: 0,
+            process_id: 0,
+            thread_id: 0,
+            _junk: [0; 164],
+        };
+        loop {
+            if unsafe { WaitForDebugEvent(&mut event as *mut DEBUG_EVENT, INFINITE) } == 0 {
+                panic!("WaitForDebugEvent failed!");
+            }
+            events += 1;
+
+            if event.event_code == EXIT_PROCESS_DEBUG_EVENT {
+                break;
+            }
+
+            if unsafe {
+                ContinueDebugEvent(event.process_id, event.thread_id, DBG_EXCEPTION_NOT_HANDLED)
+            } == 0
+            {
+                panic!("ContinueDebugEvent failed!");
+            }
+        }
+        assert!(events > 0);
+    }
+
+    #[test]
+    fn test_command_implements_send() {
+        fn take_send_type<T: Send>(_: T) {}
+        take_send_type(Command::new(""))
     }
 }
