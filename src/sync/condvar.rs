@@ -361,14 +361,23 @@ impl Condvar {
 
 impl fmt::Debug for Condvar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        //f.debug_struct("Condvar").finish()
         f.pad("Condvar { .. }")
     }
 }
 
+/// A future that waits for another task to notify the condition variable.
+///
+/// This is an internal future that `wait` and `wait_until` await on.
 struct AwaitNotify<'a, 'b, T> {
+    /// The condition variable that we are waiting on
     cond: &'a Condvar,
+    /// The lock used with `cond`.
+    /// This will be released the first time the future is polled,
+    /// after registering the context to be notified.
     guard: Option<MutexGuard<'b, T>>,
+    /// A key into the conditions variable's `WakerSet`.
+    /// This is set to the index of the `Waker` for the context each time
+    /// the future is polled and not completed.
     key: Option<usize>,
 }
 
