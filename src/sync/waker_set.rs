@@ -80,6 +80,28 @@ impl WakerSet {
         }
     }
 
+    /// If the waker for this key is still waiting for a notification, then update
+    /// the waker for the entry, and return false. If the waker has been notified,
+    /// treat the entry as completed and return true.
+    #[cfg(feature = "unstable")]
+    pub fn remove_if_notified(&self, key: usize, cx: &Context<'_>) -> bool {
+        let mut inner = self.lock();
+
+        match &mut inner.entries[key] {
+            None => {
+                inner.entries.remove(key);
+                true
+            }
+            Some(w) => {
+                // We were never woken, so update instead
+                if !w.will_wake(cx.waker()) {
+                    *w = cx.waker().clone();
+                }
+                false
+            }
+        }
+    }
+
     /// Removes the waker of a cancelled operation.
     ///
     /// Returns `true` if another blocked operation from the set was notified.
