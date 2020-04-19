@@ -35,6 +35,8 @@ struct Scheduler {
     /// Set to `true` while a machine is polling the reactor.
     polling: bool,
 
+    progress: bool,
+
     /// Available threads.
     threads: Vec<ThreadState>,
 
@@ -83,6 +85,7 @@ impl Runtime {
                 machines: Vec::with_capacity(*MAXPROCS),
                 threads,
                 polling: false,
+                progress: false,
             }),
         }
     }
@@ -127,7 +130,7 @@ impl Runtime {
 
                     // println!("getting idle thread");
                     let sched = self.sched.lock().unwrap();
-                    'inner: for (i, thread) in sched.threads.iter().enumerate() {
+                    'inner: for thread in sched.threads.iter() {
                         // grab the first parked thread
                         if thread
                             .parked
@@ -166,7 +169,7 @@ impl Runtime {
                                             parker.park();
                                             // TODO: shutdown if idle for too long
                                         }
-                                        // println!("{} thread unparked {}", k, i);
+                                        // println!("thread unparked {}", i);
                                         // when this thread is unparked, retrieve machine
                                         let m: Arc<Machine> =
                                             machine_recv.recv().expect("failed to receive machine");
@@ -188,8 +191,6 @@ impl Runtime {
                         machine_sender
                             .send(m)
                             .expect("failed to send machine to thread");
-
-                        // println!("started thread {}", i);
 
                         sched.threads.push(ThreadState {
                             unparker,
@@ -222,11 +223,14 @@ impl Runtime {
         // If no machine has been polling the reactor in a while, that means the runtime is
         // overloaded with work and we need to start another machine.
         if !sched.polling {
-            if let Some(p) = sched.processors.pop() {
-                let m = Arc::new(Machine::new(p));
-                to_start.push(m.clone());
-                sched.machines.push(m);
+            if !sched.progress {
+                if let Some(p) = sched.processors.pop() {
+                    let m = Arc::new(Machine::new(p));
+                    to_start.push(m.clone());
+                    sched.machines.push(m);
+                }
             }
+            sched.progress = false;
         }
 
         to_start
@@ -420,13 +424,16 @@ impl Machine {
             sched.polling = false;
             //println!("polling stop");
             sched.machines.push(m);
+            sched.progress = true;
 
             runs = 0;
             fails = 0;
         }
+        // println!("thread break");
 
         // When shutting down the thread, take the processor out if still available.
         let opt_p = self.processor.lock().take();
+        // println!("processor {:?}", opt_p.is_some());
 
         // Return the processor to the scheduler and remove the machine.
         if let Some(p) = opt_p {
@@ -435,6 +442,7 @@ impl Machine {
             sched.processors.push(p);
             sched.machines.retain(|elem| !ptr::eq(&**elem, self));
         }
+        // println!("thread run stopped");
     }
 }
 
