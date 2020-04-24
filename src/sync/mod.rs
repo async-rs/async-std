@@ -174,7 +174,10 @@
 #![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
-pub use std::sync::{Arc, Weak};
+pub use std::sync::Weak;
+
+#[doc(inline)]
+pub use piper::Arc;
 
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -194,8 +197,3 @@ cfg_unstable! {
 
 pub(crate) mod waker_set;
 pub(crate) use waker_set::WakerSet;
-
-cfg_default! {
-    pub(crate) mod spin_lock;
-    pub(crate) use spin_lock::Spinlock;
-}

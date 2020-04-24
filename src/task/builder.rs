@@ -3,9 +3,7 @@ use std::future::Future;
 use kv_log_macro::trace;
 
 use crate::io;
-use crate::rt::RUNTIME;
 use crate::task::{JoinHandle, Task};
-use crate::utils::abort_on_panic;
 
 /// Task builder that configures the settings of a new task.
 #[derive(Debug, Default)]
@@ -42,11 +40,11 @@ impl Builder {
             parent_task_id: Task::get_current(|t| t.id().0).unwrap_or(0),
         });
 
-        let future = async move {
+        let wrapped_future = async move {
             // Drop task-locals on exit.
-            defer! {
-                Task::get_current(|t| unsafe { t.drop_locals() });
-            }
+            // defer! {
+            //     Task::get_current(|t| unsafe { t.drop_locals() });
+            // }
 
             // Log completion on exit.
             defer! {
@@ -54,25 +52,12 @@ impl Builder {
                     task_id: Task::get_current(|t| t.id().0),
                 });
             }
-
             future.await
         };
 
-        let schedule = move |t| RUNTIME.schedule(Runnable(t));
-        let (task, handle) = async_task::spawn(future, schedule, task);
-        task.schedule();
-        Ok(JoinHandle::new(handle))
-    }
-}
+        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
-/// A runnable task.
-pub struct Runnable(async_task::Task<Task>);
-
-impl Runnable {
-    /// Runs the task by polling its future once.
-    pub fn run(self) {
-        unsafe {
-            Task::set_current(self.0.tag(), || abort_on_panic(|| self.0.run()));
-        }
+        let task = smol::Task::spawn(wrapped_future);
+        Ok(JoinHandle::new(task))
     }
 }

@@ -12,11 +12,11 @@ use crate::task::{Context, Poll, Task};
 ///
 /// [spawned]: fn.spawn.html
 #[derive(Debug)]
-pub struct JoinHandle<T>(async_task::JoinHandle<T, Task>);
+pub struct JoinHandle<T>(smol::Task<T>);
 
 impl<T> JoinHandle<T> {
     /// Creates a new `JoinHandle`.
-    pub(crate) fn new(inner: async_task::JoinHandle<T, Task>) -> JoinHandle<T> {
+    pub(crate) fn new(inner: smol::Task<T>) -> JoinHandle<T> {
         JoinHandle(inner)
     }
 
@@ -36,7 +36,7 @@ impl<T> JoinHandle<T> {
     /// #
     /// # })
     pub fn task(&self) -> &Task {
-        self.0.tag()
+        todo!()
     }
 }
 
@@ -44,10 +44,7 @@ impl<T> Future for JoinHandle<T> {
     type Output = T;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match Pin::new(&mut self.0).poll(cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(None) => panic!("cannot await the result of a panicked task"),
-            Poll::Ready(Some(val)) => Poll::Ready(val),
-        }
+        dbg!("poll joinhandle");
+        Pin::new(&mut self.0).poll(cx)
     }
 }

@@ -40,23 +40,32 @@ fn contention() {
 
         let tx = Arc::new(tx);
         let mutex = Arc::new(Mutex::new(0));
-        let num_tasks = 10000;
+        let num_tasks = 10; //000;
 
+        let mut handles = Vec::new();
         for _ in 0..num_tasks {
             let tx = tx.clone();
             let mutex = mutex.clone();
 
-            task::spawn(async move {
+            dbg!("spawn");
+            handles.push(task::spawn(async move {
                 let mut lock = mutex.lock().await;
                 *lock += 1;
                 tx.unbounded_send(()).unwrap();
                 drop(lock);
-            });
+            }));
         }
 
-        for _ in 0..num_tasks {
+        for i in 0..num_tasks {
+            dbg!(i);
             rx.next().await.unwrap();
         }
+
+        for handle in handles.into_iter() {
+            handle.await;
+        }
+
+        dbg!("wait");
 
         let lock = mutex.lock().await;
         assert_eq!(num_tasks, *lock);
