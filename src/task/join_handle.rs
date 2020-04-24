@@ -12,12 +12,18 @@ use crate::task::{Context, Poll, Task};
 ///
 /// [spawned]: fn.spawn.html
 #[derive(Debug)]
-pub struct JoinHandle<T>(smol::Task<T>);
+pub struct JoinHandle<T> {
+    handle: Option<async_task::JoinHandle<T, ()>>,
+    task: Task,
+}
 
 impl<T> JoinHandle<T> {
     /// Creates a new `JoinHandle`.
-    pub(crate) fn new(inner: smol::Task<T>) -> JoinHandle<T> {
-        JoinHandle(inner)
+    pub(crate) fn new(inner: async_task::JoinHandle<T, ()>, task: Task) -> JoinHandle<T> {
+        JoinHandle {
+            handle: Some(inner),
+            task,
+        }
     }
 
     /// Returns a handle to the underlying task.
@@ -36,7 +42,14 @@ impl<T> JoinHandle<T> {
     /// #
     /// # })
     pub fn task(&self) -> &Task {
-        todo!()
+        &self.task
+    }
+
+    /// Cancel this task.
+    pub async fn cancel(mut self) -> Option<T> {
+        let handle = self.handle.take().unwrap();
+        handle.cancel();
+        handle.await
     }
 }
 
@@ -44,7 +57,11 @@ impl<T> Future for JoinHandle<T> {
     type Output = T;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        dbg!("poll joinhandle");
-        Pin::new(&mut self.0).poll(cx)
+        match Pin::new(&mut self.handle.as_mut().unwrap()).poll(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(output) => {
+                Poll::Ready(output.expect("cannot await the result of a panicked task"))
+            }
+        }
     }
 }

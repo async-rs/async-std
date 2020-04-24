@@ -42,9 +42,9 @@ where
 
     let wrapped_future = async move {
         // Drop task-locals on exit.
-        // defer! {
-        //     Task::get_current(|t| unsafe { t.drop_locals() });
-        // }
+        defer! {
+            Task::get_current(|t| unsafe { t.drop_locals() });
+        }
 
         // Log completion on exit.
         defer! {

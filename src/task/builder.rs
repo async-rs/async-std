@@ -42,9 +42,9 @@ impl Builder {
 
         let wrapped_future = async move {
             // Drop task-locals on exit.
-            // defer! {
-            //     Task::get_current(|t| unsafe { t.drop_locals() });
-            // }
+            defer! {
+                Task::get_current(|t| unsafe { t.drop_locals() });
+            }
 
             // Log completion on exit.
             defer! {
@@ -57,7 +57,9 @@ impl Builder {
 
         once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
-        let task = smol::Task::spawn(wrapped_future);
-        Ok(JoinHandle::new(task))
+        // FIXME: figure out how to set the current task.
+
+        let smol_task = smol::Task::spawn(wrapped_future).detach();
+        Ok(JoinHandle::new(smol_task, task))
     }
 }
