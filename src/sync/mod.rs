@@ -174,10 +174,7 @@
 #![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
-pub use std::sync::Weak;
-
-#[doc(inline)]
-pub use piper::Arc;
+pub use std::sync::{Arc, Weak};
 
 pub use mutex::{Mutex, MutexGuard};
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
