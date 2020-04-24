@@ -142,6 +142,7 @@ cfg_default! {
     pub use task_local::{AccessError, LocalKey};
 
     pub(crate) use task_local::LocalsMap;
+    pub(crate) use task_locals_wrapper::TaskLocalsWrapper;
 
     mod block_on;
     mod builder;
@@ -153,6 +154,7 @@ cfg_default! {
     mod task;
     mod task_id;
     mod task_local;
+    mod task_locals_wrapper;
 
     #[cfg(any(feature = "unstable", test))]
     pub use spawn_blocking::spawn_blocking;
