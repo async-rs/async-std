@@ -139,6 +139,7 @@ cfg_default! {
     pub use join_handle::JoinHandle;
     pub use sleep::sleep;
     pub use spawn::spawn;
+    pub use spawn_local::spawn_local;
     pub use task_local::{AccessError, LocalKey};
 
     pub(crate) use task_local::LocalsMap;
@@ -151,6 +152,7 @@ cfg_default! {
     mod sleep;
     mod spawn;
     mod spawn_blocking;
+    mod spawn_local;
     mod task;
     mod task_id;
     mod task_local;

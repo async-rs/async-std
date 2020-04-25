@@ -60,6 +60,20 @@ impl Builder {
         Ok(JoinHandle::new(smol_task, task))
     }
 
+    /// Spawns a task locally with the configured settings.
+    pub fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
+    where
+        F: Future<Output = T> + 'static,
+        T: 'static,
+    {
+        let wrapped = self.build(future);
+
+        let task = wrapped.tag.task().clone();
+        let smol_task = smol::Task::local(wrapped).into();
+
+        Ok(JoinHandle::new(smol_task, task))
+    }
+
     /// Spawns a task with the configured settings, blocking on its execution.
     pub fn blocking<F, T>(self, future: F) -> T
     where
