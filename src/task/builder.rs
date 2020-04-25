@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use kv_log_macro::trace;
+use pin_project_lite::pin_project;
 
 use crate::io;
 use crate::task::{JoinHandle, Task, TaskLocalsWrapper};
@@ -42,10 +43,7 @@ impl Builder {
         let tag = TaskLocalsWrapper::new(task.clone());
 
         // FIXME: do not require all futures to be boxed.
-        SupportTaskLocals {
-            tag,
-            future: Box::pin(future),
-        }
+        SupportTaskLocals { tag, future }
     }
 
     /// Spawns a task with the configured settings.
@@ -55,12 +53,6 @@ impl Builder {
         T: Send + 'static,
     {
         let wrapped = self.build(future);
-
-        // Log this `spawn` operation.
-        trace!("spawn", {
-            task_id: wrapped.tag.id().0,
-            parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
-        });
 
         let task = wrapped.tag.task().clone();
         let smol_task = smol::Task::spawn(wrapped).detach();
@@ -86,25 +78,24 @@ impl Builder {
     }
 }
 
-/// Wrapper to add support for task locals.
-struct SupportTaskLocals<F> {
-    tag: TaskLocalsWrapper,
-    future: Pin<Box<F>>,
-}
-
-impl<F> Drop for SupportTaskLocals<F> {
-    fn drop(&mut self) {
-        // Log completion on exit.
-        trace!("completed", {
-            task_id: self.tag.id().0,
-        });
+pin_project! {
+    /// Wrapper to add support for task locals.
+    struct SupportTaskLocals<F> {
+        tag: TaskLocalsWrapper,
+        #[pin]
+        future: F,
     }
 }
 
 impl<F: Future> Future for SupportTaskLocals<F> {
     type Output = F::Output;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        unsafe { TaskLocalsWrapper::set_current(&self.tag, || Pin::new(&mut self.future).poll(cx)) }
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        unsafe {
+            TaskLocalsWrapper::set_current(&self.tag, || {
+                let this = self.project();
+                this.future.poll(cx)
+            })
+        }
     }
 }
