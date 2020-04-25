@@ -55,7 +55,7 @@ impl Builder {
         let wrapped = self.build(future);
 
         let task = wrapped.tag.task().clone();
-        let smol_task = smol::Task::spawn(wrapped).detach();
+        let smol_task = smol::Task::spawn(wrapped).into();
 
         Ok(JoinHandle::new(smol_task, task))
     }

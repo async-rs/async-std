@@ -319,7 +319,8 @@ impl AsRawFd for UnixDatagram {
 
 impl FromRawFd for UnixDatagram {
     unsafe fn from_raw_fd(fd: RawFd) -> UnixDatagram {
-        let datagram = Async::<StdUnixDatagram>::from_raw_fd(fd);
+        let raw = StdUnixDatagram::from_raw_fd(fd);
+        let datagram = Async::<StdUnixDatagram>::new(raw).expect("invalid file descriptor");
         UnixDatagram { watcher: datagram }
     }
 }

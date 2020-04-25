@@ -37,6 +37,6 @@ where
 {
     once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
-    let handle = smol::Task::blocking(async move { f() }).detach();
+    let handle = smol::Task::blocking(async move { f() }).into();
     JoinHandle::new(handle, Task::new(None))
 }
