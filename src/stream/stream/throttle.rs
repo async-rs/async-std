@@ -2,8 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
 
-use futures_timer::Delay;
 use pin_project_lite::pin_project;
+use smol::Timer;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
@@ -25,7 +25,7 @@ pin_project! {
         #[pin]
         blocked: bool,
         #[pin]
-        delay: Delay,
+        delay: Timer,
     }
 }
 
@@ -35,7 +35,7 @@ impl<S: Stream> Throttle<S> {
             stream,
             duration,
             blocked: false,
-            delay: Delay::new(Duration::default()),
+            delay: Timer::after(Duration::default()),
         }
     }
 }
@@ -59,7 +59,7 @@ impl<S: Stream> Stream for Throttle<S> {
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
                 *this.blocked = true;
-                this.delay.reset(*this.duration);
+                std::mem::replace(&mut *this.delay, Timer::after(*this.duration));
                 Poll::Ready(Some(v))
             }
         }

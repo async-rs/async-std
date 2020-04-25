@@ -319,8 +319,8 @@ impl AsRawFd for UnixDatagram {
 
 impl FromRawFd for UnixDatagram {
     unsafe fn from_raw_fd(fd: RawFd) -> UnixDatagram {
-        let datagram = std::os::unix::net::UnixDatagram::from_raw_fd(fd);
-        datagram.into()
+        let datagram = Async::<StdUnixDatagram>::from_raw_fd(fd);
+        UnixDatagram { watcher: datagram }
     }
 }
 

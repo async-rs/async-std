@@ -1,10 +1,10 @@
+use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
-use std::future::Future;
 
-use futures_timer::Delay;
 use pin_project_lite::pin_project;
+use smol::Timer;
 
 use crate::io;
 
@@ -37,7 +37,7 @@ where
     F: Future<Output = io::Result<T>>,
 {
     Timeout {
-        timeout: Delay::new(dur),
+        timeout: Timer::after(dur),
         future: f,
     }
     .await
@@ -53,7 +53,7 @@ pin_project! {
         #[pin]
         future: F,
         #[pin]
-        timeout: Delay,
+        timeout: Timer,
     }
 }
 
