@@ -72,7 +72,7 @@ impl Stream for Interval {
             return Poll::Pending;
         }
         let interval = self.interval;
-        std::mem::replace(&mut self.delay, Timer::after(interval));
+        let _ = std::mem::replace(&mut self.delay, Timer::after(interval));
         Poll::Ready(Some(()))
     }
 }

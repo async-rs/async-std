@@ -59,7 +59,7 @@ impl<S: Stream> Stream for Throttle<S> {
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
                 *this.blocked = true;
-                std::mem::replace(&mut *this.delay, Timer::after(*this.duration));
+                let _ = std::mem::replace(&mut *this.delay, Timer::after(*this.duration));
                 Poll::Ready(Some(v))
             }
         }
