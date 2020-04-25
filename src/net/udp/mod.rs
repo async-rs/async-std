@@ -482,7 +482,7 @@ cfg_unix! {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket, AsRawSocket, IntoRawSocket, FromRawSocket};
 
     impl AsRawSocket for UdpSocket {
         fn as_raw_socket(&self) -> RawSocket {

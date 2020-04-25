@@ -388,7 +388,7 @@ cfg_unix! {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
+    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket, AsRawSocket, FromRawSocket, IntoRawSocket};
 
     impl AsRawSocket for TcpStream {
         fn as_raw_socket(&self) -> RawSocket {
@@ -402,9 +402,12 @@ cfg_windows! {
         }
     }
 
-    impl IntoRawSocket for TcpListener {
+    impl IntoRawSocket for crate::net::tcp::TcpListener {
         fn into_raw_socket(self) -> RawSocket {
-            self.raw_socket
+            // TODO(stjepang): This does not mean `RawFd` is now the sole owner of the file
+            // descriptor because it's possible that there are other clones of this `TcpStream`
+            // using it at the same time. We should probably document that behavior.
+            self.as_raw_socket()
         }
     }
 }
