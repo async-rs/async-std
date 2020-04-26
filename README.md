@@ -8,6 +8,11 @@
 <br />
 
 <div align="center">
+   <!-- CI status -->
+  <a href="https://github.com/async-rs/async-std/actions">
+    <img src="https://github.com/async-rs/async-std/workflows/CI/badge.svg"
+      alt="CI Status" />
+  </a>
   <!-- Crates version -->
   <a href="https://crates.io/crates/async-std">
     <img src="https://img.shields.io/crates/v/async-std.svg?style=flat-square"
