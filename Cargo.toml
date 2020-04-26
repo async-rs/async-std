@@ -29,7 +29,6 @@ default = [
   "log",
   "num_cpus",
   "pin-project-lite",
-  "smol",
 ]
 docs = ["attributes", "unstable", "default"]
 unstable = ["std", "broadcaster"]
@@ -43,6 +42,7 @@ std = [
   "once_cell",
   "pin-utils",
   "slab",
+  "smol",
 ]
 alloc = [
   "futures-core/alloc",
