@@ -59,6 +59,37 @@ pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
 }
 
+#[cfg(not(target_os = "unknown"))]
+pub(crate) type Timer = smol::Timer;
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug)]
+pub(crate) struct Timer(wasm_timer::Delay);
+
+#[cfg(target_arch = "wasm32")]
+impl Timer {
+    pub(crate) fn after(dur: std::time::Duration) -> Self {
+        Timer(wasm_timer::Delay::new(dur))
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+use std::pin::Pin;
+#[cfg(target_arch = "wasm32")]
+use std::task::Poll;
+
+#[cfg(target_arch = "wasm32")]
+impl std::future::Future for Timer {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+        match Pin::new(&mut self.0).poll(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(_) => Poll::Ready(()),
+        }
+    }
+}
+
 /// Defers evaluation of a block of code until the end of the scope.
 #[cfg(feature = "default")]
 #[doc(hidden)]

@@ -4,9 +4,9 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use pin_project_lite::pin_project;
-use smol::Timer;
 
 use crate::io;
+use crate::utils::Timer;
 
 /// Awaits an I/O future or times out after a duration of time.
 ///

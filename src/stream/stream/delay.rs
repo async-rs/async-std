@@ -3,10 +3,10 @@ use core::pin::Pin;
 use core::time::Duration;
 
 use pin_project_lite::pin_project;
-use smol::Timer;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 pin_project! {
     #[doc(hidden)]

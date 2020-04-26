@@ -307,22 +307,33 @@ cfg_std! {
 cfg_default! {
     // For use in the print macros.
     #[doc(hidden)]
+    #[cfg(not(target_os = "unknown"))]
     pub use stdio::{_eprint, _print};
 
+    #[cfg(not(target_os = "unknown"))]
     pub use stderr::{stderr, Stderr};
+    #[cfg(not(target_os = "unknown"))]
     pub use stdin::{stdin, Stdin};
+    #[cfg(not(target_os = "unknown"))]
     pub use stdout::{stdout, Stdout};
     pub use timeout::timeout;
 
     mod timeout;
+    #[cfg(not(target_os = "unknown"))]
     mod stderr;
+    #[cfg(not(target_os = "unknown"))]
     mod stdin;
+    #[cfg(not(target_os = "unknown"))]
     mod stdio;
+    #[cfg(not(target_os = "unknown"))]
     mod stdout;
 }
 
 cfg_unstable_default! {
+    #[cfg(not(target_os = "unknown"))]
     pub use stderr::StderrLock;
+    #[cfg(not(target_os = "unknown"))]
     pub use stdin::StdinLock;
+    #[cfg(not(target_os = "unknown"))]
     pub use stdout::StdoutLock;
 }

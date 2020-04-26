@@ -8,14 +8,23 @@ use async_std::stream;
 use async_std::sync::channel;
 use async_std::task;
 
+#[cfg(target_arch = "wasm32")]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+#[cfg(not(target_os = "unknown"))]
+use async_std::task::spawn;
+#[cfg(target_os = "unknown")]
+use async_std::task::spawn_local as spawn;
+
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 /// Checks that streams are merged fully even if one of the components
 /// experiences delay.
 fn merging_delayed_streams_work() {
     let (sender, receiver) = channel::<i32>(10);
 
     let mut s = receiver.merge(stream::empty());
-    let t = task::spawn(async move {
+    let t = spawn(async move {
         let mut xs = Vec::new();
         while let Some(x) = s.next().await {
             xs.push(x);
@@ -34,7 +43,7 @@ fn merging_delayed_streams_work() {
     let (sender, receiver) = channel::<i32>(10);
 
     let mut s = stream::empty().merge(receiver);
-    let t = task::spawn(async move {
+    let t = spawn(async move {
         let mut xs = Vec::new();
         while let Some(x) = s.next().await {
             xs.push(x);
@@ -85,16 +94,17 @@ fn explode<S: Stream>(s: S) -> Explode<S> {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn merge_works_with_unfused_streams() {
     let s1 = explode(stream::once(92));
     let s2 = explode(stream::once(92));
     let mut s = s1.merge(s2);
-    let xs = task::block_on(async move {
+
+    task::block_on(async move {
         let mut xs = Vec::new();
         while let Some(x) = s.next().await {
             xs.push(x)
         }
-        xs
+        assert_eq!(xs, vec![92, 92]);
     });
-    assert_eq!(xs, vec![92, 92]);
 }

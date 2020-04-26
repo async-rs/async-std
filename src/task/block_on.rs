@@ -25,9 +25,20 @@ use crate::task::Builder;
 ///     })
 /// }
 /// ```
+#[cfg(not(target_os = "unknown"))]
 pub fn block_on<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
     Builder::new().blocking(future)
+}
+
+/// Spawns a task and waits for it to finish.
+#[cfg(target_os = "unknown")]
+pub fn block_on<F, T>(future: F)
+where
+    F: Future<Output = T> + 'static,
+    T: 'static,
+{
+    Builder::new().local(future).unwrap();
 }

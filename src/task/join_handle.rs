@@ -13,13 +13,18 @@ use crate::task::{Context, Poll, Task};
 /// [spawned]: fn.spawn.html
 #[derive(Debug)]
 pub struct JoinHandle<T> {
-    handle: Option<async_task::JoinHandle<T, ()>>,
+    handle: Option<InnerHandle<T>>,
     task: Task,
 }
 
+#[cfg(not(target_os = "unknown"))]
+type InnerHandle<T> = async_task::JoinHandle<T, ()>;
+#[cfg(target_arch = "wasm32")]
+type InnerHandle<T> = futures_channel::oneshot::Receiver<T>;
+
 impl<T> JoinHandle<T> {
     /// Creates a new `JoinHandle`.
-    pub(crate) fn new(inner: async_task::JoinHandle<T, ()>, task: Task) -> JoinHandle<T> {
+    pub(crate) fn new(inner: InnerHandle<T>, task: Task) -> JoinHandle<T> {
         JoinHandle {
             handle: Some(inner),
             task,
@@ -46,10 +51,19 @@ impl<T> JoinHandle<T> {
     }
 
     /// Cancel this task.
+    #[cfg(not(target_os = "unknown"))]
     pub async fn cancel(mut self) -> Option<T> {
         let handle = self.handle.take().unwrap();
         handle.cancel();
         handle.await
+    }
+
+    /// Cancel this task.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn cancel(mut self) -> Option<T> {
+        let mut handle = self.handle.take().unwrap();
+        handle.close();
+        handle.await.ok()
     }
 }
 

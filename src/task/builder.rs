@@ -3,7 +3,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use kv_log_macro::trace;
 use pin_project_lite::pin_project;
 
 use crate::io;
@@ -38,15 +37,16 @@ impl Builder {
         // Create a new task handle.
         let task = Task::new(name);
 
+        #[cfg(not(target_os = "unknown"))]
         once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
         let tag = TaskLocalsWrapper::new(task.clone());
 
-        // FIXME: do not require all futures to be boxed.
         SupportTaskLocals { tag, future }
     }
 
     /// Spawns a task with the configured settings.
+    #[cfg(not(target_os = "unknown"))]
     pub fn spawn<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
     where
         F: Future<Output = T> + Send + 'static,
@@ -61,6 +61,7 @@ impl Builder {
     }
 
     /// Spawns a task locally with the configured settings.
+    #[cfg(not(target_os = "unknown"))]
     pub fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
     where
         F: Future<Output = T> + 'static,
@@ -74,7 +75,29 @@ impl Builder {
         Ok(JoinHandle::new(smol_task, task))
     }
 
+    /// Spawns a task locally with the configured settings.
+    #[cfg(target_arch = "wasm32")]
+    pub fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
+    where
+        F: Future<Output = T> + 'static,
+        T: 'static,
+    {
+        use futures_channel::oneshot::channel;
+        let (sender, receiver) = channel();
+
+        let wrapped = self.build(async move {
+            let res = future.await;
+            let _ = sender.send(res);
+        });
+
+        let task = wrapped.tag.task().clone();
+        wasm_bindgen_futures::spawn_local(wrapped);
+
+        Ok(JoinHandle::new(receiver, task))
+    }
+
     /// Spawns a task with the configured settings, blocking on its execution.
+    #[cfg(not(target_os = "unknown"))]
     pub fn blocking<F, T>(self, future: F) -> T
     where
         F: Future<Output = T>,
@@ -82,7 +105,7 @@ impl Builder {
         let wrapped = self.build(future);
 
         // Log this `block_on` operation.
-        trace!("block_on", {
+        kv_log_macro::trace!("block_on", {
             task_id: wrapped.tag.id().0,
             parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
         });

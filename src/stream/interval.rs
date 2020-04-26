@@ -4,7 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use crate::stream::Stream;
-use smol::Timer;
+use crate::utils::Timer;
 
 /// Creates a new stream that yields at a set interval.
 ///

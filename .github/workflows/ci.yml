@@ -58,6 +58,14 @@ jobs:
       with:
         command:  check
         args: --features unstable --all --bins --examples --tests
+        
+    - name: check wasm
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        target: wasm32-unknown-unknown
+        override: true
+        args: --features unstable --all --bins --tests
 
     - name: check bench
       uses: actions-rs/cargo@v1

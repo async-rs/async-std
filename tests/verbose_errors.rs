@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "unknown"))]
+
 use async_std::{fs, io, net::ToSocketAddrs, task};
 
 #[test]

@@ -202,7 +202,7 @@ impl BarrierWaitResult {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "unknown")))]
 mod test {
     use futures::channel::mpsc::unbounded;
     use futures::sink::SinkExt;

@@ -3,10 +3,10 @@ use std::pin::Pin;
 use std::time::Duration;
 
 use pin_project_lite::pin_project;
-use smol::Timer;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 pin_project! {
     /// A stream that only yields one element once every `duration`.
