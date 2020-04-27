@@ -66,7 +66,7 @@ pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
-smol = { version = "0.1", optional = true }
+smol = { version = "0.1.1", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-timer = "0.2.4"
