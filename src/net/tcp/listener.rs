@@ -229,7 +229,10 @@ cfg_unix! {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, AsRawSocket, RawSocket, FromRawSocket};
+    use crate::os::windows::io::{
+        AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle,
+        AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket,
+    };
 
     impl AsRawSocket for TcpListener {
         fn as_raw_socket(&self) -> RawSocket {

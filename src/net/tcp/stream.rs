@@ -402,7 +402,7 @@ cfg_windows! {
         }
     }
 
-    impl IntoRawSocket for crate::net::tcp::TcpListener {
+    impl IntoRawSocket for TcpStream {
         fn into_raw_socket(self) -> RawSocket {
             // TODO(stjepang): This does not mean `RawFd` is now the sole owner of the file
             // descriptor because it's possible that there are other clones of this `TcpStream`
