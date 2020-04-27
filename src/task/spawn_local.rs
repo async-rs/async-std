@@ -4,10 +4,6 @@ use crate::task::{Builder, JoinHandle};
 
 /// Spawns a task onto the thread-local executor.
 ///
-/// This function is similar to [`std::thread::spawn`], except it spawns an asynchronous task.
-///
-/// [`std::thread`]: https://doc.rust-lang.org/std/thread/fn.spawn.html
-///
 /// # Examples
 ///
 /// ```
