@@ -140,7 +140,6 @@ cfg_default! {
     pub use sleep::sleep;
     #[cfg(not(target_os = "unknown"))]
     pub use spawn::spawn;
-    pub use spawn_local::spawn_local;
     pub use task_local::{AccessError, LocalKey};
 
     pub(crate) use task_local::LocalsMap;
@@ -155,7 +154,6 @@ cfg_default! {
     mod spawn;
     #[cfg(not(target_os = "unknown"))]
     mod spawn_blocking;
-    mod spawn_local;
     mod task;
     mod task_id;
     mod task_local;
@@ -167,4 +165,10 @@ cfg_default! {
     #[cfg(not(target_os = "unknown"))]
     #[cfg(not(any(feature = "unstable", test)))]
     pub(crate) use spawn_blocking::spawn_blocking;
+}
+
+cfg_unstable! {
+    pub use spawn_local::spawn_local;
+
+    mod spawn_local;
 }

@@ -477,7 +477,7 @@ unsafe fn initialize<R: futures_io::AsyncRead>(_reader: &R, buf: &mut [u8]) {
     std::ptr::write_bytes(buf.as_mut_ptr(), 0, buf.len())
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "unknown")))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

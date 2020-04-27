@@ -61,7 +61,7 @@ impl Builder {
     }
 
     /// Spawns a task locally with the configured settings.
-    #[cfg(not(target_os = "unknown"))]
+    #[cfg(all(not(target_os = "unknown"), feature = "unstable"))]
     pub fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
     where
         F: Future<Output = T> + 'static,
@@ -76,8 +76,29 @@ impl Builder {
     }
 
     /// Spawns a task locally with the configured settings.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "unstable"))]
     pub fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
+    where
+        F: Future<Output = T> + 'static,
+        T: 'static,
+    {
+        use futures_channel::oneshot::channel;
+        let (sender, receiver) = channel();
+
+        let wrapped = self.build(async move {
+            let res = future.await;
+            let _ = sender.send(res);
+        });
+
+        let task = wrapped.tag.task().clone();
+        wasm_bindgen_futures::spawn_local(wrapped);
+
+        Ok(JoinHandle::new(receiver, task))
+    }
+
+    /// Spawns a task locally with the configured settings.
+    #[cfg(all(target_arch = "wasm32", not(feature = "unstable")))]
+    pub(crate) fn local<F, T>(self, future: F) -> io::Result<JoinHandle<T>>
     where
         F: Future<Output = T> + 'static,
         T: 'static,
