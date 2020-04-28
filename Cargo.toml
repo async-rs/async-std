@@ -43,6 +43,9 @@ std = [
   "pin-utils",
   "slab",
   "smol",
+  "wasm-timer",
+  "wasm-bindgen-futures",
+  "futures-channel",
 ]
 alloc = [
   "futures-core/alloc",
@@ -69,9 +72,9 @@ slab = { version = "0.4.2", optional = true }
 smol = { version = "0.1.1", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-timer = "0.2.4"
-wasm-bindgen-futures = "0.4.10"
-futures-channel = "0.3.4"
+wasm-timer = { version = "0.2.4", optional = true }
+wasm-bindgen-futures = { version = "0.4.10", optional = true }
+futures-channel = { version = "0.3.4", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.10"
