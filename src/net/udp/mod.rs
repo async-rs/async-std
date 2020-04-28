@@ -482,17 +482,19 @@ cfg_unix! {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket, AsRawSocket, IntoRawSocket, FromRawSocket};
+    use crate::os::windows::io::{
+        RawSocket, AsRawSocket, IntoRawSocket, FromRawSocket
+    };
 
     impl AsRawSocket for UdpSocket {
         fn as_raw_socket(&self) -> RawSocket {
-            self.watcher.as_raw_socket()
+            self.watcher.get_ref().as_raw_socket()
         }
     }
 
     impl FromRawSocket for UdpSocket {
         unsafe fn from_raw_socket(handle: RawSocket) -> UdpSocket {
-            net::UdpSocket::from_raw_socket(handle).into()
+            std::net::UdpSocket::from_raw_socket(handle).into()
         }
     }
 

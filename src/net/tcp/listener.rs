@@ -230,7 +230,6 @@ cfg_unix! {
 
 cfg_windows! {
     use crate::os::windows::io::{
-        AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle,
         AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket,
     };
 
@@ -242,7 +241,7 @@ cfg_windows! {
 
     impl FromRawSocket for TcpListener {
         unsafe fn from_raw_socket(handle: RawSocket) -> TcpListener {
-            net::TcpListener::from_raw_socket(handle).try_into().unwrap()
+            std::net::TcpListener::from_raw_socket(handle).into()
         }
     }
 

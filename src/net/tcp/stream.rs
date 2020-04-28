@@ -388,17 +388,19 @@ cfg_unix! {
 }
 
 cfg_windows! {
-    use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle, RawSocket, AsRawSocket, FromRawSocket, IntoRawSocket};
+    use crate::os::windows::io::{
+        RawSocket, AsRawSocket, FromRawSocket, IntoRawSocket
+    };
 
     impl AsRawSocket for TcpStream {
         fn as_raw_socket(&self) -> RawSocket {
-            self.raw_socket
+            self.watcher.get_ref().as_raw_socket()
         }
     }
 
     impl FromRawSocket for TcpStream {
         unsafe fn from_raw_socket(handle: RawSocket) -> TcpStream {
-            net::TcpStream::from_raw_socket(handle).try_into().unwrap()
+            std::net::TcpStream::from_raw_socket(handle).into()
         }
     }
 
