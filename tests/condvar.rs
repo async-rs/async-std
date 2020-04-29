@@ -23,13 +23,13 @@ fn wait_timeout_with_lock() {
         spawn(async move {
             let (m, c) = &*pair2;
             let _g = m.lock().await;
-            task::sleep(Duration::from_millis(20)).await;
+            task::sleep(Duration::from_millis(200)).await;
             c.notify_one();
         });
 
         let (m, c) = &*pair;
         let (_, wait_result) = c
-            .wait_timeout(m.lock().await, Duration::from_millis(10))
+            .wait_timeout(m.lock().await, Duration::from_millis(100))
             .await;
         assert!(wait_result.timed_out());
     })
@@ -57,7 +57,7 @@ fn wait_timeout_until_timed_out() {
         let c = Condvar::new();
 
         let (_, wait_result) = c
-            .wait_timeout_until(m.lock().await, Duration::from_millis(10), |&mut started| {
+            .wait_timeout_until(m.lock().await, Duration::from_millis(100), |&mut started| {
                 started
             })
             .await;
@@ -85,7 +85,7 @@ fn notify_all() {
         }
 
         // Give some time for tasks to start up
-        task::sleep(Duration::from_millis(5)).await;
+        task::sleep(Duration::from_millis(50)).await;
 
         let (m, c) = &*pair;
         {
