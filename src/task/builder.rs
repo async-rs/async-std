@@ -132,7 +132,7 @@ impl Builder {
         });
 
         // Run the future as a task.
-        unsafe { TaskLocalsWrapper::set_current(&wrapped.tag, || smol::block_on(wrapped)) }
+        unsafe { TaskLocalsWrapper::set_current(&wrapped.tag, || smol::run(wrapped)) }
     }
 }
 
