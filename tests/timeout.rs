@@ -12,7 +12,7 @@ fn timeout_future_many() {
     task::block_on(async {
         let futures = (0..100)
             .map(|i| {
-                timeout(Duration::from_millis(i * 10), async move {
+                timeout(Duration::from_millis(i * 20), async move {
                     task::sleep(Duration::from_millis(i)).await;
                     Ok::<(), async_std::future::TimeoutError>(())
                 })
