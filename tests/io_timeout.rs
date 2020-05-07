@@ -10,6 +10,7 @@ use async_std::task;
     target_arch = "arm",
     target_arch = "mips",
     target_arch = "powerpc",
+    target_arch = "powerpc64",
     target_arch = "x86",
 )))] // stdin tests fail when running through cross
 fn io_timeout_timedout() {
