@@ -54,6 +54,11 @@ impl Builder {
     {
         let wrapped = self.build(future);
 
+        kv_log_macro::trace!("spawn", {
+            task_id: wrapped.tag.id().0,
+            parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
+        });
+
         let task = wrapped.tag.task().clone();
         let smol_task = smol::Task::spawn(wrapped).into();
 
@@ -68,6 +73,11 @@ impl Builder {
         T: 'static,
     {
         let wrapped = self.build(future);
+
+        kv_log_macro::trace!("spawn_local", {
+            task_id: wrapped.tag.id().0,
+            parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
+        });
 
         let task = wrapped.tag.task().clone();
         let smol_task = smol::Task::local(wrapped).into();
@@ -89,6 +99,10 @@ impl Builder {
             let res = future.await;
             let _ = sender.send(res);
         });
+        kv_log_macro::trace!("spawn_local", {
+            task_id: wrapped.tag.id().0,
+            parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
+        });
 
         let task = wrapped.tag.task().clone();
         wasm_bindgen_futures::spawn_local(wrapped);
@@ -109,6 +123,11 @@ impl Builder {
         let wrapped = self.build(async move {
             let res = future.await;
             let _ = sender.send(res);
+        });
+
+        kv_log_macro::trace!("spawn_local", {
+            task_id: wrapped.tag.id().0,
+            parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
         });
 
         let task = wrapped.tag.task().clone();
