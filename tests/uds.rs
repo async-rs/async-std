@@ -1,4 +1,4 @@
-#![cfg(unix)]
+#![cfg(all(unix, not(target_os = "unknown")))]
 
 use async_std::io;
 use async_std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};

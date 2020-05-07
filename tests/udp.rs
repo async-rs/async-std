@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "unknown"))]
+
 use async_std::io;
 use async_std::net::UdpSocket;
 use async_std::task;

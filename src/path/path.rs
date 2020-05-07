@@ -4,9 +4,9 @@ use std::ffi::{OsStr, OsString};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::fs;
-use crate::io;
 use crate::path::{Ancestors, Components, Display, Iter, PathBuf, StripPrefixError};
+#[cfg(not(target_os = "unknown"))]
+use crate::{fs, io};
 
 /// A slice of a path.
 ///
@@ -584,6 +584,7 @@ impl Path {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg(not(target_os = "unknown"))]
     pub async fn metadata(&self) -> io::Result<fs::Metadata> {
         fs::metadata(self).await
     }
@@ -607,6 +608,7 @@ impl Path {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg(not(target_os = "unknown"))]
     pub async fn symlink_metadata(&self) -> io::Result<fs::Metadata> {
         fs::symlink_metadata(self).await
     }
@@ -632,6 +634,7 @@ impl Path {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg(not(target_os = "unknown"))]
     pub async fn canonicalize(&self) -> io::Result<PathBuf> {
         fs::canonicalize(self).await
     }
@@ -654,6 +657,7 @@ impl Path {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg(not(target_os = "unknown"))]
     pub async fn read_link(&self) -> io::Result<PathBuf> {
         fs::read_link(self).await
     }
@@ -688,6 +692,7 @@ impl Path {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[cfg(not(target_os = "unknown"))]
     pub async fn read_dir(&self) -> io::Result<fs::ReadDir> {
         fs::read_dir(self).await
     }
@@ -717,6 +722,7 @@ impl Path {
     /// check errors, call [fs::metadata].
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
+    #[cfg(not(target_os = "unknown"))]
     pub async fn exists(&self) -> bool {
         fs::metadata(self).await.is_ok()
     }
@@ -749,6 +755,7 @@ impl Path {
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
     /// [fs::Metadata::is_file]: ../fs/struct.Metadata.html#method.is_file
+    #[cfg(not(target_os = "unknown"))]
     pub async fn is_file(&self) -> bool {
         fs::metadata(self)
             .await
@@ -785,6 +792,7 @@ impl Path {
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
     /// [fs::Metadata::is_dir]: ../fs/struct.Metadata.html#method.is_dir
+    #[cfg(not(target_os = "unknown"))]
     pub async fn is_dir(&self) -> bool {
         fs::metadata(self)
             .await

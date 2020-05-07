@@ -5,6 +5,7 @@ use async_std::task;
 
 #[test]
 #[should_panic(expected = "timed out")]
+#[cfg(not(target_os = "unknown"))]
 fn io_timeout_timedout() {
     task::block_on(async {
         io::timeout(Duration::from_secs(1), async {

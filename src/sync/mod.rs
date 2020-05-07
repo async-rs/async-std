@@ -194,8 +194,3 @@ cfg_unstable! {
 
 pub(crate) mod waker_set;
 pub(crate) use waker_set::WakerSet;
-
-cfg_default! {
-    pub(crate) mod spin_lock;
-    pub(crate) use spin_lock::Spinlock;
-}

@@ -2,10 +2,10 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
 
-use futures_timer::Delay;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 pin_project! {
     #[doc(hidden)]
@@ -14,13 +14,13 @@ pin_project! {
         #[pin]
         future: F,
         #[pin]
-        delay: Delay,
+        delay: Timer,
     }
 }
 
 impl<F> DelayFuture<F> {
     pub fn new(future: F, dur: Duration) -> DelayFuture<F> {
-        let delay = Delay::new(dur);
+        let delay = Timer::after(dur);
 
         DelayFuture { future, delay }
     }

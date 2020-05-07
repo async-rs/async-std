@@ -4,20 +4,20 @@ use std::thread;
 
 use once_cell::sync::Lazy;
 
-use crate::utils::abort_on_panic;
+use crate::future;
 
-pub use reactor::{Reactor, Watcher};
-pub use runtime::Runtime;
-
-mod reactor;
-mod runtime;
+/// Dummy runtime struct.
+pub struct Runtime {}
 
 /// The global runtime.
 pub static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
-    thread::Builder::new()
-        .name("async-std/runtime".to_string())
-        .spawn(|| abort_on_panic(|| RUNTIME.run()))
-        .expect("cannot start a runtime thread");
-
-    Runtime::new()
+    // Create an executor thread pool.
+    let num_threads = num_cpus::get().max(1);
+    for _ in 0..num_threads {
+        thread::Builder::new()
+            .name("async-std/runtime".to_string())
+            .spawn(|| smol::run(future::pending::<()>()))
+            .expect("cannot start a runtime thread");
+    }
+    Runtime {}
 });

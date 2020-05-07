@@ -21,7 +21,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 }
 
 /// Generates a random number in `0..n`.
-#[cfg(any(feature = "unstable", feature = "default"))]
+#[cfg(feature = "unstable")]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
@@ -57,6 +57,37 @@ pub fn random(n: u32) -> u32 {
 /// Add additional context to errors
 pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
+}
+
+#[cfg(all(not(target_os = "unknown"), feature = "default"))]
+pub(crate) type Timer = smol::Timer;
+
+#[cfg(all(target_arch = "wasm32", feature = "default"))]
+#[derive(Debug)]
+pub(crate) struct Timer(wasm_timer::Delay);
+
+#[cfg(all(target_arch = "wasm32", feature = "default"))]
+impl Timer {
+    pub(crate) fn after(dur: std::time::Duration) -> Self {
+        Timer(wasm_timer::Delay::new(dur))
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+use std::pin::Pin;
+#[cfg(target_arch = "wasm32")]
+use std::task::Poll;
+
+#[cfg(target_arch = "wasm32")]
+impl std::future::Future for Timer {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+        match Pin::new(&mut self.0).poll(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(_) => Poll::Ready(()),
+        }
+    }
 }
 
 /// Defers evaluation of a block of code until the end of the scope.

@@ -1,10 +1,10 @@
+use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use crate::future::Future;
 use crate::stream::Stream;
-use futures_timer::Delay;
+use crate::utils::Timer;
 
 /// Creates a new stream that yields at a set interval.
 ///
@@ -45,7 +45,7 @@ use futures_timer::Delay;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn interval(dur: Duration) -> Interval {
     Interval {
-        delay: Delay::new(dur),
+        delay: Timer::after(dur),
         interval: dur,
     }
 }
@@ -60,7 +60,7 @@ pub fn interval(dur: Duration) -> Interval {
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct Interval {
-    delay: Delay,
+    delay: Timer,
     interval: Duration,
 }
 
@@ -72,7 +72,7 @@ impl Stream for Interval {
             return Poll::Pending;
         }
         let interval = self.interval;
-        self.delay.reset(interval);
+        let _ = std::mem::replace(&mut self.delay, Timer::after(interval));
         Poll::Ready(Some(()))
     }
 }
