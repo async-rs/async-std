@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.0-beta.1] - 2020-05-07
+
+## Added
+
+- Added `task::spawn_local`. ([#757](https://github.com/async-rs/async-std/pull/757))
+- Added out of the box support for `wasm`. ([#757](https://github.com/async-rs/async-std/pull/757))
+- Added `JoinHandle::cancel` ([#757](https://github.com/async-rs/async-std/pull/757))
+- Added `sync::Condvar` ([#369](https://github.com/async-rs/async-std/pull/369))
+- Added `sync::Sender::try_send` and `sync::Receiver::try_recv` ([#585](https://github.com/async-rs/async-std/pull/585))
+- Added `no_std` support for `task`, `future` and `stream` ([#680](https://github.com/async-rs/async-std/pull/680))
+
+## Changed
+
+- Switched underlying runtime to [`smol`](https://github.com/stjepang/smol/). ([#757](https://github.com/async-rs/async-std/pull/757))
+- Switched implementation of `sync::Barrier` to use `sync::Condvar` like `std` does. ([#581](https://github.com/async-rs/async-std/pull/581))
+
+## Fixed
+
+- Allow compilation on 32 bit targets, by using `AtomicUsize` for `TaskId`. ([#756](https://github.com/async-rs/async-std/pull/756))
+
 # [1.5.0] - 2020-02-03
 
 [API Documentation](https://docs.rs/async-std/1.5.0/async-std)

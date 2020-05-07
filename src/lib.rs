@@ -194,7 +194,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! features = ["unstable"]
 //! ```
 //!
@@ -207,7 +207,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! features = ["attributes"]
 //! ```
 //!
@@ -216,7 +216,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! default-features = false
 //! features = ["std"]
 //! ```
@@ -226,7 +226,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.5.0"
+//! version = "1.6.0-beta.1"
 //! default-features = false
 //! features = ["alloc"]
 //! ```
