@@ -9,8 +9,9 @@ use async_std::task;
     target_os = "unknown",
     target_arch = "arm",
     target_arch = "mips",
-    target_arch = "powerpc"
-)))]
+    target_arch = "powerpc",
+    target_arch = "x86",
+)))] // stdin tests fail when running through cross
 fn io_timeout_timedout() {
     task::block_on(async {
         io::timeout(Duration::from_secs(1), async {
