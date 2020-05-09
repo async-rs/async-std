@@ -875,7 +875,7 @@ mod tests {
     #[test]
     fn async_file_drop() {
         crate::task::block_on(async move {
-            File::open(".").await.unwrap();
+            File::open(file!()).await.unwrap();
         });
     }
 }
