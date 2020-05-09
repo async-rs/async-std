@@ -12,7 +12,7 @@ use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::path::Path;
 use crate::prelude::*;
-use crate::task::{self, spawn_blocking, Context, Poll, Waker};
+use crate::task::{spawn_blocking, Context, Poll, Waker};
 use crate::utils::Context as _;
 
 /// An open file on the filesystem.
@@ -315,7 +315,7 @@ impl Drop for File {
         // non-blocking fashion, but our only other option here is losing data remaining in the
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
-        let _ = task::block_on(self.flush());
+        let _ = smol::block_on(self.flush());
     }
 }
 
@@ -865,5 +865,17 @@ impl LockGuard<State> {
     // semantics nor whether it will stay in the `AsyncWrite` trait.
     fn poll_close(self, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn async_file_drop() {
+        crate::task::block_on(async move {
+            File::open(file!()).await.unwrap();
+        });
     }
 }
