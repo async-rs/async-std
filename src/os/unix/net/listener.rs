@@ -13,6 +13,7 @@ use crate::io;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::stream::Stream;
+use crate::sync::Arc;
 use crate::task::{Context, Poll};
 
 /// A Unix domain socket server, listening for connections.
@@ -92,7 +93,7 @@ impl UnixListener {
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         let (stream, addr) = self.watcher.accept().await?;
 
-        Ok((UnixStream { watcher: stream }, addr))
+        Ok((UnixStream { watcher: Arc::new(stream) }, addr))
     }
 
     /// Returns a stream of incoming connections.
