@@ -64,12 +64,12 @@ pub(crate) type Timer = smol::Timer;
 
 #[cfg(all(target_arch = "wasm32", feature = "default"))]
 #[derive(Debug)]
-pub(crate) struct Timer(wasm_timer::Delay);
+pub(crate) struct Timer(futures_timer::Delay);
 
 #[cfg(all(target_arch = "wasm32", feature = "default"))]
 impl Timer {
     pub(crate) fn after(dur: std::time::Duration) -> Self {
-        Timer(wasm_timer::Delay::new(dur))
+        Timer(futures_timer::Delay::new(dur))
     }
 }
 
