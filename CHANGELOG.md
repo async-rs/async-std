@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+## Changed
+
+- For `wasm`, switched underlying `Timer` implementation to [`futures-timer`](https://github.com/async-rs/futures-timer). ([#776](https://github.com/async-rs/async-std/pull/776))
+
 # [1.6.0-beta.1] - 2020-05-07
 
 ## Added
