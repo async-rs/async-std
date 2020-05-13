@@ -29,7 +29,7 @@ fn wait_timeout_with_lock() {
 
         let (m, c) = &*pair;
         let (_, wait_result) = c
-            .wait_timeout(m.lock().await, Duration::from_millis(100))
+            .wait_timeout(m.lock().await, Duration::from_millis(50))
             .await;
         assert!(wait_result.timed_out());
     })
