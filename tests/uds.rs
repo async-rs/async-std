@@ -94,3 +94,27 @@ async fn ping_pong_client(socket: &std::path::PathBuf, iterations: u32) -> std::
     }
     Ok(())
 }
+
+#[test]
+fn uds_clone() -> io::Result<()> {
+    task::block_on(async {
+        let tmp_dir = TempDir::new("socket_ping_pong").expect("Temp dir not created");
+        let sock_path = tmp_dir.as_ref().join("sock");
+        let input = UnixListener::bind(&sock_path).await?;
+
+        let mut writer = UnixStream::connect(&sock_path).await?;
+        let mut reader = input.incoming().next().await.unwrap()?;
+
+        writer.write(b"original").await.unwrap();
+        let mut original_buf = [0; 8];
+        reader.read(&mut original_buf).await?;
+        assert_eq!(&original_buf, b"original");
+
+        writer.clone().write(b"clone").await.unwrap();
+        let mut clone_buf = [0; 5];
+        reader.clone().read(&mut clone_buf).await?;
+        assert_eq!(&clone_buf, b"clone");
+
+        Ok(())
+    })
+}

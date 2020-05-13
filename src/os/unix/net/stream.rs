@@ -11,6 +11,7 @@ use super::SocketAddr;
 use crate::io::{self, Read, Write};
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
+use crate::sync::Arc;
 use crate::task::{Context, Poll};
 
 /// A Unix stream socket.
@@ -36,8 +37,9 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
+#[derive(Clone)]
 pub struct UnixStream {
-    pub(super) watcher: Async<StdUnixStream>,
+    pub(super) watcher: Arc<Async<StdUnixStream>>,
 }
 
 impl UnixStream {
@@ -56,7 +58,7 @@ impl UnixStream {
     /// ```
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         let path = path.as_ref().to_owned();
-        let stream = Async::<StdUnixStream>::connect(path).await?;
+        let stream = Arc::new(Async::<StdUnixStream>::connect(path).await?);
 
         Ok(UnixStream { watcher: stream })
     }
@@ -78,8 +80,12 @@ impl UnixStream {
     /// ```
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
         let (a, b) = Async::<StdUnixStream>::pair()?;
-        let a = UnixStream { watcher: a };
-        let b = UnixStream { watcher: b };
+        let a = UnixStream {
+            watcher: Arc::new(a),
+        };
+        let b = UnixStream {
+            watcher: Arc::new(b),
+        };
         Ok((a, b))
     }
 
@@ -158,7 +164,7 @@ impl Read for &UnixStream {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.watcher).poll_read(cx, buf)
+        Pin::new(&mut &*self.watcher).poll_read(cx, buf)
     }
 }
 
@@ -186,15 +192,15 @@ impl Write for &UnixStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut &self.watcher).poll_write(cx, buf)
+        Pin::new(&mut &*self.watcher).poll_write(cx, buf)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.watcher).poll_flush(cx)
+        Pin::new(&mut &*self.watcher).poll_flush(cx)
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut &self.watcher).poll_close(cx)
+        Pin::new(&mut &*self.watcher).poll_close(cx)
     }
 }
 
@@ -219,7 +225,7 @@ impl From<StdUnixStream> for UnixStream {
     /// Converts a `std::os::unix::net::UnixStream` into its asynchronous equivalent.
     fn from(stream: StdUnixStream) -> UnixStream {
         let stream = Async::new(stream).expect("UnixStream is known to be good");
-        UnixStream { watcher: stream }
+        UnixStream { watcher: Arc::new(stream) }
     }
 }
 
@@ -238,6 +244,6 @@ impl FromRawFd for UnixStream {
 
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
-        self.watcher.into_raw_fd()
+        self.as_raw_fd()
     }
 }
