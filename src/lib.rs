@@ -230,6 +230,21 @@
 //! default-features = false
 //! features = ["alloc"]
 //! ```
+//!
+//! # Runtime configuration
+//!
+//! Several environment variables are available to tune the async-std
+//! runtime:
+//!
+//! * `ASYNC_STD_THREAD_COUNT`: The number of threads that the
+//! async-std runtime will start. By default, this is one per logical
+//! cpu as reported by the [num_cpus](num_cpus) crate, which may be
+//! different than the number of physical cpus. Async-std _will panic_
+//! if this is set to any value other than a positive integer.
+//! * `ASYNC_STD_THREAD_NAME`: The name that async-std's runtime
+//! threads report to the operating system. The default value is
+//! `"async-std/runtime"`.
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
