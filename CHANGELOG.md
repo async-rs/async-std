@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.0-beta.2] - 2020-05-19
+
+## Added 
+
+- Added an environment variable to configure the thread pool size of the runtime. ([#774](https://github.com/async-rs/async-std/pull/774))
+- Implement `Clone` for `UnixStream` ([#772](https://github.com/async-rs/async-std/pull/772))
+
 ## Changed
 
 - For `wasm`, switched underlying `Timer` implementation to [`futures-timer`](https://github.com/async-rs/futures-timer). ([#776](https://github.com/async-rs/async-std/pull/776))
+
+## Fixed
+
+- Use `smol::block_on` to handle drop of `File`, avoiding nested executor panic. ([#768](https://github.com/async-rs/async-std/pull/768))
 
 # [1.6.0-beta.1] - 2020-05-07
 
@@ -701,8 +712,9 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.5.0...HEAD
-[1.6.0-beta.1]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.6.0-beta.1
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.2...HEAD
+[1.6.0-beta.2]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.1...v1.6.0-beta.2
+[1.6.0-beta.1]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0-beta.1
 [1.5.0]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/async-rs/async-std/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/async-rs/async-std/compare/v1.2.0...v1.3.0
