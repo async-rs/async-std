@@ -5,6 +5,14 @@ use async_std::task;
 
 #[test]
 #[should_panic(expected = "timed out")]
+#[cfg(not(any(
+    target_os = "unknown",
+    target_arch = "arm",
+    target_arch = "mips",
+    target_arch = "powerpc",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+)))] // stdin tests fail when running through cross
 fn io_timeout_timedout() {
     task::block_on(async {
         io::timeout(Duration::from_secs(1), async {

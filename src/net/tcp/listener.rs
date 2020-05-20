@@ -1,13 +1,13 @@
 use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
-use std::sync::Arc;
 
-use crate::future;
+use smol::Async;
+
 use crate::io;
-use crate::net::driver::Watcher;
 use crate::net::{TcpStream, ToSocketAddrs};
 use crate::stream::Stream;
+use crate::sync::Arc;
 use crate::task::{Context, Poll};
 
 /// A TCP socket server, listening for connections.
@@ -49,7 +49,7 @@ use crate::task::{Context, Poll};
 /// ```
 #[derive(Debug)]
 pub struct TcpListener {
-    watcher: Watcher<mio::net::TcpListener>,
+    watcher: Async<std::net::TcpListener>,
 }
 
 impl TcpListener {
@@ -79,11 +79,9 @@ impl TcpListener {
         let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match mio::net::TcpListener::bind(&addr) {
-                Ok(mio_listener) => {
-                    return Ok(TcpListener {
-                        watcher: Watcher::new(mio_listener),
-                    });
+            match Async::<std::net::TcpListener>::bind(&addr) {
+                Ok(listener) => {
+                    return Ok(TcpListener { watcher: listener });
                 }
                 Err(err) => last_err = Some(err),
             }
@@ -114,13 +112,9 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        let (io, addr) =
-            future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.accept_std()))
-                .await?;
-
-        let mio_stream = mio::net::TcpStream::from_stream(io)?;
+        let (stream, addr) = self.watcher.accept().await?;
         let stream = TcpStream {
-            watcher: Arc::new(Watcher::new(mio_stream)),
+            watcher: Arc::new(stream),
         };
         Ok((stream, addr))
     }
@@ -206,9 +200,8 @@ impl<'a> Stream for Incoming<'a> {
 impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
     fn from(listener: std::net::TcpListener) -> TcpListener {
-        let mio_listener = mio::net::TcpListener::from_std(listener).unwrap();
         TcpListener {
-            watcher: Watcher::new(mio_listener),
+            watcher: Async::new(listener).expect("TcpListener is known to be good"),
         }
     }
 }
@@ -230,29 +223,31 @@ cfg_unix! {
 
     impl IntoRawFd for TcpListener {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_inner().into_raw_fd()
+            self.watcher.into_raw_fd()
         }
     }
 }
 
 cfg_windows! {
-    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    //
-    // impl AsRawSocket for TcpListener {
-    //     fn as_raw_socket(&self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
-    //
-    // impl FromRawSocket for TcpListener {
-    //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpListener {
-    //         net::TcpListener::from_raw_socket(handle).try_into().unwrap()
-    //     }
-    // }
-    //
-    // impl IntoRawSocket for TcpListener {
-    //     fn into_raw_socket(self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
+    use crate::os::windows::io::{
+        AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket,
+    };
+
+    impl AsRawSocket for TcpListener {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.watcher.as_raw_socket()
+        }
+    }
+
+    impl FromRawSocket for TcpListener {
+        unsafe fn from_raw_socket(handle: RawSocket) -> TcpListener {
+            std::net::TcpListener::from_raw_socket(handle).into()
+        }
+    }
+
+    impl IntoRawSocket for TcpListener {
+        fn into_raw_socket(self) -> RawSocket {
+            self.watcher.into_raw_socket()
+        }
+    }
 }

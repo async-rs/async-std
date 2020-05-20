@@ -197,7 +197,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! features = ["unstable"]
 //! ```
 //!
@@ -210,7 +210,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! features = ["attributes"]
 //! ```
 //!
@@ -219,7 +219,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.0-beta.1"
 //! default-features = false
 //! features = ["std"]
 //! ```
@@ -229,10 +229,25 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.5.0"
+//! version = "1.6.0-beta.1"
 //! default-features = false
 //! features = ["alloc"]
 //! ```
+//!
+//! # Runtime configuration
+//!
+//! Several environment variables are available to tune the async-std
+//! runtime:
+//!
+//! * `ASYNC_STD_THREAD_COUNT`: The number of threads that the
+//! async-std runtime will start. By default, this is one per logical
+//! cpu as reported by the [num_cpus](num_cpus) crate, which may be
+//! different than the number of physical cpus. Async-std _will panic_
+//! if this is set to any value other than a positive integer.
+//! * `ASYNC_STD_THREAD_NAME`: The name that async-std's runtime
+//! threads report to the operating system. The default value is
+//! `"async-std/runtime"`.
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
@@ -270,13 +285,17 @@ cfg_std! {
 }
 
 cfg_default! {
+    #[cfg(not(target_os = "unknown"))]
     pub mod fs;
     pub mod path;
     pub mod net;
+    #[cfg(not(target_os = "unknown"))]
+    pub(crate) mod rt;
 }
 
 cfg_unstable! {
     pub mod pin;
+    #[cfg(not(target_os = "unknown"))]
     pub mod process;
 
     mod unit;

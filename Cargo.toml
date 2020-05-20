@@ -1,9 +1,10 @@
 [package]
 name = "async-std"
-version = "1.5.0"
+version = "1.6.0-beta.1"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "Yoshua Wuyts <yoshuawuyts@gmail.com>",
+  "Friedel Ziegelmayer <me@dignifiedquire.com>",
   "Contributors to async-std",
 ]
 edition = "2018"
@@ -24,18 +25,13 @@ rustdoc-args = ["--cfg", "feature=\"docs\""]
 default = [
   "std",
   "async-task",
-  "crossbeam-channel",
-  "crossbeam-deque",
-  "futures-timer",
   "kv-log-macro",
   "log",
-  "mio",
-  "mio-uds",
   "num_cpus",
   "pin-project-lite",
 ]
 docs = ["attributes", "unstable", "default"]
-unstable = ["std", "broadcaster", "futures-timer"]
+unstable = ["std"]
 attributes = ["async-attributes"]
 std = [
   "alloc",
@@ -46,6 +42,10 @@ std = [
   "once_cell",
   "pin-utils",
   "slab",
+  "smol",
+  "futures-timer",
+  "wasm-bindgen-futures",
+  "futures-channel",
 ]
 alloc = [
   "futures-core/alloc",
@@ -54,31 +54,39 @@ alloc = [
 
 [dependencies]
 async-attributes = { version = "1.1.1", optional = true }
-async-task = { version = "1.2.1", optional = true }
-broadcaster = { version = "1.0.0", optional = true }
-crossbeam-channel = { version = "0.4.0", optional = true }
-crossbeam-deque = { version = "0.7.2", optional = true }
-crossbeam-utils = { version = "0.7.0", optional = true }
-futures-core = { version = "0.3.1", optional = true, default-features = false }
-futures-io = { version = "0.3.1", optional = true }
-futures-timer = { version = "2.0.2", optional = true }
+async-task = { version = "3.0.0", optional = true }
+crossbeam-utils = { version = "0.7.2", optional = true }
+futures-core = { version = "0.3.4", optional = true, default-features = false }
+futures-io = { version = "0.3.4", optional = true }
 kv-log-macro = { version = "1.0.4", optional = true }
 log = { version = "0.4.8", features = ["kv_unstable"], optional = true }
-memchr = { version = "2.3.0", optional = true }
-mio = { version = "0.6.19", optional = true }
-mio-uds = { version = "0.6.7", optional = true }
-num_cpus = { version = "1.11.1", optional = true }
-once_cell = { version = "1.2.0", optional = true }
-pin-project-lite = { version = "0.1.2", optional = true }
+memchr = { version = "2.3.3", optional = true }
+num_cpus = { version = "1.12.0", optional = true }
+once_cell = { version = "1.3.1", optional = true }
+pin-project-lite = { version = "0.1.4", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
+
+# Devdepencency, but they are not allowed to be optional :/
+surf = { version = "1.0.3", optional = true }
+
+[target.'cfg(not(target_os = "unknown"))'.dependencies]
+smol = { version = "0.1.1", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures-timer = { version = "3.0.2", optional = true, features = ["wasm-bindgen"] }
+wasm-bindgen-futures = { version = "0.4.10", optional = true }
+futures-channel = { version = "0.3.4", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3.10"
 
 [dev-dependencies]
 femme = "1.3.0"
 rand = "0.7.3"
-surf = "1.0.3"
 tempdir = "0.3.7"
-futures = "0.3.1"
+futures = "0.3.4"
+rand_xorshift = "0.2.0"
 
 [[test]]
 name = "stream"
@@ -87,3 +95,7 @@ required-features = ["unstable"]
 [[example]]
 name = "tcp-ipv4-and-6-echo"
 required-features = ["unstable"]
+
+[[example]]
+name = "surf-web"
+required-features = ["surf"]

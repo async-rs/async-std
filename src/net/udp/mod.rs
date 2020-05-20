@@ -2,8 +2,8 @@ use std::io;
 use std::net::SocketAddr;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use crate::future;
-use crate::net::driver::Watcher;
+use smol::Async;
+
 use crate::net::ToSocketAddrs;
 use crate::utils::Context as _;
 
@@ -45,7 +45,7 @@ use crate::utils::Context as _;
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
-    watcher: Watcher<mio::net::UdpSocket>,
+    watcher: Async<std::net::UdpSocket>,
 }
 
 impl UdpSocket {
@@ -69,16 +69,12 @@ impl UdpSocket {
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<UdpSocket> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match mio::net::UdpSocket::bind(&addr) {
-                Ok(mio_socket) => {
-                    return Ok(UdpSocket {
-                        watcher: Watcher::new(mio_socket),
-                    });
+            match Async::<std::net::UdpSocket>::bind(&addr) {
+                Ok(socket) => {
+                    return Ok(UdpSocket { watcher: socket });
                 }
                 Err(err) => last_err = Some(err),
             }
@@ -102,7 +98,7 @@ impl UdpSocket {
     /// ```no_run
     /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
     /// #
-    ///	use async_std::net::UdpSocket;
+    /// use async_std::net::UdpSocket;
     ///
     /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
     /// let addr = socket.local_addr()?;
@@ -153,12 +149,10 @@ impl UdpSocket {
             }
         };
 
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_write_with(cx, |inner| inner.send_to(buf, &addr))
-        })
-        .await
-        .context(|| format!("could not send packet to {}", addr))
+        self.watcher
+            .send_to(buf, addr)
+            .await
+            .context(|| format!("could not send packet to {}", addr))
     }
 
     /// Receives data from the socket.
@@ -181,22 +175,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_read_with(cx, |inner| inner.recv_from(buf))
-        })
-        .await
-        .context(|| {
-            use std::fmt::Write;
-
-            let mut error = String::from("could not receive data on ");
-            if let Ok(addr) = self.local_addr() {
-                let _ = write!(&mut error, "{}", addr);
-            } else {
-                error.push_str("socket");
-            }
-            error
-        })
+        self.watcher.recv_from(buf).await
     }
 
     /// Connects the UDP socket to a remote address.
@@ -267,19 +246,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_write_with(cx, |inner| inner.send(buf)))
-            .await
-            .context(|| {
-                use std::fmt::Write;
-
-                let mut error = String::from("could not send data on ");
-                if let Ok(addr) = self.local_addr() {
-                    let _ = write!(&mut error, "{}", addr);
-                } else {
-                    error.push_str("socket");
-                }
-                error
-            })
+        self.watcher.send(buf).await
     }
 
     /// Receives data from the socket.
@@ -303,19 +270,7 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.recv(buf)))
-            .await
-            .context(|| {
-                use std::fmt::Write;
-
-                let mut error = String::from("could not receive data on ");
-                if let Ok(addr) = self.local_addr() {
-                    let _ = write!(&mut error, "{}", addr);
-                } else {
-                    error.push_str("socket");
-                }
-                error
-            })
+        self.watcher.recv(buf).await
     }
 
     /// Gets the value of the `SO_BROADCAST` option for this socket.
@@ -498,9 +453,8 @@ impl UdpSocket {
 impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
     fn from(socket: std::net::UdpSocket) -> UdpSocket {
-        let mio_socket = mio::net::UdpSocket::from_socket(socket).unwrap();
         UdpSocket {
-            watcher: Watcher::new(mio_socket),
+            watcher: Async::new(socket).expect("UdpSocket is known to be good"),
         }
     }
 }
@@ -522,29 +476,31 @@ cfg_unix! {
 
     impl IntoRawFd for UdpSocket {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_inner().into_raw_fd()
+            self.watcher.into_raw_fd()
         }
     }
 }
 
 cfg_windows! {
-    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    //
-    // impl AsRawSocket for UdpSocket {
-    //     fn as_raw_socket(&self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
-    //
-    // impl FromRawSocket for UdpSocket {
-    //     unsafe fn from_raw_socket(handle: RawSocket) -> UdpSocket {
-    //         net::UdpSocket::from_raw_socket(handle).into()
-    //     }
-    // }
-    //
-    // impl IntoRawSocket for UdpSocket {
-    //     fn into_raw_socket(self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
+    use crate::os::windows::io::{
+        RawSocket, AsRawSocket, IntoRawSocket, FromRawSocket
+    };
+
+    impl AsRawSocket for UdpSocket {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.watcher.get_ref().as_raw_socket()
+        }
+    }
+
+    impl FromRawSocket for UdpSocket {
+        unsafe fn from_raw_socket(handle: RawSocket) -> UdpSocket {
+            std::net::UdpSocket::from_raw_socket(handle).into()
+        }
+    }
+
+    impl IntoRawSocket for UdpSocket {
+        fn into_raw_socket(self) -> RawSocket {
+            self.watcher.into_raw_socket()
+        }
+    }
 }

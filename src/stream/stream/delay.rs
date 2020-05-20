@@ -6,6 +6,7 @@ use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 pin_project! {
     #[doc(hidden)]
@@ -14,7 +15,7 @@ pin_project! {
         #[pin]
         stream: S,
         #[pin]
-        delay: futures_timer::Delay,
+        delay: Timer,
         delay_done: bool,
     }
 }
@@ -23,7 +24,7 @@ impl<S> Delay<S> {
     pub(super) fn new(stream: S, dur: Duration) -> Self {
         Delay {
             stream,
-            delay: futures_timer::Delay::new(dur),
+            delay: Timer::after(dur),
             delay_done: false,
         }
     }

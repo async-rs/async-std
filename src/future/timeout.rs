@@ -1,13 +1,13 @@
 use std::error::Error;
 use std::fmt;
+use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
-use std::future::Future;
 
-use futures_timer::Delay;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 /// Awaits a future or times out after a duration of time.
 ///
@@ -33,11 +33,7 @@ pub async fn timeout<F, T>(dur: Duration, f: F) -> Result<T, TimeoutError>
 where
     F: Future<Output = T>,
 {
-    let f = TimeoutFuture {
-        future: f,
-        delay: Delay::new(dur),
-    };
-    f.await
+    TimeoutFuture::new(f, dur).await
 }
 
 pin_project! {
@@ -46,14 +42,17 @@ pin_project! {
         #[pin]
         future: F,
         #[pin]
-        delay: Delay,
+        delay: Timer,
     }
 }
 
 impl<F> TimeoutFuture<F> {
     #[allow(dead_code)]
     pub(super) fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
-        TimeoutFuture { future: future, delay: Delay::new(dur) }
+        TimeoutFuture {
+            future,
+            delay: Timer::after(dur),
+        }
     }
 }
 
