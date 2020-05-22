@@ -992,6 +992,7 @@ impl<T> Drop for Channel<T> {
 /// An error returned from the `try_send` method.
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[derive(PartialEq, Eq)]
 pub enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
@@ -1023,7 +1024,7 @@ impl<T> Display for TrySendError<T> {
 /// An error returned from the `try_recv` method.
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
@@ -1046,7 +1047,7 @@ impl Display for TryRecvError {
 /// An error returned from the `recv` method.
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RecvError;
 
 impl Error for RecvError {}

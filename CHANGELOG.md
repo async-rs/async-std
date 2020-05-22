@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.0] - 2020-05-22
+
+See `1.6.0-beta.1` and `1.6.0-beta.2`.
+
 # [1.6.0-beta.2] - 2020-05-19
 
 ## Added 
@@ -712,7 +716,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.2...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0
 [1.6.0-beta.2]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.1...v1.6.0-beta.2
 [1.6.0-beta.1]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0-beta.1
 [1.5.0]: https://github.com/async-rs/async-std/compare/v1.4.0...v1.5.0
