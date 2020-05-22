@@ -29,7 +29,7 @@ extension_trait! {
 
         ```
         # #[allow(unused_imports)]
-        use async_std::prelude::*;
+        use async_std::io::prelude::*;
         ```
 
         [`std::io::BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
