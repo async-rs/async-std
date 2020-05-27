@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -7,6 +8,11 @@ use pin_project_lite::pin_project;
 
 use crate::io;
 use crate::task::{JoinHandle, Task, TaskLocalsWrapper};
+
+#[cfg(not(target_os = "unknown"))]
+thread_local! {
+    static IS_CURRENT_BLOCKING: Cell<usize> = Cell::new(0);
+}
 
 /// Task builder that configures the settings of a new task.
 #[derive(Debug, Default)]
@@ -151,7 +157,36 @@ impl Builder {
         });
 
         // Run the future as a task.
-        unsafe { TaskLocalsWrapper::set_current(&wrapped.tag, || smol::run(wrapped)) }
+        IS_CURRENT_BLOCKING.with(|is_current_blocking| {
+            let count = is_current_blocking.get();
+            let res = if count == 0 {
+                // increase the count
+                is_current_blocking.replace(1);
+
+                // The first call should use run.
+                unsafe {
+                    TaskLocalsWrapper::set_current(&wrapped.tag, || {
+                        let res = smol::run(wrapped);
+                        is_current_blocking.replace(is_current_blocking.get() - 1);
+                        res
+                    })
+                }
+            } else {
+                // increase the count
+                is_current_blocking.replace(is_current_blocking.get() + 1);
+
+                // Subsequent calls should be using `block_on`.
+                unsafe {
+                    TaskLocalsWrapper::set_current(&wrapped.tag, || {
+                        let res = smol::block_on(wrapped);
+                        is_current_blocking.replace(is_current_blocking.get() - 1);
+                        res
+                    })
+                }
+            };
+
+            res
+        })
     }
 }
 

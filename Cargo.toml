@@ -103,3 +103,7 @@ required-features = ["unstable"]
 [[example]]
 name = "surf-web"
 required-features = ["surf"]
+
+[patch.crates-io]
+smol = { git = "https://github.com/dignifiedquire/smol-1", branch = "feat/recursive-block-on" }
+
