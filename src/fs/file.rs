@@ -673,7 +673,7 @@ impl LockGuard<State> {
                 if available > 0 || self.cache.is_empty() {
                     // Copy data from the cache into the buffer.
                     let n = cmp::min(available, buf.len());
-                    buf[..n].copy_from_slice(&self.cache[start..n]);
+                    buf[..n].copy_from_slice(&self.cache[start..(start + n)]);
 
                     // Move the read cursor forward.
                     self.mode = Mode::Reading(start + n);
