@@ -64,7 +64,10 @@ mod timer {
     pub type Timer = smol::Timer;
 }
 
-#[cfg(any(all(target_arch = "wasm32", feature = "default"), feature = "unstable"))]
+#[cfg(any(
+    all(target_arch = "wasm32", feature = "default"),
+    all(feature = "unstable", not(feature = "default"))
+))]
 mod timer {
     use std::pin::Pin;
     use std::task::Poll;
