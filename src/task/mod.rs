@@ -168,7 +168,9 @@ cfg_default! {
 }
 
 cfg_unstable! {
+    #[cfg(feature = "default")]
     pub use spawn_local::spawn_local;
 
+    #[cfg(feature = "default")]
     mod spawn_local;
 }

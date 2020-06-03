@@ -60,35 +60,37 @@ pub(crate) trait Context {
 }
 
 #[cfg(all(not(target_os = "unknown"), feature = "default"))]
-pub(crate) type Timer = smol::Timer;
-
-#[cfg(all(target_arch = "wasm32", feature = "default"))]
-#[derive(Debug)]
-pub(crate) struct Timer(futures_timer::Delay);
-
-#[cfg(all(target_arch = "wasm32", feature = "default"))]
-impl Timer {
-    pub(crate) fn after(dur: std::time::Duration) -> Self {
-        Timer(futures_timer::Delay::new(dur))
-    }
+mod timer {
+    pub type Timer = smol::Timer;
 }
 
-#[cfg(target_arch = "wasm32")]
-use std::pin::Pin;
-#[cfg(target_arch = "wasm32")]
-use std::task::Poll;
+#[cfg(any(all(target_arch = "wasm32", feature = "default"), feature = "unstable"))]
+mod timer {
+    use std::pin::Pin;
+    use std::task::Poll;
 
-#[cfg(target_arch = "wasm32")]
-impl std::future::Future for Timer {
-    type Output = ();
+    #[derive(Debug)]
+    pub(crate) struct Timer(futures_timer::Delay);
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
-        match Pin::new(&mut self.0).poll(cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(_) => Poll::Ready(()),
+    impl Timer {
+        pub(crate) fn after(dur: std::time::Duration) -> Self {
+            Timer(futures_timer::Delay::new(dur))
+        }
+    }
+
+    impl std::future::Future for Timer {
+        type Output = ();
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+            match Pin::new(&mut self.0).poll(cx) {
+                Poll::Pending => Poll::Pending,
+                Poll::Ready(_) => Poll::Ready(()),
+            }
         }
     }
 }
+
+pub(crate) use timer::*;
 
 /// Defers evaluation of a block of code until the end of the scope.
 #[cfg(feature = "default")]
