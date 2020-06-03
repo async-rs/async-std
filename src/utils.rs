@@ -90,6 +90,7 @@ mod timer {
     }
 }
 
+#[cfg(any(feature = "unstable", feature = "default"))]
 pub(crate) use timer::*;
 
 /// Defers evaluation of a block of code until the end of the scope.
