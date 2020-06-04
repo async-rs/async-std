@@ -328,12 +328,3 @@ cfg_default! {
     #[cfg(not(target_os = "unknown"))]
     mod stdout;
 }
-
-cfg_unstable_default! {
-    #[cfg(not(target_os = "unknown"))]
-    pub use stderr::StderrLock;
-    #[cfg(not(target_os = "unknown"))]
-    pub use stdin::StdinLock;
-    #[cfg(not(target_os = "unknown"))]
-    pub use stdout::StdoutLock;
-}
