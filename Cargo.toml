@@ -75,7 +75,7 @@ futures-timer = { version = "3.0.2", optional = true }
 surf = { version = "1.0.3", optional = true }
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
-smol = { version = "0.1.10", optional = true }
+smol = { version = "0.1.11", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 futures-timer = { version = "3.0.2", optional = true, features = ["wasm-bindgen"] }
@@ -103,3 +103,4 @@ required-features = ["unstable"]
 [[example]]
 name = "surf-web"
 required-features = ["surf"]
+

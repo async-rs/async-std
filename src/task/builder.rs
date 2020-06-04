@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -150,8 +151,31 @@ impl Builder {
             parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
         });
 
+        thread_local! {
+            /// Tracks the number of nested block_on calls.
+            static NUM_NESTED_BLOCKING: Cell<usize> = Cell::new(0);
+        }
+
         // Run the future as a task.
-        unsafe { TaskLocalsWrapper::set_current(&wrapped.tag, || smol::run(wrapped)) }
+        NUM_NESTED_BLOCKING.with(|num_nested_blocking| {
+            let count = num_nested_blocking.get();
+            let should_run = count == 0;
+            // increase the count
+            num_nested_blocking.replace(count + 1);
+
+            unsafe {
+                TaskLocalsWrapper::set_current(&wrapped.tag, || {
+                    let res = if should_run {
+                        // The first call should use run.
+                        smol::run(wrapped)
+                    } else {
+                        smol::block_on(wrapped)
+                    };
+                    num_nested_blocking.replace(num_nested_blocking.get() - 1);
+                    res
+                })
+            }
+        })
     }
 }
 
