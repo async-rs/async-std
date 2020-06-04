@@ -1,9 +1,6 @@
 #![cfg(not(target_os = "unknown"))]
 
-use async_std::{
-    future::ready,
-    task::{block_on, spawn_local},
-};
+use async_std::{future::ready, task::block_on};
 
 #[test]
 fn smoke() {
@@ -23,6 +20,8 @@ fn panic() {
 #[cfg(feature = "unstable")]
 #[test]
 fn nested_block_on_local() {
+    use async_std::task::spawn_local;
+
     let x = block_on(async {
         let a = block_on(async { block_on(async { ready(3).await }) });
         let b = spawn_local(async { block_on(async { ready(2).await }) }).await;
