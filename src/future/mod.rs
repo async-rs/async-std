@@ -61,10 +61,10 @@ cfg_std! {
     mod ready;
 }
 
-cfg_default! {
-    pub use timeout::{timeout, TimeoutError};
-    mod timeout;
-}
+#[cfg(any(feature = "unstable", feature = "default"))]
+pub use timeout::{timeout, TimeoutError};
+#[cfg(any(feature = "unstable", feature = "default"))]
+mod timeout;
 
 cfg_unstable! {
     pub use into_future::IntoFuture;
