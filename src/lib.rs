@@ -214,6 +214,15 @@
 //! features = ["attributes"]
 //! ```
 //!
+//! Compatibility with the `tokio` runtime is possible using the `tokio02`
+//! Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.6.0"
+//! features = ["tokio02"]
+//! ```
+//!
 //! Additionally it's possible to only use the core traits and combinators by
 //! only enabling the `std` Cargo feature:
 //!

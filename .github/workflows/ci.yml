@@ -110,6 +110,17 @@ jobs:
         command:  check
         args: --no-default-features --features alloc --target thumbv7m-none-eabi -Z avoid-dev-deps
 
+  check_tokio_02_feature:
+    name: Check tokio02 feature
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: check tokio02
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --all --features tokio02
+
   cross:
     name: Cross compile
     runs-on: ubuntu-latest
