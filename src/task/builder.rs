@@ -9,11 +9,6 @@ use pin_project_lite::pin_project;
 use crate::io;
 use crate::task::{JoinHandle, Task, TaskLocalsWrapper};
 
-#[cfg(not(target_os = "unknown"))]
-thread_local! {
-    static IS_CURRENT_BLOCKING: Cell<usize> = Cell::new(0);
-}
-
 /// Task builder that configures the settings of a new task.
 #[derive(Debug, Default)]
 pub struct Builder {
@@ -156,36 +151,30 @@ impl Builder {
             parent_task_id: TaskLocalsWrapper::get_current(|t| t.id().0).unwrap_or(0),
         });
 
+        thread_local! {
+            /// Tracks the number of nested block_on calls.
+            static NUM_NESTED_BLOCKING: Cell<usize> = Cell::new(0);
+        }
+
         // Run the future as a task.
-        IS_CURRENT_BLOCKING.with(|is_current_blocking| {
-            let count = is_current_blocking.get();
-            let res = if count == 0 {
-                // increase the count
-                is_current_blocking.replace(1);
+        NUM_NESTED_BLOCKING.with(|num_nested_blocking| {
+            let count = num_nested_blocking.get();
+            let should_run = count == 0;
+            // increase the count
+            num_nested_blocking.replace(count + 1);
 
-                // The first call should use run.
-                unsafe {
-                    TaskLocalsWrapper::set_current(&wrapped.tag, || {
-                        let res = smol::run(wrapped);
-                        is_current_blocking.replace(is_current_blocking.get() - 1);
-                        res
-                    })
-                }
-            } else {
-                // increase the count
-                is_current_blocking.replace(is_current_blocking.get() + 1);
-
-                // Subsequent calls should be using `block_on`.
-                unsafe {
-                    TaskLocalsWrapper::set_current(&wrapped.tag, || {
-                        let res = smol::block_on(wrapped);
-                        is_current_blocking.replace(is_current_blocking.get() - 1);
-                        res
-                    })
-                }
-            };
-
-            res
+            unsafe {
+                TaskLocalsWrapper::set_current(&wrapped.tag, || {
+                    let res = if should_run {
+                        // The first call should use run.
+                        smol::run(wrapped)
+                    } else {
+                        smol::block_on(wrapped)
+                    };
+                    num_nested_blocking.replace(num_nested_blocking.get() - 1);
+                    res
+                })
+            }
         })
     }
 }
