@@ -30,19 +30,19 @@ jobs:
         override: true
 
     - name: Cache cargo registry
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.cargo/registry
         key: ${{ matrix.os }}-${{ matrix.rust }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
 
     - name: Cache cargo index
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.cargo/git
         key: ${{ matrix.os }}-${{ matrix.rust }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
 
     - name: Cache cargo build
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: target
         key: ${{ matrix.os }}-${{ matrix.rust }}-cargo-build-target-${{ hashFiles('**/Cargo.toml') }}
@@ -58,7 +58,7 @@ jobs:
       with:
         command:  check
         args: --features unstable --all --bins --examples --tests
-        
+
     - name: check wasm
       uses: actions-rs/cargo@v1
       with:
