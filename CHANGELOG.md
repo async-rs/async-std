@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.1] - 2020-06-11
+
+## Added
+
+- Added `tokio02` feature flag, to allow compatability usage with tokio@0.2 ([#804](https://github.com/async-rs/async-std/pull/804)).
+
+## Changed
+
+- Removed unstable `stdio` lock methods, due to their unsoundness ([#807](https://github.com/async-rs/async-std/pull/807)).
+
+## Fixed
+
+- Fixed wrong slice index for file reading ([#802](https://github.com/async-rs/async-std/pull/802)).
+- Fixed recursive calls to `block_on` ([#799](https://github.com/async-rs/async-std/pull/799)) and ([#809](https://github.com/async-rs/async-std/pull/809)).
+- Remove `default` feature requirement for the `unstable` feature ([#806](https://github.com/async-rs/async-std/pull/806)).
+
 # [1.6.0] - 2020-05-22
 
 See `1.6.0-beta.1` and `1.6.0-beta.2`.
@@ -716,7 +732,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/async-rs/async-std/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0
 [1.6.0-beta.2]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.1...v1.6.0-beta.2
 [1.6.0-beta.1]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0-beta.1
