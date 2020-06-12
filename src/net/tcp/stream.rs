@@ -1,13 +1,13 @@
-use std::io::{IoSlice, IoSliceMut, Read as _, Write as _};
+use std::io::{IoSlice, IoSliceMut};
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use crate::future;
+use smol::Async;
+
 use crate::io::{self, Read, Write};
-use crate::net::driver::Watcher;
 use crate::net::ToSocketAddrs;
-use crate::task::{spawn_blocking, Context, Poll};
-use crate::utils::Context as _;
+use crate::sync::Arc;
+use crate::task::{Context, Poll};
 
 /// A TCP stream between a local and a remote socket.
 ///
@@ -45,9 +45,9 @@ use crate::utils::Context as _;
 /// #
 /// # Ok(()) }) }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TcpStream {
-    pub(super) watcher: Watcher<mio::net::TcpStream>,
+    pub(super) watcher: Arc<Async<std::net::TcpStream>>,
 }
 
 impl TcpStream {
@@ -72,25 +72,19 @@ impl TcpStream {
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
         let mut last_err = None;
-        let addrs = addrs
-            .to_socket_addrs()
-            .await?;
+        let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            let res = spawn_blocking(move || {
-                let std_stream = std::net::TcpStream::connect(addr)
-                    .context(|| format!("could not connect to {}", addr))?;
-                let mio_stream = mio::net::TcpStream::from_stream(std_stream)
-                    .context(|| format!("could not open async connection to {}", addr))?;
-                Ok(TcpStream {
-                    watcher: Watcher::new(mio_stream),
-                })
-            })
-            .await;
-
-            match res {
-                Ok(stream) => return Ok(stream),
-                Err(err) => last_err = Some(err),
+            match Async::<std::net::TcpStream>::connect(&addr).await {
+                Ok(stream) => {
+                    return Ok(TcpStream {
+                        watcher: Arc::new(stream),
+                    });
+                }
+                Err(e) => {
+                    last_err = Some(e);
+                    continue;
+                }
             }
         }
 
@@ -208,7 +202,7 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.peek(buf))).await
+        self.watcher.peek(buf).await
     }
 
     /// Gets the value of the `TCP_NODELAY` option on this socket.
@@ -311,7 +305,7 @@ impl Read for &TcpStream {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher.poll_read_with(cx, |mut inner| inner.read(buf))
+        Pin::new(&mut &*self.watcher).poll_read(cx, buf)
     }
 }
 
@@ -347,26 +341,23 @@ impl Write for &TcpStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher
-            .poll_write_with(cx, |mut inner| inner.write(buf))
+        Pin::new(&mut &*self.watcher).poll_write(cx, buf)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.watcher.poll_write_with(cx, |mut inner| inner.flush())
+        Pin::new(&mut &*self.watcher).poll_flush(cx)
     }
 
-    fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.shutdown(std::net::Shutdown::Write)?;
-        Poll::Ready(Ok(()))
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut &*self.watcher).poll_close(cx)
     }
 }
 
 impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
     fn from(stream: std::net::TcpStream) -> TcpStream {
-        let mio_stream = mio::net::TcpStream::from_stream(stream).unwrap();
         TcpStream {
-            watcher: Watcher::new(mio_stream),
+            watcher: Arc::new(Async::new(stream).expect("TcpStream is known to be good")),
         }
     }
 }
@@ -388,29 +379,37 @@ cfg_unix! {
 
     impl IntoRawFd for TcpStream {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_inner().into_raw_fd()
+            // TODO(stjepang): This does not mean `RawFd` is now the sole owner of the file
+            // descriptor because it's possible that there are other clones of this `TcpStream`
+            // using it at the same time. We should probably document that behavior.
+            self.as_raw_fd()
         }
     }
 }
 
 cfg_windows! {
-    // use crate::os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle};
-    //
-    // impl AsRawSocket for TcpStream {
-    //     fn as_raw_socket(&self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
-    //
-    // impl FromRawSocket for TcpStream {
-    //     unsafe fn from_raw_socket(handle: RawSocket) -> TcpStream {
-    //         net::TcpStream::from_raw_socket(handle).try_into().unwrap()
-    //     }
-    // }
-    //
-    // impl IntoRawSocket for TcpListener {
-    //     fn into_raw_socket(self) -> RawSocket {
-    //         self.raw_socket
-    //     }
-    // }
+    use crate::os::windows::io::{
+        RawSocket, AsRawSocket, FromRawSocket, IntoRawSocket
+    };
+
+    impl AsRawSocket for TcpStream {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.watcher.get_ref().as_raw_socket()
+        }
+    }
+
+    impl FromRawSocket for TcpStream {
+        unsafe fn from_raw_socket(handle: RawSocket) -> TcpStream {
+            std::net::TcpStream::from_raw_socket(handle).into()
+        }
+    }
+
+    impl IntoRawSocket for TcpStream {
+        fn into_raw_socket(self) -> RawSocket {
+            // TODO(stjepang): This does not mean `RawFd` is now the sole owner of the file
+            // descriptor because it's possible that there are other clones of this `TcpStream`
+            // using it at the same time. We should probably document that behavior.
+            self.as_raw_socket()
+        }
+    }
 }

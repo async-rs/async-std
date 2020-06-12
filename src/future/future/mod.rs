@@ -21,8 +21,8 @@ cfg_unstable_default! {
 }
 
 extension_trait! {
-    use std::pin::Pin;
-    use std::ops::{Deref, DerefMut};
+    use core::pin::Pin;
+    use core::ops::{Deref, DerefMut};
 
     use crate::task::{Context, Poll};
 
@@ -136,7 +136,7 @@ extension_trait! {
 
         [`Future`]: ../future/trait.Future.html
     "#]
-    pub trait FutureExt: std::future::Future {
+    pub trait FutureExt: core::future::Future {
         /// Returns a Future that delays execution for a specified time.
         ///
         /// # Examples

@@ -1,7 +1,7 @@
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
 use pin_project_lite::pin_project;
-use std::pin::Pin;
+use core::pin::Pin;
 
 pin_project! {
     /// A stream that clones the elements of an underlying stream.

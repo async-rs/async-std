@@ -1,4 +1,4 @@
-use crate::task::Task;
+use crate::task::{Task, TaskLocalsWrapper};
 
 /// Returns a handle to the current task.
 ///
@@ -23,6 +23,6 @@ use crate::task::Task;
 /// # })
 /// ```
 pub fn current() -> Task {
-    Task::get_current(|t| t.clone())
+    TaskLocalsWrapper::get_current(|t| t.task().clone())
         .expect("`task::current()` called outside the context of a task")
 }

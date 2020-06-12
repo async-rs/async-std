@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use crate::prelude::*;
-use crate::stream::{Stream, Product};
+use crate::stream::{Product, Stream};
 
 impl<T, U, E> Product<Result<U, E>> for Result<T, E>
 where
@@ -36,26 +36,39 @@ where
         ```
     "#]
     fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Result<T, E>> + 'a>>
-        where S: Stream<Item = Result<U, E>> + 'a
+    where
+        S: Stream<Item = Result<U, E>> + 'a,
     {
         Box::pin(async move {
-            // Using `scan` here because it is able to stop the stream early
+            // Using `take_while` here because it is able to stop the stream early
             // if a failure occurs
+            let mut is_error = false;
             let mut found_error = None;
-            let out = <T as Product<U>>::product(stream
-                .scan((), |_, elem| {
-                    match elem {
-                        Ok(elem) => Some(elem),
+            let out = <T as Product<U>>::product(
+                stream
+                    .take_while(|elem| {
+                        // Stop processing the stream on `Err`
+                        !is_error
+                            && (elem.is_ok() || {
+                                is_error = true;
+                                // Capture first `Err`
+                                true
+                            })
+                    })
+                    .filter_map(|elem| match elem {
+                        Ok(value) => Some(value),
                         Err(err) => {
                             found_error = Some(err);
-                            // Stop processing the stream on error
                             None
                         }
-                    }
-                })).await;
-            match found_error {
-                Some(err) => Err(err),
-                None => Ok(out)
+                    }),
+            )
+            .await;
+
+            if is_error {
+                Err(found_error.unwrap())
+            } else {
+                Ok(out)
             }
         })
     }

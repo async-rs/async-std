@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "unknown"))]
+
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use async_std::net::ToSocketAddrs;

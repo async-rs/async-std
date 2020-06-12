@@ -1,7 +1,6 @@
-use std::cmp::{Ord, Ordering};
-use std::marker::PhantomData;
-use std::pin::Pin;
-use std::future::Future;
+use core::cmp::{Ord, Ordering};
+use core::future::Future;
+use core::pin::Pin;
 
 use pin_project_lite::pin_project;
 
@@ -11,29 +10,23 @@ use crate::task::{Context, Poll};
 pin_project! {
     #[doc(hidden)]
     #[allow(missing_debug_implementations)]
-    pub struct MinFuture<S, F, T> {
+    pub struct MinFuture<S, T> {
         #[pin]
         stream: S,
-        _compare: PhantomData<F>,
         min: Option<T>,
     }
 }
 
-impl<S, F, T> MinFuture<S, F, T> {
+impl<S, T> MinFuture<S, T> {
     pub(super) fn new(stream: S) -> Self {
-        Self {
-            stream,
-            _compare: PhantomData,
-            min: None,
-        }
+        Self { stream, min: None }
     }
 }
 
-impl<S, F> Future for MinFuture<S, F, S::Item>
+impl<S> Future for MinFuture<S, S::Item>
 where
     S: Stream,
     S::Item: Ord,
-    F: FnMut(&S::Item, &S::Item) -> Ordering,
 {
     type Output = Option<S::Item>;
 

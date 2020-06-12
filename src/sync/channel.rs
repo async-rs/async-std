@@ -1,5 +1,6 @@
 use std::cell::UnsafeCell;
-use std::fmt;
+use std::error::Error;
+use std::fmt::{self, Debug, Display};
 use std::future::Future;
 use std::isize;
 use std::marker::PhantomData;
@@ -31,6 +32,7 @@ use crate::sync::WakerSet;
 /// # Examples
 ///
 /// ```
+/// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
@@ -41,7 +43,7 @@ use crate::sync::WakerSet;
 /// let (s, r) = channel(1);
 ///
 /// // This call returns immediately because there is enough space in the channel.
-/// s.send(1).await;
+/// s.send(1usize).await;
 ///
 /// task::spawn(async move {
 ///     // This call will have to wait because the channel is full.
@@ -50,10 +52,11 @@ use crate::sync::WakerSet;
 /// });
 ///
 /// task::sleep(Duration::from_secs(1)).await;
-/// assert_eq!(r.recv().await, Some(1));
-/// assert_eq!(r.recv().await, Some(2));
+/// assert_eq!(r.recv().await?, 1);
+/// assert_eq!(r.recv().await?, 2);
+/// # Ok(())
 /// #
-/// # })
+/// # }) }
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -112,6 +115,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -124,11 +128,12 @@ impl<T> Sender<T> {
     ///     s.send(2).await;
     /// });
     ///
-    /// assert_eq!(r.recv().await, Some(1));
-    /// assert_eq!(r.recv().await, Some(2));
-    /// assert_eq!(r.recv().await, None);
+    /// assert_eq!(r.recv().await?, 1);
+    /// assert_eq!(r.recv().await?, 2);
+    /// assert!(r.recv().await.is_err());
     /// #
-    /// # })
+    /// # Ok(())
+    /// # }) }
     /// ```
     pub async fn send(&self, msg: T) {
         struct SendFuture<'a, T> {
@@ -190,6 +195,27 @@ impl<T> Sender<T> {
             opt_key: None,
         }
         .await
+    }
+
+    /// Attempts to send a message into the channel.
+    ///
+    /// If the channel is full, this method will return an error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # async_std::task::block_on(async {
+    /// #
+    /// use async_std::sync::channel;
+    ///
+    /// let (s, r) = channel(1);
+    /// assert!(s.try_send(1).is_ok());
+    /// assert!(s.try_send(2).is_err());
+    /// #
+    /// # })
+    /// ```
+    pub fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
+        self.channel.try_send(msg)
     }
 
     /// Returns the channel capacity.
@@ -313,6 +339,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// # Examples
 ///
 /// ```
+/// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
 /// use std::time::Duration;
@@ -323,15 +350,16 @@ impl<T> fmt::Debug for Sender<T> {
 /// let (s, r) = channel(100);
 ///
 /// task::spawn(async move {
-///     s.send(1).await;
+///     s.send(1usize).await;
 ///     task::sleep(Duration::from_secs(1)).await;
 ///     s.send(2).await;
 /// });
 ///
-/// assert_eq!(r.recv().await, Some(1)); // Received immediately.
-/// assert_eq!(r.recv().await, Some(2)); // Received after 1 second.
+/// assert_eq!(r.recv().await?, 1); // Received immediately.
+/// assert_eq!(r.recv().await?, 2); // Received after 1 second.
 /// #
-/// # })
+/// # Ok(())
+/// # }) }
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
@@ -346,12 +374,14 @@ pub struct Receiver<T> {
 impl<T> Receiver<T> {
     /// Receives a message from the channel.
     ///
-    /// If the channel is empty and still has senders, this method will wait until a message is
-    /// sent into the channel or until all senders get dropped.
+    /// If the channel is empty and still has senders, this method
+    /// will wait until a message is sent into it. Once all senders
+    /// have been dropped it will return `None`.
     ///
     /// # Examples
     ///
     /// ```
+    /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -360,24 +390,26 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(1);
     ///
     /// task::spawn(async move {
-    ///     s.send(1).await;
+    ///     s.send(1usize).await;
     ///     s.send(2).await;
+    ///     // Then we drop the sender
     /// });
     ///
-    /// assert_eq!(r.recv().await, Some(1));
-    /// assert_eq!(r.recv().await, Some(2));
-    /// assert_eq!(r.recv().await, None);
+    /// assert_eq!(r.recv().await?, 1);
+    /// assert_eq!(r.recv().await?, 2);
+    /// assert!(r.recv().await.is_err());
     /// #
-    /// # })
+    /// # Ok(())
+    /// # }) }
     /// ```
-    pub async fn recv(&self) -> Option<T> {
+    pub async fn recv(&self) -> Result<T, RecvError> {
         struct RecvFuture<'a, T> {
             channel: &'a Channel<T>,
             opt_key: Option<usize>,
         }
 
         impl<T> Future for RecvFuture<'_, T> {
-            type Output = Option<T>;
+            type Output = Result<T, RecvError>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 poll_recv(
@@ -403,6 +435,30 @@ impl<T> Receiver<T> {
             opt_key: None,
         }
         .await
+    }
+
+    /// Attempts to receive a message from the channel.
+    ///
+    /// If the channel is empty, this method will return an error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # async_std::task::block_on(async {
+    /// #
+    /// use async_std::sync::channel;
+    ///
+    /// let (s, r) = channel(1);
+    ///
+    /// s.send(1u8).await;
+    ///
+    /// assert!(r.try_recv().is_ok());
+    /// assert!(r.try_recv().is_err());
+    /// #
+    /// # })
+    /// ```
+    pub fn try_recv(&self) -> Result<T, TryRecvError> {
+        self.channel.try_recv()
     }
 
     /// Returns the channel capacity.
@@ -519,12 +575,13 @@ impl<T> Stream for Receiver<T> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
-        poll_recv(
+        let res = futures_core::ready!(poll_recv(
             &this.channel,
             &this.channel.stream_wakers,
             &mut this.opt_key,
             cx,
-        )
+        ));
+        Poll::Ready(res.ok())
     }
 }
 
@@ -543,7 +600,7 @@ fn poll_recv<T>(
     wakers: &WakerSet,
     opt_key: &mut Option<usize>,
     cx: &mut Context<'_>,
-) -> Poll<Option<T>> {
+) -> Poll<Result<T, RecvError>> {
     loop {
         // If the current task is in the set, remove it.
         if let Some(key) = opt_key.take() {
@@ -552,8 +609,8 @@ fn poll_recv<T>(
 
         // Try receiving a message.
         match channel.try_recv() {
-            Ok(msg) => return Poll::Ready(Some(msg)),
-            Err(TryRecvError::Disconnected) => return Poll::Ready(None),
+            Ok(msg) => return Poll::Ready(Ok(msg)),
+            Err(TryRecvError::Disconnected) => return Poll::Ready(Err(RecvError {})),
             Err(TryRecvError::Empty) => {
                 // Insert this receive operation.
                 *opt_key = Some(wakers.insert(cx));
@@ -932,8 +989,11 @@ impl<T> Drop for Channel<T> {
     }
 }
 
-/// An error returned from the `try_send()` method.
-enum TrySendError<T> {
+/// An error returned from the `try_send` method.
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[derive(PartialEq, Eq)]
+pub enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
 
@@ -941,11 +1001,59 @@ enum TrySendError<T> {
     Disconnected(T),
 }
 
-/// An error returned from the `try_recv()` method.
-enum TryRecvError {
+impl<T> Error for TrySendError<T> {}
+
+impl<T> Debug for TrySendError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Full(_) => Debug::fmt("Full<T>", f),
+            Self::Disconnected(_) => Debug::fmt("Disconnected<T>", f),
+        }
+    }
+}
+
+impl<T> Display for TrySendError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Full(_) => Display::fmt("The channel is full.", f),
+            Self::Disconnected(_) => Display::fmt("The channel is full and disconnected.", f),
+        }
+    }
+}
+
+/// An error returned from the `try_recv` method.
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
 
     /// The channel is empty and disconnected.
     Disconnected,
+}
+
+impl Error for TryRecvError {}
+
+impl Display for TryRecvError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Empty => Display::fmt("The channel is empty.", f),
+            Self::Disconnected => Display::fmt("The channel is empty and disconnected.", f),
+        }
+    }
+}
+
+/// An error returned from the `recv` method.
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[derive(Debug, PartialEq, Eq)]
+pub struct RecvError;
+
+impl Error for RecvError {}
+
+impl Display for RecvError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt("The channel is empty.", f)
+    }
 }

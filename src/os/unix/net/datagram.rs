@@ -2,16 +2,14 @@
 
 use std::fmt;
 use std::net::Shutdown;
+use std::os::unix::net::UnixDatagram as StdUnixDatagram;
 
-use mio_uds;
+use smol::Async;
 
 use super::SocketAddr;
-use crate::future;
 use crate::io;
-use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
-use crate::task::spawn_blocking;
 
 /// A Unix datagram socket.
 ///
@@ -42,13 +40,13 @@ use crate::task::spawn_blocking;
 /// # Ok(()) }) }
 /// ```
 pub struct UnixDatagram {
-    watcher: Watcher<mio_uds::UnixDatagram>,
+    watcher: Async<StdUnixDatagram>,
 }
 
 impl UnixDatagram {
-    fn new(socket: mio_uds::UnixDatagram) -> UnixDatagram {
+    fn new(socket: StdUnixDatagram) -> UnixDatagram {
         UnixDatagram {
-            watcher: Watcher::new(socket),
+            watcher: Async::new(socket).expect("UnixDatagram is known to be good"),
         }
     }
 
@@ -67,8 +65,8 @@ impl UnixDatagram {
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
         let path = path.as_ref().to_owned();
-        let socket = spawn_blocking(move || mio_uds::UnixDatagram::bind(path)).await?;
-        Ok(UnixDatagram::new(socket))
+        let socket = Async::<StdUnixDatagram>::bind(path)?;
+        Ok(UnixDatagram { watcher: socket })
     }
 
     /// Creates a Unix datagram which is not bound to any address.
@@ -85,7 +83,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn unbound() -> io::Result<UnixDatagram> {
-        let socket = mio_uds::UnixDatagram::unbound()?;
+        let socket = StdUnixDatagram::unbound()?;
         Ok(UnixDatagram::new(socket))
     }
 
@@ -105,7 +103,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixDatagram, UnixDatagram)> {
-        let (a, b) = mio_uds::UnixDatagram::pair()?;
+        let (a, b) = StdUnixDatagram::pair()?;
         let a = UnixDatagram::new(a);
         let b = UnixDatagram::new(b);
         Ok((a, b))
@@ -197,11 +195,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_read_with(cx, |inner| inner.recv_from(buf))
-        })
-        .await
+        self.watcher.recv_from(buf).await
     }
 
     /// Receives data from the socket.
@@ -222,7 +216,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_read_with(cx, |inner| inner.recv(buf))).await
+        self.watcher.recv(buf).await
     }
 
     /// Sends data on the socket to the specified address.
@@ -242,11 +236,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn send_to<P: AsRef<Path>>(&self, buf: &[u8], path: P) -> io::Result<usize> {
-        future::poll_fn(|cx| {
-            self.watcher
-                .poll_write_with(cx, |inner| inner.send_to(buf, path.as_ref()))
-        })
-        .await
+        self.watcher.send_to(buf, path.as_ref()).await
     }
 
     /// Sends data on the socket to the socket's peer.
@@ -267,7 +257,7 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        future::poll_fn(|cx| self.watcher.poll_write_with(cx, |inner| inner.send(buf))).await
+        self.watcher.send(buf).await
     }
 
     /// Shut down the read, write, or both halves of this connection.
@@ -312,31 +302,31 @@ impl fmt::Debug for UnixDatagram {
     }
 }
 
-impl From<std::os::unix::net::UnixDatagram> for UnixDatagram {
+impl From<StdUnixDatagram> for UnixDatagram {
     /// Converts a `std::os::unix::net::UnixDatagram` into its asynchronous equivalent.
-    fn from(datagram: std::os::unix::net::UnixDatagram) -> UnixDatagram {
-        let mio_datagram = mio_uds::UnixDatagram::from_datagram(datagram).unwrap();
+    fn from(datagram: StdUnixDatagram) -> UnixDatagram {
         UnixDatagram {
-            watcher: Watcher::new(mio_datagram),
+            watcher: Async::new(datagram).expect("UnixDatagram is known to be good"),
         }
     }
 }
 
 impl AsRawFd for UnixDatagram {
     fn as_raw_fd(&self) -> RawFd {
-        self.watcher.get_ref().as_raw_fd()
+        self.watcher.as_raw_fd()
     }
 }
 
 impl FromRawFd for UnixDatagram {
     unsafe fn from_raw_fd(fd: RawFd) -> UnixDatagram {
-        let datagram = std::os::unix::net::UnixDatagram::from_raw_fd(fd);
-        datagram.into()
+        let raw = StdUnixDatagram::from_raw_fd(fd);
+        let datagram = Async::<StdUnixDatagram>::new(raw).expect("invalid file descriptor");
+        UnixDatagram { watcher: datagram }
     }
 }
 
 impl IntoRawFd for UnixDatagram {
     fn into_raw_fd(self) -> RawFd {
-        self.watcher.into_inner().into_raw_fd()
+        self.watcher.into_raw_fd()
     }
 }

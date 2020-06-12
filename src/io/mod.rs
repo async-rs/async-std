@@ -275,7 +275,7 @@ cfg_std! {
     #[doc(inline)]
     pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
-    pub use buf_read::{BufRead, Lines};
+    pub use buf_read::{BufRead, Lines, Split};
     pub use buf_reader::BufReader;
     pub use buf_writer::{BufWriter, IntoInnerError};
     pub use copy::copy;
@@ -307,22 +307,24 @@ cfg_std! {
 cfg_default! {
     // For use in the print macros.
     #[doc(hidden)]
+    #[cfg(not(target_os = "unknown"))]
     pub use stdio::{_eprint, _print};
 
+    #[cfg(not(target_os = "unknown"))]
     pub use stderr::{stderr, Stderr};
+    #[cfg(not(target_os = "unknown"))]
     pub use stdin::{stdin, Stdin};
+    #[cfg(not(target_os = "unknown"))]
     pub use stdout::{stdout, Stdout};
     pub use timeout::timeout;
 
     mod timeout;
+    #[cfg(not(target_os = "unknown"))]
     mod stderr;
+    #[cfg(not(target_os = "unknown"))]
     mod stdin;
+    #[cfg(not(target_os = "unknown"))]
     mod stdio;
+    #[cfg(not(target_os = "unknown"))]
     mod stdout;
-}
-
-cfg_unstable_default! {
-    pub use stderr::StderrLock;
-    pub use stdin::StdinLock;
-    pub use stdout::StdoutLock;
 }

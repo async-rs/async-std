@@ -1,7 +1,7 @@
 use pin_project_lite::pin_project;
-use std::default::Default;
-use std::future::Future;
-use std::pin::Pin;
+use core::default::Default;
+use core::future::Future;
+use core::pin::Pin;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};

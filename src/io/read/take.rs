@@ -218,7 +218,7 @@ impl<T: BufRead> BufRead for Take<T> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "unknown")))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

@@ -1,14 +1,14 @@
 use std::error::Error;
 use std::fmt;
+use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
-use std::future::Future;
 
-use futures_timer::Delay;
 use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
+use crate::utils::Timer;
 
 pin_project! {
     /// A stream with timeout time set
@@ -17,13 +17,13 @@ pin_project! {
         #[pin]
         stream: S,
         #[pin]
-        delay: Delay,
+        delay: Timer,
     }
 }
 
 impl<S: Stream> Timeout<S> {
     pub(crate) fn new(stream: S, dur: Duration) -> Self {
-        let delay = Delay::new(dur);
+        let delay = Timer::after(dur);
 
         Self { stream, delay }
     }

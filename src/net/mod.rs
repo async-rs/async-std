@@ -61,11 +61,16 @@ pub use std::net::Shutdown;
 pub use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 pub use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 
+#[cfg(not(target_os = "unknown"))]
 pub use addr::ToSocketAddrs;
+#[cfg(not(target_os = "unknown"))]
 pub use tcp::{Incoming, TcpListener, TcpStream};
+#[cfg(not(target_os = "unknown"))]
 pub use udp::UdpSocket;
 
+#[cfg(not(target_os = "unknown"))]
 mod addr;
-pub(crate) mod driver;
+#[cfg(not(target_os = "unknown"))]
 mod tcp;
+#[cfg(not(target_os = "unknown"))]
 mod udp;

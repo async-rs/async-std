@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use crate::task::Task;
+use crate::task::TaskLocalsWrapper;
 
 /// The key for accessing a task-local value.
 ///
@@ -98,7 +98,7 @@ impl<T: Send + 'static> LocalKey<T> {
     where
         F: FnOnce(&T) -> R,
     {
-        Task::get_current(|task| unsafe {
+        TaskLocalsWrapper::get_current(|task| unsafe {
             // Prepare the numeric key, initialization function, and the map of task-locals.
             let key = self.key();
             let init = || Box::new((self.__init)()) as Box<dyn Send>;

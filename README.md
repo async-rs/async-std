@@ -8,6 +8,11 @@
 <br />
 
 <div align="center">
+   <!-- CI status -->
+  <a href="https://github.com/async-rs/async-std/actions">
+    <img src="https://github.com/async-rs/async-std/workflows/CI/badge.svg"
+      alt="CI Status" />
+  </a>
   <!-- Crates version -->
   <a href="https://crates.io/crates/async-std">
     <img src="https://img.shields.io/crates/v/async-std.svg?style=flat-square"
@@ -133,6 +138,10 @@ documentation] on how to enable them.
  * [SQLx](https://crates.io/crates/sqlx) — The Rust **SQL** Toolkit. SQLx is a 100% safe Rust library for Postgres and MySQL with compile-time checked queries.
 
  * [Surf](https://crates.io/crates/surf) — Surf the web. Surf is a friendly **HTTP client** built for casual Rustaceans and veterans alike.
+ 
+ * [Xactor](https://crates.io/crates/xactor) — Xactor is a rust actors framework based on async-std.
+ 
+ * [async-graphql](https://crates.io/crates/async-graphql) — A GraphQL server library implemented in rust, with full support for async/await.
  
 ## License
 

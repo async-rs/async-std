@@ -117,13 +117,16 @@
 //! [`task_local!`]: ../macro.task_local.html
 //! [`with`]: struct.LocalKey.html#method.with
 
-cfg_std! {
+cfg_alloc! {
     #[doc(inline)]
-    pub use std::task::{Context, Poll, Waker};
-
+    pub use core::task::{Context, Poll, Waker};
     pub use ready::ready;
-    pub use yield_now::yield_now;
+
     mod ready;
+}
+
+cfg_std! {
+    pub use yield_now::yield_now;
     mod yield_now;
 }
 
@@ -135,26 +138,39 @@ cfg_default! {
     pub use task_id::TaskId;
     pub use join_handle::JoinHandle;
     pub use sleep::sleep;
+    #[cfg(not(target_os = "unknown"))]
     pub use spawn::spawn;
     pub use task_local::{AccessError, LocalKey};
 
-    use builder::Runnable;
-    use task_local::LocalsMap;
+    pub(crate) use task_local::LocalsMap;
+    pub(crate) use task_locals_wrapper::TaskLocalsWrapper;
 
     mod block_on;
     mod builder;
     mod current;
-    mod executor;
     mod join_handle;
     mod sleep;
+    #[cfg(not(target_os = "unknown"))]
     mod spawn;
+    #[cfg(not(target_os = "unknown"))]
     mod spawn_blocking;
     mod task;
     mod task_id;
     mod task_local;
+    mod task_locals_wrapper;
 
+    #[cfg(not(target_os = "unknown"))]
     #[cfg(any(feature = "unstable", test))]
     pub use spawn_blocking::spawn_blocking;
+    #[cfg(not(target_os = "unknown"))]
     #[cfg(not(any(feature = "unstable", test)))]
     pub(crate) use spawn_blocking::spawn_blocking;
+}
+
+cfg_unstable! {
+    #[cfg(feature = "default")]
+    pub use spawn_local::spawn_local;
+
+    #[cfg(feature = "default")]
+    mod spawn_local;
 }

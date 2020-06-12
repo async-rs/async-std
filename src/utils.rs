@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 /// Calls a function and aborts if it panics.
 ///
 /// This is useful in unsafe code where we can't recover from panics.
@@ -19,7 +21,7 @@ pub fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 }
 
 /// Generates a random number in `0..n`.
-#[cfg(any(feature = "unstable", feature = "default"))]
+#[cfg(feature = "unstable")]
 pub fn random(n: u32) -> u32 {
     use std::cell::Cell;
     use std::num::Wrapping;
@@ -56,6 +58,43 @@ pub fn random(n: u32) -> u32 {
 pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
 }
+
+#[cfg(all(not(target_os = "unknown"), feature = "default"))]
+mod timer {
+    pub type Timer = smol::Timer;
+}
+
+#[cfg(any(
+    all(target_arch = "wasm32", feature = "default"),
+    all(feature = "unstable", not(feature = "default"))
+))]
+mod timer {
+    use std::pin::Pin;
+    use std::task::Poll;
+
+    #[derive(Debug)]
+    pub(crate) struct Timer(futures_timer::Delay);
+
+    impl Timer {
+        pub(crate) fn after(dur: std::time::Duration) -> Self {
+            Timer(futures_timer::Delay::new(dur))
+        }
+    }
+
+    impl std::future::Future for Timer {
+        type Output = ();
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Self::Output> {
+            match Pin::new(&mut self.0).poll(cx) {
+                Poll::Pending => Poll::Pending,
+                Poll::Ready(_) => Poll::Ready(()),
+            }
+        }
+    }
+}
+
+#[cfg(any(feature = "unstable", feature = "default"))]
+pub(crate) use timer::*;
 
 /// Defers evaluation of a block of code until the end of the scope.
 #[cfg(feature = "default")]
@@ -104,6 +143,7 @@ macro_rules! cfg_unstable_default {
 
 /// Declares Unix-specific items.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_unix {
     ($($item:item)*) => {
         $(
@@ -116,6 +156,7 @@ macro_rules! cfg_unix {
 
 /// Declares Windows-specific items.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_windows {
     ($($item:item)*) => {
         $(
@@ -128,6 +169,7 @@ macro_rules! cfg_windows {
 
 /// Declares items when the "docs" feature is enabled.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_docs {
     ($($item:item)*) => {
         $(
@@ -139,6 +181,7 @@ macro_rules! cfg_docs {
 
 /// Declares items when the "docs" feature is disabled.
 #[doc(hidden)]
+#[allow(unused_macros)]
 macro_rules! cfg_not_docs {
     ($($item:item)*) => {
         $(
@@ -155,6 +198,18 @@ macro_rules! cfg_std {
     ($($item:item)*) => {
         $(
             #[cfg(feature = "std")]
+            $item
+        )*
+    }
+}
+
+/// Declares no-std items.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_alloc {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "alloc")]
             $item
         )*
     }
@@ -180,6 +235,7 @@ macro_rules! cfg_default {
 ///
 /// Inside invocations of this macro, we write a definitions that looks similar to the final
 /// rendered docs, and the macro then generates all the boilerplate for us.
+#[allow(unused_macros)]
 #[doc(hidden)]
 macro_rules! extension_trait {
     (
@@ -204,14 +260,14 @@ macro_rules! extension_trait {
         #[allow(dead_code)]
         mod owned {
             #[doc(hidden)]
-            pub struct ImplFuture<T>(std::marker::PhantomData<T>);
+            pub struct ImplFuture<T>(core::marker::PhantomData<T>);
         }
 
         // A fake `impl Future` type that borrows its environment.
         #[allow(dead_code)]
         mod borrowed {
             #[doc(hidden)]
-            pub struct ImplFuture<'a, T>(std::marker::PhantomData<&'a T>);
+            pub struct ImplFuture<'a, T>(core::marker::PhantomData<&'a T>);
         }
 
         // Render a fake trait combining the bodies of the base trait and the extension trait.
@@ -236,11 +292,6 @@ macro_rules! extension_trait {
 
         // Shim trait impls that only appear in docs.
         $(#[cfg(feature = "docs")] $imp)*
-    };
-
-    // Optimization: expand `$head` eagerly before starting a new method definition.
-    (@ext ($($head:tt)*) #[doc = $d:literal] $($tail:tt)*) => {
-        $($head)* extension_trait!(@ext (#[doc = $d]) $($tail)*);
     };
 
     // Parse the return type in an extension method.

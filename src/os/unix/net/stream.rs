@@ -1,18 +1,18 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::io::{Read as _, Write as _};
 use std::net::Shutdown;
+use std::os::unix::net::UnixStream as StdUnixStream;
 use std::pin::Pin;
 
-use mio_uds;
+use smol::Async;
 
 use super::SocketAddr;
 use crate::io::{self, Read, Write};
-use crate::net::driver::Watcher;
 use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
-use crate::task::{spawn_blocking, Context, Poll};
+use crate::sync::Arc;
+use crate::task::{Context, Poll};
 
 /// A Unix stream socket.
 ///
@@ -37,8 +37,9 @@ use crate::task::{spawn_blocking, Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
+#[derive(Clone)]
 pub struct UnixStream {
-    pub(super) watcher: Watcher<mio_uds::UnixStream>,
+    pub(super) watcher: Arc<Async<StdUnixStream>>,
 }
 
 impl UnixStream {
@@ -57,15 +58,9 @@ impl UnixStream {
     /// ```
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
         let path = path.as_ref().to_owned();
+        let stream = Arc::new(Async::<StdUnixStream>::connect(path).await?);
 
-        spawn_blocking(move || {
-            let std_stream = std::os::unix::net::UnixStream::connect(path)?;
-            let mio_stream = mio_uds::UnixStream::from_stream(std_stream)?;
-            Ok(UnixStream {
-                watcher: Watcher::new(mio_stream),
-            })
-        })
-        .await
+        Ok(UnixStream { watcher: stream })
     }
 
     /// Creates an unnamed pair of connected sockets.
@@ -84,12 +79,12 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
-        let (a, b) = mio_uds::UnixStream::pair()?;
+        let (a, b) = Async::<StdUnixStream>::pair()?;
         let a = UnixStream {
-            watcher: Watcher::new(a),
+            watcher: Arc::new(a),
         };
         let b = UnixStream {
-            watcher: Watcher::new(b),
+            watcher: Arc::new(b),
         };
         Ok((a, b))
     }
@@ -169,7 +164,7 @@ impl Read for &UnixStream {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher.poll_read_with(cx, |mut inner| inner.read(buf))
+        Pin::new(&mut &*self.watcher).poll_read(cx, buf)
     }
 }
 
@@ -197,16 +192,15 @@ impl Write for &UnixStream {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        self.watcher
-            .poll_write_with(cx, |mut inner| inner.write(buf))
+        Pin::new(&mut &*self.watcher).poll_write(cx, buf)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.watcher.poll_write_with(cx, |mut inner| inner.flush())
+        Pin::new(&mut &*self.watcher).poll_flush(cx)
     }
 
-    fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(Ok(()))
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut &*self.watcher).poll_close(cx)
     }
 }
 
@@ -227,19 +221,17 @@ impl fmt::Debug for UnixStream {
     }
 }
 
-impl From<std::os::unix::net::UnixStream> for UnixStream {
+impl From<StdUnixStream> for UnixStream {
     /// Converts a `std::os::unix::net::UnixStream` into its asynchronous equivalent.
-    fn from(stream: std::os::unix::net::UnixStream) -> UnixStream {
-        let mio_stream = mio_uds::UnixStream::from_stream(stream).unwrap();
-        UnixStream {
-            watcher: Watcher::new(mio_stream),
-        }
+    fn from(stream: StdUnixStream) -> UnixStream {
+        let stream = Async::new(stream).expect("UnixStream is known to be good");
+        UnixStream { watcher: Arc::new(stream) }
     }
 }
 
 impl AsRawFd for UnixStream {
     fn as_raw_fd(&self) -> RawFd {
-        self.watcher.get_ref().as_raw_fd()
+        self.watcher.as_raw_fd()
     }
 }
 
@@ -252,6 +244,6 @@ impl FromRawFd for UnixStream {
 
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
-        self.watcher.into_inner().into_raw_fd()
+        self.as_raw_fd()
     }
 }

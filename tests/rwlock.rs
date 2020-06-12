@@ -10,6 +10,14 @@ use async_std::sync::RwLock;
 use async_std::task;
 use futures::channel::mpsc;
 
+#[cfg(not(target_os = "unknown"))]
+use async_std::task::spawn;
+#[cfg(target_os = "unknown")]
+use async_std::task::spawn_local as spawn;
+
+#[cfg(target_arch = "wasm32")]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
 /// Generates a random number in `0..n`.
 pub fn random(n: u32) -> u32 {
     thread_local! {
@@ -35,6 +43,7 @@ pub fn random(n: u32) -> u32 {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn smoke() {
     task::block_on(async {
         let lock = RwLock::new(());
@@ -46,6 +55,7 @@ fn smoke() {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn try_write() {
     task::block_on(async {
         let lock = RwLock::new(0isize);
@@ -56,12 +66,14 @@ fn try_write() {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn into_inner() {
     let lock = RwLock::new(10);
     assert_eq!(lock.into_inner(), 10);
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn into_inner_and_drop() {
     struct Counter(Arc<AtomicUsize>);
 
@@ -84,6 +96,7 @@ fn into_inner_and_drop() {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn get_mut() {
     let mut lock = RwLock::new(10);
     *lock.get_mut() = 20;
@@ -91,6 +104,7 @@ fn get_mut() {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn contention() {
     const N: u32 = 10;
     const M: usize = 1000;
@@ -104,7 +118,7 @@ fn contention() {
         let tx = tx.clone();
         let rw = rw.clone();
 
-        task::spawn(async move {
+        spawn(async move {
             for _ in 0..M {
                 if random(N) == 0 {
                     drop(rw.write().await);
@@ -116,7 +130,7 @@ fn contention() {
         });
     }
 
-    task::block_on(async {
+    task::block_on(async move {
         for _ in 0..N {
             rx.next().await.unwrap();
         }
@@ -124,6 +138,7 @@ fn contention() {
 }
 
 #[test]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
 fn writer_and_readers() {
     #[derive(Default)]
     struct Yield(Cell<bool>);
@@ -146,7 +161,7 @@ fn writer_and_readers() {
     let (tx, mut rx) = mpsc::unbounded();
 
     // Spawn a writer task.
-    task::spawn({
+    spawn({
         let lock = lock.clone();
         async move {
             let mut lock = lock.write().await;
@@ -164,13 +179,13 @@ fn writer_and_readers() {
     let mut readers = Vec::new();
     for _ in 0..5 {
         let lock = lock.clone();
-        readers.push(task::spawn(async move {
+        readers.push(spawn(async move {
             let lock = lock.read().await;
             assert!(*lock >= 0);
         }));
     }
 
-    task::block_on(async {
+    task::block_on(async move {
         // Wait for readers to pass their asserts.
         for r in readers {
             r.await;

@@ -184,9 +184,11 @@ mod rwlock;
 
 cfg_unstable! {
     pub use barrier::{Barrier, BarrierWaitResult};
-    pub use channel::{channel, Sender, Receiver};
+    pub use channel::{channel, Sender, Receiver, RecvError, TryRecvError, TrySendError};
+    pub use condvar::Condvar;
 
     mod barrier;
+    mod condvar;
     mod channel;
 }
 

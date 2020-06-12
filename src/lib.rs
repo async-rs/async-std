@@ -138,7 +138,8 @@
 //!
 //! Call an async function from the main function:
 //!
-//! ```
+#![cfg_attr(feature = "attributes", doc = "```")]
+#![cfg_attr(not(feature = "attributes"), doc = "```ignore")]
 //! async fn say_hello() {
 //!     println!("Hello, world!");
 //! }
@@ -151,7 +152,8 @@
 //!
 //! Await two futures concurrently, and return a tuple of their output:
 //!
-//! ```
+#![cfg_attr(feature = "attributes", doc = "```")]
+#![cfg_attr(not(feature = "attributes"), doc = "```ignore")]
 //! use async_std::prelude::*;
 //!
 //! #[async_std::main]
@@ -164,7 +166,8 @@
 //!
 //! Create a UDP server that echoes back each received message to the sender:
 //!
-//! ```no_run
+#![cfg_attr(feature = "attributes", doc = "```no_run")]
+#![cfg_attr(not(feature = "attributes"), doc = "```ignore")]
 //! use async_std::net::UdpSocket;
 //!
 //! #[async_std::main]
@@ -194,7 +197,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.1"
 //! features = ["unstable"]
 //! ```
 //!
@@ -207,8 +210,17 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.1"
 //! features = ["attributes"]
+//! ```
+//!
+//! Compatibility with the `tokio` runtime is possible using the `tokio02`
+//! Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.6.1"
+//! features = ["tokio02"]
 //! ```
 //!
 //! Additionally it's possible to only use the core traits and combinators by
@@ -216,11 +228,37 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.0.0"
+//! version = "1.6.1"
 //! default-features = false
 //! features = ["std"]
 //! ```
+//!
+//! And to use async-std on `no_std` targets that only support `alloc` only
+//! enable the `alloc` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.6.1"
+//! default-features = false
+//! features = ["alloc"]
+//! ```
+//!
+//! # Runtime configuration
+//!
+//! Several environment variables are available to tune the async-std
+//! runtime:
+//!
+//! * `ASYNC_STD_THREAD_COUNT`: The number of threads that the
+//! async-std runtime will start. By default, this is one per logical
+//! cpu as reported by the [num_cpus](num_cpus) crate, which may be
+//! different than the number of physical cpus. Async-std _will panic_
+//! if this is set to any value other than a positive integer.
+//! * `ASYNC_STD_THREAD_NAME`: The name that async-std's runtime
+//! threads report to the operating system. The default value is
+//! `"async-std/runtime"`.
+//!
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]
@@ -228,6 +266,8 @@
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 #![recursion_limit = "2048"]
+
+extern crate alloc;
 
 #[macro_use]
 mod utils;
@@ -240,24 +280,31 @@ pub use async_attributes::{main, test};
 #[cfg(feature = "std")]
 mod macros;
 
-cfg_std! {
+cfg_alloc! {
+    pub mod task;
     pub mod future;
+    pub mod stream;
+}
+
+cfg_std! {
     pub mod io;
     pub mod os;
     pub mod prelude;
-    pub mod stream;
     pub mod sync;
-    pub mod task;
 }
 
 cfg_default! {
+    #[cfg(not(target_os = "unknown"))]
     pub mod fs;
     pub mod path;
     pub mod net;
+    #[cfg(not(target_os = "unknown"))]
+    pub(crate) mod rt;
 }
 
 cfg_unstable! {
     pub mod pin;
+    #[cfg(not(target_os = "unknown"))]
     pub mod process;
 
     mod unit;

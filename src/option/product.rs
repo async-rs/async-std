@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{Product, Stream};
+use std::convert::identity;
 
 impl<T, U> Product<Option<U>> for Option<T>
 where
@@ -48,18 +49,15 @@ where
                     .take_while(|elem| {
                         elem.is_some() || {
                             found_none = true;
+                            // Stop processing the stream on `None`
                             false
                         }
                     })
-                    .map(Option::unwrap),
+                    .filter_map(identity),
             )
             .await;
 
-            if found_none {
-                None
-            } else {
-                Some(out)
-            }
+            if found_none { None } else { Some(out) }
         })
     }
 }

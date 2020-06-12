@@ -2,6 +2,7 @@ use std::pin::Pin;
 
 use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
+use std::convert::identity;
 
 impl<T, V> FromStream<Option<T>> for Option<V>
 where
@@ -24,18 +25,15 @@ where
                 .take_while(|elem| {
                     elem.is_some() || {
                         found_none = true;
+                        // Stop processing the stream on `None`
                         false
                     }
                 })
-                .map(Option::unwrap)
+                .filter_map(identity)
                 .collect()
                 .await;
 
-            if found_none {
-                None
-            } else {
-                Some(out)
-            }
+            if found_none { None } else { Some(out) }
         })
     }
 }
