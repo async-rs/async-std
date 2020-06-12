@@ -53,7 +53,7 @@ where
         loop {
             if let Some(inner) = this.inner_stream.as_mut().as_pin_mut() {
                 match futures_core::ready!(inner.poll_next(cx)) {
-                    item @ Some(_) => return Poll::Ready(next_item),
+                    item @ Some(_) => return Poll::Ready(item),
                     None => this.inner_stream.set(None),
                 }
             }
