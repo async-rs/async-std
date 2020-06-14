@@ -60,7 +60,7 @@ where
 
             match futures_core::ready!(this.stream.as_mut().poll_next(cx)) {
                 inner @ Some(_) => this.inner_stream.set(inner.map(IntoStream::into_stream)),
-                None => Poll::Ready(None),
+                None => return Poll::Ready(None),
             }
         }
     }
