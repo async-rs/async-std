@@ -19,7 +19,7 @@ fn send_recv() -> io::Result<()> {
 
         socket1.connect(socket2.local_addr()?).await?;
         socket2.connect(socket1.local_addr()?).await?;
-
+        assert_eq!(socket1.peer_addr()?, socket2.local_addr()?);
         socket1.send(THE_MERCHANT_OF_VENICE).await?;
 
         let mut buf = [0u8; 1024];

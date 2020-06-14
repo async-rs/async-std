@@ -88,6 +88,32 @@ impl UdpSocket {
         }))
     }
 
+    /// Returns the peer address that this listener is connected to.
+    ///
+    /// This can be useful, for example, when connect to port 0 to figure out which port was
+    /// actually connected.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::UdpSocket;
+    ///
+    /// let socket1 = UdpSocket::bind("127.0.0.1:0").await?;
+    /// let socket2 = UdpSocket::bind("127.0.0.1:0").await?;
+    /// socket1.connect(socket2.local_addr()?).await?;
+    /// let addr = socket1.peer_addr()?;
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.watcher
+            .get_ref()
+            .peer_addr()
+            .context(|| String::from("could not get peer address"))
+    }
+
     /// Returns the local address that this listener is bound to.
     ///
     /// This can be useful, for example, when binding to port 0 to figure out which port was
