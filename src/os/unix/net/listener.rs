@@ -68,6 +68,8 @@ impl UnixListener {
     /// # Ok(()) }) }
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixListener> {
+        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
+
         let path = path.as_ref().to_owned();
         let listener = Async::<StdUnixListener>::bind(path)?;
 
@@ -93,7 +95,12 @@ impl UnixListener {
     pub async fn accept(&self) -> io::Result<(UnixStream, SocketAddr)> {
         let (stream, addr) = self.watcher.accept().await?;
 
-        Ok((UnixStream { watcher: Arc::new(stream) }, addr))
+        Ok((
+            UnixStream {
+                watcher: Arc::new(stream),
+            },
+            addr,
+        ))
     }
 
     /// Returns a stream of incoming connections.
@@ -187,6 +194,8 @@ impl Stream for Incoming<'_> {
 impl From<StdUnixListener> for UnixListener {
     /// Converts a `std::os::unix::net::UnixListener` into its asynchronous equivalent.
     fn from(listener: StdUnixListener) -> UnixListener {
+        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
+
         UnixListener {
             watcher: Async::new(listener).expect("UnixListener is known to be good"),
         }

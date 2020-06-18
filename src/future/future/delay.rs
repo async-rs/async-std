@@ -5,7 +5,7 @@ use std::time::Duration;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 pin_project! {
     #[doc(hidden)]
@@ -20,7 +20,7 @@ pin_project! {
 
 impl<F> DelayFuture<F> {
     pub fn new(future: F, dur: Duration) -> DelayFuture<F> {
-        let delay = Timer::after(dur);
+        let delay = timer_after(dur);
 
         DelayFuture { future, delay }
     }

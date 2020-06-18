@@ -6,7 +6,7 @@ use std::time::Duration;
 use pin_project_lite::pin_project;
 
 use crate::io;
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 /// Awaits an I/O future or times out after a duration of time.
 ///
@@ -37,7 +37,7 @@ where
     F: Future<Output = io::Result<T>>,
 {
     Timeout {
-        timeout: Timer::after(dur),
+        timeout: timer_after(dur),
         future: f,
     }
     .await

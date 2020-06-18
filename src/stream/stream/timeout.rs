@@ -8,7 +8,7 @@ use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 pin_project! {
     /// A stream with timeout time set
@@ -23,7 +23,7 @@ pin_project! {
 
 impl<S: Stream> Timeout<S> {
     pub(crate) fn new(stream: S, dur: Duration) -> Self {
-        let delay = Timer::after(dur);
+        let delay = timer_after(dur);
 
         Self { stream, delay }
     }

@@ -75,6 +75,8 @@ impl TcpListener {
     ///
     /// [`local_addr`]: #method.local_addr
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpListener> {
+        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
+
         let mut last_err = None;
         let addrs = addrs.to_socket_addrs().await?;
 
@@ -200,6 +202,8 @@ impl<'a> Stream for Incoming<'a> {
 impl From<std::net::TcpListener> for TcpListener {
     /// Converts a `std::net::TcpListener` into its asynchronous equivalent.
     fn from(listener: std::net::TcpListener) -> TcpListener {
+        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
+
         TcpListener {
             watcher: Async::new(listener).expect("TcpListener is known to be good"),
         }

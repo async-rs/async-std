@@ -6,7 +6,7 @@ use pin_project_lite::pin_project;
 
 use crate::stream::Stream;
 use crate::task::{Context, Poll};
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 pin_project! {
     /// A stream that only yields one element once every `duration`.
@@ -35,7 +35,7 @@ impl<S: Stream> Throttle<S> {
             stream,
             duration,
             blocked: false,
-            delay: Timer::after(Duration::default()),
+            delay: timer_after(Duration::default()),
         }
     }
 }
@@ -59,7 +59,7 @@ impl<S: Stream> Stream for Throttle<S> {
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(v)) => {
                 *this.blocked = true;
-                let _ = std::mem::replace(&mut *this.delay, Timer::after(*this.duration));
+                let _ = std::mem::replace(&mut *this.delay, timer_after(*this.duration));
                 Poll::Ready(Some(v))
             }
         }

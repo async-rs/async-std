@@ -4,7 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use crate::stream::Stream;
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 /// Creates a new stream that yields at a set interval.
 ///
@@ -45,7 +45,7 @@ use crate::utils::Timer;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn interval(dur: Duration) -> Interval {
     Interval {
-        delay: Timer::after(dur),
+        delay: timer_after(dur),
         interval: dur,
     }
 }
@@ -72,7 +72,7 @@ impl Stream for Interval {
             return Poll::Pending;
         }
         let interval = self.interval;
-        let _ = std::mem::replace(&mut self.delay, Timer::after(interval));
+        let _ = std::mem::replace(&mut self.delay, timer_after(interval));
         Poll::Ready(Some(()))
     }
 }
