@@ -7,6 +7,7 @@ use crate::task::{Builder, JoinHandle};
 /// # Examples
 ///
 /// ```
+/// # #[cfg(feature = "unstable")]
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
@@ -19,6 +20,8 @@ use crate::task::{Builder, JoinHandle};
 /// #
 /// # })
 /// ```
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[inline]
 pub fn spawn_local<F, T>(future: F) -> JoinHandle<T>
 where
     F: Future<Output = T> + 'static,
