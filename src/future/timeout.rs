@@ -7,7 +7,7 @@ use std::time::Duration;
 use pin_project_lite::pin_project;
 
 use crate::task::{Context, Poll};
-use crate::utils::Timer;
+use crate::utils::{timer_after, Timer};
 
 /// Awaits a future or times out after a duration of time.
 ///
@@ -51,7 +51,7 @@ impl<F> TimeoutFuture<F> {
     pub(super) fn new(future: F, dur: Duration) -> TimeoutFuture<F> {
         TimeoutFuture {
             future,
-            delay: Timer::after(dur),
+            delay: timer_after(dur),
         }
     }
 }

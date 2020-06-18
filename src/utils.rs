@@ -64,6 +64,13 @@ mod timer {
     pub type Timer = smol::Timer;
 }
 
+pub(crate) fn timer_after(dur: std::time::Duration) -> timer::Timer {
+    #[cfg(not(target_os = "unknown"))]
+    once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
+
+    Timer::after(dur)
+}
+
 #[cfg(any(
     all(target_arch = "wasm32", feature = "default"),
     all(feature = "unstable", not(feature = "default"))
