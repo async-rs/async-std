@@ -1,3 +1,5 @@
+use std::convert::identity;
+use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -106,5 +108,76 @@ fn merge_works_with_unfused_streams() {
             xs.push(x)
         }
         assert_eq!(xs, vec![92, 92]);
+    });
+}
+
+struct S<T>(T);
+
+impl<T: Stream + Unpin> Stream for S<T> {
+    type Item = T::Item;
+
+    fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Option<Self::Item>> {
+        unsafe { Pin::new_unchecked(&mut self.0) }.poll_next(ctx)
+    }
+}
+
+struct StrictOnce {
+    polled: bool,
+}
+
+impl Stream for StrictOnce {
+    type Item = ();
+
+    fn poll_next(mut self: Pin<&mut Self>, _: &mut Context) -> Poll<Option<Self::Item>> {
+        assert!(!self.polled, "Polled after completion!");
+        self.polled = true;
+        Poll::Ready(None)
+    }
+}
+
+struct Interchanger {
+    polled: bool,
+}
+
+impl Stream for Interchanger {
+    type Item = S<Box<dyn Stream<Item = ()> + Unpin>>;
+
+    fn poll_next(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Option<Self::Item>> {
+        if self.polled {
+            self.polled = false;
+            ctx.waker().wake_by_ref();
+            Poll::Pending
+        } else {
+            self.polled = true;
+            Poll::Ready(Some(S(Box::new(StrictOnce { polled: false }))))
+        }
+    }
+}
+
+#[test]
+fn flat_map_doesnt_poll_completed_inner_stream() {
+    task::block_on(async {
+        assert_eq!(
+            Interchanger { polled: false }
+                .take(2)
+                .flat_map(identity)
+                .count()
+                .await,
+            0
+        );
+    });
+}
+
+#[test]
+fn flatten_doesnt_poll_completed_inner_stream() {
+    task::block_on(async {
+        assert_eq!(
+            Interchanger { polled: false }
+                .take(2)
+                .flatten()
+                .count()
+                .await,
+            0
+        );
     });
 }
