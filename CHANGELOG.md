@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.2] - 2020-06-19
+
+## Added
+
+- Add `UdpSocket::peer_addr` ([#816](https://github.com/async-rs/async-std/pull/816))
+
+## Changed
+
+## Fixed
+
+- Ensure the reactor is running for sockets and timers ([#819](https://github.com/async-rs/async-std/pull/819)).
+- Avoid excessive polling in `flatten` and `flat_map` ([#701](https://github.com/async-rs/async-std/pull/701))
+
+
 # [1.6.1] - 2020-06-11
 
 ## Added
@@ -732,7 +746,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.2...HEAD
+[1.6.2]: https://github.com/async-rs/async-std/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/async-rs/async-std/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0
 [1.6.0-beta.2]: https://github.com/async-rs/async-std/compare/v1.6.0-beta.1...v1.6.0-beta.2
