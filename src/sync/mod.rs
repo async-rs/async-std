@@ -176,10 +176,11 @@
 #[doc(inline)]
 pub use std::sync::{Arc, Weak};
 
-pub use mutex::{Mutex, MutexGuard};
+#[doc(inline)]
+pub use async_mutex::{Mutex, MutexGuard};
+
 pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-mod mutex;
 mod rwlock;
 
 cfg_unstable! {
