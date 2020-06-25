@@ -89,11 +89,12 @@ enum Operation {
 
 impl Write for Stdout {
     fn poll_write(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        let state = &mut *self.0.lock().unwrap();
+        let mut state_guard = self.0.lock().unwrap();
+        let state = &mut *state_guard;
 
         loop {
             match state {
@@ -137,8 +138,9 @@ impl Write for Stdout {
         }
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let state = &mut *self.0.lock().unwrap();
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let mut state_guard = self.0.lock().unwrap();
+        let state = &mut *state_guard;
 
         loop {
             match state {

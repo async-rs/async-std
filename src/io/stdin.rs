@@ -149,11 +149,12 @@ impl Stdin {
 
 impl Read for Stdin {
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let state = &mut *self.0.lock().unwrap();
+        let mut state_guard = self.0.lock().unwrap();
+        let state = &mut *state_guard;
 
         loop {
             match state {
