@@ -2,7 +2,7 @@ use std::fmt;
 use std::pin::Pin;
 use std::time::Duration;
 
-use super::mutex::{guard_lock, MutexGuard};
+use super::MutexGuard;
 use crate::future::{timeout, Future};
 use crate::sync::WakerSet;
 use crate::task::{Context, Poll};
@@ -120,7 +120,7 @@ impl Condvar {
     /// ```
     #[allow(clippy::needless_lifetimes)]
     pub async fn wait<'a, T>(&self, guard: MutexGuard<'a, T>) -> MutexGuard<'a, T> {
-        let mutex = guard_lock(&guard);
+        let mutex = MutexGuard::source(&guard);
 
         self.await_notify(guard).await;
 
@@ -228,7 +228,7 @@ impl Condvar {
         guard: MutexGuard<'a, T>,
         dur: Duration,
     ) -> (MutexGuard<'a, T>, WaitTimeoutResult) {
-        let mutex = guard_lock(&guard);
+        let mutex = MutexGuard::source(&guard);
         match timeout(dur, self.wait(guard)).await {
             Ok(guard) => (guard, WaitTimeoutResult(false)),
             Err(_) => (mutex.lock().await, WaitTimeoutResult(true)),
@@ -281,7 +281,7 @@ impl Condvar {
     where
         F: FnMut(&mut T) -> bool,
     {
-        let mutex = guard_lock(&guard);
+        let mutex = MutexGuard::source(&guard);
         match timeout(dur, self.wait_until(guard, condition)).await {
             Ok(guard) => (guard, WaitTimeoutResult(false)),
             Err(_) => (mutex.lock().await, WaitTimeoutResult(true)),
