@@ -323,7 +323,10 @@ impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
     fn extend<'a, S: IntoStream<Item = P> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {
@@ -337,11 +340,14 @@ impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
 }
 
 #[cfg(feature = "unstable")]
-impl<'b, P: AsRef<Path> + 'b> FromStream<P> for PathBuf {
+impl<'b, P: AsRef<Path> + 'b + Send> FromStream<P> for PathBuf {
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = P> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>>
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {

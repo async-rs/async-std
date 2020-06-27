@@ -72,7 +72,10 @@ use crate::stream::IntoStream;
 /// impl FromStream<i32> for MyCollection {
 ///     fn from_stream<'a, S: IntoStream<Item = i32> + 'a>(
 ///         stream: S,
-///     ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+///     ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>>
+///    where
+///        <S as IntoStream>::IntoStream: Send,
+///    {
 ///         let stream = stream.into_stream();
 ///
 ///         Box::pin(async move {
@@ -107,12 +110,12 @@ use crate::stream::IntoStream;
 /// assert_eq!(c.0, vec![5, 5, 5, 5, 5]);
 /// #
 /// # Ok(()) }) }
-///```
+/// ```
 ///
 /// [`IntoStream`]: trait.IntoStream.html
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-pub trait FromStream<T> {
+pub trait FromStream<T: Send> {
     /// Creates a value from a stream.
     ///
     /// # Examples
@@ -135,5 +138,7 @@ pub trait FromStream<T> {
     /// ```
     fn from_stream<'a, S: IntoStream<Item = T> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = Self> + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>>
+    where
+        <S as IntoStream>::IntoStream: Send;
 }

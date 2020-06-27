@@ -5,6 +5,8 @@ use crate::stream::{FromStream, IntoStream};
 
 impl<T, E, V> FromStream<Result<T, E>> for Result<V, E>
 where
+    T: Send,
+    E: Send,
     V: FromStream<T>,
 {
     /// Takes each element in the stream: if it is an `Err`, no further
@@ -30,7 +32,10 @@ where
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = Result<T, E>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>> 
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {

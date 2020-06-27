@@ -1888,10 +1888,11 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn collect<'a, B>(
             self,
-        ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a>>]
+        ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a + Send>>]
         where
-            Self: Sized + 'a,
+            Self: Sized + 'a + Send,
             B: FromStream<Self::Item>,
+            Self::Item: Send,
         {
             FromStream::from_stream(self)
         }

@@ -7,13 +7,16 @@ use crate::stream::{self, IntoStream};
 
 impl<T, H> stream::Extend<T> for HashSet<T, H>
 where
-    T: Eq + Hash,
-    H: BuildHasher + Default,
+    T: Eq + Hash + Send,
+    H: BuildHasher + Default + Send,
 {
     fn extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         // The Extend impl for HashSet in the standard library delegates to the internal HashMap.
         // Thus, this impl is just a copy of the async Extend impl for HashMap in this crate.
 

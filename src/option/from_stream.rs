@@ -4,7 +4,7 @@ use crate::prelude::*;
 use crate::stream::{FromStream, IntoStream};
 use std::convert::identity;
 
-impl<T, V> FromStream<Option<T>> for Option<V>
+impl<T: Send, V> FromStream<Option<T>> for Option<V>
 where
     V: FromStream<T>,
 {
@@ -14,7 +14,10 @@ where
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = Option<T>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>> 
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {

@@ -7,13 +7,17 @@ use crate::stream::{self, IntoStream};
 
 impl<K, V, H> stream::Extend<(K, V)> for HashMap<K, V, H>
 where
-    K: Eq + Hash,
-    H: BuildHasher + Default,
+    K: Eq + Hash + Send,
+    V: Send,
+    H: BuildHasher + Default + Send,
 {
     fn extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         // The following is adapted from the hashbrown source code:
