@@ -106,15 +106,14 @@
 //! [`io`], [`fs`], and [`net`] modules.
 //!
 //! The [`task`] module contains `async-std`'s task abstractions. [`sync`]
-//! contains further primitive shared memory types, including [`channel`],
-//! which contains the channel types for message passing.
+//! contains further primitive shared memory types. [`channel`]  contains the channel types for message passing.
 //!
 //! [files]: fs/struct.File.html
 //! [TCP]: net/struct.TcpStream.html
 //! [UDP]: net/struct.UdpSocket.html
 //! [`io`]: fs/struct.File.html
 //! [`sync`]: sync/index.html
-//! [`channel`]: sync/fn.channel.html
+//! [`channel`]: channel/index.html
 //!
 //! ## Timeouts, intervals, and delays
 //!
@@ -300,6 +299,7 @@ cfg_std! {
     pub mod os;
     pub mod prelude;
     pub mod sync;
+    pub mod channel;
 }
 
 cfg_default! {

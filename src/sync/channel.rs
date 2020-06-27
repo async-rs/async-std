@@ -60,6 +60,7 @@ use crate::sync::WakerSet;
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
     let channel = Arc::new(Channel::with_capacity(cap));
     let s = Sender {
@@ -102,6 +103,7 @@ pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct Sender<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
@@ -363,6 +365,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct Receiver<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
@@ -993,6 +996,7 @@ impl<T> Drop for Channel<T> {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
@@ -1025,6 +1029,7 @@ impl<T> Display for TrySendError<T> {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
@@ -1048,6 +1053,7 @@ impl Display for TryRecvError {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct RecvError;
 
 impl Error for RecvError {}
