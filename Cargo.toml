@@ -49,6 +49,7 @@ std = [
   "wasm-bindgen-futures",
   "futures-channel",
   "async-mutex",
+  "async-channel",
 ]
 alloc = [
   "futures-core/alloc",
@@ -72,9 +73,11 @@ pin-project-lite = { version = "0.1.4", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
+async-channel = { version = "1.1.1", optional = true }
 
 # Devdepencency, but they are not allowed to be optional :/
 surf = { version = "1.0.3", optional = true }
+
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
 smol = { version = "0.1.17", optional = true }

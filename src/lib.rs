@@ -306,6 +306,7 @@ cfg_unstable! {
     pub mod pin;
     #[cfg(not(target_os = "unknown"))]
     pub mod process;
+    pub mod channel;
 
     mod unit;
     mod vec;
