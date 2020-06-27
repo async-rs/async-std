@@ -136,8 +136,6 @@ impl<T> Sender<T> {
             inner: Pin<Box<dyn Future<Output = Result<(), SendError<T>>> + 'a>>,
         }
 
-        unsafe impl<T: Send> Send for SendFuture<'_, T> {}
-        
         impl<T> Unpin for SendFuture<'_, T> {}
 
         impl<T> Future for SendFuture<'_, T> {
