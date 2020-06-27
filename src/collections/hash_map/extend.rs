@@ -11,7 +11,7 @@ where
     V: Send,
     H: BuildHasher + Default + Send,
 {
-    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

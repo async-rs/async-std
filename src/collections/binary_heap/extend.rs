@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::stream::{self, IntoStream};
 
 impl<T: Ord + Send> stream::Extend<T> for BinaryHeap<T> {
-    fn extend<'a, S: IntoStream<Item = T> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

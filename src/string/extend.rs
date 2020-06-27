@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::stream::{self, IntoStream};
 
 impl stream::Extend<char> for String {
-    fn extend<'a, S: IntoStream<Item = char> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = char> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>> 
@@ -26,7 +26,7 @@ impl stream::Extend<char> for String {
 }
 
 impl<'b> stream::Extend<&'b char> for String {
-    fn extend<'a, S: IntoStream<Item = &'b char> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = &'b char> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>> 
@@ -46,7 +46,7 @@ impl<'b> stream::Extend<&'b char> for String {
 }
 
 impl<'b> stream::Extend<&'b str> for String {
-    fn extend<'a, S: IntoStream<Item = &'b str> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = &'b str> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>> 
@@ -66,7 +66,7 @@ impl<'b> stream::Extend<&'b str> for String {
 }
 
 impl stream::Extend<String> for String {
-    fn extend<'a, S: IntoStream<Item = String> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = String> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>
@@ -86,7 +86,7 @@ impl stream::Extend<String> for String {
 }
 
 impl<'b> stream::Extend<Cow<'b, str>> for String {
-    fn extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = Cow<'b, str>> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

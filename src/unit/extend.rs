@@ -4,7 +4,7 @@ use crate::prelude::*;
 use crate::stream::{self, IntoStream};
 
 impl stream::Extend<()> for () {
-    fn extend<'a, S: IntoStream<Item = ()> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = ()> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>> 

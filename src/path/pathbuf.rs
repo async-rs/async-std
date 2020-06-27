@@ -320,7 +320,7 @@ impl AsRef<OsStr> for PathBuf {
 
 #[cfg(feature = "unstable")]
 impl<P: AsRef<Path>> stream::Extend<P> for PathBuf {
-    fn extend<'a, S: IntoStream<Item = P> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = P> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

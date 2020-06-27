@@ -10,7 +10,7 @@ where
     T: Eq + Hash + Send,
     H: BuildHasher + Default + Send,
 {
-    fn extend<'a, S: IntoStream<Item = T> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = T> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::stream::{self, IntoStream};
 
 impl<K: Ord + Send, V: Send> stream::Extend<(K, V)> for BTreeMap<K, V> {
-    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a + Send>(
+    fn extend<'a, S: IntoStream<Item = (K, V)> + 'a>(
         &'a mut self,
         stream: S,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>

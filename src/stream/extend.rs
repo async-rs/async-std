@@ -31,7 +31,7 @@ use crate::stream::IntoStream;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait Extend<A> {
     /// Extends a collection with the contents of a stream.
-    fn extend<'a, T: IntoStream<Item = A> + 'a + Send>(
+    fn extend<'a, T: IntoStream<Item = A> + 'a>(
         &'a mut self,
         stream: T,
     ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>>
@@ -70,7 +70,7 @@ pub trait Extend<A> {
 pub async fn extend<'a, C, T, S>(collection: &mut C, stream: S)
 where
     C: Extend<T>,
-    S: IntoStream<Item = T> + 'a + Send,
+    S: IntoStream<Item = T> + 'a,
     <S as IntoStream>::IntoStream: Send,
 {
     Extend::extend(collection, stream).await
