@@ -4,10 +4,13 @@ use crate::prelude::*;
 use crate::stream::{self, IntoStream};
 
 impl stream::Extend<()> for () {
-    fn extend<'a, T: IntoStream<Item = ()> + 'a>(
+    fn extend<'a, S: IntoStream<Item = ()> + 'a + Send>(
         &'a mut self,
-        stream: T,
-    ) -> Pin<Box<dyn Future<Output = ()> + 'a>> {
+        stream: S,
+    ) -> Pin<Box<dyn Future<Output = ()> + 'a + Send>> 
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {

@@ -32,7 +32,10 @@ where
     #[inline]
     fn from_stream<'a, S: IntoStream<Item = Result<T, E>> + 'a>(
         stream: S,
-    ) -> Pin<Box<dyn Future<Output = Self> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Self> + 'a + Send>> 
+    where
+        <S as IntoStream>::IntoStream: Send,
+    {
         let stream = stream.into_stream();
 
         Box::pin(async move {
