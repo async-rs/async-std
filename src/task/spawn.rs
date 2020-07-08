@@ -23,6 +23,30 @@ use crate::task::{Builder, JoinHandle};
 /// #
 /// # })
 /// ```
+///
+/// ```
+/// use async_std::task;
+/// use std::time::Duration;
+///
+/// async fn clock() {
+///     loop {
+///        task::sleep(Duration::from_secs(1)).await;
+///        println!("Tick");
+///    }
+///}
+///
+/// #[async_std::main]
+/// async fn main() {
+///    println!("Start");
+///    task::spawn(clock());
+///
+///    for i in (0..100).rev() {
+///        println!("Countdown {}", i);
+///        task::sleep(Duration::from_secs(2)).await;
+///    }
+///    println!("End");
+///}
+/// ```
 pub fn spawn<F, T>(future: F) -> JoinHandle<T>
 where
     F: Future<Output = T> + Send + 'static,
