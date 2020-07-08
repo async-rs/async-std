@@ -24,7 +24,7 @@ use crate::task::{Builder, JoinHandle};
 /// # })
 /// ```
 ///
-/// ```
+/// ```ignore
 /// use async_std::task;
 /// use std::time::Duration;
 ///
