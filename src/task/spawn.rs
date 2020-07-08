@@ -40,7 +40,7 @@ use crate::task::{Builder, JoinHandle};
 ///    println!("Start");
 ///    task::spawn(clock());
 ///
-///    for i in (0..100).rev() {
+///    for i in (0..=10).rev() {
 ///        println!("Countdown {}", i);
 ///        task::sleep(Duration::from_secs(2)).await;
 ///    }
