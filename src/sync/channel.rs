@@ -22,8 +22,8 @@ use crate::sync::WakerSet;
 /// This channel has a buffer that can hold at most `cap` messages at a time.
 ///
 /// Senders and receivers can be cloned. When all senders associated with a channel get dropped, it
-/// becomes closed. Receive operations on a closed and empty channel return `None` instead of
-/// trying to await a message.
+/// becomes closed. Receive operations on a closed and empty channel return [RecvError] instead of
+/// trying to await a message when using [Receiver::recv] or `None` when used as a [Stream].
 ///
 /// # Panics
 ///
@@ -376,7 +376,7 @@ impl<T> Receiver<T> {
     ///
     /// If the channel is empty and still has senders, this method
     /// will wait until a message is sent into it. Once all senders
-    /// have been dropped it will return `None`.
+    /// have been dropped it will return [RecvError].
     ///
     /// # Examples
     ///
