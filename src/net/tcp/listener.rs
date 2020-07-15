@@ -2,7 +2,7 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use smol::Async;
+use async_io::Async;
 
 use crate::io;
 use crate::net::{TcpStream, ToSocketAddrs};
@@ -81,7 +81,7 @@ impl TcpListener {
         let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match Async::<std::net::TcpListener>::bind(&addr) {
+            match Async::<std::net::TcpListener>::bind(addr) {
                 Ok(listener) => {
                     return Ok(TcpListener { watcher: listener });
                 }
@@ -227,7 +227,7 @@ cfg_unix! {
 
     impl IntoRawFd for TcpListener {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_raw_fd()
+            self.watcher.into_inner().unwrap().into_raw_fd()
         }
     }
 }
@@ -251,7 +251,7 @@ cfg_windows! {
 
     impl IntoRawSocket for TcpListener {
         fn into_raw_socket(self) -> RawSocket {
-            self.watcher.into_raw_socket()
+            self.watcher.into_inner().unwrap().into_raw_socket()
         }
     }
 }

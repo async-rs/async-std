@@ -4,7 +4,7 @@ use std::fmt;
 use std::net::Shutdown;
 use std::os::unix::net::UnixDatagram as StdUnixDatagram;
 
-use smol::Async;
+use async_io::Async;
 
 use super::SocketAddr;
 use crate::io;
@@ -335,6 +335,6 @@ impl FromRawFd for UnixDatagram {
 
 impl IntoRawFd for UnixDatagram {
     fn into_raw_fd(self) -> RawFd {
-        self.watcher.into_raw_fd()
+        self.watcher.into_inner().unwrap().into_raw_fd()
     }
 }

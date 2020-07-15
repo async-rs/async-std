@@ -24,6 +24,7 @@ rustdoc-args = ["--cfg", "feature=\"docs\""]
 [features]
 default = [
   "std",
+  "async-io",
   "async-task",
   "kv-log-macro",
   "log",
@@ -77,6 +78,7 @@ futures-timer = { version = "3.0.2", optional = true }
 surf = { version = "1.0.3", optional = true }
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
+async-io = { version = "0.1.5", optional = true }
 smol = { version = "0.1.17", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

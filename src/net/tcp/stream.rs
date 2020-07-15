@@ -2,7 +2,7 @@ use std::io::{IoSlice, IoSliceMut};
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use smol::Async;
+use async_io::Async;
 
 use crate::io::{self, Read, Write};
 use crate::net::ToSocketAddrs;
@@ -77,7 +77,7 @@ impl TcpStream {
         let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match Async::<std::net::TcpStream>::connect(&addr).await {
+            match Async::<std::net::TcpStream>::connect(addr).await {
                 Ok(stream) => {
                     return Ok(TcpStream {
                         watcher: Arc::new(stream),

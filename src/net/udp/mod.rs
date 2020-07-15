@@ -2,7 +2,7 @@ use std::io;
 use std::net::SocketAddr;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use smol::Async;
+use async_io::Async;
 
 use crate::net::ToSocketAddrs;
 use crate::utils::Context as _;
@@ -74,7 +74,7 @@ impl UdpSocket {
         let addrs = addrs.to_socket_addrs().await?;
 
         for addr in addrs {
-            match Async::<std::net::UdpSocket>::bind(&addr) {
+            match Async::<std::net::UdpSocket>::bind(addr) {
                 Ok(socket) => {
                     return Ok(UdpSocket { watcher: socket });
                 }
@@ -506,7 +506,7 @@ cfg_unix! {
 
     impl IntoRawFd for UdpSocket {
         fn into_raw_fd(self) -> RawFd {
-            self.watcher.into_raw_fd()
+            self.watcher.into_inner().unwrap().into_raw_fd()
         }
     }
 }
@@ -530,7 +530,7 @@ cfg_windows! {
 
     impl IntoRawSocket for UdpSocket {
         fn into_raw_socket(self) -> RawSocket {
-            self.watcher.into_raw_socket()
+            self.watcher.into_inner().unwrap().into_raw_socket()
         }
     }
 }

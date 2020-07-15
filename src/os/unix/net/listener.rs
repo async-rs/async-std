@@ -5,7 +5,7 @@ use std::future::Future;
 use std::os::unix::net::UnixListener as StdUnixListener;
 use std::pin::Pin;
 
-use smol::Async;
+use async_io::Async;
 
 use super::SocketAddr;
 use super::UnixStream;
@@ -217,6 +217,6 @@ impl FromRawFd for UnixListener {
 
 impl IntoRawFd for UnixListener {
     fn into_raw_fd(self) -> RawFd {
-        self.watcher.into_raw_fd()
+        self.watcher.into_inner().unwrap().into_raw_fd()
     }
 }

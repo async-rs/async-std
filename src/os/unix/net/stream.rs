@@ -5,7 +5,7 @@ use std::net::Shutdown;
 use std::os::unix::net::UnixStream as StdUnixStream;
 use std::pin::Pin;
 
-use smol::Async;
+use async_io::Async;
 
 use super::SocketAddr;
 use crate::io::{self, Read, Write};
