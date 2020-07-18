@@ -18,7 +18,7 @@ pub struct JoinHandle<T> {
 }
 
 #[cfg(not(target_os = "unknown"))]
-type InnerHandle<T> = async_task::JoinHandle<T, ()>;
+type InnerHandle<T> = multitask::Task<T>;
 #[cfg(target_arch = "wasm32")]
 type InnerHandle<T> = futures_channel::oneshot::Receiver<T>;
 
@@ -54,8 +54,7 @@ impl<T> JoinHandle<T> {
     #[cfg(not(target_os = "unknown"))]
     pub async fn cancel(mut self) -> Option<T> {
         let handle = self.handle.take().unwrap();
-        handle.cancel();
-        handle.await
+        handle.cancel().await
     }
 
     /// Cancel this task.
@@ -67,15 +66,19 @@ impl<T> JoinHandle<T> {
     }
 }
 
+#[cfg(not(target_os = "unknown"))]
+impl<T> Drop for JoinHandle<T> {
+    fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            handle.detach();
+        }
+    }
+}
+
 impl<T> Future for JoinHandle<T> {
     type Output = T;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match Pin::new(&mut self.handle.as_mut().unwrap()).poll(cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(output) => {
-                Poll::Ready(output.expect("cannot await the result of a panicked task"))
-            }
-        }
+        Pin::new(&mut self.handle.as_mut().unwrap()).poll(cx)
     }
 }

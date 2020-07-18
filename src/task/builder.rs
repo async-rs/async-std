@@ -7,7 +7,7 @@ use std::task::{Context, Poll};
 use pin_project_lite::pin_project;
 
 use crate::io;
-use crate::task::{JoinHandle, Task, TaskLocalsWrapper};
+use crate::task::{self, JoinHandle, Task, TaskLocalsWrapper};
 
 /// Task builder that configures the settings of a new task.
 #[derive(Debug, Default)]
@@ -61,9 +61,9 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let smol_task = smol::Task::spawn(wrapped).into();
+        let handle = task::executor::spawn(wrapped);
 
-        Ok(JoinHandle::new(smol_task, task))
+        Ok(JoinHandle::new(handle, task))
     }
 
     /// Spawns a task locally with the configured settings.
@@ -81,9 +81,9 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let smol_task = smol::Task::local(wrapped).into();
+        let handle = task::executor::local(wrapped);
 
-        Ok(JoinHandle::new(smol_task, task))
+        Ok(JoinHandle::new(handle, task))
     }
 
     /// Spawns a task locally with the configured settings.
@@ -166,8 +166,8 @@ impl Builder {
             unsafe {
                 TaskLocalsWrapper::set_current(&wrapped.tag, || {
                     let res = if should_run {
-                        // The first call should use run.
-                        smol::run(wrapped)
+                        // The first call should run the executor
+                        task::executor::run(wrapped)
                     } else {
                         futures_lite::future::block_on(wrapped)
                     };
