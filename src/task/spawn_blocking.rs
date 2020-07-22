@@ -1,4 +1,4 @@
-use crate::task::{JoinHandle, Task};
+use crate::task::{self, JoinHandle};
 
 /// Spawns a blocking task.
 ///
@@ -35,8 +35,5 @@ where
     F: FnOnce() -> T + Send + 'static,
     T: Send + 'static,
 {
-    once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
-    let handle = smol::Task::blocking(async move { f() }).into();
-    JoinHandle::new(handle, Task::new(None))
+    task::spawn(async move { blocking::unblock!(f()) })
 }
