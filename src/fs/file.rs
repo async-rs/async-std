@@ -315,7 +315,7 @@ impl Drop for File {
         // non-blocking fashion, but our only other option here is losing data remaining in the
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
-        let _ = smol::block_on(self.flush());
+        let _ = futures_lite::future::block_on(self.flush());
     }
 }
 

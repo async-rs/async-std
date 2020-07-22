@@ -169,7 +169,7 @@ impl Builder {
                         // The first call should use run.
                         smol::run(wrapped)
                     } else {
-                        smol::block_on(wrapped)
+                        futures_lite::future::block_on(wrapped)
                     };
                     num_nested_blocking.replace(num_nested_blocking.get() - 1);
                     res
