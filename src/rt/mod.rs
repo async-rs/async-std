@@ -27,7 +27,7 @@ pub static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     for _ in 0..thread_count {
         thread::Builder::new()
             .name(thread_name.clone())
-            .spawn(|| crate::task::block_on(future::pending::<()>()))
+            .spawn(|| crate::task::executor::run_global(future::pending::<()>()))
             .expect("cannot start a runtime thread");
     }
     Runtime {}

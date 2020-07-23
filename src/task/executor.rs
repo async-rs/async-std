@@ -1,23 +1,13 @@
 use std::cell::RefCell;
 use std::future::Future;
-use std::task::{Context, Poll};
 
-static GLOBAL_EXECUTOR: once_cell::sync::Lazy<multitask::Executor> = once_cell::sync::Lazy::new(multitask::Executor::new);
-
-struct Executor {
-    local_executor: multitask::LocalExecutor,
-    parker: async_io::parking::Parker,
-}
+static GLOBAL_EXECUTOR: once_cell::sync::Lazy<async_executor::Executor> = once_cell::sync::Lazy::new(async_executor::Executor::new);
 
 thread_local! {
-    static EXECUTOR: RefCell<Executor> = RefCell::new({
-        let (parker, unparker) = async_io::parking::pair();
-        let local_executor = multitask::LocalExecutor::new(move || unparker.unpark());
-        Executor { local_executor, parker }
-    });
+    static EXECUTOR: RefCell<async_executor::LocalExecutor> = RefCell::new(async_executor::LocalExecutor::new());
 }
 
-pub(crate) fn spawn<F, T>(future: F) -> multitask::Task<T>
+pub(crate) fn spawn<F, T>(future: F) -> async_executor::Task<T>
 where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
@@ -26,35 +16,26 @@ where
 }
 
 #[cfg(feature = "unstable")]
-pub(crate) fn local<F, T>(future: F) -> multitask::Task<T>
+pub(crate) fn local<F, T>(future: F) -> async_executor::Task<T>
 where
     F: Future<Output = T> + 'static,
     T: 'static,
 {
-    EXECUTOR.with(|executor| executor.borrow().local_executor.spawn(future))
+    EXECUTOR.with(|executor| executor.borrow().spawn(future))
 }
 
 pub(crate) fn run<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
-    enter(|| EXECUTOR.with(|executor| {
-        let executor = executor.borrow();
-        let unparker = executor.parker.unparker();
-        let global_ticker = GLOBAL_EXECUTOR.ticker(move || unparker.unpark());
-        let unparker = executor.parker.unparker();
-        let waker = async_task::waker_fn(move || unparker.unpark());
-        let cx = &mut Context::from_waker(&waker);
-        pin_utils::pin_mut!(future);
-        loop {
-            if let Poll::Ready(res) = future.as_mut().poll(cx) {
-                return res;
-            }
-            if let Ok(false) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| executor.local_executor.tick() || global_ticker.tick())) {
-                executor.parker.park();
-            }
-        }
-    }))
+    EXECUTOR.with(|executor| enter(|| GLOBAL_EXECUTOR.enter(|| executor.borrow().run(future))))
+}
+
+pub(crate) fn run_global<F, T>(future: F) -> T
+where
+    F: Future<Output = T>,
+{
+    enter(|| GLOBAL_EXECUTOR.run(future))
 }
 
 /// Enters the tokio context if the `tokio` feature is enabled.

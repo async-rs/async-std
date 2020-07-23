@@ -18,7 +18,7 @@ pub struct JoinHandle<T> {
 }
 
 #[cfg(not(target_os = "unknown"))]
-type InnerHandle<T> = multitask::Task<T>;
+type InnerHandle<T> = async_executor::Task<T>;
 #[cfg(target_arch = "wasm32")]
 type InnerHandle<T> = futures_channel::oneshot::Receiver<T>;
 

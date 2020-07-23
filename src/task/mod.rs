@@ -149,7 +149,7 @@ cfg_default! {
     mod builder;
     mod current;
     #[cfg(not(target_os = "unknown"))]
-    mod executor;
+    pub(crate) mod executor;
     mod join_handle;
     mod sleep;
     #[cfg(not(target_os = "unknown"))]
