@@ -66,7 +66,7 @@ mod timer {
 
 #[cfg(any(feature = "unstable", feature = "default"))]
 pub(crate) fn timer_after(dur: std::time::Duration) -> timer::Timer {
-    #[cfg(not(target_os = "unknown"))]
+    #[cfg(all(not(target_os = "unknown"), feature = "default"))]
     once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
     Timer::after(dur)
