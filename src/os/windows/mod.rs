@@ -5,5 +5,6 @@ cfg_std! {
 }
 
 cfg_unstable! {
+    #[cfg(feature = "default")]
     pub mod fs;
 }
