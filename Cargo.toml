@@ -80,8 +80,8 @@ futures-timer = { version = "3.0.2", optional = true }
 surf = { version = "1.0.3", optional = true }
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
-async-executor = { version = "0.1.1", features = ["async-io"], optional = true }
-async-io = { version = "0.1.5", optional = true }
+async-executor = { version = "0.1.2", features = ["async-io"], optional = true }
+async-io = { version = "0.1.8", optional = true }
 blocking = { version = "0.5.0", optional = true }
 futures-lite = { version = "0.1.8", optional = true }
 
