@@ -121,10 +121,10 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
     let listener = TcpListener::bind(addr).await?;
     let mut incoming = listener.incoming();
     while let Some(result) = incoming.next().await {
-        let stream = match stream {
+        let stream = match result {
             Err(ref e) if is_connection_error(e) => continue, // 1
             Err(e) => {
-                eprintln!("Error: {}. Pausing for 500ms."); // 3
+                eprintln!("Error: {}. Pausing for 500ms.", e); // 3
                 task::sleep(Duration::from_millis(500)).await; // 2
                 continue;
             }
