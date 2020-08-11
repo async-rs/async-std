@@ -21,7 +21,7 @@ impl WaitTimeoutResult {
 
 /// A Condition Variable
 ///
-/// This type is an async version of [`std::sync::Mutex`].
+/// This type is an async version of [`std::sync::Condvar`].
 ///
 /// [`std::sync::Condvar`]: https://doc.rust-lang.org/std/sync/struct.Condvar.html
 ///
