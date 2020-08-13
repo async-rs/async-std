@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.3] - 2020-07-31
+
+## Added
+
+## Changed
+
+- Switched from smol to individual executor parts. ([#836](https://github.com/async-rs/async-std/pull/836))
+- Replaced internal `Mutex` implementation with `async-mutex`. ([#822](https://github.com/async-rs/async-std/pull/822))
+
+## Fixed
+
+- Added missing `Send` guards to `Stream::collect`. ([#665](https://github.com/async-rs/async-std/pull/665))
+
+
 # [1.6.2] - 2020-06-19
 
 ## Added
@@ -746,7 +760,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.2...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.3...HEAD
+[1.6.2]: https://github.com/async-rs/async-std/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/async-rs/async-std/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/async-rs/async-std/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/async-rs/async-std/compare/v1.5.0...v1.6.0
