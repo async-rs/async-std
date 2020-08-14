@@ -160,6 +160,26 @@ jobs:
     - name: test
       run: cross test --all --features unstable --target ${{ matrix.target }}
 
+  check_wasm:
+    name: Check wasm targets
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Install nightly with wasm32-unknown-unknown
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        target: wasm32-unknown-unknown
+        override: true
+
+    - name: check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: --target wasm32-unknown-unknown
+
   check_fmt_and_docs:
     name: Checking fmt and docs
     runs-on: ubuntu-latest
