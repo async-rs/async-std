@@ -29,7 +29,7 @@ fn send_recv() -> io::Result<()> {
 }
 
 #[test]
-fn into_raw_fd() -> io::Result<()> {
+fn into_raw_fd_datagram() -> io::Result<()> {
     use async_std::os::unix::io::{FromRawFd, IntoRawFd};
     task::block_on(async {
         let (socket1, socket2) = UnixDatagram::pair().unwrap();
@@ -39,6 +39,23 @@ fn into_raw_fd() -> io::Result<()> {
 
         let socket2 = unsafe { UnixDatagram::from_raw_fd(socket2.into_raw_fd()) };
         let n = socket2.recv(&mut buf).await?;
+        assert_eq!(&buf[..n], JULIUS_CAESAR);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn into_raw_fd_stream() -> io::Result<()> {
+    use async_std::os::unix::io::{FromRawFd, IntoRawFd};
+    task::block_on(async {
+        let (mut socket1, socket2) = UnixStream::pair().unwrap();
+        socket1.write(JULIUS_CAESAR).await?;
+
+        let mut buf = vec![0; 1024];
+
+        let mut socket2 = unsafe { UnixStream::from_raw_fd(socket2.into_raw_fd()) };
+        let n = socket2.read(&mut buf).await?;
         assert_eq!(&buf[..n], JULIUS_CAESAR);
 
         Ok(())
