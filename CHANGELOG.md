@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+## Fixed
+
+- Ensure `UnixStream::into_raw_fd` doesn't close the file descriptor ([#855](https://github.com/async-rs/async-std/issues/855))
+
 # [1.6.3] - 2020-07-31
 
 ## Added

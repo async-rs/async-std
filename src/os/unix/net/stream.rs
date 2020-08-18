@@ -252,6 +252,6 @@ impl FromRawFd for UnixStream {
 
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
-        self.as_raw_fd()
+        (*self.watcher).get_ref().try_clone().unwrap().into_raw_fd()
     }
 }
