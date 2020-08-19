@@ -100,7 +100,7 @@ features = ["rt-threaded"]
 optional = true
 
 [dev-dependencies]
-femme = "1.3.0"
+femme = "2.1.1"
 rand = "0.7.3"
 tempdir = "0.3.7"
 futures = "0.3.4"
