@@ -3,7 +3,7 @@
 use async_std::task;
 
 fn main() {
-    femme::start(log::LevelFilter::Trace).unwrap();
+    femme::with_level(log::LevelFilter::Trace);
 
     task::block_on(async {
         let handle = task::spawn(async {
