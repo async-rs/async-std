@@ -35,5 +35,5 @@ where
     F: FnOnce() -> T + Send + 'static,
     T: Send + 'static,
 {
-    task::spawn(async move { blocking::unblock!(f()) })
+    task::spawn(blocking::unblock(f))
 }
