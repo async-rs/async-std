@@ -86,7 +86,7 @@ blocking = { version = "0.5.2", optional = true }
 futures-lite = { version = "0.1.8", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-futures-timer = { version = "3.0.2", optional = true, features = ["wasm-bindgen"] }
+futures-timer = { version = "3.0.2", features = ["wasm-bindgen"] }
 wasm-bindgen-futures = { version = "0.4.10", optional = true }
 futures-channel = { version = "0.3.4", optional = true }
 
