@@ -1,6 +1,6 @@
 #[cfg(feature = "unstable")]
 #[test]
-fn test_send() -> async_std::io::Result<()> {
+fn test_send() {
     use async_std::prelude::*;
     use async_std::{stream, task};
 
@@ -14,7 +14,5 @@ fn test_send() -> async_std::io::Result<()> {
 
         // This line triggers a compilation error
         test_send_trait(&fut);
-
-        Ok(())
-    })
+    });
 }
