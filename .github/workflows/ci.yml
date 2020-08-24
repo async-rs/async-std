@@ -163,14 +163,23 @@ jobs:
   check_wasm:
     name: Check wasm targets
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [nightly, beta, stable]
+
+    - name: Cache cargo registry
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo/registry
+        key: wasm32-${{ matrix.rust }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
 
     steps:
     - uses: actions/checkout@master
 
-    - name: Install nightly with wasm32-unknown-unknown
+    - name: Install rust with wasm32-unknown-unknown
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ matrix.rust }}
         target: wasm32-unknown-unknown
         override: true
 
