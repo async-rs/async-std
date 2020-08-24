@@ -5,8 +5,6 @@ use async_std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
 use async_std::prelude::*;
 use async_std::task;
 
-use tempdir::TempDir;
-
 use std::time::Duration;
 
 const JULIUS_CAESAR: &[u8] = b"
@@ -51,7 +49,10 @@ const TEST_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[test]
 fn socket_ping_pong() {
-    let tmp_dir = TempDir::new("socket_ping_pong").expect("Temp dir not created");
+    let tmp_dir = tempfile::Builder::new()
+        .prefix("socket_ping_pong")
+        .tempdir()
+        .expect("Temp dir not created");
     let sock_path = tmp_dir.as_ref().join("sock");
     let iter_cnt = 16;
 
@@ -98,7 +99,10 @@ async fn ping_pong_client(socket: &std::path::PathBuf, iterations: u32) -> std::
 #[test]
 fn uds_clone() -> io::Result<()> {
     task::block_on(async {
-        let tmp_dir = TempDir::new("socket_ping_pong").expect("Temp dir not created");
+        let tmp_dir = tempfile::Builder::new()
+            .prefix("socket_ping_pong")
+            .tempdir()
+            .expect("Temp dir not created");
         let sock_path = tmp_dir.as_ref().join("sock");
         let input = UnixListener::bind(&sock_path).await?;
 

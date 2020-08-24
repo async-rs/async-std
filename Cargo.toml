@@ -102,7 +102,7 @@ optional = true
 [dev-dependencies]
 femme = "2.1.1"
 rand = "0.7.3"
-tempdir = "0.3.7"
+tempfile = "3.1.0"
 futures = "0.3.4"
 rand_xorshift = "0.2.0"
 
