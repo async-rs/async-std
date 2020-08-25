@@ -49,9 +49,12 @@ std = [
   "once_cell",
   "pin-utils",
   "slab",
+  "async-mutex",
+]
+wasm = [
+  "futures-timer/wasm-bindgen",
   "wasm-bindgen-futures",
   "futures-channel",
-  "async-mutex",
 ]
 alloc = [
   "futures-core/alloc",
@@ -75,6 +78,8 @@ pin-project-lite = { version = "0.1.4", optional = true }
 pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4.10", optional = true }
+futures-channel = { version = "0.3.4", optional = true }
 
 # Devdepencency, but they are not allowed to be optional :/
 surf = { version = "1.0.3", optional = true }
@@ -85,13 +90,7 @@ async-io = { version = "0.1.8", optional = true }
 blocking = { version = "0.5.2", optional = true }
 futures-lite = { version = "0.1.8", optional = true }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-futures-timer = { version = "3.0.2", features = ["wasm-bindgen"] }
-wasm-bindgen-futures = { version = "0.4.10", optional = true }
-futures-channel = { version = "0.3.4", optional = true }
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "0.3.10"
 
 [dependencies.tokio]
 version = "0.2"
@@ -105,6 +104,7 @@ rand = "0.7.3"
 tempfile = "3.1.0"
 futures = "0.3.4"
 rand_xorshift = "0.2.0"
+wasm-bindgen-test = "0.3.10"
 
 [[test]]
 name = "stream"

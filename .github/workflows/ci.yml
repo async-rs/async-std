@@ -163,13 +163,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --target wasm32-unknown-unknown 
+        args: --target wasm32-unknown-unknown --features wasm
 
     - name: check unstable
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --target wasm32-unknown-unknown --tests --all --features unstable
+        args: --target wasm32-unknown-unknown --tests --all --features unstable,wasm
         
   check_fmt_and_docs:
     name: Checking fmt and docs
