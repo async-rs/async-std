@@ -206,6 +206,29 @@ impl UdpSocket {
         self.watcher.recv_from(buf).await
     }
 
+    /// Receives data from socket without removing it from the queue.
+    ///
+    /// On success, returns the number of bytes peeked and the origin.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::UdpSocket;
+    ///
+    /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
+    ///
+    /// let mut buf = vec![0; 1024];
+    /// let (n, peer) = socket.peek_from(&mut buf).await?;
+    /// println!("Peeked {} bytes from {}", n, peer);
+    /// #
+    /// # Ok (()) }) }
+    /// ```
+    pub async fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+        self.watcher.peek_from(buf).await
+    }
+
     /// Connects the UDP socket to a remote address.
     ///
     /// When connected, methods [`send`] and [`recv`] will use the specified address for sending
@@ -299,6 +322,30 @@ impl UdpSocket {
     /// ```
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.watcher.recv(buf).await
+    }
+
+    /// Receives data from the socket without removing it from the queue.
+    ///
+    /// On success, returns the number of bytes peeked.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::UdpSocket;
+    ///
+    /// let socket = UdpSocket::bind("127.0.0.1:0").await?;
+    /// socket.connect("127.0.0.1:8080").await?;
+    ///
+    /// let mut buf = vec![0; 1024];
+    /// let n = socket.peek(&mut buf).await?;
+    /// println!("Peeked {} bytes", n);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.watcher.peek(buf).await
     }
 
     /// Gets the value of the `SO_BROADCAST` option for this socket.
