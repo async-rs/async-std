@@ -1,41 +1,10 @@
-use std::cell::RefCell;
 use std::future::Future;
-
-static GLOBAL_EXECUTOR: once_cell::sync::Lazy<async_executor::Executor> = once_cell::sync::Lazy::new(async_executor::Executor::new);
-
-thread_local! {
-    static EXECUTOR: RefCell<async_executor::LocalExecutor> = RefCell::new(async_executor::LocalExecutor::new());
-}
-
-pub(crate) fn spawn<F, T>(future: F) -> async_executor::Task<T>
-where
-    F: Future<Output = T> + Send + 'static,
-    T: Send + 'static,
-{
-    GLOBAL_EXECUTOR.spawn(future)
-}
-
-#[cfg(feature = "unstable")]
-pub(crate) fn local<F, T>(future: F) -> async_executor::Task<T>
-where
-    F: Future<Output = T> + 'static,
-    T: 'static,
-{
-    EXECUTOR.with(|executor| executor.borrow().spawn(future))
-}
 
 pub(crate) fn run<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
-    EXECUTOR.with(|executor| enter(|| async_io::block_on(executor.borrow().run(future))))
-}
-
-pub(crate) fn run_global<F, T>(future: F) -> T
-where
-    F: Future<Output = T>,
-{
-    enter(|| async_io::block_on(GLOBAL_EXECUTOR.run(future)))
+    enter(|| async_global_executor::block_on(future))
 }
 
 /// Enters the tokio context if the `tokio` feature is enabled.
