@@ -57,8 +57,6 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<UnixStream> {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let path = path.as_ref().to_owned();
         let stream = Arc::new(Async::<StdUnixStream>::connect(path).await?);
 
@@ -81,8 +79,6 @@ impl UnixStream {
     /// # Ok(()) }) }
     /// ```
     pub fn pair() -> io::Result<(UnixStream, UnixStream)> {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let (a, b) = Async::<StdUnixStream>::pair()?;
         let a = UnixStream {
             watcher: Arc::new(a),
@@ -228,8 +224,6 @@ impl fmt::Debug for UnixStream {
 impl From<StdUnixStream> for UnixStream {
     /// Converts a `std::os::unix::net::UnixStream` into its asynchronous equivalent.
     fn from(stream: StdUnixStream) -> UnixStream {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let stream = Async::new(stream).expect("UnixStream is known to be good");
         UnixStream {
             watcher: Arc::new(stream),

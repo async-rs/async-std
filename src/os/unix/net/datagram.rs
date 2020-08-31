@@ -45,8 +45,6 @@ pub struct UnixDatagram {
 
 impl UnixDatagram {
     fn new(socket: StdUnixDatagram) -> UnixDatagram {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         UnixDatagram {
             watcher: Async::new(socket).expect("UnixDatagram is known to be good"),
         }
@@ -66,8 +64,6 @@ impl UnixDatagram {
     /// # Ok(()) }) }
     /// ```
     pub async fn bind<P: AsRef<Path>>(path: P) -> io::Result<UnixDatagram> {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let path = path.as_ref().to_owned();
         let socket = Async::<StdUnixDatagram>::bind(path)?;
         Ok(UnixDatagram { watcher: socket })
@@ -309,8 +305,6 @@ impl fmt::Debug for UnixDatagram {
 impl From<StdUnixDatagram> for UnixDatagram {
     /// Converts a `std::os::unix::net::UnixDatagram` into its asynchronous equivalent.
     fn from(datagram: StdUnixDatagram) -> UnixDatagram {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         UnixDatagram {
             watcher: Async::new(datagram).expect("UnixDatagram is known to be good"),
         }
@@ -325,8 +319,6 @@ impl AsRawFd for UnixDatagram {
 
 impl FromRawFd for UnixDatagram {
     unsafe fn from_raw_fd(fd: RawFd) -> UnixDatagram {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let raw = StdUnixDatagram::from_raw_fd(fd);
         let datagram = Async::<StdUnixDatagram>::new(raw).expect("invalid file descriptor");
         UnixDatagram { watcher: datagram }
