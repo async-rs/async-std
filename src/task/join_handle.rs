@@ -78,7 +78,16 @@ impl<T> Drop for JoinHandle<T> {
 impl<T> Future for JoinHandle<T> {
     type Output = T;
 
+    #[cfg(not(target_os = "unknown"))]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         Pin::new(&mut self.handle.as_mut().unwrap()).poll(cx)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match Pin::new(&mut self.handle.as_mut().unwrap()).poll(cx) {
+            Poll::Ready(Ok(value)) => Poll::Ready(value),
+            _ => Poll::Pending,
+        }
     }
 }
