@@ -41,9 +41,9 @@ where
         let mut this = self.project();
         let next = futures_core::ready!(this.stream.as_mut().poll_next(cx));
 
-        Poll::Ready(next.and_then(|x| {
+        Poll::Ready(next.map(|x| {
             (this.f)(&x);
-            Some(x)
+            x
         }))
     }
 }
