@@ -51,7 +51,7 @@ std = [
   "slab",
   "async-mutex",
 ]
-wasm = [
+wasm-bindgen = [
   "futures-timer/wasm-bindgen",
   "wasm-bindgen-futures",
   "futures-channel",

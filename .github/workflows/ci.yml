@@ -41,14 +41,6 @@ jobs:
         command:  check
         args: --features unstable --all --bins --examples --tests
 
-    - name: check wasm
-      uses: actions-rs/cargo@v1
-      with:
-        command:  check
-        target: wasm32-unknown-unknown
-        override: true
-        args: --features unstable --all --bins --tests
-
     - name: check bench
       uses: actions-rs/cargo@v1
       if: matrix.rust == 'nightly'
@@ -163,13 +155,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --target wasm32-unknown-unknown --features wasm
+        args: --target wasm32-unknown-unknown --features wasm-bindgen
 
     - name: check unstable
       uses: actions-rs/cargo@v1
       with:
         command: check
-        args: --target wasm32-unknown-unknown --tests --all --features unstable,wasm
+        args: --target wasm32-unknown-unknown --tests --all --features unstable,wasm-bindgen
         
   check_fmt_and_docs:
     name: Checking fmt and docs
