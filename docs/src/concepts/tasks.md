@@ -118,7 +118,7 @@ thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 ```
 
-While panicing a spawned task will abort:
+While panicking a spawned task will abort:
 
 ```rust,edition2018,should_panic
 # extern crate async_std;
