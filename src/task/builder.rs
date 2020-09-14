@@ -41,7 +41,7 @@ impl Builder {
         #[cfg(not(target_os = "unknown"))]
         once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
 
-        let tag = TaskLocalsWrapper::new(task.clone());
+        let tag = TaskLocalsWrapper::new(task);
 
         SupportTaskLocals { tag, future }
     }

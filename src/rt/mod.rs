@@ -22,7 +22,8 @@ pub static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
         .unwrap_or_else(|_| num_cpus::get())
         .max(1);
 
-    let thread_name = env::var("ASYNC_STD_THREAD_NAME").unwrap_or("async-std/runtime".to_string());
+    let thread_name =
+        env::var("ASYNC_STD_THREAD_NAME").unwrap_or_else(|_| "async-std/runtime".to_string());
 
     for _ in 0..thread_count {
         thread::Builder::new()
