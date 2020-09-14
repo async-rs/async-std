@@ -74,7 +74,8 @@ pin_project! {
     ///
     /// By wrapping the stream with a `BufWriter`, these ten writes are all grouped
     /// together by the buffer, and will all be written out in one system call when
-    /// the `stream` is dropped.
+    /// `stream.flush()` completes. (As mentioned above, dropping a `BufWriter`
+    /// does not flush its buffers, so a `flush` call is essential.)
     ///
     /// [`Write`]: trait.Write.html
     /// [`TcpStream::write`]: ../net/struct.TcpStream.html#method.write
