@@ -59,7 +59,10 @@ pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
 }
 
-#[cfg(all(not(target_os = "unknown"), feature = "default"))]
+#[cfg(all(
+    not(target_os = "unknown"),
+    any(feature = "default", feature = "unstable")
+))]
 mod timer {
     pub type Timer = async_io::Timer;
 }
@@ -69,10 +72,7 @@ pub(crate) fn timer_after(dur: std::time::Duration) -> timer::Timer {
     Timer::after(dur)
 }
 
-#[cfg(any(
-    all(target_arch = "wasm32", feature = "default"),
-    all(feature = "unstable", not(feature = "default"))
-))]
+#[cfg(any(all(target_arch = "wasm32", feature = "default"),))]
 mod timer {
     use std::pin::Pin;
     use std::task::Poll;
