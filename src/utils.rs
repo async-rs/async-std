@@ -77,12 +77,14 @@ mod timer {
     use std::pin::Pin;
     use std::task::Poll;
 
+    use gloo_timers::future::TimeoutFuture;
+
     #[derive(Debug)]
-    pub(crate) struct Timer(futures_timer::Delay);
+    pub(crate) struct Timer(TimeoutFuture);
 
     impl Timer {
         pub(crate) fn after(dur: std::time::Duration) -> Self {
-            Timer(futures_timer::Delay::new(dur))
+            Timer(TimeoutFuture::new(dur.as_millis() as u32))
         }
     }
 
