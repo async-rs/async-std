@@ -71,8 +71,6 @@ impl TcpStream {
     /// # Ok(()) }) }
     /// ```
     pub async fn connect<A: ToSocketAddrs>(addrs: A) -> io::Result<TcpStream> {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let mut last_err = None;
         let addrs = addrs.to_socket_addrs().await?;
 
@@ -358,8 +356,6 @@ impl Write for &TcpStream {
 impl From<std::net::TcpStream> for TcpStream {
     /// Converts a `std::net::TcpStream` into its asynchronous equivalent.
     fn from(stream: std::net::TcpStream) -> TcpStream {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         TcpStream {
             watcher: Arc::new(Async::new(stream).expect("TcpStream is known to be good")),
         }

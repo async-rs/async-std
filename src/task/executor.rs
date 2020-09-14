@@ -28,14 +28,14 @@ pub(crate) fn run<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
-    EXECUTOR.with(|executor| enter(|| GLOBAL_EXECUTOR.enter(|| executor.borrow().run(future))))
+    EXECUTOR.with(|executor| enter(|| async_io::block_on(executor.borrow().run(future))))
 }
 
 pub(crate) fn run_global<F, T>(future: F) -> T
 where
     F: Future<Output = T>,
 {
-    enter(|| GLOBAL_EXECUTOR.run(future))
+    enter(|| async_io::block_on(GLOBAL_EXECUTOR.run(future)))
 }
 
 /// Enters the tokio context if the `tokio` feature is enabled.

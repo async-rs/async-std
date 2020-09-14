@@ -68,8 +68,6 @@ impl UdpSocket {
     /// # Ok(()) }) }
     /// ```
     pub async fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<UdpSocket> {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         let mut last_err = None;
         let addrs = addrs.to_socket_addrs().await?;
 
@@ -528,8 +526,6 @@ impl UdpSocket {
 impl From<std::net::UdpSocket> for UdpSocket {
     /// Converts a `std::net::UdpSocket` into its asynchronous equivalent.
     fn from(socket: std::net::UdpSocket) -> UdpSocket {
-        once_cell::sync::Lazy::force(&crate::rt::RUNTIME);
-
         UdpSocket {
             watcher: Async::new(socket).expect("UdpSocket is known to be good"),
         }
