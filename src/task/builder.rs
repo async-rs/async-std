@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -7,7 +6,7 @@ use std::task::{Context, Poll};
 use pin_project_lite::pin_project;
 
 use crate::io;
-use crate::task::{self, JoinHandle, Task, TaskLocalsWrapper};
+use crate::task::{JoinHandle, Task, TaskLocalsWrapper};
 
 /// Task builder that configures the settings of a new task.
 #[derive(Debug, Default)]
@@ -61,7 +60,7 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let handle = task::executor::spawn(wrapped);
+        let handle = crate::task::executor::spawn(wrapped);
 
         Ok(JoinHandle::new(handle, task))
     }
@@ -81,7 +80,7 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let handle = task::executor::local(wrapped);
+        let handle = crate::task::executor::local(wrapped);
 
         Ok(JoinHandle::new(handle, task))
     }
@@ -143,6 +142,8 @@ impl Builder {
     where
         F: Future<Output = T>,
     {
+        use std::cell::Cell;
+
         let wrapped = self.build(future);
 
         // Log this `block_on` operation.
@@ -167,7 +168,7 @@ impl Builder {
                 TaskLocalsWrapper::set_current(&wrapped.tag, || {
                     let res = if should_run {
                         // The first call should run the executor
-                        task::executor::run(wrapped)
+                        crate::task::executor::run(wrapped)
                     } else {
                         futures_lite::future::block_on(wrapped)
                     };
