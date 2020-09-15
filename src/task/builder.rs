@@ -60,7 +60,7 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let handle = crate::task::executor::spawn(wrapped);
+        let handle = async_global_executor::spawn(wrapped);
 
         Ok(JoinHandle::new(handle, task))
     }
@@ -80,7 +80,7 @@ impl Builder {
         });
 
         let task = wrapped.tag.task().clone();
-        let handle = crate::task::executor::local(wrapped);
+        let handle = async_global_executor::spawn_local(wrapped);
 
         Ok(JoinHandle::new(handle, task))
     }
