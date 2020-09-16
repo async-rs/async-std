@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 - Extracted the executor into [async-global-executor](https://github.com/async-rs/async-global-executor) ([#867](https://github.com/async-rs/async-std/pull/867))
 
-- Updated various depdendencies
+- Updated various dependencies
 
 ## Fixed
 
