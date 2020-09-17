@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.4] - 2020-09-16
+
+## Added
+
+- Added `UdpSocket::peek` and `UdpSocket::peek_from` ([#853](https://github.com/async-rs/async-std/pull/853))
+
+## Changed
+
+- Extracted the executor into [async-global-executor](https://github.com/async-rs/async-global-executor) ([#867](https://github.com/async-rs/async-std/pull/867))
+
+- Updated various dependencies
+
 ## Fixed
 
 - Ensure `UnixStream::into_raw_fd` doesn't close the file descriptor ([#855](https://github.com/async-rs/async-std/issues/855))
+- Fixed wasm builds and ensured better dependency management depending on the compile target ([#863](https://github.com/async-rs/async-std/pull/863))
+
 
 # [1.6.3] - 2020-07-31
 
@@ -764,7 +778,8 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.3...HEAD
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.4...HEAD
+[1.6.3]: https://github.com/async-rs/async-std/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/async-rs/async-std/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/async-rs/async-std/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/async-rs/async-std/compare/v1.6.0...v1.6.1
