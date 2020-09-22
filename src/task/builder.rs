@@ -168,7 +168,7 @@ impl Builder {
                 TaskLocalsWrapper::set_current(&wrapped.tag, || {
                     let res = if should_run {
                         // The first call should run the executor
-                        crate::task::executor::run(wrapped)
+                        async_global_executor::block_on(wrapped)
                     } else {
                         futures_lite::future::block_on(wrapped)
                     };
