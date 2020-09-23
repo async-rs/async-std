@@ -303,6 +303,7 @@
 pub use empty::{empty, Empty};
 pub use from_fn::{from_fn, FromFn};
 pub use from_iter::{from_iter, FromIter};
+pub use interval::{interval, Interval};
 pub use once::{once, Once};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
@@ -313,6 +314,7 @@ pub(crate) mod stream;
 mod empty;
 mod from_fn;
 mod from_iter;
+mod interval;
 mod once;
 mod repeat;
 mod repeat_with;
@@ -323,7 +325,6 @@ cfg_unstable! {
     mod extend;
     mod from_stream;
     mod fused_stream;
-    mod interval;
     mod into_stream;
     mod pending;
     mod product;
@@ -335,7 +336,6 @@ cfg_unstable! {
     pub use extend::{extend, Extend};
     pub use from_stream::FromStream;
     pub use fused_stream::FusedStream;
-    pub use interval::{interval, Interval};
     pub use into_stream::IntoStream;
     pub use pending::{pending, Pending};
     pub use product::Product;
