@@ -339,7 +339,6 @@ cfg_unstable! {
     pub use into_stream::IntoStream;
     pub use pending::{pending, Pending};
     pub use product::Product;
-    pub use stream::Merge;
     pub use successors::{successors, Successors};
     pub use sum::Sum;
 }
