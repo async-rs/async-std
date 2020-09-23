@@ -305,6 +305,7 @@ pub use from_fn::{from_fn, FromFn};
 pub use from_iter::{from_iter, FromIter};
 pub use interval::{interval, Interval};
 pub use once::{once, Once};
+pub use pending::{pending, Pending};
 pub use repeat::{repeat, Repeat};
 pub use repeat_with::{repeat_with, RepeatWith};
 pub use stream::*;
@@ -316,6 +317,7 @@ mod from_fn;
 mod from_iter;
 mod interval;
 mod once;
+mod pending;
 mod repeat;
 mod repeat_with;
 
@@ -326,7 +328,6 @@ cfg_unstable! {
     mod from_stream;
     mod fused_stream;
     mod into_stream;
-    mod pending;
     mod product;
     mod successors;
     mod sum;
@@ -337,7 +338,6 @@ cfg_unstable! {
     pub use from_stream::FromStream;
     pub use fused_stream::FusedStream;
     pub use into_stream::IntoStream;
-    pub use pending::{pending, Pending};
     pub use product::Product;
     pub use successors::{successors, Successors};
     pub use sum::Sum;
