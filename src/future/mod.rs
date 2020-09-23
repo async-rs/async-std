@@ -47,8 +47,11 @@
 //! [`Future::try_race`]: trait.Future.html#method.try_race
 
 cfg_alloc! {
+    pub use into_future::IntoFuture;
     pub use future::Future;
+
     pub(crate) mod future;
+    mod into_future;
 }
 
 cfg_std! {
@@ -66,9 +69,5 @@ pub use timeout::{timeout, TimeoutError};
 #[cfg(any(feature = "unstable", feature = "default"))]
 mod timeout;
 
-cfg_unstable! {
-    pub use into_future::IntoFuture;
-    pub(crate) use maybe_done::MaybeDone;
-    mod into_future;
-    mod maybe_done;
-}
+pub(crate) use maybe_done::MaybeDone;
+mod maybe_done;

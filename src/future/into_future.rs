@@ -30,8 +30,6 @@ use std::future::Future;
 ///     }
 /// }
 /// ```
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub trait IntoFuture {
     /// The type of value produced on completion.
     type Output;
