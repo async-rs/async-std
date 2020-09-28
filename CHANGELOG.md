@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.6.5] - 2020-09-28
+
+## Fixed
+
+- Fix `TcpListener::incoming`. ([#889](https://github.com/async-rs/async-std/pull/889))
+- Fix tokio compatability flag. ([#882](https://github.com/async-rs/async-std/pull/882))
+
 # [1.6.4] - 2020-09-16
 
 ## Added
@@ -778,8 +785,9 @@ task::blocking(async {
 
 - Initial beta release
 
-[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.4...HEAD
-[1.6.3]: https://github.com/async-rs/async-std/compare/v1.6.3...v1.6.4
+[Unreleased]: https://github.com/async-rs/async-std/compare/v1.6.5...HEAD
+[1.6.5]: https://github.com/async-rs/async-std/compare/v1.6.4...v1.6.5
+[1.6.4]: https://github.com/async-rs/async-std/compare/v1.6.3...v1.6.4
 [1.6.3]: https://github.com/async-rs/async-std/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/async-rs/async-std/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/async-rs/async-std/compare/v1.6.0...v1.6.1
