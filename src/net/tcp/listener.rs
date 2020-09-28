@@ -1,3 +1,4 @@
+use std::fmt;
 use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
@@ -8,7 +9,7 @@ use crate::io;
 use crate::net::{TcpStream, ToSocketAddrs};
 use crate::stream::Stream;
 use crate::sync::Arc;
-use crate::task::{Context, Poll};
+use crate::task::{ready, Context, Poll};
 
 /// A TCP socket server, listening for connections.
 ///
@@ -146,7 +147,10 @@ impl TcpListener {
     /// # Ok(()) }) }
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
-        Incoming(self)
+        Incoming {
+            listener: self,
+            accept: None,
+        }
     }
 
     /// Returns the local address that this listener is bound to.
@@ -182,18 +186,36 @@ impl TcpListener {
 /// [`incoming`]: struct.TcpListener.html#method.incoming
 /// [`TcpListener`]: struct.TcpListener.html
 /// [`std::net::Incoming`]: https://doc.rust-lang.org/std/net/struct.Incoming.html
-#[derive(Debug)]
-pub struct Incoming<'a>(&'a TcpListener);
+pub struct Incoming<'a> {
+    listener: &'a TcpListener,
+    accept: Option<
+        Pin<Box<dyn Future<Output = io::Result<(TcpStream, SocketAddr)>> + Send + Sync + 'a>>,
+    >,
+}
 
-impl<'a> Stream for Incoming<'a> {
+impl Stream for Incoming<'_> {
     type Item = io::Result<TcpStream>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let future = self.0.accept();
-        pin_utils::pin_mut!(future);
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        loop {
+            if self.accept.is_none() {
+                self.accept = Some(Box::pin(self.listener.accept()));
+            }
 
-        let (socket, _) = futures_core::ready!(future.poll(cx))?;
-        Poll::Ready(Some(Ok(socket)))
+            if let Some(f) = &mut self.accept {
+                let res = ready!(f.as_mut().poll(cx));
+                self.accept = None;
+                return Poll::Ready(Some(res.map(|(stream, _)| stream)));
+            }
+        }
+    }
+}
+
+impl fmt::Debug for Incoming<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Incoming")
+            .field("listener", self.listener)
+            .finish()
     }
 }
 

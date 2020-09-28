@@ -14,7 +14,7 @@ use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use crate::path::Path;
 use crate::stream::Stream;
 use crate::sync::Arc;
-use crate::task::{Context, Poll};
+use crate::task::{ready, Context, Poll};
 
 /// A Unix domain socket server, listening for connections.
 ///
@@ -128,7 +128,10 @@ impl UnixListener {
     /// # Ok(()) }) }
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
-        Incoming(self)
+        Incoming {
+            listener: self,
+            accept: None,
+        }
     }
 
     /// Returns the local socket address of this listener.
@@ -174,18 +177,36 @@ impl fmt::Debug for UnixListener {
 /// [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
 /// [`incoming`]: struct.UnixListener.html#method.incoming
 /// [`UnixListener`]: struct.UnixListener.html
-#[derive(Debug)]
-pub struct Incoming<'a>(&'a UnixListener);
+pub struct Incoming<'a> {
+    listener: &'a UnixListener,
+    accept: Option<
+        Pin<Box<dyn Future<Output = io::Result<(UnixStream, SocketAddr)>> + Send + Sync + 'a>>,
+    >,
+}
 
 impl Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let future = self.0.accept();
-        pin_utils::pin_mut!(future);
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        loop {
+            if self.accept.is_none() {
+                self.accept = Some(Box::pin(self.listener.accept()));
+            }
 
-        let (socket, _) = futures_core::ready!(future.poll(cx))?;
-        Poll::Ready(Some(Ok(socket)))
+            if let Some(f) = &mut self.accept {
+                let res = ready!(f.as_mut().poll(cx));
+                self.accept = None;
+                return Poll::Ready(Some(res.map(|(stream, _)| stream)));
+            }
+        }
+    }
+}
+
+impl fmt::Debug for Incoming<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Incoming")
+            .field("listener", self.listener)
+            .finish()
     }
 }
 
