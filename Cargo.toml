@@ -92,12 +92,6 @@ futures-channel = { version = "0.3.4", optional = true }
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.10"
 
-[dependencies.tokio]
-version = "0.2"
-default-features = false
-features = ["rt-threaded"]
-optional = true
-
 [dev-dependencies]
 femme = "2.1.1"
 rand = "0.7.3"
