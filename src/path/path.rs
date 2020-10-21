@@ -8,6 +8,15 @@ use crate::path::{Ancestors, Components, Display, Iter, PathBuf, StripPrefixErro
 #[cfg(not(target_os = "unknown"))]
 use crate::{fs, io};
 
+#[cfg(feature = "serde")]
+use {
+    std::fmt,
+    serde::{
+        ser::{ Serialize, Serializer },
+        de::{ Deserialize, Deserializer, Visitor, Unexpected, },
+    },
+};
+
 /// A slice of a path.
 ///
 /// This struct is an async version of [`std::path::Path`].
@@ -1039,3 +1048,74 @@ impl AsRef<Path> for std::path::PathBuf {
         p.into()
     }
 }
+
+#[cfg(feature = "serde")]
+struct PathVisitor;
+
+#[cfg(feature = "serde")]
+impl<'a> Visitor<'a> for PathVisitor {
+    type Value = &'a Path;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a borrowed path")
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'a str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(v.as_ref())
+    }
+
+    fn visit_borrowed_bytes<E>(self, v: &'a [u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        std::str::from_utf8(v)
+            .map(AsRef::as_ref)
+            .map_err(|_| serde::de::Error::invalid_value(Unexpected::Bytes(v), &self))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de: 'a, 'a> Deserialize<'de> for &'a Path {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(PathVisitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Path {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self.inner.to_str() {
+            Some(s) => s.serialize(serializer),
+            None => Err(serde::ser::Error::custom("path contains invalid UTF-8 characters")),
+        }
+    }
+}
+
+macro_rules! forwarded_impl {
+    (
+        $(#[doc = $doc:tt])*
+        ( $($id: ident),* ), $ty: ty, $func: expr
+    ) => {
+        $(#[doc = $doc])*
+        impl<'de $(, $id : Deserialize<'de>,)*> Deserialize<'de> for $ty {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                Deserialize::deserialize(deserializer).map($func)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+forwarded_impl!((), Box<Path>, PathBuf::into_boxed_path);
