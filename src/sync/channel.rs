@@ -135,7 +135,7 @@ impl<T> Sender<T> {
     /// # Ok(())
     /// # }) }
     /// ```
-    pub async fn send(&self, msg: T) {
+    pub async fn send(&self, msg: T) -> Result<(), SendError<T>> {
         struct SendFuture<'a, T> {
             channel: &'a Channel<T>,
             msg: Option<T>,
@@ -145,7 +145,7 @@ impl<T> Sender<T> {
         impl<T> Unpin for SendFuture<'_, T> {}
 
         impl<T> Future for SendFuture<'_, T> {
-            type Output = ();
+            type Output = Result<(), SendError<T>>;
 
             fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 loop {
@@ -158,10 +158,9 @@ impl<T> Sender<T> {
 
                     // Try sending the message.
                     match self.channel.try_send(msg) {
-                        Ok(()) => return Poll::Ready(()),
+                        Ok(()) => return Poll::Ready(Ok(())),
                         Err(TrySendError::Disconnected(msg)) => {
-                            self.msg = Some(msg);
-                            return Poll::Pending;
+                            return Poll::Ready(Err(SendError(msg)));
                         }
                         Err(TrySendError::Full(msg)) => {
                             self.msg = Some(msg);
@@ -1000,6 +999,13 @@ pub enum TrySendError<T> {
     /// The channel is full and disconnected.
     Disconnected(T),
 }
+
+/// An error returned from the `send` method when it is disconnected.
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[derive(PartialEq, Eq, Debug)]
+pub struct SendError<T>(pub T);
+
 
 impl<T> Error for TrySendError<T> {}
 
