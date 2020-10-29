@@ -26,10 +26,10 @@ fn smoke() {
     task::block_on(async {
         let (s, r) = channel(1);
 
-        s.send(7).await;
+        s.send(7).await.unwrap();
         assert_eq!(r.recv().await.unwrap(), 7);
 
-        s.send(8).await;
+        s.send(8).await.unwrap();
         assert_eq!(r.recv().await.unwrap(), 8);
 
         drop(s);
@@ -39,7 +39,7 @@ fn smoke() {
     task::block_on(async {
         let (s, r) = channel(10);
         drop(r);
-        s.send(1).await;
+        s.send(1).await.unwrap();
     });
 }
 
@@ -67,7 +67,7 @@ fn len_empty_full() {
         assert_eq!(r.is_empty(), true);
         assert_eq!(r.is_full(), false);
 
-        s.send(()).await;
+        s.send(()).await.unwrap();
 
         assert_eq!(s.len(), 1);
         assert_eq!(s.is_empty(), false);
@@ -76,7 +76,7 @@ fn len_empty_full() {
         assert_eq!(r.is_empty(), false);
         assert_eq!(r.is_full(), false);
 
-        s.send(()).await;
+        s.send(()).await.unwrap();
 
         assert_eq!(s.len(), 2);
         assert_eq!(s.is_empty(), false);
@@ -112,9 +112,9 @@ fn recv() {
         });
 
         task::sleep(ms(1500)).await;
-        s.send(7).await;
-        s.send(8).await;
-        s.send(9).await;
+        s.send(7).await.unwrap();
+        s.send(8).await.unwrap();
+        s.send(9).await.unwrap();
     })
 }
 
@@ -125,13 +125,13 @@ fn send() {
         let (s, r) = channel(1);
 
         spawn(async move {
-            s.send(7).await;
+            s.send(7).await.unwrap();
             task::sleep(ms(1000)).await;
-            s.send(8).await;
+            s.send(8).await.unwrap();
             task::sleep(ms(1000)).await;
-            s.send(9).await;
+            s.send(9).await.unwrap();
             task::sleep(ms(1000)).await;
-            s.send(10).await;
+            s.send(10).await.unwrap();
         });
 
         task::sleep(ms(1500)).await;
@@ -147,9 +147,9 @@ fn recv_after_disconnect() {
     task::block_on(async {
         let (s, r) = channel(100);
 
-        s.send(1).await;
-        s.send(2).await;
-        s.send(3).await;
+        s.send(1).await.unwrap();
+        s.send(2).await.unwrap();
+        s.send(3).await.unwrap();
 
         drop(s);
 
@@ -174,7 +174,7 @@ fn len() {
 
         for _ in 0..CAP / 10 {
             for i in 0..50 {
-                s.send(i).await;
+                s.send(i).await.unwrap();
                 assert_eq!(s.len(), i + 1);
             }
 
@@ -188,7 +188,7 @@ fn len() {
         assert_eq!(r.len(), 0);
 
         for i in 0..CAP {
-            s.send(i).await;
+            s.send(i).await.unwrap();
             assert_eq!(s.len(), i + 1);
         }
 
@@ -211,7 +211,7 @@ fn len() {
         });
 
         for i in 0..COUNT {
-            s.send(i).await;
+            s.send(i).await.unwrap();
             let len = s.len();
             assert!(len <= CAP);
         }
@@ -256,7 +256,7 @@ fn spsc() {
         });
 
         for i in 0..COUNT {
-            s.send(i).await;
+            s.send(i).await.unwrap();
         }
         drop(s);
 
@@ -292,7 +292,7 @@ fn mpmc() {
             let s = s.clone();
             tasks.push(spawn(async move {
                 for i in 0..COUNT {
-                    s.send(i).await;
+                    s.send(i).await.unwrap();
                 }
             }));
         }
@@ -320,7 +320,7 @@ fn oneshot() {
             let c2 = spawn(async move { s.send(0).await });
 
             c1.await;
-            c2.await;
+            c2.await.unwrap();
         }
     })
 }
@@ -360,13 +360,13 @@ fn drops() {
             });
 
             for _ in 0..steps {
-                s.send(DropCounter).await;
+                s.send(DropCounter).await.unwrap();
             }
 
             child.await;
 
             for _ in 0..additional {
-                s.send(DropCounter).await;
+                s.send(DropCounter).await.unwrap();
             }
 
             assert_eq!(DROPS.load(Ordering::SeqCst), steps);

@@ -36,7 +36,7 @@ fn merging_delayed_streams_work() {
 
     task::block_on(async move {
         task::sleep(std::time::Duration::from_millis(500)).await;
-        sender.send(92).await;
+        sender.send(92).await.unwrap();
         drop(sender);
         let xs = t.await;
         assert_eq!(xs, vec![92])
@@ -55,7 +55,7 @@ fn merging_delayed_streams_work() {
 
     task::block_on(async move {
         task::sleep(std::time::Duration::from_millis(500)).await;
-        sender.send(92).await;
+        sender.send(92).await.unwrap();
         drop(sender);
         let xs = t.await;
         assert_eq!(xs, vec![92])
