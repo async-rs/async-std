@@ -43,12 +43,12 @@ use crate::sync::WakerSet;
 /// let (s, r) = channel(1);
 ///
 /// // This call returns immediately because there is enough space in the channel.
-/// s.send(1usize).await;
+/// s.send(1usize).await.unwrap();
 ///
 /// task::spawn(async move {
 ///     // This call will have to wait because the channel is full.
 ///     // It will be able to complete only after the first message is received.
-///     s.send(2).await;
+///     s.send(2).await.unwrap();
 /// });
 ///
 /// task::sleep(Duration::from_secs(1)).await;
@@ -124,8 +124,8 @@ impl<T> Sender<T> {
     /// let (s, r) = channel(1);
     ///
     /// task::spawn(async move {
-    ///     s.send(1).await;
-    ///     s.send(2).await;
+    ///     s.send(1).await.unwrap();
+    ///     s.send(2).await.unwrap();
     /// });
     ///
     /// assert_eq!(r.recv().await?, 1);
@@ -243,7 +243,7 @@ impl<T> Sender<T> {
     /// let (s, r) = channel(1);
     ///
     /// assert!(s.is_empty());
-    /// s.send(0).await;
+    /// s.send(0).await.unwrap();
     /// assert!(!s.is_empty());
     /// #
     /// # })
@@ -264,7 +264,7 @@ impl<T> Sender<T> {
     /// let (s, r) = channel(1);
     ///
     /// assert!(!s.is_full());
-    /// s.send(0).await;
+    /// s.send(0).await.unwrap();
     /// assert!(s.is_full());
     /// #
     /// # })
@@ -285,8 +285,8 @@ impl<T> Sender<T> {
     /// let (s, r) = channel(2);
     /// assert_eq!(s.len(), 0);
     ///
-    /// s.send(1).await;
-    /// s.send(2).await;
+    /// s.send(1).await.unwrap();
+    /// s.send(2).await.unwrap();
     /// assert_eq!(s.len(), 2);
     /// #
     /// # })
@@ -349,9 +349,9 @@ impl<T> fmt::Debug for Sender<T> {
 /// let (s, r) = channel(100);
 ///
 /// task::spawn(async move {
-///     s.send(1usize).await;
+///     s.send(1usize).await.unwrap();
 ///     task::sleep(Duration::from_secs(1)).await;
-///     s.send(2).await;
+///     s.send(2).await.unwrap();
 /// });
 ///
 /// assert_eq!(r.recv().await?, 1); // Received immediately.
@@ -389,8 +389,8 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(1);
     ///
     /// task::spawn(async move {
-    ///     s.send(1usize).await;
-    ///     s.send(2).await;
+    ///     s.send(1usize).await.unwrap();
+    ///     s.send(2).await.unwrap();
     ///     // Then we drop the sender
     /// });
     ///
@@ -449,7 +449,7 @@ impl<T> Receiver<T> {
     ///
     /// let (s, r) = channel(1);
     ///
-    /// s.send(1u8).await;
+    /// s.send(1u8).await.unwrap();
     ///
     /// assert!(r.try_recv().is_ok());
     /// assert!(r.try_recv().is_err());
@@ -486,7 +486,7 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(1);
     ///
     /// assert!(r.is_empty());
-    /// s.send(0).await;
+    /// s.send(0).await.unwrap();
     /// assert!(!r.is_empty());
     /// #
     /// # })
@@ -507,7 +507,7 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(1);
     ///
     /// assert!(!r.is_full());
-    /// s.send(0).await;
+    /// s.send(0).await.unwrap();
     /// assert!(r.is_full());
     /// #
     /// # })
@@ -528,8 +528,8 @@ impl<T> Receiver<T> {
     /// let (s, r) = channel(2);
     /// assert_eq!(r.len(), 0);
     ///
-    /// s.send(1).await;
-    /// s.send(2).await;
+    /// s.send(1).await.unwrap();
+    /// s.send(2).await.unwrap();
     /// assert_eq!(r.len(), 2);
     /// #
     /// # })
