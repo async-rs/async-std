@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+# [1.7.0] - 2020-10-30
+
+This patch adds a feature to enable compatibility with the new `tokio` 0.3.0
+release, and updates internal dependencies.
+
+## Added
+
+- Add `tokio03` feature ([#895](https://github.com/async-rs/async-std/pull/895))
+
+## Internal
+
+- chore: update dependencies ([#897](https://github.com/async-rs/async-std/pull/897))
+
 # [1.6.5] - 2020-09-28
 
 ## Fixed
