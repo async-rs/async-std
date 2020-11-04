@@ -223,8 +223,8 @@
 //! features = ["tokio02"]
 //! ```
 //!
-//! Compatibility with the `tokio` 0.3 runtime is also simultaneously possible using the `tokio03`
-//! Cargo feature:
+//! Compatibility with the `tokio` 0.3 runtime is also simultaneously possible
+//! using the `tokio03` Cargo feature:
 //!
 //! ```toml
 //! [dependencies.async-std]
