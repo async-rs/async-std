@@ -197,7 +197,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.6.5"
+//! version = "1.7.0"
 //! features = ["unstable"]
 //! ```
 //!
@@ -210,17 +210,26 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.6.5"
+//! version = "1.7.0"
 //! features = ["attributes"]
 //! ```
 //!
-//! Compatibility with the `tokio` runtime is possible using the `tokio02`
+//! Compatibility with the `tokio` 0.2 runtime is possible using the `tokio02`
 //! Cargo feature:
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.6.5"
+//! version = "1.7.0"
 //! features = ["tokio02"]
+//! ```
+//!
+//! Compatibility with the `tokio` 0.3 runtime is also simultaneously possible using the `tokio03`
+//! Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.7.0"
+//! features = ["tokio03"]
 //! ```
 //!
 //! Additionally it's possible to only use the core traits and combinators by
@@ -228,7 +237,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.6.5"
+//! version = "1.7.0"
 //! default-features = false
 //! features = ["std"]
 //! ```
@@ -238,7 +247,7 @@
 //!
 //! ```toml
 //! [dependencies.async-std]
-//! version = "1.6.5"
+//! version = "1.7.0"
 //! default-features = false
 //! features = ["alloc"]
 //! ```
