@@ -68,6 +68,9 @@ pub enum ToSocketAddrsFuture<I> {
     Done,
 }
 
+// The field of `Self::Resolving` is `Unpin`, and the field of `Self::Ready` is never pinned.
+impl<I> Unpin for ToSocketAddrsFuture<I> {}
+
 /// Wrap `std::io::Error` with additional message
 ///
 /// Keeps the original error kind and stores the original I/O error as `source`.
@@ -84,7 +87,7 @@ impl<I: Iterator<Item = SocketAddr>> Future for ToSocketAddrsFuture<I> {
     type Output = io::Result<I>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.get_mut();
         let state = mem::replace(this, ToSocketAddrsFuture::Done);
 
         match state {
