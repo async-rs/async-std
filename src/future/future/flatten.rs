@@ -1,26 +1,39 @@
+use pin_project_lite::pin_project;
 use std::future::Future;
 use std::pin::Pin;
 
 use crate::future::IntoFuture;
 use crate::task::{ready, Context, Poll};
 
-#[doc(hidden)]
-#[allow(missing_debug_implementations)]
-pub struct FlattenFuture<Fut1, Fut2> {
-    state: State<Fut1, Fut2>,
+pin_project! {
+    #[doc(hidden)]
+    #[allow(missing_debug_implementations)]
+    pub struct FlattenFuture<Fut1, Fut2> {
+        #[pin]
+        state: State<Fut1, Fut2>,
+    }
 }
 
-#[derive(Debug)]
-enum State<Fut1, Fut2> {
-    First(Fut1),
-    Second(Fut2),
-    Empty,
+pin_project! {
+    #[project = StateProj]
+    #[derive(Debug)]
+    enum State<Fut1, Fut2> {
+        First {
+            #[pin]
+            fut1: Fut1,
+        },
+        Second {
+            #[pin]
+            fut2: Fut2,
+        },
+        Empty,
+    }
 }
 
 impl<Fut1, Fut2> FlattenFuture<Fut1, Fut2> {
-    pub(crate) fn new(future: Fut1) -> FlattenFuture<Fut1, Fut2> {
+    pub(crate) fn new(fut1: Fut1) -> FlattenFuture<Fut1, Fut2> {
         FlattenFuture {
-            state: State::First(future),
+            state: State::First { fut1 },
         }
     }
 }
@@ -33,19 +46,19 @@ where
     type Output = <Fut1::Output as IntoFuture>::Output;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let Self { state } = unsafe { self.get_unchecked_mut() };
+        let mut state = self.project().state;
         loop {
-            match state {
-                State::First(fut1) => {
-                    let fut2 = ready!(unsafe { Pin::new_unchecked(fut1) }.poll(cx)).into_future();
-                    *state = State::Second(fut2);
+            match state.as_mut().project() {
+                StateProj::First { fut1 } => {
+                    let fut2 = ready!(fut1.poll(cx)).into_future();
+                    state.set(State::Second { fut2 });
                 }
-                State::Second(fut2) => {
-                    let v = ready!(unsafe { Pin::new_unchecked(fut2) }.poll(cx));
-                    *state = State::Empty;
+                StateProj::Second { fut2 } => {
+                    let v = ready!(fut2.poll(cx));
+                    state.set(State::Empty);
                     return Poll::Ready(v);
                 }
-                State::Empty => panic!("polled a completed future"),
+                StateProj::Empty => panic!("polled a completed future"),
             }
         }
     }
