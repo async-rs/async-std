@@ -7,8 +7,7 @@
 //!
 //! [`std::process`]: https://doc.rust-lang.org/std/process/index.html
 
-// Re-export structs.
-pub use std::process::{ExitStatus, Output};
-
-// Re-export functions.
-pub use std::process::{abort, exit, id};
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::*;
