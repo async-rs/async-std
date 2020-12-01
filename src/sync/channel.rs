@@ -34,6 +34,7 @@ use crate::sync::WakerSet;
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
@@ -85,6 +86,7 @@ pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::sync::channel;
@@ -119,6 +121,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
@@ -208,6 +211,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -227,6 +231,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// use async_std::sync::channel;
     ///
     /// let (s, _) = channel::<i32>(5);
@@ -241,6 +246,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -262,6 +268,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -283,6 +290,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -343,6 +351,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
@@ -386,6 +395,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
@@ -449,6 +459,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -471,6 +482,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// use async_std::sync::channel;
     ///
     /// let (_, r) = channel::<i32>(5);
@@ -485,6 +497,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -506,6 +519,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -527,6 +541,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
