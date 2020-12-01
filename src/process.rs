@@ -7,7 +7,34 @@
 //!
 //! [`std::process`]: https://doc.rust-lang.org/std/process/index.html
 
-#[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
-pub use async_process::*;
+pub use async_process::ExitStatus;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::Output;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::Stdio;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::Child;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::ChildStderr;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::ChildStdin;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::ChildStdout;
+
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[doc(inline)]
+pub use async_process::Command;
