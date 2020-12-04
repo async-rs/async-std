@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::cell::UnsafeCell;
 use std::error::Error;
 use std::fmt::{self, Debug, Display};
@@ -32,6 +34,7 @@ use crate::sync::WakerSet;
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
@@ -60,6 +63,7 @@ use crate::sync::WakerSet;
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
     let channel = Arc::new(Channel::with_capacity(cap));
     let s = Sender {
@@ -82,6 +86,7 @@ pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::sync::channel;
@@ -102,6 +107,7 @@ pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct Sender<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
@@ -115,6 +121,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
@@ -204,6 +211,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -223,6 +231,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// use async_std::sync::channel;
     ///
     /// let (s, _) = channel::<i32>(5);
@@ -237,6 +246,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -258,6 +268,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -279,6 +290,7 @@ impl<T> Sender<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -339,6 +351,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// # Examples
 ///
 /// ```
+/// #![allow(deprecated)]
 /// # fn main() -> Result<(), async_std::sync::RecvError> {
 /// # async_std::task::block_on(async {
 /// #
@@ -363,6 +376,7 @@ impl<T> fmt::Debug for Sender<T> {
 /// ```
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct Receiver<T> {
     /// The inner channel.
     channel: Arc<Channel<T>>,
@@ -381,6 +395,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # fn main() -> Result<(), async_std::sync::RecvError> {
     /// # async_std::task::block_on(async {
     /// #
@@ -444,6 +459,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -466,6 +482,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// use async_std::sync::channel;
     ///
     /// let (_, r) = channel::<i32>(5);
@@ -480,6 +497,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -501,6 +519,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -522,6 +541,7 @@ impl<T> Receiver<T> {
     /// # Examples
     ///
     /// ```
+    /// #![allow(deprecated)]
     /// # async_std::task::block_on(async {
     /// #
     /// use async_std::sync::channel;
@@ -993,6 +1013,7 @@ impl<T> Drop for Channel<T> {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub enum TrySendError<T> {
     /// The channel is full but not disconnected.
     Full(T),
@@ -1025,6 +1046,7 @@ impl<T> Display for TrySendError<T> {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub enum TryRecvError {
     /// The channel is empty but not disconnected.
     Empty,
@@ -1048,6 +1070,7 @@ impl Display for TryRecvError {
 #[cfg(feature = "unstable")]
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug, PartialEq, Eq)]
+#[deprecated = "new channel api at async_std::channel"]
 pub struct RecvError;
 
 impl Error for RecvError {}

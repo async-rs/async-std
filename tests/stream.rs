@@ -5,9 +5,9 @@ use std::task::{Context, Poll};
 
 use pin_project_lite::pin_project;
 
+use async_std::channel::bounded as channel;
 use async_std::prelude::*;
 use async_std::stream;
-use async_std::sync::channel;
 use async_std::task;
 
 #[cfg(target_arch = "wasm32")]
@@ -36,7 +36,7 @@ fn merging_delayed_streams_work() {
 
     task::block_on(async move {
         task::sleep(std::time::Duration::from_millis(500)).await;
-        sender.send(92).await;
+        sender.send(92).await.unwrap();
         drop(sender);
         let xs = t.await;
         assert_eq!(xs, vec![92])
@@ -55,7 +55,7 @@ fn merging_delayed_streams_work() {
 
     task::block_on(async move {
         task::sleep(std::time::Duration::from_millis(500)).await;
-        sender.send(92).await;
+        sender.send(92).await.unwrap();
         drop(sender);
         let xs = t.await;
         assert_eq!(xs, vec![92])

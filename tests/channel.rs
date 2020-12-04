@@ -1,4 +1,5 @@
 #![cfg(feature = "unstable")]
+#![allow(deprecated)]
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
