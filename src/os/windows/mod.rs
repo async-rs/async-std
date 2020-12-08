@@ -7,4 +7,7 @@ cfg_std! {
 cfg_unstable! {
     #[cfg(feature = "default")]
     pub mod fs;
+    #[cfg(feature = "std")]
+    #[cfg(windows)]
+    pub use async_process::windows as process;
 }
