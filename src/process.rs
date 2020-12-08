@@ -38,3 +38,6 @@ pub use async_process::ChildStdout;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[doc(inline)]
 pub use async_process::Command;
+
+// Re-export functions.
+pub use std::process::{abort, exit, id};
