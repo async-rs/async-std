@@ -103,7 +103,7 @@
 //! the desired task name to [`Builder::name`]. To retrieve the task name from within the
 //! task, use [`Task::name`].
 //!
-//! [`Arc`]: ../gsync/struct.Arc.html
+//! [`Arc`]: ../sync/struct.Arc.html
 //! [`spawn`]: fn.spawn.html
 //! [`JoinHandle`]: struct.JoinHandle.html
 //! [`JoinHandle::task`]: struct.JoinHandle.html#method.task
