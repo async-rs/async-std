@@ -99,10 +99,10 @@ wasm-bindgen-test = "0.3.10"
 
 [dev-dependencies]
 femme = "2.1.1"
-rand = "0.7.3"
+rand = "0.8.0"
 tempfile = "3.1.0"
 futures = "0.3.4"
-rand_xorshift = "0.2.0"
+rand_xorshift = "0.3.0"
 
 [[test]]
 name = "stream"

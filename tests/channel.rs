@@ -345,8 +345,8 @@ fn drops() {
     for _ in 0..RUNS {
         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
         task::block_on(async move {
-            let steps = rng.gen_range(0, 10_000);
-            let additional = rng.gen_range(0, 50);
+            let steps = rng.gen_range(0..10_000);
+            let additional = rng.gen_range(0..50);
 
             DROPS.store(0, Ordering::SeqCst);
             let (s, r) = channel::<DropCounter>(50);
