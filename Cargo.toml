@@ -59,6 +59,7 @@ alloc = [
   "futures-core/alloc",
   "pin-project-lite",
 ]
+tokio = ["async-global-executor/tokio"]
 tokio02 = ["async-global-executor/tokio02"]
 tokio03 = ["async-global-executor/tokio03"]
 
