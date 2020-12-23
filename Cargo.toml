@@ -96,6 +96,7 @@ futures-channel = { version = "0.3.4", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.10"
+getrandom = { version = "0.2.0", features = ["js"] }
 
 [dev-dependencies]
 femme = "2.1.1"
