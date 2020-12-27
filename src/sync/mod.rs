@@ -177,22 +177,20 @@
 pub use std::sync::{Arc, Weak};
 
 #[doc(inline)]
-pub use async_mutex::{Mutex, MutexGuard};
+pub use async_lock::{Mutex, MutexGuard, MutexGuardArc};
 
-pub use rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
-mod rwlock;
+#[doc(inline)]
+pub use async_lock::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard};
 
 cfg_unstable! {
-    pub use barrier::{Barrier, BarrierWaitResult};
+    pub use async_lock::{Barrier, BarrierWaitResult};
     #[allow(deprecated)]
     pub use channel::{channel, Sender, Receiver, RecvError, TryRecvError, TrySendError};
     pub use condvar::Condvar;
+    pub(crate) use waker_set::WakerSet;
 
-    mod barrier;
     mod condvar;
     mod channel;
-}
 
-pub(crate) mod waker_set;
-pub(crate) use waker_set::WakerSet;
+    pub(crate) mod waker_set;
+}
