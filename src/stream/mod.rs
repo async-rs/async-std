@@ -255,7 +255,7 @@
 //!
 //! # Infinity
 //!
-//! Streams do not have to be finite. As an example, an repeat stream is
+//! Streams do not have to be finite. As an example, a repeat stream is
 //! an infinite stream:
 //!
 //! ```
