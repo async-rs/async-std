@@ -1,10 +1,10 @@
 use std::cell::UnsafeCell;
 use std::fmt;
+use std::future::Future;
 use std::isize;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::process;
-use std::future::Future;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::sync::WakerSet;
@@ -301,7 +301,11 @@ impl<T: ?Sized> RwLock<T> {
     /// # })
     /// ```
     pub fn try_write(&self) -> Option<RwLockWriteGuard<'_, T>> {
-        if self.state.compare_and_swap(0, WRITE_LOCK, Ordering::SeqCst) == 0 {
+        if self
+            .state
+            .compare_exchange(0, WRITE_LOCK, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
             Some(RwLockWriteGuard(self))
         } else {
             None
@@ -318,7 +322,10 @@ impl<T: ?Sized> RwLock<T> {
     /// let lock = RwLock::new(10);
     /// assert_eq!(lock.into_inner(), 10);
     /// ```
-    pub fn into_inner(self) -> T where T: Sized {
+    pub fn into_inner(self) -> T
+    where
+        T: Sized,
+    {
         self.value.into_inner()
     }
 
