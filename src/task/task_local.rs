@@ -124,9 +124,9 @@ impl<T: Send + 'static> LocalKey<T> {
                 std::process::abort();
             }
 
-            match key.compare_and_swap(0, counter, Ordering::AcqRel) {
-                0 => counter,
-                k => k,
+            match key.compare_exchange(0, counter, Ordering::AcqRel, Ordering::Acquire) {
+                Ok(_) => counter,
+                Err(k) => k,
             }
         }
 
