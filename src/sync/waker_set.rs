@@ -127,21 +127,6 @@ impl WakerSet {
         false
     }
 
-    /// Notifies a blocked operation if none have been notified already.
-    ///
-    /// Returns `true` if an operation was notified.
-    #[inline]
-    pub fn notify_any(&self) -> bool {
-        // Use `SeqCst` ordering to synchronize with `Lock::drop()`.
-        let flag = self.flag.load(Ordering::SeqCst);
-
-        if flag & NOTIFIED == 0 && flag & NOTIFIABLE != 0 {
-            self.notify(Notify::Any)
-        } else {
-            false
-        }
-    }
-
     /// Notifies one additional blocked operation.
     ///
     /// Returns `true` if an operation was notified.
