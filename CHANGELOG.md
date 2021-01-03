@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## Added
 
-- Add `tokio` feature ([#924](https://github.com/async-rs/async-std/pull/924))
+- Add `tokio1` feature ([#924](https://github.com/async-rs/async-std/pull/924))
 
 # [1.8.0] - 2020-12-04
 
