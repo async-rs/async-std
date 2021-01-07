@@ -65,6 +65,7 @@ use crate::sync::WakerSet;
 #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[deprecated = "new channel api at async_std::channel"]
 pub fn channel<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
+    debug_assert!(cap >= 1);
     let channel = Arc::new(Channel::with_capacity(cap));
     let s = Sender {
         channel: channel.clone(),
