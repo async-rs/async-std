@@ -113,7 +113,7 @@ using Rust's familiar stdlib API.
 
 ## Installation
 
-With [cargo add][cargo-add] installed run:
+With [cargo-edit](https://github.com/killercup/cargo-edit) installed run:
 
 ```sh
 $ cargo add async-std
