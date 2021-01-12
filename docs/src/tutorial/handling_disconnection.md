@@ -106,7 +106,7 @@ async fn connection_writer_loop(
 
 1. We add shutdown channel as an argument.
 2. Because of `select`, we can't use a `while let` loop, so we desugar it further into a `loop`.
-3. Function fuse() is used to turn any `Future` into a `FusedFuture`. This is used for fusing a future such that `poll` will never again be called once it has completed.
+3. Function fuse() is used to turn any `Stream` into a `FusedStream`. This is used for fusing a stream such that poll_next will never again be called once it has finished.
 4. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
 
 Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
