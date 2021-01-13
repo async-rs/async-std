@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 - Add `tokio1` feature ([#924](https://github.com/async-rs/async-std/pull/924))
 
+## Removed
+
+- Removed deprecated `sync::channel`
+
 # [1.8.0] - 2020-12-04
 
 This patch introduces `async_std::channel`, a new submodule for our async channels implementation. `channels` have been one of async-std's most requested features, and have existed as "unstable" for the past year. We've been cautious about stabilizing channels, and this caution turned out to be warranted: we realized our channels could hang indefinitely under certain circumstances, and people ended up expressing a need for unbounded channels.
