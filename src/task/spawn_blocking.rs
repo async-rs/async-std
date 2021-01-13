@@ -35,5 +35,5 @@ where
     F: FnOnce() -> T + Send + 'static,
     T: Send + 'static,
 {
-    task::spawn(blocking::unblock(f))
+    task::spawn(async_global_executor::spawn_blocking(f))
 }

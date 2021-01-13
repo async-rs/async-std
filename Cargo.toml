@@ -26,7 +26,6 @@ default = [
   "std",
   "async-global-executor",
   "async-io",
-  "blocking",
   "futures-lite",
   "kv-log-macro",
   "log",
@@ -59,6 +58,7 @@ alloc = [
   "futures-core/alloc",
   "pin-project-lite",
 ]
+tokio1 = ["async-global-executor/tokio"]
 tokio02 = ["async-global-executor/tokio02"]
 tokio03 = ["async-global-executor/tokio03"]
 
@@ -83,9 +83,8 @@ surf = { version = "2.0.0", optional = true }
 
 
 [target.'cfg(not(target_os = "unknown"))'.dependencies]
-async-global-executor = { version = "1.4.0", optional = true, features = ["async-io"] }
+async-global-executor = { version = "2.0.0", optional = true, features = ["async-io"] }
 async-io = { version = "1.0.1", optional = true }
-blocking = { version = "1.0.0", optional = true }
 futures-lite = { version = "1.0.0", optional = true }
 async-process = { version = "1.0.1", optional = true }
 

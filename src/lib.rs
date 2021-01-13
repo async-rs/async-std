@@ -213,6 +213,15 @@
 //! features = ["attributes"]
 //! ```
 //!
+//! Compatibility with the `tokio` 1.0 runtime is also simultaneously possible
+//! using the `tokio1` Cargo feature:
+//!
+//! ```toml
+//! [dependencies.async-std]
+//! version = "1.7.0"
+//! features = ["tokio1"]
+//! ```
+//!
 //! Compatibility with the `tokio` 0.2 runtime is possible using the `tokio02`
 //! Cargo feature:
 //!
