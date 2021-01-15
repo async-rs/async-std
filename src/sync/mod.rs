@@ -184,13 +184,10 @@ pub use async_lock::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockW
 
 cfg_unstable! {
     pub use async_lock::{Barrier, BarrierWaitResult};
-    #[allow(deprecated)]
-    pub use channel::{channel, Sender, Receiver, RecvError, TryRecvError, TrySendError};
     pub use condvar::Condvar;
     pub(crate) use waker_set::WakerSet;
 
     mod condvar;
-    mod channel;
 
     pub(crate) mod waker_set;
 }

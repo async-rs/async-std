@@ -70,16 +70,6 @@ impl WakerSet {
         key
     }
 
-    /// Removes the waker of an operation.
-    #[cold]
-    pub fn remove(&self, key: usize) {
-        let mut inner = self.lock();
-
-        if inner.entries.remove(key).is_some() {
-            inner.notifiable -= 1;
-        }
-    }
-
     /// If the waker for this key is still waiting for a notification, then update
     /// the waker for the entry, and return false. If the waker has been notified,
     /// treat the entry as completed and return true.
