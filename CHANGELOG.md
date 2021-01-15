@@ -5,17 +5,78 @@ All notable changes to async-std will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://book.async.rs/overview/stability-guarantees.html).
 
-## [Unreleased]
+# [Unreleased]
 
-The new `async_std::channel` submodule, introduced in 1.8.0, has been stabilized. You no longer need the `unstable` feature to use it.
+## Added
+## Removed
+## Changed
+
+# [1.9.0] - 2021-01-15
+
+This patch stabilizes the `async_std::channel` submodule, removes the
+deprecated `sync::channel` types, and introduces the `tokio1` feature.
+
+## New Channels
+
+As part of our `1.8.0` release last month we introduced the new
+`async_std::channel` submodule and deprecated the unstable
+`async_std::sync::channel` types. You can read our full motiviation for this
+change in the last patch notes. But the short version is that the old
+channels had some fundamental problems, and the `sync` submodule is a bit of
+a mess.
+
+This release of `async-std` promotes `async_std::channel` to stable, and
+fully removes the `async_std::sync::channel` types. In practice many
+libraries have already been upgraded to the new channels in the past month,
+and this will enable much of the ecosystem to switch off "unstable" versions
+of `async-std`.
+
+```rust
+use async_std::channel;
+
+let (sender, receiver) = channel::unbounded();
+
+assert_eq!(sender.send("Hello").await, Ok(()));
+assert_eq!(receiver.recv().await, Ok("Hello"));
+```
+
+## Tokio 1.0 compat
+
+The Tokio project recently released version 1.0 of their runtime, and the
+async-std team would like to congratulate the Tokio team on achieving this
+milestone.
+
+This release of `async-std` adds the `tokio1` feature flag, enabling Tokio's
+TLS constructors to be initialized within the `async-std` runtime. This is in
+addition to the `tokio02` and `tokio03` feature flags which we were already
+exposing.
+
+In terms of stability it's worth noting that we will continue to provide
+support for the `tokio02`, `tokio03`, and `tokio1` on the current major
+release line of `async-std`. These flags are part of our public API, and
+removing compat support for older Tokio versions is considered a breaking
+change.
 
 ## Added
 
-- Add `tokio1` feature ([#924](https://github.com/async-rs/async-std/pull/924))
+- Added the `tokio1` feature ([#924](https://github.com/async-rs/async-std/pull/924))
+- Stabilized the `async_std::channel` submodule ([#934](https://github.com/async-rs/async-std/pull/934))
 
 ## Removed
 
-- Removed deprecated `sync::channel`
+- Removed deprecated `sync::channel` ([#933](https://github.com/async-rs/async-std/pull/933))
+
+## Fixed
+
+- Fixed a typo for [sic] `FuturesExt` trait ([#930](https://github.com/async-rs/async-std/pull/930))
+- Update the link to `cargo-edit` in the installation section of the docs ([#932](https://github.com/async-rs/async-std/pull/932))
+- Fixed a small typo for stream ([#926](https://github.com/async-rs/async-std/pull/926))
+
+## Internal
+
+- Updated `rand` to 0.8 ([#923](https://github.com/async-rs/async-std/pull/923))
+- Migrated `RwLock` and `Barrier` to use the `async-lock` crate internally ([#925](https://github.com/async-rs/async-std/pull/925))
+- Replaced uses of deprecated the `compare_and_swap` method with `compare_exchange` ([#927](https://github.com/async-rs/async-std/pull/927))
 
 # [1.8.0] - 2020-12-04
 
