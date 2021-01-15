@@ -58,6 +58,7 @@ use crate::utils::Context as _;
 /// #
 /// # Ok(()) }) }
 /// ```
+#[derive(Clone)]
 pub struct File {
     /// A reference to the inner file.
     file: Arc<std::fs::File>,
@@ -470,6 +471,13 @@ struct Lock<T>(Arc<LockState<T>>);
 unsafe impl<T: Send> Send for Lock<T> {}
 unsafe impl<T: Send> Sync for Lock<T> {}
 
+impl<T> Clone for Lock<T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
 /// The state of a lock.
 struct LockState<T> {
     /// Set to `true` when locked.
@@ -876,6 +884,23 @@ mod tests {
     fn async_file_drop() {
         crate::task::block_on(async move {
             File::open(file!()).await.unwrap();
+        });
+    }
+
+    #[test]
+    fn async_file_clone() {
+        crate::task::block_on(async move {
+            let file = File::open(file!()).await.unwrap();
+            let mut clone = file.clone();
+            let len = crate::task::spawn_blocking(move || {
+                let mut buf = Vec::new();
+                crate::task::block_on(async move {
+                    clone.read_to_end(&mut buf).await.unwrap();
+                    drop(clone);
+                    buf.len()
+                })
+            }).await;
+            assert_eq!(len as u64, file.metadata().await.unwrap().len());
         });
     }
 }
