@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 
 ## [Unreleased]
 
+The new `async_std::channel` submodule, introduced in 1.8.0, has been stabilized. You no longer need the `unstable` feature to use it.
+
 ## Added
 
 - Add `tokio1` feature ([#924](https://github.com/async-rs/async-std/pull/924))
