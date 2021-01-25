@@ -152,7 +152,7 @@ pub trait DoubleEndedStream: Stream {
     }
 
     #[doc = r#"
-            Returns the the frist element from the right that matches the predicate.
+            Returns the first element from the right that matches the predicate.
 
             # Examples
 
