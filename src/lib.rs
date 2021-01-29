@@ -111,7 +111,7 @@
 //! [files]: fs/struct.File.html
 //! [TCP]: net/struct.TcpStream.html
 //! [UDP]: net/struct.UdpSocket.html
-//! [`io`]: fs/struct.File.html
+//! [`io`]: io/index.html
 //! [`sync`]: sync/index.html
 //! [`channel`]: channel/index.html
 //!
