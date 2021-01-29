@@ -903,4 +903,44 @@ mod tests {
             assert_eq!(len as u64, file.metadata().await.unwrap().len());
         });
     }
+
+    cfg_unstable! {
+    cfg_windows! {
+    #[test]
+    fn async_file_win_openext() {
+        use super::fs::OpenOptions;
+        use crate::os::windows::fs::OpenOptionsExt;
+        const FILE_FLAG_NO_BUFFERING: u32 = 0x2000_0000;
+        const FILE_FLAG_RANDOM_ACCESS: u32 = 0x1000_0000;
+
+        crate::task::block_on(async move {
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .custom_flags(FILE_FLAG_NO_BUFFERING | FILE_FLAG_RANDOM_ACCESS)
+                .open(file!()).await.unwrap();
+        });
+    }
+    }
+    }
+
+    #[cfg(target_os = "unix")]
+    #[test]
+    fn async_file_unix_openext() {
+        use super::fs::OpenOptions;
+        use crate::os::unix::fs::OpenOptionsExt;
+        const O_DIRECT: i32 = 0o0_040_000;
+
+        crate::task::block_on(async move {
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .custom_flags(O_DIRECT)
+                .open(file!())
+                .await
+                .unwrap();
+        });
+    }
 }
