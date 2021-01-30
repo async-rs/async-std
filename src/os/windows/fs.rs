@@ -55,10 +55,12 @@ pub async fn symlink_file<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io:
 }
 
 cfg_not_docs! {
-    pub use std::os::windows::fs::{OpenOptionsExt};
+    pub use std::os::windows::fs::{OpenOptionsExt, FileExt};
 }
 
 cfg_docs! {
+    use async_trait::async_trait;
+
     /// Windows-specific extensions to `OpenOptions`.
     pub trait OpenOptionsExt {
         /// Overrides the `dwDesiredAccess` argument to the call to [`CreateFile`]
@@ -222,5 +224,75 @@ cfg_docs! {
         /// [Impersonation Levels]:
         ///     https://docs.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-security_impersonation_level
         fn security_qos_flags(&mut self, flags: u32) -> &mut Self;
+    }
+
+    /// Windows-specific extensions to [`fs::File`].
+    #[async_trait]
+    pub trait FileExt {
+        /// Seeks to a given position and reads a number of bytes.
+        ///
+        /// Returns the number of bytes read.
+        ///
+        /// The offset is relative to the start of the file and thus independent
+        /// from the current cursor. The current cursor **is** affected by this
+        /// function, it is set to the end of the read.
+        ///
+        /// Reading beyond the end of the file will always return with a length of
+        /// 0\.
+        ///
+        /// Note that similar to `File::read`, it is not an error to return with a
+        /// short read. When returning from such a short read, the file pointer is
+        /// still updated.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_std::io;
+        /// use async_std::fs::File;
+        /// use async_std::os::windows::prelude::*;
+        ///
+        /// fn main() -> io::Result<()> {
+        ///     let mut file = File::open("foo.txt").await?;
+        ///     let mut buffer = [0; 10];
+        ///
+        ///     // Read 10 bytes, starting 72 bytes from the
+        ///     // start of the file.
+        ///     file.seek_read(&mut buffer[..], 72).await?;
+        ///     Ok(())
+        /// }
+        /// ```
+        async fn seek_read(&self, buf: &mut [u8], offset: u64) -> io::Result<usize>;
+
+        /// Seeks to a given position and writes a number of bytes.
+        ///
+        /// Returns the number of bytes written.
+        ///
+        /// The offset is relative to the start of the file and thus independent
+        /// from the current cursor. The current cursor **is** affected by this
+        /// function, it is set to the end of the write.
+        ///
+        /// When writing beyond the end of the file, the file is appropriately
+        /// extended and the intermediate bytes are left uninitialized.
+        ///
+        /// Note that similar to `File::write`, it is not an error to return a
+        /// short write. When returning from such a short write, the file pointer
+        /// is still updated.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use async_std::fs::File;
+        /// use async_std::os::windows::prelude::*;
+        ///
+        /// fn main() -> std::io::Result<()> {
+        ///     let mut buffer = File::create("foo.txt").await?;
+        ///
+        ///     // Write a byte string starting 72 bytes from
+        ///     // the start of the file.
+        ///     buffer.seek_write(b"some bytes", 72).await?;
+        ///     Ok(())
+        /// }
+        /// ```
+        async fn seek_write(&self, buf: &[u8], offset: u64) -> io::Result<usize>;
     }
 }

@@ -938,4 +938,35 @@ mod tests {
                 .unwrap();
         });
     }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn async_file_win_positional_io() {
+        use super::os::windows::fs::FileExt;
+
+        crate::task::block_on(async move {
+            let file = File::open(file!()).await.unwrap();
+            assert_eq!(10u64, file.seek_write(&[5u8; 10], 10u64).await.unwrap());
+
+            let mut buf: [u8; 20];
+            assert_eq!(20u64, file.seek_read(&buf, 0)).await.unwrap();
+            assert_eq!(buf.iter(), [0u8; 10].iter().chain([5u8; 10].iter()));
+        });
+    }
+
+    #[cfg(target_os = "unix")]
+    #[test]
+    fn async_file_unix_positional_io() {
+        use super::os::unix::fs::FileExt;
+
+        crate::task::block_on(async move {
+            let file = File::open(file!()).await.unwrap();
+            assert_eq!(10u64, file.write_all_at(&[5u8; 10], 10u64).await.unwrap());
+
+            let mut buf: [u8; 20];
+            assert_eq!(20u64, file.read_exact_at(&buf, 0)).await.unwrap();
+            assert_eq!(buf.iter(), [0u8; 10].iter().chain([5u8; 10].iter()));
+        });
+
+    }
 }
