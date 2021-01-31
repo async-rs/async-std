@@ -24,7 +24,7 @@ impl TaskLocalsWrapper {
     /// If the task is unnamed, the inner representation of the task will be lazily allocated on
     /// demand.
     #[inline]
-    pub(crate) fn new(task: Task) -> Self {
+    pub(crate) const fn new(task: Task) -> Self {
         Self {
             task,
             locals: LocalsMap::new(),
@@ -33,17 +33,17 @@ impl TaskLocalsWrapper {
 
     /// Gets the task's unique identifier.
     #[inline]
-    pub fn id(&self) -> TaskId {
+    pub const fn id(&self) -> TaskId {
         self.task.id()
     }
 
     /// Returns a reference to the inner `Task`.
-    pub(crate) fn task(&self) -> &Task {
+    pub(crate) const fn task(&self) -> &Task {
         &self.task
     }
 
     /// Returns the map holding task-local values.
-    pub(crate) fn locals(&self) -> &LocalsMap {
+    pub(crate) const fn locals(&self) -> &LocalsMap {
         &self.locals
     }
 

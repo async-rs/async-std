@@ -115,7 +115,7 @@ impl<R> BufReader<R> {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn get_ref(&self) -> &R {
+    pub const fn get_ref(&self) -> &R {
         &self.inner
     }
 

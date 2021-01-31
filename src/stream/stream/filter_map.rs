@@ -15,7 +15,7 @@ pin_project! {
 }
 
 impl<S, F> FilterMap<S, F> {
-    pub(crate) fn new(stream: S, f: F) -> Self {
+    pub(crate) const fn new(stream: S, f: F) -> Self {
         Self { stream, f }
     }
 }
@@ -31,13 +31,13 @@ where
         let this = self.project();
         let next = futures_core::ready!(this.stream.poll_next(cx));
         match next {
-            Some(v) => match (this.f)(v) {
-                Some(b) => Poll::Ready(Some(b)),
-                None => {
+            Some(v) => (this.f)(v).map_or_else(
+                || {
                     cx.waker().wake_by_ref();
                     Poll::Pending
-                }
-            },
+                },
+                |b| Poll::Ready(Some(b)),
+            ),
             None => Poll::Ready(None),
         }
     }

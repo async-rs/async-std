@@ -1,6 +1,6 @@
+use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll};
-use core::future::Future;
 
 use crate::stream::Stream;
 
@@ -28,14 +28,15 @@ where
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let next = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
         match next {
-            Some(v) => match self.n {
-                0 => Poll::Ready(Some(v)),
-                _ => {
+            Some(v) => {
+                if let 0 = self.n {
+                    Poll::Ready(Some(v))
+                } else {
                     self.n -= 1;
                     cx.waker().wake_by_ref();
                     Poll::Pending
                 }
-            },
+            }
             None => Poll::Ready(None),
         }
     }

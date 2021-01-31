@@ -32,7 +32,7 @@ impl<'a> Iter<'a> {
     ///
     /// assert_eq!(Path::new("foo/bar.txt"), iter.as_path());
     /// ```
-    pub fn as_path(&self) -> &'a Path {
+    #[must_use] pub fn as_path(&self) -> &'a Path {
         self.inner.as_path()
     }
 }

@@ -22,7 +22,7 @@ use crate::task::{Task, TaskLocalsWrapper};
 /// #
 /// # })
 /// ```
-pub fn current() -> Task {
+#[must_use] pub fn current() -> Task {
     TaskLocalsWrapper::get_current(|t| t.task().clone())
         .expect("`task::current()` called outside the context of a task")
 }

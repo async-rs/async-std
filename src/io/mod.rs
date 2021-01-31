@@ -39,7 +39,7 @@
 //! nickname: readers and writers. So you'll sometimes see 'a reader' instead
 //! of 'a type that implements the [`Read`] trait'. Much easier!
 //!
-//! ## Seek and BufRead
+//! ## `Seek` and `BufRead`
 //!
 //! Beyond that, there are two important traits that are provided: [`Seek`]
 //! and [`BufRead`]. Both of these build on top of a reader to control
@@ -70,7 +70,7 @@
 //! [`BufRead`] uses an internal buffer to provide a number of other ways to read, but
 //! to show it off, we'll need to talk about buffers in general. Keep reading!
 //!
-//! ## BufReader and BufWriter
+//! ## `BufReader` and `BufWriter`
 //!
 //! Byte-based interfaces are unwieldy and can be inefficient, as we'd need to be
 //! making near-constant calls to the operating system. To help with this,
@@ -214,7 +214,7 @@
 //!
 //! [functions-list]: #functions-1
 //!
-//! ## io::Result
+//! ## `io::Result`
 //!
 //! Last, but certainly not least, is [`io::Result`]. This type is used
 //! as the return type of many `std::io` functions that can cause an error, and

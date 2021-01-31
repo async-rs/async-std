@@ -25,7 +25,8 @@ use crate::task::{Context, Poll};
 /// #
 /// # })
 /// ```
-pub fn empty<T>() -> Empty<T> {
+#[must_use]
+pub const fn empty<T>() -> Empty<T> {
     Empty {
         _marker: PhantomData,
     }

@@ -35,7 +35,7 @@ impl<L: Stream, R: Stream> PartialCmpFuture<L, R> {
     }
 }
 
-impl<L: Stream, R: Stream> Future for PartialCmpFuture<L, R>
+impl<L, R> Future for PartialCmpFuture<L, R>
 where
     L: Stream + Sized,
     R: Stream + Sized,
