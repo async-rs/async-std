@@ -133,7 +133,7 @@ cfg_std! {
 cfg_default! {
     pub use block_on::block_on;
     pub use builder::Builder;
-    pub use current::current;
+    pub use current::{current, try_current};
     pub use task::Task;
     pub use task_id::TaskId;
     pub use join_handle::JoinHandle;
