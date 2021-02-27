@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::io::{IoSlice, IoSliceMut};
 use std::net::SocketAddr;
 use std::pin::Pin;
@@ -399,6 +400,18 @@ cfg_unix! {
             // descriptor because it's possible that there are other clones of this `TcpStream`
             // using it at the same time. We should probably document that behavior.
             self.as_raw_fd()
+        }
+    }
+    impl TryFrom<TcpStream> for RawFd {
+        type Error = TcpStream;
+        /// Tries to convert a `TcpStream` into an owned `RawFd`.
+        ///
+        /// This method can fail if their are clones of the stream.
+        /// If this method fails the `Err` contains the unchanged `stream`.
+        fn try_from(stream: TcpStream) -> Result<Self, Self::Error> {
+            let owned = Arc::try_unwrap(stream.watcher).map_err(|watcher| TcpStream { watcher })?;
+            let std_stream = owned.into_inner().unwrap();
+            Ok(std_stream.into_raw_fd())
         }
     }
 }
