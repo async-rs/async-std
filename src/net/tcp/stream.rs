@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::io::{IoSlice, IoSliceMut};
 use std::net::SocketAddr;
 use std::pin::Pin;
@@ -380,6 +379,7 @@ impl From<std::net::TcpStream> for TcpStream {
 }
 
 cfg_unix! {
+    use std::convert::TryFrom;
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
     impl AsRawFd for TcpStream {
