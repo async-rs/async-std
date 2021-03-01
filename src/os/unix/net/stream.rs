@@ -1,5 +1,6 @@
 //! Unix-specific networking extensions.
 
+use std::convert::TryFrom;
 use std::fmt;
 use std::net::Shutdown;
 use std::os::unix::net::UnixStream as StdUnixStream;
@@ -247,5 +248,18 @@ impl FromRawFd for UnixStream {
 impl IntoRawFd for UnixStream {
     fn into_raw_fd(self) -> RawFd {
         (*self.watcher).get_ref().try_clone().unwrap().into_raw_fd()
+    }
+}
+
+impl TryFrom<UnixStream> for RawFd {
+    type Error = UnixStream;
+    /// Tries to convert a `UnixStream` into an owned `RawFd`.
+    ///
+    /// This method can fail if their are clones of the stream.
+    /// If this method fails the `Err` contains the unchanged `stream`.
+    fn try_from(stream: UnixStream) -> Result<Self, Self::Error> {
+        let owned = Arc::try_unwrap(stream.watcher).map_err(|watcher| UnixStream { watcher })?;
+        let std_stream = owned.into_inner().unwrap();
+        Ok(std_stream.into_raw_fd())
     }
 }
