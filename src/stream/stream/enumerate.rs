@@ -39,4 +39,11 @@ where
             None => Poll::Ready(None),
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.stream.size_hint().1 {
+            Some(upper_bound) => (self.i, Some(upper_bound)),
+            None => (0, None)
+        }
+    }
 }

@@ -343,3 +343,18 @@ cfg_unstable! {
     pub use successors::{successors, Successors};
     pub use sum::Sum;
 }
+
+
+/// Merge the size hints from two streams. This is not my own implementation but that of tokio stream crate.
+/// https://github.com/tokio-rs/tokio/blob/4d7b73f5b3aaf6ce305f4cdc9fdb087242636f75/tokio-stream/src/stream_ext.rs
+pub fn merge_size_hints(
+    (left_low, left_high): (usize, Option<usize>),
+    (right_low, right_hign): (usize, Option<usize>),
+) -> (usize, Option<usize>) {
+    let low = left_low.saturating_add(right_low);
+    let high = match (left_high, right_hign) {
+        (Some(h1), Some(h2)) => h1.checked_add(h2),
+        _ => None,
+    };
+    (low, high)
+}

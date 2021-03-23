@@ -49,6 +49,10 @@ impl<S: Stream> Stream for Timeout<S> {
 
         r
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.stream.size_hint()
+    }
 }
 
 /// An error returned when a stream times out.

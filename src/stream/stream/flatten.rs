@@ -64,6 +64,10 @@ where
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.stream.size_hint().1)
+    }
 }
 
 impl<S, U> fmt::Debug for Flatten<S>

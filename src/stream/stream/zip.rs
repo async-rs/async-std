@@ -58,4 +58,17 @@ impl<A: Stream, B: Stream> Stream for Zip<A, B> {
         let first_item = this.item_slot.take().unwrap();
         Poll::Ready(second_item.map(|second_item| (first_item, second_item)))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.first.size_hint().1 {
+            Some(first_hint) => match self.second.size_hint().1 {
+                Some(second_hint) => (0, Some(first_hint.max(second_hint))),
+                None => (0, Some(first_hint))
+            },
+            None => match self.second.size_hint().1 {
+                Some(second_hint) => (0, Some(second_hint)),
+                None => (0, None)
+            }
+        }
+    }
 }

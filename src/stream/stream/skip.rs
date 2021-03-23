@@ -47,4 +47,11 @@ where
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.stream.size_hint().1 {
+            Some(stream_size) => (self.n, Some(stream_size - self.n)),
+            None => (0, None)
+        }
+    }
 }

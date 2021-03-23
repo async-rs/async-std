@@ -45,4 +45,8 @@ where
             item => Poll::Ready(item),
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.orig.size_hint().1)
+    }
 }

@@ -55,4 +55,11 @@ where
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.stream.size_hint().1 {
+            Some(stream_size) => (0, Some((stream_size - self.i) / self.step)),
+            None => (0, None)
+        }
+    }
 }

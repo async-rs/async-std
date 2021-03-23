@@ -48,6 +48,13 @@ impl<T> Stream for Once<T> {
     fn poll_next(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<T>> {
         Poll::Ready(self.project().value.take())
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.value {
+            Some(_) => (0, Some(1)),
+            None => (0, None)
+        }
+    }
 }
 
 #[cfg(feature = "unstable")]

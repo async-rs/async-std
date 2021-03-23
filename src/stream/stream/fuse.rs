@@ -45,4 +45,11 @@ impl<S: Stream> Stream for Fuse<S> {
             Poll::Ready(next)
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.done {
+            return (0, None)
+        }
+        self.stream.size_hint()
+    }
 }

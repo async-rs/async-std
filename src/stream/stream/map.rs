@@ -36,4 +36,8 @@ where
         let next = futures_core::ready!(this.stream.poll_next(cx));
         Poll::Ready(next.map(this.f))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.stream.size_hint()
+    }
 }

@@ -51,6 +51,12 @@ where
             poll_next_in_order(this.right, this.left, cx)
         }
     }
+
+    
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        super::super::merge_size_hints(self.left.size_hint(), self.right.size_hint())
+    }
 }
 
 fn poll_next_in_order<F, S, I>(

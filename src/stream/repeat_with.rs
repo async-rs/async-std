@@ -81,4 +81,8 @@ where
         let item = (&mut self.f)();
         Poll::Ready(Some(item))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
+    }
 }

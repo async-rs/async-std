@@ -74,4 +74,8 @@ where
         mem::swap(this.slot, &mut next);
         Poll::Ready(next)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
+    }
 }

@@ -75,4 +75,8 @@ impl Stream for Interval {
         let _ = std::mem::replace(&mut self.delay, timer_after(interval));
         Poll::Ready(Some(()))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (usize::MAX, None)
+    }
 }

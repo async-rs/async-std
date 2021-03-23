@@ -52,4 +52,8 @@ where
             None => Poll::Ready(None),
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.stream.size_hint()
+    }
 }

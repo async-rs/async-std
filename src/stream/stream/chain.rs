@@ -58,4 +58,8 @@ impl<S: Stream, U: Stream<Item = S::Item>> Stream for Chain<S, U> {
 
         Poll::Pending
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        super::super::merge_size_hints(self.first.size_hint(), self.second.size_hint())
+    }
 }
