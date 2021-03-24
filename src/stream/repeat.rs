@@ -46,6 +46,6 @@ impl<T: Clone> Stream for Repeat<T> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, None)
+        (usize::MAX, None)
     }
 }
