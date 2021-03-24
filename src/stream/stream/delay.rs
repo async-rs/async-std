@@ -49,7 +49,7 @@ where
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         if self.delay_done {
-            (0, None)
+            return (0, None)
         }
         (0, Some(1))
     }

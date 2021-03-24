@@ -63,8 +63,4 @@ impl<T: DoubleEndedIterator> DoubleEndedStream for FromIter<T> {
     fn poll_next_back(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<T::Item>> {
         Poll::Ready(self.iter.next_back())
     }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
 }
