@@ -48,6 +48,19 @@ impl<S: Stream> Stream for Take<S> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(self.remaining))
+        if self.remaining == 0 {
+            return (0, Some(0));
+        }
+
+        let (lower, upper) = self.stream.size_hint();
+
+        let lower = std::cmp::min(lower, self.remaining);
+
+        let upper = match upper {
+            Some(x) if x < self.remaining => Some(x),
+            _ => Some(self.remaining)
+        };
+
+        (lower, upper)
     }
 }

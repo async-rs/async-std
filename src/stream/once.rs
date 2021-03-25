@@ -52,7 +52,7 @@ impl<T> Stream for Once<T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         match self.value {
             Some(_) => (0, Some(1)),
-            None => (0, None)
+            None => (0, Some(0))
         }
     }
 }

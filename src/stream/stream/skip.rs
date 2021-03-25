@@ -49,9 +49,14 @@ where
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match self.stream.size_hint().1 {
-            Some(stream_size) => (self.n, Some(stream_size - self.n)),
-            None => (0, None)
-        }
+        let (lower, upper) = self.stream.size_hint();
+
+        let lower = lower.saturating_sub(self.n);
+        let upper = match upper {
+            Some(x) => Some(x.saturating_sub(self.n)),
+            None => None,
+        };
+
+        (lower, upper)
     }
 }
