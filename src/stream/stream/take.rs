@@ -53,8 +53,7 @@ impl<S: Stream> Stream for Take<S> {
         }
 
         let (lower, upper) = self.stream.size_hint();
-
-        let lower = cmp::min(lower, self.remaining);
+        let lower = core::cmp::min(lower, self.remaining);
 
         let upper = match upper {
             Some(x) if x < self.remaining => Some(x),
