@@ -109,4 +109,15 @@ impl Stream for ReadDir {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if let State::Idle(optional_dir) = &self.0 {
+            if let Some(directory) = optional_dir {
+                return directory.size_hint()
+            }
+        }
+        // We cannot really know what the size_hint would give because when its busy because we would 
+        // have to wait until the task is done.
+        (0, Some(0))
+    }
 }
