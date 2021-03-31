@@ -1,6 +1,6 @@
 use std::fmt;
-use std::future::Future;
 use std::net::SocketAddr;
+use std::net::TcpStream as StdTcpStream;
 use std::pin::Pin;
 
 use async_io::Async;
@@ -148,8 +148,7 @@ impl TcpListener {
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
         Incoming {
-            listener: self,
-            accept: None,
+            incoming: Box::pin(self.watcher.incoming()),
         }
     }
 
@@ -187,35 +186,21 @@ impl TcpListener {
 /// [`TcpListener`]: struct.TcpListener.html
 /// [`std::net::Incoming`]: https://doc.rust-lang.org/std/net/struct.Incoming.html
 pub struct Incoming<'a> {
-    listener: &'a TcpListener,
-    accept: Option<
-        Pin<Box<dyn Future<Output = io::Result<(TcpStream, SocketAddr)>> + Send + Sync + 'a>>,
-    >,
+    incoming: Pin<Box<dyn Stream<Item = io::Result<Async<StdTcpStream>>> + Send + Sync + 'a>>,
 }
 
 impl Stream for Incoming<'_> {
     type Item = io::Result<TcpStream>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        loop {
-            if self.accept.is_none() {
-                self.accept = Some(Box::pin(self.listener.accept()));
-            }
-
-            if let Some(f) = &mut self.accept {
-                let res = ready!(f.as_mut().poll(cx));
-                self.accept = None;
-                return Poll::Ready(Some(res.map(|(stream, _)| stream)));
-            }
-        }
+        let res = ready!(Pin::new(&mut self.incoming).poll_next(cx));
+        Poll::Ready(res.map(|res| res.map(|stream| TcpStream { watcher: Arc::new(stream) })))
     }
 }
 
 impl fmt::Debug for Incoming<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Incoming")
-            .field("listener", self.listener)
-            .finish()
+        write!(f, "Incoming {{ ... }}")
     }
 }
 

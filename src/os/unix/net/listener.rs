@@ -1,8 +1,8 @@
 //! Unix-specific networking extensions.
 
 use std::fmt;
-use std::future::Future;
 use std::os::unix::net::UnixListener as StdUnixListener;
+use std::os::unix::net::UnixStream as StdUnixStream;
 use std::pin::Pin;
 
 use async_io::Async;
@@ -129,8 +129,7 @@ impl UnixListener {
     /// ```
     pub fn incoming(&self) -> Incoming<'_> {
         Incoming {
-            listener: self,
-            accept: None,
+            incoming: Box::pin(self.watcher.incoming()),
         }
     }
 
@@ -178,34 +177,21 @@ impl fmt::Debug for UnixListener {
 /// [`incoming`]: struct.UnixListener.html#method.incoming
 /// [`UnixListener`]: struct.UnixListener.html
 pub struct Incoming<'a> {
-    listener: &'a UnixListener,
-    accept: Option<
-        Pin<Box<dyn Future<Output = io::Result<(UnixStream, SocketAddr)>> + Send + Sync + 'a>>,
-    >,
+    incoming: Pin<Box<dyn Stream<Item = io::Result<Async<StdUnixStream>>> + Send + Sync + 'a>>,
 }
 
 impl Stream for Incoming<'_> {
     type Item = io::Result<UnixStream>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        loop {
-            if self.accept.is_none() {
-                self.accept = Some(Box::pin(self.listener.accept()));
-            }
-
-            if let Some(f) = &mut self.accept {
-                let res = ready!(f.as_mut().poll(cx));
-                self.accept = None;
-                return Poll::Ready(Some(res.map(|(stream, _)| stream)));
-            }
-        }
+        let res = ready!(Pin::new(&mut self.incoming).poll_next(cx));
+        Poll::Ready(res.map(|res| res.map(|stream| UnixStream { watcher: Arc::new(stream) })))
     }
 }
 
 impl fmt::Debug for Incoming<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Incoming")
-            .field("listener", self.listener)
             .finish()
     }
 }
