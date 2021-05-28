@@ -2,7 +2,7 @@
 
 Now that we know what Futures are, we want to run them!
 
-In `async-std`, the [`tasks`][tasks] module is responsible for this. The simplest way is using the `block_on` function:
+In `async-std`, the [`task`][tasks] module is responsible for this. The simplest way is using the `block_on` function:
 
 ```rust,edition2018
 # extern crate async_std;
