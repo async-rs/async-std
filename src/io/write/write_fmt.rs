@@ -11,7 +11,7 @@ pub struct WriteFmtFuture<'a, T: Unpin + ?Sized> {
     pub(crate) writer: &'a mut T,
     pub(crate) res: Option<io::Result<Vec<u8>>>,
     pub(crate) buffer: Option<Vec<u8>>,
-    pub(crate) amt: u64,
+    pub(crate) amt: usize,
 }
 
 impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
@@ -37,15 +37,15 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
 
         // Copy the data from the buffer into the writer until it's done.
         loop {
-            if *amt == buffer.len() as u64 {
+            if *amt == buffer.len() {
                 futures_core::ready!(Pin::new(&mut **writer).poll_flush(cx))?;
                 return Poll::Ready(Ok(()));
             }
-            let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, buffer))?;
+            let i = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, &buffer[*amt..]))?;
             if i == 0 {
                 return Poll::Ready(Err(io::ErrorKind::WriteZero.into()));
             }
-            *amt += i as u64;
+            *amt += i;
         }
     }
 }
