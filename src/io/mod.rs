@@ -285,7 +285,7 @@ cfg_std! {
     pub use repeat::{repeat, Repeat};
     pub use seek::Seek;
     pub use sink::{sink, Sink};
-    pub use write::Write;
+    pub use write::*;
 
     pub mod prelude;
 
