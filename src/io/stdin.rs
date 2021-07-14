@@ -16,7 +16,7 @@ use crate::utils::Context as _;
 /// ### Note: Windows Portability Consideration
 ///
 /// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// non-UTF-8 byte sequences. Attempting to read bytes that are not valid UTF-8 will return
 /// an error.
 ///
 /// # Examples
@@ -49,7 +49,7 @@ pub fn stdin() -> Stdin {
 /// ### Note: Windows Portability Consideration
 ///
 /// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
+/// non-UTF-8 byte sequences. Attempting to read bytes that are not valid UTF-8 will return
 /// an error.
 ///
 /// [`stdin`]: fn.stdin.html
@@ -79,7 +79,7 @@ struct Inner {
     /// The line buffer.
     line: String,
 
-    /// The write buffer.
+    /// The read buffer.
     buf: Vec<u8>,
 
     /// The result of the last asynchronous operation on the stdin.
