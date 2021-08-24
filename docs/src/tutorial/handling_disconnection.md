@@ -90,12 +90,12 @@ async fn connection_writer_loop(
     let mut shutdown = shutdown.fuse();
     loop { // 2
         select! {
-            msg = messages.next().fuse() => match msg {
+            msg = messages.next().fuse() => match msg { // 3
                 Some(msg) => stream.write_all(msg.as_bytes()).await?,
                 None => break,
             },
             void = shutdown.next().fuse() => match void {
-                Some(void) => match void {}, // 3
+                Some(void) => match void {}, // 4
                 None => break,
             }
         }
@@ -106,7 +106,8 @@ async fn connection_writer_loop(
 
 1. We add shutdown channel as an argument.
 2. Because of `select`, we can't use a `while let` loop, so we desugar it further into a `loop`.
-3. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
+3. Function fuse() is used to turn any `Stream` into a `FusedStream`. This is used for fusing a stream such that poll_next will never again be called once it has finished.
+4. In the shutdown case we use `match void {}` as a statically-checked `unreachable!()`.
 
 Another problem is that between the moment we detect disconnection in `connection_writer_loop` and the moment when we actually remove the peer from the `peers` map, new messages might be pushed into the peer's channel.
 To not lose these messages completely, we'll return the messages channel back to the broker.
