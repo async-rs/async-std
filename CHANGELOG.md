@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 ## Removed
 ## Changed
 
+# [1.10.0] - 2021-08-25
+
+This release comes with an assortment of small features and fixes.
+
+## Added
+- `File` now implements `Clone` so that `File`s can be passed into closures for use in `spawn_blocking`.
+    - `File`'s contents are already wrapped in `Arc`s, so the implementation of `Clone` is straightforward.
+- `task::try_current()` which returns a handle to the current task if called within the context of a task created by async-std.
+- `async_std::io` now re-exports `WriteExt` directly.
+
+## Fixed
+- `write!` now takes already written bytes into account on `File`.
+
+## Internal
+- `TcpStream` now properly makes use of vectored IO.
+- The `net::*::Incoming` implementations now do less allocation.
+
+## Docs
+- Several docs improvements / fixes.
+
 # [1.9.0] - 2021-01-15
 
 This patch stabilizes the `async_std::channel` submodule, removes the
