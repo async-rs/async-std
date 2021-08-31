@@ -129,11 +129,6 @@
 //!   to reach a point in the program, before continuing execution all
 //!   together.
 //!
-//! - [`channel`]: Multi-producer, multi-consumer queues, used for
-//!   message-based communication. Can provide a lightweight
-//!   inter-task synchronisation mechanism, at the cost of some
-//!   extra memory.
-//!
 //! - [`Mutex`]: Mutual exclusion mechanism, which ensures that at
 //!   most one task at a time is able to access some data.
 //!
@@ -141,6 +136,9 @@
 //!   multiple readers at the same time, while allowing only one
 //!   writer at a time. In some cases, this can be more efficient than
 //!   a mutex.
+//!
+//! If you're looking for channels, check out
+//! [`async_std::channel`][crate::channel].
 //!
 //! [`Arc`]: struct.Arc.html
 //! [`Barrier`]: struct.Barrier.html
