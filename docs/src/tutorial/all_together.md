@@ -124,8 +124,8 @@ async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
                     Entry::Occupied(..) => (),
                     Entry::Vacant(entry) => {
                         let (client_sender, client_receiver) = mpsc::unbounded();
-                        entry.insert(client_sender); // 4
-                        spawn_and_log_error(connection_writer_loop(client_receiver, stream)); // 5
+                        entry.insert(client_sender);
+                        spawn_and_log_error(connection_writer_loop(client_receiver, stream));
                     }
                 }
             }
