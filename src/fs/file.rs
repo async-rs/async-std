@@ -154,7 +154,6 @@ impl File {
         let path = path.as_ref().to_owned();
         let file = spawn_blocking(move || {
             std::fs::File::create(&path)
-                .context(|| format!("could not create `{}`", path.display()))
         })
         .await?;
         Ok(File::new(file, true))
@@ -902,5 +901,16 @@ mod tests {
             }).await;
             assert_eq!(len as u64, file.metadata().await.unwrap().len());
         });
+    }
+
+    #[test]
+    fn async_file_create_error () {
+        let file_name = Path::new("/tmp/does_not_exist/test");
+        let expect = std::fs::File::create(file_name).unwrap_err();
+
+        crate::task::block_on(async move {
+            let actual = File::create(file_name).await.unwrap_err();
+            assert_eq!(format!("{}", expect), format!("{}", actual));     
+        })
     }
 }
