@@ -164,7 +164,7 @@
 //! #
 //! # use async_std::prelude::*;
 //! # use async_std::stream;
-//! let mut values = stream::repeat(1u8).take(5);
+//! let mut values = stream::from_iter(1u8..6);
 //!
 //! while let Some(x) = values.next().await {
 //!     println!("{}", x);
@@ -183,7 +183,8 @@
 //!
 //! Unlike `std::iter::IntoIterator`, `IntoStream` does not have compiler
 //! support yet. This means that automatic conversions like with `for` loops
-//! doesn't occur yet, and `into_stream` will always have to be called manually.
+//! doesn't occur yet, and `into_stream` or `from_iter` as above will always
+//! have to be called manually.
 //!
 //! [`IntoStream`]: trait.IntoStream.html
 //! [`into_stream`]: trait.IntoStream.html#tymethod.into_stream
@@ -271,7 +272,7 @@
 //! #
 //! # use async_std::prelude::*;
 //! # use async_std::stream;
-//! let numbers = stream::repeat(1u8);
+//! let numbers = stream::from_iter(0u8..);
 //! let mut five_numbers = numbers.take(5);
 //!
 //! while let Some(number) = five_numbers.next().await {
