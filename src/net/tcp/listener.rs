@@ -150,6 +150,45 @@ impl TcpListener {
         Incoming {
             incoming: Box::pin(self.watcher.incoming()),
         }
+    }    
+
+    /// Turn this into a stream over the connections being received on this
+    /// listener.
+    ///
+    /// The returned stream is infinite and will also not yield
+    /// the peer's [`SocketAddr`] structure. Iterating over it is equivalent to
+    /// calling [`TcpListener::accept`] in a loop.
+    ///
+    /// ## Examples
+    ///
+    /// Merge the incoming connections of multiple sockets into one [`Stream`]:
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::TcpListener;
+    ///
+    /// // Our server listens on multiple ports for some reason
+    /// let listeners = vec![
+    ///     TcpListener::bind("[::0]:8080").await?,
+    ///     TcpListener::bind("[::0]:12345").await?,
+    ///     TcpListener::bind("[::0]:5678").await?,
+    /// ];
+    /// // Iterate over all incoming connections
+    /// let incoming = futures::stream::select_all(
+    ///     listeners.into_iter()
+    ///         .map(TcpListener::into_incoming)
+    ///         .map(Box::pin)
+    /// );
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    #[cfg(feature = "unstable")]
+    pub fn into_incoming(self) -> impl Stream<Item = io::Result<TcpStream>> + Send {
+        futures_lite::stream::unfold(self, |listener| async move {
+            let res = listener.accept().await.map(|(stream, _)| stream);
+            Some((res, listener))
+        })
     }
 
     /// Returns the local address that this listener is bound to.
