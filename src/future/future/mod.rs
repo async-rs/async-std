@@ -361,7 +361,7 @@ extension_trait! {
 
         #[doc = r#"
             Waits for both the future and a timeout, if the timeout completes before
-            the future, it returns an TimeoutError.
+            the future, it returns a TimeoutError.
 
             # Example
             ```
