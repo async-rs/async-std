@@ -903,4 +903,70 @@ mod tests {
             assert_eq!(len as u64, file.metadata().await.unwrap().len());
         });
     }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn async_file_win_openext() {
+        use super::os::windows::fs::OpenOptionsExt;
+        const FILE_FLAG_NO_BUFFERING: u32 = 0x2000_0000;
+        const FILE_FLAG_RANDOM_ACCESS: u32 = 0x1000_0000;
+
+        crate::task::block_on(async move {
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .custom_flags(FILE_FLAG_NO_BUFFERING | FILE_FLAG_RANDOM_ACCESS)
+                .open(file!()).await.unwrap();
+        });
+    }
+
+    #[cfg(target_os = "unix")]
+    #[test]
+    fn async_file_unix_openext() {
+        use super::os::unix::fs::OpenOptionsExt;
+        const O_DIRECT: i32 = 0o0_040_000;
+
+        crate::task::block_on(async move {
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .custom_flags(O_DIRECT)
+                .open(file!())
+                .await
+                .unwrap();
+        });
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn async_file_win_positional_io() {
+        use super::os::windows::fs::FileExt;
+
+        crate::task::block_on(async move {
+            let file = File::open(file!()).await.unwrap();
+            assert_eq!(10u64, file.seek_write(&[5u8; 10], 10u64).await.unwrap());
+
+            let mut buf: [u8; 20];
+            assert_eq!(20u64, file.seek_read(&buf, 0)).await.unwrap();
+            assert_eq!(buf.iter(), [0u8; 10].iter().chain([5u8; 10].iter()));
+        });
+    }
+
+    #[cfg(target_os = "unix")]
+    #[test]
+    fn async_file_unix_positional_io() {
+        use super::os::unix::fs::FileExt;
+
+        crate::task::block_on(async move {
+            let file = File::open(file!()).await.unwrap();
+            assert_eq!(10u64, file.write_all_at(&[5u8; 10], 10u64).await.unwrap());
+
+            let mut buf: [u8; 20];
+            assert_eq!(20u64, file.read_exact_at(&buf, 0)).await.unwrap();
+            assert_eq!(buf.iter(), [0u8; 10].iter().chain([5u8; 10].iter()));
+        });
+
+    }
 }

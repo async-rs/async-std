@@ -298,9 +298,9 @@ impl Default for OpenOptions {
 }
 
 cfg_unix! {
-    use crate::os::unix::fs::OpenOptionsExt;
+    use crate::os::unix::fs::OpenOptionsExt as UnixOpenOptionsExt;
 
-    impl OpenOptionsExt for OpenOptions {
+    impl UnixOpenOptionsExt for OpenOptions {
         fn mode(&mut self, mode: u32) -> &mut Self {
             self.0.mode(mode);
             self
@@ -311,4 +311,37 @@ cfg_unix! {
             self
         }
     }
+}
+
+cfg_unstable_default! {
+cfg_windows! {
+    use crate::os::windows::fs::OpenOptionsExt as WindowsOpenOptionsExt;
+
+    impl WindowsOpenOptionsExt for OpenOptions {
+        fn access_mode(&mut self, access: u32) -> &mut OpenOptions {
+            self.0.access_mode(access);
+            self
+        }
+
+        fn share_mode(&mut self, share: u32) -> &mut OpenOptions {
+            self.0.share_mode(share);
+            self
+        }
+
+        fn custom_flags(&mut self, flags: u32) -> &mut OpenOptions {
+            self.0.custom_flags(flags);
+            self
+        }
+
+        fn attributes(&mut self, attributes: u32) -> &mut OpenOptions {
+            self.0.attributes(attributes);
+            self
+        }
+
+        fn security_qos_flags(&mut self, flags: u32) -> &mut OpenOptions {
+            self.0.security_qos_flags(flags);
+            self
+        }
+    }
+}
 }
