@@ -1,24 +1,22 @@
-cfg_unstable! {
-    mod delay;
-    mod flatten;
-    mod race;
-    mod try_race;
-    mod join;
-    mod try_join;
+mod delay;
+mod flatten;
+mod race;
+mod try_race;
+mod join;
+mod try_join;
 
-    use std::time::Duration;
-    use delay::DelayFuture;
-    use flatten::FlattenFuture;
-    use crate::future::IntoFuture;
-    use race::Race;
-    use try_race::TryRace;
-    use join::Join;
-    use try_join::TryJoin;
-}
+use std::time::Duration;
+use delay::DelayFuture;
+use flatten::FlattenFuture;
+use race::Race;
+use try_race::TryRace;
+use join::Join;
+use try_join::TryJoin;
 
-cfg_unstable_default! {
-    use crate::future::timeout::TimeoutFuture;
-}
+#[cfg(feature = "default")]
+use crate::future::timeout::TimeoutFuture;
+
+use crate::future::IntoFuture;
 
 extension_trait! {
     use core::pin::Pin;
@@ -151,8 +149,6 @@ extension_trait! {
         /// dbg!(a.await);
         /// # })
         /// ```
-        #[cfg(feature = "unstable")]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
         where
             Self: Sized,
@@ -174,8 +170,6 @@ extension_trait! {
         /// assert_eq!(future.await, 1);
         /// # })
         /// ```
-        #[cfg(feature = "unstable")]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn flatten(
             self,
         ) -> impl Future<Output = <Self::Output as IntoFuture>::Output>
@@ -216,8 +210,6 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(feature = "unstable")]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn race<F>(
             self,
             other: F,
@@ -262,8 +254,6 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        #[cfg(feature = "unstable")]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn try_race<F, T, E>(
             self,
             other: F
@@ -299,8 +289,6 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn join<F>(
             self,
             other: F
@@ -346,8 +334,6 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        #[cfg(any(feature = "unstable", feature = "docs"))]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn try_join<F, A, B, E>(
             self,
             other: F
@@ -385,8 +371,7 @@ extension_trait! {
             # });
             ```
         "#]
-        #[cfg(any(all(feature = "default", feature = "unstable"), feature = "docs"))]
-        #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
+        #[cfg(feature = "default")]
         fn timeout(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
             where Self: Sized
         {
