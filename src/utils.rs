@@ -309,14 +309,6 @@ macro_rules! extension_trait {
         extension_trait!(@ext ($($head)* -> $f) $($tail)*);
     };
 
-    // Parse the return type in an extension method.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> borrowed::ImplFuture<$lt, $out>) $($tail)*);
-    };
-    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> + $lt:lifetime [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
-    };
-
     // Parse a token.
     (@doc ($($head:tt)*) $token:tt $($tail:tt)*) => {
         extension_trait!(@doc ($($head)* $token) $($tail)*);
