@@ -281,7 +281,7 @@ macro_rules! extension_trait {
         #[cfg(feature = "docs")]
         #[doc = $doc]
         pub trait $name {
-            extension_trait!(@doc () $($body_base)* $($body_ext)*);
+            extension_trait!(@doc [$($body_base)* $($body_ext)*] -> []);
         }
 
         // When not rendering docs, re-export the base trait from the futures crate.
@@ -291,7 +291,7 @@ macro_rules! extension_trait {
         // The extension trait that adds methods to any type implementing the base trait.
         #[doc = $doc_ext]
         pub trait $ext: $name {
-            extension_trait!(@ext () $($body_ext)*);
+            extension_trait!(@ext [$($body_ext)*] -> []);
         }
 
         // Blanket implementation of the extension trait for any type implementing the base trait.
@@ -302,24 +302,24 @@ macro_rules! extension_trait {
     };
 
     // Parse the return type in an extension method.
-    (@doc ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* -> owned::ImplFuture<$out>) $($tail)*);
+    (@doc [-> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
+        extension_trait!(@doc [$($tail)*] -> [$($accum)* -> owned::ImplFuture<$out>]);
     };
-    (@ext ($($head:tt)*) -> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* -> $f) $($tail)*);
+    (@ext [-> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
+        extension_trait!(@ext [$($tail)*] -> [$($accum)* -> $f]);
     };
 
     // Parse a token.
-    (@doc ($($head:tt)*) $token:tt $($tail:tt)*) => {
-        extension_trait!(@doc ($($head)* $token) $($tail)*);
+    (@doc [$token:tt $($tail:tt)*] -> [$($accum:tt)*]) => {
+        extension_trait!(@doc [$($tail)*] -> [$($accum)* $token]);
     };
-    (@ext ($($head:tt)*) $token:tt $($tail:tt)*) => {
-        extension_trait!(@ext ($($head)* $token) $($tail)*);
+    (@ext [$token:tt $($tail:tt)*] -> [$($accum:tt)*]) => {
+        extension_trait!(@ext [$($tail)*] -> [$($accum)* $token]);
     };
 
     // Handle the end of the token list.
-    (@doc ($($head:tt)*)) => { $($head)* };
-    (@ext ($($head:tt)*)) => { $($head)* };
+    (@doc [] -> [$($accum:tt)*]) => { $($accum)* };
+    (@ext [] -> [$($accum:tt)*]) => { $($accum)* };
 
     // Parse imports at the beginning of the macro.
     ($import:item $($tail:tt)*) => {
