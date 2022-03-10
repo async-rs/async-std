@@ -302,10 +302,10 @@ macro_rules! extension_trait {
     };
 
     // Parse the return type in an extension method.
-    (@doc [-> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
+    (@doc [-> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
         extension_trait!(@doc [$($tail)*] -> [$($accum)* -> owned::ImplFuture<$out>]);
     };
-    (@ext [-> impl Future<Output = $out:ty> $(+ $lt:lifetime)? [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
+    (@ext [-> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
         extension_trait!(@ext [$($tail)*] -> [$($accum)* -> $f]);
     };
 

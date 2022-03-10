@@ -112,7 +112,7 @@ extension_trait! {
         fn read<'a>(
             &'a mut self,
             buf: &'a mut [u8],
-        ) -> impl Future<Output = io::Result<usize>> + 'a [ReadFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<usize>> [ReadFuture<'a, Self>]
         where
             Self: Unpin
         {
@@ -134,7 +134,7 @@ extension_trait! {
         fn read_vectored<'a>(
             &'a mut self,
             bufs: &'a mut [IoSliceMut<'a>],
-        ) -> impl Future<Output = io::Result<usize>> + 'a [ReadVectoredFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<usize>> [ReadVectoredFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -171,7 +171,7 @@ extension_trait! {
         fn read_to_end<'a>(
             &'a mut self,
             buf: &'a mut Vec<u8>,
-        ) -> impl Future<Output = io::Result<usize>> + 'a [ReadToEndFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<usize>> [ReadToEndFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -210,7 +210,7 @@ extension_trait! {
         fn read_to_string<'a>(
             &'a mut self,
             buf: &'a mut String,
-        ) -> impl Future<Output = io::Result<usize>> + 'a [ReadToStringFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<usize>> [ReadToStringFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -265,7 +265,7 @@ extension_trait! {
         fn read_exact<'a>(
             &'a mut self,
             buf: &'a mut [u8],
-        ) -> impl Future<Output = io::Result<()>> + 'a [ReadExactFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<()>> [ReadExactFuture<'a, Self>]
         where
             Self: Unpin,
         {

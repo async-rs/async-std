@@ -76,7 +76,7 @@ extension_trait! {
         fn seek(
             &mut self,
             pos: SeekFrom,
-        ) -> impl Future<Output = io::Result<u64>> + '_ [SeekFuture<'_, Self>]
+        ) -> impl Future<Output = io::Result<u64>> [SeekFuture<'_, Self>]
         where
             Self: Unpin,
         {

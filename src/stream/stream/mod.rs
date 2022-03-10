@@ -260,7 +260,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn next(&mut self) -> impl Future<Output = Option<Self::Item>> + '_ [NextFuture<'_, Self>]
+        fn next(&mut self) -> impl Future<Output = Option<Self::Item>> [NextFuture<'_, Self>]
         where
             Self: Unpin,
         {
@@ -1165,7 +1165,7 @@ extension_trait! {
         fn nth(
             &mut self,
             n: usize,
-        ) -> impl Future<Output = Option<Self::Item>> + '_ [NthFuture<'_, Self>]
+        ) -> impl Future<Output = Option<Self::Item>> [NthFuture<'_, Self>]
         where
             Self: Unpin + Sized,
         {
@@ -1221,7 +1221,7 @@ extension_trait! {
         fn all<F>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = bool> + '_ [AllFuture<'_, Self, F, Self::Item>]
+        ) -> impl Future<Output = bool> [AllFuture<'_, Self, F, Self::Item>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -1270,7 +1270,7 @@ extension_trait! {
         fn find<P>(
             &mut self,
             p: P,
-        ) -> impl Future<Output = Option<Self::Item>> + '_ [FindFuture<'_, Self, P>]
+        ) -> impl Future<Output = Option<Self::Item>> [FindFuture<'_, Self, P>]
         where
             Self: Unpin + Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -1298,7 +1298,7 @@ extension_trait! {
         fn find_map<F, B>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = Option<B>> + '_ [FindMapFuture<'_, Self, F>]
+        ) -> impl Future<Output = Option<B>> [FindMapFuture<'_, Self, F>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Option<B>,
@@ -1461,7 +1461,7 @@ extension_trait! {
         fn any<F>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = bool> + '_ [AnyFuture<'_, Self, F, Self::Item>]
+        ) -> impl Future<Output = bool> [AnyFuture<'_, Self, F, Self::Item>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -1697,7 +1697,7 @@ extension_trait! {
             &mut self,
             init: T,
             f: F,
-        ) -> impl Future<Output = Result<T, E>> + '_ [TryFoldFuture<'_, Self, F, T>]
+        ) -> impl Future<Output = Result<T, E>> [TryFoldFuture<'_, Self, F, T>]
         where
             Self: Unpin + Sized,
             F: FnMut(B, Self::Item) -> Result<T, E>,
@@ -1742,7 +1742,7 @@ extension_trait! {
         fn try_for_each<F, E>(
             &mut self,
             f: F,
-        ) -> impl Future<Output = E> + 'a [TryForEachFuture<'_, Self, F>]
+        ) -> impl Future<Output = E> [TryForEachFuture<'_, Self, F>]
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
@@ -1888,7 +1888,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn collect<'a, B>(
             self,
-        ) -> impl Future<Output = B> + 'a [Pin<Box<dyn Future<Output = B> + 'a + Send>>]
+        ) -> impl Future<Output = B> [Pin<Box<dyn Future<Output = B> + 'a + Send>>]
         where
             Self: Sized + 'a + Send,
             B: FromStream<Self::Item>,
@@ -2002,7 +2002,7 @@ extension_trait! {
         fn position<P>(
            &mut self,
            predicate: P,
-        ) -> impl Future<Output = Option<usize>> + '_ [PositionFuture<'_, Self, P>]
+        ) -> impl Future<Output = Option<usize>> [PositionFuture<'_, Self, P>]
         where
             Self: Unpin + Sized,
             P: FnMut(Self::Item) -> bool,
@@ -2335,7 +2335,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn sum<'a, S>(
             self,
-        ) -> impl Future<Output = S> + 'a [Pin<Box<dyn Future<Output = S> + 'a>>]
+        ) -> impl Future<Output = S> [Pin<Box<dyn Future<Output = S> + 'a>>]
         where
             Self: Sized + Stream<Item = S> + 'a,
             S: Sum<Self::Item>,
@@ -2381,7 +2381,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn product<'a, P>(
             self,
-        ) -> impl Future<Output = P> + 'a [Pin<Box<dyn Future<Output = P> + 'a>>]
+        ) -> impl Future<Output = P> [Pin<Box<dyn Future<Output = P> + 'a>>]
         where
             Self: Sized + Stream<Item = P> + 'a,
             P: Product,

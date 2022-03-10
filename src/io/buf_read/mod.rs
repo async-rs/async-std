@@ -124,7 +124,7 @@ extension_trait! {
             &'a mut self,
             byte: u8,
             buf: &'a mut Vec<u8>,
-        ) -> impl Future<Output = usize> + 'a [ReadUntilFuture<'a, Self>]
+        ) -> impl Future<Output = usize> [ReadUntilFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -177,7 +177,7 @@ extension_trait! {
         fn read_line<'a>(
             &'a mut self,
             buf: &'a mut String,
-        ) -> impl Future<Output = io::Result<usize>> + 'a [ReadLineFuture<'a, Self>]
+        ) -> impl Future<Output = io::Result<usize>> [ReadLineFuture<'a, Self>]
         where
             Self: Unpin,
         {
