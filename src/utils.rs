@@ -270,13 +270,6 @@ macro_rules! extension_trait {
             pub struct ImplFuture<T>(core::marker::PhantomData<T>);
         }
 
-        // A fake `impl Future` type that borrows its environment.
-        #[allow(dead_code)]
-        mod borrowed {
-            #[doc(hidden)]
-            pub struct ImplFuture<'a, T>(core::marker::PhantomData<&'a T>);
-        }
-
         // Render a fake trait combining the bodies of the base trait and the extension trait.
         #[cfg(feature = "docs")]
         #[doc = $doc]
