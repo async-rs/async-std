@@ -16,8 +16,6 @@ use crate::io;
 use crate::task::{Context, Poll};
 
 extension_trait! {
-    use std::ops::{Deref, DerefMut};
-
     #[doc = r#"
         Allows reading from a buffered byte stream.
 
@@ -281,62 +279,6 @@ extension_trait! {
                 delim: byte,
                 read: 0,
             }
-        }
-    }
-
-    impl<T: BufRead + Unpin + ?Sized> BufRead for Box<T> {
-        fn poll_fill_buf(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-        ) -> Poll<io::Result<&[u8]>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn consume(self: Pin<&mut Self>, amt: usize) {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: BufRead + Unpin + ?Sized> BufRead for &mut T {
-        fn poll_fill_buf(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-        ) -> Poll<io::Result<&[u8]>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn consume(self: Pin<&mut Self>, amt: usize) {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> BufRead for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: BufRead,
-    {
-        fn poll_fill_buf(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-        ) -> Poll<io::Result<&[u8]>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn consume(self: Pin<&mut Self>, amt: usize) {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl BufRead for &[u8] {
-        fn poll_fill_buf(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-        ) -> Poll<io::Result<&[u8]>> {
-            unreachable!()
-        }
-
-        fn consume(self: Pin<&mut Self>, amt: usize) {
-            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

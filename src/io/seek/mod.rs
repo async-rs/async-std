@@ -5,12 +5,6 @@ use seek::SeekFuture;
 use crate::io::SeekFrom;
 
 extension_trait! {
-    use std::ops::{Deref, DerefMut};
-    use std::pin::Pin;
-
-    use crate::io;
-    use crate::task::{Context, Poll};
-
     #[doc = r#"
         Allows seeking through a byte stream.
 
@@ -81,40 +75,6 @@ extension_trait! {
             Self: Unpin,
         {
             SeekFuture { seeker: self, pos }
-        }
-    }
-
-    impl<T: Seek + Unpin + ?Sized> Seek for Box<T> {
-        fn poll_seek(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            pos: SeekFrom,
-        ) -> Poll<io::Result<u64>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: Seek + Unpin + ?Sized> Seek for &mut T {
-        fn poll_seek(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            pos: SeekFrom,
-        ) -> Poll<io::Result<u64>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> Seek for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: Seek,
-    {
-        fn poll_seek(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            pos: SeekFrom,
-        ) -> Poll<io::Result<u64>> {
-            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

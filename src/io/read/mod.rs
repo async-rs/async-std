@@ -22,12 +22,6 @@ pub use chain::Chain;
 pub use take::Take;
 
 extension_trait! {
-    use std::pin::Pin;
-    use std::ops::{Deref, DerefMut};
-
-    use crate::io;
-    use crate::task::{Context, Poll};
-
     #[doc = r#"
         Allows reading from a byte stream.
 
@@ -421,50 +415,6 @@ extension_trait! {
             Chain { first: self, second: next, done_first: false }
         }
 
-    }
-
-    impl<T: Read + Unpin + ?Sized> Read for Box<T> {
-        fn poll_read(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: Read + Unpin + ?Sized> Read for &mut T {
-        fn poll_read(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> Read for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: Read,
-    {
-        fn poll_read(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl Read for &[u8] {
-        fn poll_read(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
     }
 }
 

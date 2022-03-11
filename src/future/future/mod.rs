@@ -21,11 +21,6 @@ cfg_unstable_default! {
 }
 
 extension_trait! {
-    use core::pin::Pin;
-    use core::ops::{Deref, DerefMut};
-
-    use crate::task::{Context, Poll};
-
     #[doc = r#"
         A future represents an asynchronous computation.
 
@@ -391,42 +386,6 @@ extension_trait! {
             where Self: Sized
         {
             TimeoutFuture::new(self, dur)
-        }
-    }
-
-    impl<F: Future + Unpin + ?Sized> Future for Box<F> {
-        type Output = F::Output;
-
-        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<F: Future + Unpin + ?Sized> Future for &mut F {
-        type Output = F::Output;
-
-        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> Future for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: Future,
-    {
-        type Output = <<P as Deref>::Target as Future>::Output;
-
-        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<F: Future> Future for std::panic::AssertUnwindSafe<F> {
-        type Output = F::Output;
-
-        fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

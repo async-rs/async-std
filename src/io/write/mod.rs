@@ -13,11 +13,6 @@ use write_vectored::WriteVectoredFuture;
 use crate::io::{self, IoSlice};
 
 extension_trait! {
-    use std::pin::Pin;
-    use std::ops::{Deref, DerefMut};
-
-    use crate::task::{Context, Poll};
-
     #[doc = r#"
         Allows writing to a byte stream.
 
@@ -243,82 +238,6 @@ extension_trait! {
                 .map(|_| string.into_bytes())
                 .map_err(|_| io::Error::new(io::ErrorKind::Other, "formatter error"));
             WriteFmtFuture { writer: self, res: Some(res), buffer: None, amt: 0 }
-        }
-    }
-
-    impl<T: Write + Unpin + ?Sized> Write for Box<T> {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<T: Write + Unpin + ?Sized> Write for &mut T {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> Write for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: Write,
-    {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl Write for Vec<u8> {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }

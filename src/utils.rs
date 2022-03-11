@@ -259,26 +259,8 @@ macro_rules! extension_trait {
         pub trait $ext:ident: $base:path {
             $($body_ext:tt)*
         }
-
-        // Shim trait impls that only appear in docs.
-        $($imp:item)*
     ) => {
-        // A fake `impl Future` type that doesn't borrow.
-        #[allow(dead_code)]
-        mod owned {
-            #[doc(hidden)]
-            pub struct ImplFuture<T>(core::marker::PhantomData<T>);
-        }
-
-        // Render a fake trait combining the bodies of the base trait and the extension trait.
-        #[cfg(feature = "docs")]
-        #[doc = $doc]
-        pub trait $name {
-            extension_trait!(@doc [$($body_base)* $($body_ext)*] -> []);
-        }
-
-        // When not rendering docs, re-export the base trait from the futures crate.
-        #[cfg(not(feature = "docs"))]
+        // Re-export the base trait from the futures crate.
         pub use $base as $name;
 
         // The extension trait that adds methods to any type implementing the base trait.
@@ -289,36 +271,18 @@ macro_rules! extension_trait {
 
         // Blanket implementation of the extension trait for any type implementing the base trait.
         impl<T: $name + ?Sized> $ext for T {}
-
-        // Shim trait impls that only appear in docs.
-        $(#[cfg(feature = "docs")] $imp)*
     };
 
     // Parse the return type in an extension method.
-    (@doc [-> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
-        extension_trait!(@doc [$($tail)*] -> [$($accum)* -> owned::ImplFuture<$out>]);
-    };
     (@ext [-> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
         extension_trait!(@ext [$($tail)*] -> [$($accum)* -> $f]);
     };
 
     // Parse a token.
-    (@doc [$token:tt $($tail:tt)*] -> [$($accum:tt)*]) => {
-        extension_trait!(@doc [$($tail)*] -> [$($accum)* $token]);
-    };
     (@ext [$token:tt $($tail:tt)*] -> [$($accum:tt)*]) => {
         extension_trait!(@ext [$($tail)*] -> [$($accum)* $token]);
     };
 
     // Handle the end of the token list.
-    (@doc [] -> [$($accum:tt)*]) => { $($accum)* };
     (@ext [] -> [$($accum:tt)*]) => { $($accum)* };
-
-    // Parse imports at the beginning of the macro.
-    ($import:item $($tail:tt)*) => {
-        #[cfg(feature = "docs")]
-        $import
-
-        extension_trait!($($tail)*);
-    };
 }

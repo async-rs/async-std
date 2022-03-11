@@ -144,10 +144,6 @@ cfg_unstable! {
 }
 
 extension_trait! {
-    use std::ops::{Deref, DerefMut};
-
-    use crate::task::{Context, Poll};
-
     #[doc = r#"
         An asynchronous stream of values.
 
@@ -2387,42 +2383,6 @@ extension_trait! {
             P: Product,
         {
             Product::product(self)
-        }
-    }
-
-    impl<S: Stream + Unpin + ?Sized> Stream for Box<S> {
-        type Item = S::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<S: Stream + Unpin + ?Sized> Stream for &mut S {
-        type Item = S::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<P> Stream for Pin<P>
-    where
-        P: DerefMut + Unpin,
-        <P as Deref>::Target: Stream,
-    {
-        type Item = <<P as Deref>::Target as Stream>::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
-
-    impl<S: Stream> Stream for std::panic::AssertUnwindSafe<S> {
-        type Item = S::Item;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            unreachable!("this impl only appears in the rendered docs")
         }
     }
 }
