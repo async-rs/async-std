@@ -17,7 +17,6 @@ use crate::task::{Context, Poll};
 
 pub use futures_io::AsyncBufRead as BufRead;
 
-extension_trait! {
     #[doc = r#"
         Extension methods for [`BufRead`].
 
@@ -78,7 +77,7 @@ extension_trait! {
             &'a mut self,
             byte: u8,
             buf: &'a mut Vec<u8>,
-        ) -> [ReadUntilFuture<'a, Self>]
+        ) -> ReadUntilFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -131,7 +130,7 @@ extension_trait! {
         fn read_line<'a>(
             &'a mut self,
             buf: &'a mut String,
-        ) -> [ReadLineFuture<'a, Self>]
+        ) -> ReadLineFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -237,7 +236,6 @@ extension_trait! {
             }
         }
     }
-}
 
 impl<T: BufRead + ?Sized> BufReadExt for T {}
 

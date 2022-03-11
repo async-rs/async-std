@@ -23,7 +23,6 @@ pub use take::Take;
 
 pub use futures_io::AsyncRead as Read;
 
-extension_trait! {
     #[doc = r#"
         Extension methods for [`Read`].
 
@@ -64,7 +63,7 @@ extension_trait! {
         fn read<'a>(
             &'a mut self,
             buf: &'a mut [u8],
-        ) -> [ReadFuture<'a, Self>]
+        ) -> ReadFuture<'a, Self>
         where
             Self: Unpin
         {
@@ -86,7 +85,7 @@ extension_trait! {
         fn read_vectored<'a>(
             &'a mut self,
             bufs: &'a mut [IoSliceMut<'a>],
-        ) -> [ReadVectoredFuture<'a, Self>]
+        ) -> ReadVectoredFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -123,7 +122,7 @@ extension_trait! {
         fn read_to_end<'a>(
             &'a mut self,
             buf: &'a mut Vec<u8>,
-        ) -> [ReadToEndFuture<'a, Self>]
+        ) -> ReadToEndFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -162,7 +161,7 @@ extension_trait! {
         fn read_to_string<'a>(
             &'a mut self,
             buf: &'a mut String,
-        ) -> [ReadToStringFuture<'a, Self>]
+        ) -> ReadToStringFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -217,7 +216,7 @@ extension_trait! {
         fn read_exact<'a>(
             &'a mut self,
             buf: &'a mut [u8],
-        ) -> [ReadExactFuture<'a, Self>]
+        ) -> ReadExactFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -373,7 +372,6 @@ extension_trait! {
             Chain { first: self, second: next, done_first: false }
         }
     }
-}
 
 impl<T: Read + ?Sized> ReadExt for T {}
 

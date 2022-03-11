@@ -14,7 +14,6 @@ use crate::io::{self, IoSlice};
 
 pub use futures_io::AsyncWrite as Write;
 
-extension_trait! {
     #[doc = r#"
         Extension methods for [`Write`].
 
@@ -49,7 +48,7 @@ extension_trait! {
         fn write<'a>(
             &'a mut self,
             buf: &'a [u8],
-        ) -> [WriteFuture<'a, Self>]
+        ) -> WriteFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -75,7 +74,7 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        fn flush(&mut self) -> [FlushFuture<'_, Self>]
+        fn flush(&mut self) -> FlushFuture<'_, Self>
         where
             Self: Unpin,
         {
@@ -97,7 +96,7 @@ extension_trait! {
         fn write_vectored<'a>(
             &'a mut self,
             bufs: &'a [IoSlice<'a>],
-        ) -> [WriteVectoredFuture<'a, Self>]
+        ) -> WriteVectoredFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -133,7 +132,7 @@ extension_trait! {
         fn write_all<'a>(
             &'a mut self,
             buf: &'a [u8],
-        ) -> [WriteAllFuture<'a, Self>]
+        ) -> WriteAllFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -170,7 +169,7 @@ extension_trait! {
         fn write_fmt<'a>(
             &'a mut self,
             fmt: std::fmt::Arguments<'_>,
-        ) -> [WriteFmtFuture<'a, Self>]
+        ) -> WriteFmtFuture<'a, Self>
         where
             Self: Unpin,
         {
@@ -184,6 +183,5 @@ extension_trait! {
             WriteFmtFuture { writer: self, res: Some(res), buffer: None, amt: 0 }
         }
     }
-}
 
 impl<T: Write + ?Sized> WriteExt for T {}

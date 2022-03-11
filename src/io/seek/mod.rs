@@ -6,7 +6,6 @@ use crate::io::SeekFrom;
 
 pub use futures_io::AsyncSeek as Seek;
 
-extension_trait! {
     #[doc = r#"
         Extension methods for [`Seek`].
 
@@ -40,13 +39,12 @@ extension_trait! {
         fn seek(
             &mut self,
             pos: SeekFrom,
-        ) -> [SeekFuture<'_, Self>]
+        ) -> SeekFuture<'_, Self>
         where
             Self: Unpin,
         {
             SeekFuture { seeker: self, pos }
         }
     }
-}
 
 impl<T: Seek + ?Sized> SeekExt for T {}

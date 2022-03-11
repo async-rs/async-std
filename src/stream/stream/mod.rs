@@ -145,7 +145,6 @@ cfg_unstable! {
 
 pub use futures_core::stream::Stream as Stream;
 
-extension_trait! {
     #[doc = r#"
         Extension methods for [`Stream`].
 
@@ -177,7 +176,7 @@ extension_trait! {
             # }) }
             ```
         "#]
-        fn next(&mut self) -> [NextFuture<'_, Self>]
+        fn next(&mut self) -> NextFuture<'_, Self>
         where
             Self: Unpin,
         {
@@ -629,7 +628,7 @@ extension_trait! {
         "#]
         fn last(
             self,
-        ) -> [LastFuture<Self, Self::Item>]
+        ) -> LastFuture<Self, Self::Item>
         where
             Self: Sized,
         {
@@ -839,7 +838,7 @@ extension_trait! {
         fn min_by_key<B, F>(
             self,
             key_by: F,
-        ) -> [MinByKeyFuture<Self, Self::Item, F>]
+        ) -> MinByKeyFuture<Self, Self::Item, F>
         where
             Self: Sized,
             B: Ord,
@@ -875,7 +874,7 @@ extension_trait! {
         fn max_by_key<B, F>(
             self,
             key_by: F,
-        ) -> [MaxByKeyFuture<Self, Self::Item, F>]
+        ) -> MaxByKeyFuture<Self, Self::Item, F>
         where
             Self: Sized,
             B: Ord,
@@ -914,7 +913,7 @@ extension_trait! {
         fn min_by<F>(
             self,
             compare: F,
-        ) -> [MinByFuture<Self, F, Self::Item>]
+        ) -> MinByFuture<Self, F, Self::Item>
         where
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
@@ -947,7 +946,7 @@ extension_trait! {
         "#]
         fn max(
             self,
-        ) -> [MaxFuture<Self, Self::Item>]
+        ) -> MaxFuture<Self, Self::Item>
         where
             Self: Sized,
             Self::Item: Ord,
@@ -980,7 +979,7 @@ extension_trait! {
         "#]
         fn min(
             self,
-        ) -> [MinFuture<Self, Self::Item>]
+        ) -> MinFuture<Self, Self::Item>
         where
             Self: Sized,
             Self::Item: Ord,
@@ -1018,7 +1017,7 @@ extension_trait! {
         fn max_by<F>(
             self,
             compare: F,
-        ) -> [MaxByFuture<Self, F, Self::Item>]
+        ) -> MaxByFuture<Self, F, Self::Item>
         where
             Self: Sized,
             F: FnMut(&Self::Item, &Self::Item) -> Ordering,
@@ -1082,7 +1081,7 @@ extension_trait! {
         fn nth(
             &mut self,
             n: usize,
-        ) -> [NthFuture<'_, Self>]
+        ) -> NthFuture<'_, Self>
         where
             Self: Unpin + Sized,
         {
@@ -1138,7 +1137,7 @@ extension_trait! {
         fn all<F>(
             &mut self,
             f: F,
-        ) -> [AllFuture<'_, Self, F, Self::Item>]
+        ) -> AllFuture<'_, Self, F, Self::Item>
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -1187,7 +1186,7 @@ extension_trait! {
         fn find<P>(
             &mut self,
             p: P,
-        ) -> [FindFuture<'_, Self, P>]
+        ) -> FindFuture<'_, Self, P>
         where
             Self: Unpin + Sized,
             P: FnMut(&Self::Item) -> bool,
@@ -1215,7 +1214,7 @@ extension_trait! {
         fn find_map<F, B>(
             &mut self,
             f: F,
-        ) -> [FindMapFuture<'_, Self, F>]
+        ) -> FindMapFuture<'_, Self, F>
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Option<B>,
@@ -1249,7 +1248,7 @@ extension_trait! {
             self,
             init: B,
             f: F,
-        ) -> [FoldFuture<Self, F, B>]
+        ) -> FoldFuture<Self, F, B>
         where
             Self: Sized,
             F: FnMut(B, Self::Item) -> B,
@@ -1286,7 +1285,7 @@ extension_trait! {
         fn partition<B, F>(
             self,
             f: F,
-        ) -> [PartitionFuture<Self, F, B>]
+        ) -> PartitionFuture<Self, F, B>
         where
             Self: Sized,
             F: FnMut(&Self::Item) -> bool,
@@ -1322,7 +1321,7 @@ extension_trait! {
         fn for_each<F>(
             self,
             f: F,
-        ) -> [ForEachFuture<Self, F>]
+        ) -> ForEachFuture<Self, F>
         where
             Self: Sized,
             F: FnMut(Self::Item),
@@ -1378,7 +1377,7 @@ extension_trait! {
         fn any<F>(
             &mut self,
             f: F,
-        ) -> [AnyFuture<'_, Self, F, Self::Item>]
+        ) -> AnyFuture<'_, Self, F, Self::Item>
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> bool,
@@ -1614,7 +1613,7 @@ extension_trait! {
             &mut self,
             init: T,
             f: F,
-        ) -> [TryFoldFuture<'_, Self, F, T>]
+        ) -> TryFoldFuture<'_, Self, F, T>
         where
             Self: Unpin + Sized,
             F: FnMut(B, Self::Item) -> Result<T, E>,
@@ -1659,7 +1658,7 @@ extension_trait! {
         fn try_for_each<F, E>(
             &mut self,
             f: F,
-        ) -> [TryForEachFuture<'_, Self, F>]
+        ) -> TryForEachFuture<'_, Self, F>
         where
             Self: Unpin + Sized,
             F: FnMut(Self::Item) -> Result<(), E>,
@@ -1741,7 +1740,7 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn unzip<A, B, FromA, FromB>(self) -> [UnzipFuture<Self, FromA, FromB>]
+        fn unzip<A, B, FromA, FromB>(self) -> UnzipFuture<Self, FromA, FromB>
         where
         FromA: Default + Extend<A>,
         FromB: Default + Extend<B>,
@@ -1805,7 +1804,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn collect<'a, B>(
             self,
-        ) -> [Pin<Box<dyn Future<Output = B> + 'a + Send>>]
+        ) -> Pin<Box<dyn Future<Output = B> + 'a + Send>>
         where
             Self: Sized + 'a + Send,
             B: FromStream<Self::Item>,
@@ -1879,7 +1878,7 @@ extension_trait! {
         fn partial_cmp<S>(
            self,
            other: S
-        ) -> [PartialCmpFuture<Self, S>]
+        ) -> PartialCmpFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -1919,7 +1918,7 @@ extension_trait! {
         fn position<P>(
            &mut self,
            predicate: P,
-        ) -> [PositionFuture<'_, Self, P>]
+        ) -> PositionFuture<'_, Self, P>
         where
             Self: Unpin + Sized,
             P: FnMut(Self::Item) -> bool,
@@ -1957,7 +1956,7 @@ extension_trait! {
         fn cmp<S>(
            self,
            other: S
-        ) -> [CmpFuture<Self, S>]
+        ) -> CmpFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -1988,7 +1987,7 @@ extension_trait! {
         "#]
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn count(self) -> [CountFuture<Self>]
+        fn count(self) -> CountFuture<Self>
         where
             Self: Sized,
         {
@@ -2023,7 +2022,7 @@ extension_trait! {
         fn ne<S>(
            self,
            other: S
-        ) -> [NeFuture<Self, S>]
+        ) -> NeFuture<Self, S>
         where
             Self: Sized,
             S: Sized + Stream,
@@ -2060,7 +2059,7 @@ extension_trait! {
         fn ge<S>(
            self,
            other: S
-        ) -> [GeFuture<Self, S>]
+        ) -> GeFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -2097,7 +2096,7 @@ extension_trait! {
         fn eq<S>(
            self,
            other: S
-        ) -> [EqFuture<Self, S>]
+        ) -> EqFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Sized + Stream,
@@ -2134,7 +2133,7 @@ extension_trait! {
         fn gt<S>(
            self,
            other: S
-        ) -> [GtFuture<Self, S>]
+        ) -> GtFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -2171,7 +2170,7 @@ extension_trait! {
         fn le<S>(
            self,
            other: S
-        ) -> [LeFuture<Self, S>]
+        ) -> LeFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -2208,7 +2207,7 @@ extension_trait! {
         fn lt<S>(
            self,
            other: S
-        ) -> [LtFuture<Self, S>]
+        ) -> LtFuture<Self, S>
         where
             Self: Sized + Stream,
             S: Stream,
@@ -2252,7 +2251,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn sum<'a, S>(
             self,
-        ) -> [Pin<Box<dyn Future<Output = S> + 'a>>]
+        ) -> Pin<Box<dyn Future<Output = S> + 'a>>
         where
             Self: Sized + Stream<Item = S> + 'a,
             S: Sum<Self::Item>,
@@ -2298,7 +2297,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn product<'a, P>(
             self,
-        ) -> [Pin<Box<dyn Future<Output = P> + 'a>>]
+        ) -> Pin<Box<dyn Future<Output = P> + 'a>>
         where
             Self: Sized + Stream<Item = P> + 'a,
             P: Product,
@@ -2306,7 +2305,6 @@ extension_trait! {
             Product::product(self)
         }
     }
-}
 
 impl<T: Stream + ?Sized> StreamExt for T {}
 
