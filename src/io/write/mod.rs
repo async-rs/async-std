@@ -201,6 +201,43 @@ extension_trait! {
             WriteAllFuture { writer: self, buf }
         }
 
+
+        #[doc = r#"
+            Creates a "by reference" adaptor for this instance of `Write`.
+
+            The returned adaptor also implements `Write` and will simply borrow this
+            current writer.
+
+            # Examples
+
+            [`File`][file]s implement `Write`:
+
+            [file]: ../fs/struct.File.html
+
+            ```no_run
+            # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+            #
+            use async_std::io::prelude::*;
+            use async_std::fs::File;
+
+            let mut f = File::open("foo.txt").await?;
+
+            {
+                let reference = WriteExt::by_ref(&mut f);
+
+                // read at most 5 bytes
+                reference.write_all(b"hello ").await?;
+
+            } // drop our &mut reference so we can use f again
+
+            // original file still usable, read the rest
+            f.write_all(b"world").await?;
+            #
+            # Ok(()) }) }
+            ```
+        "#]
+        fn by_ref(&mut self) -> &mut Self where Self: Sized { self }
+
         #[doc = r#"
             Writes a formatted string into this writer, returning any error encountered.
 
@@ -320,5 +357,31 @@ extension_trait! {
         fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
             unreachable!("this impl only appears in the rendered docs")
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::io;
+    use crate::prelude::*;
+
+    #[test]
+    fn test_write_by_ref() -> io::Result<()> {
+        crate::task::block_on(async {
+            let mut f = io::Cursor::new(vec![]);
+
+            {
+                let reference = io::write::WriteExt::by_ref(&mut f);
+
+                reference.write_all(b"hello").await?;
+            } // drop our &mut reference so we can use f again
+
+            assert_eq!(f.position(), 5);
+            // original file still usable, read the rest
+            f.write_all(b" world").await?;
+            assert_eq!(f.position(), 11);
+            Ok(())
+        })
     }
 }

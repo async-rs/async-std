@@ -327,7 +327,7 @@ extension_trait! {
             ```no_run
             # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
             #
-            use async_std::prelude::*;
+            use async_std::io::prelude::*;
             use async_std::fs::File;
 
             let mut f = File::open("foo.txt").await?;
@@ -335,7 +335,7 @@ extension_trait! {
             let mut other_buffer = Vec::new();
 
             {
-                let reference = f.by_ref();
+                let reference = ReadExt::by_ref(&mut f);
 
                 // read at most 5 bytes
                 reference.take(5).read_to_end(&mut buffer).await?;
@@ -490,7 +490,7 @@ mod tests {
             let mut other_buffer = Vec::new();
 
             {
-                let reference = f.by_ref();
+                let reference = io::read::ReadExt::by_ref(&mut f);
 
                 // read at most 5 bytes
                 assert_eq!(reference.take(5).read_to_end(&mut buffer).await.unwrap(), 5);
