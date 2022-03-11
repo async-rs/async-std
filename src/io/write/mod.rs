@@ -12,6 +12,8 @@ use write_vectored::WriteVectoredFuture;
 
 use crate::io::{self, IoSlice};
 
+pub use futures_io::AsyncWrite as Write;
+
 extension_trait! {
     pub trait Write {}
 

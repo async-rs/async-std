@@ -4,6 +4,8 @@ use seek::SeekFuture;
 
 use crate::io::SeekFrom;
 
+pub use futures_io::AsyncSeek as Seek;
+
 extension_trait! {
     pub trait Seek {}
 

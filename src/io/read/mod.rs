@@ -21,6 +21,8 @@ pub use bytes::Bytes;
 pub use chain::Chain;
 pub use take::Take;
 
+pub use futures_io::AsyncRead as Read;
+
 extension_trait! {
     pub trait Read {}
 

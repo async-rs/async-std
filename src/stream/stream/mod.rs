@@ -143,6 +143,8 @@ cfg_unstable! {
     mod unzip;
 }
 
+pub use futures_core::stream::Stream as Stream;
+
 extension_trait! {
     pub trait Stream {}
 

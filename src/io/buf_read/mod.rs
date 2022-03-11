@@ -15,6 +15,8 @@ use std::pin::Pin;
 use crate::io;
 use crate::task::{Context, Poll};
 
+pub use futures_io::AsyncBufRead as BufRead;
+
 extension_trait! {
     pub trait BufRead {}
 

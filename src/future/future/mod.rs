@@ -20,6 +20,8 @@ cfg_unstable_default! {
     use crate::future::timeout::TimeoutFuture;
 }
 
+pub use core::future::Future as Future;
+
 extension_trait! {
     pub trait Future {}
 

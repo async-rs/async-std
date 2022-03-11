@@ -257,9 +257,6 @@ macro_rules! extension_trait {
             $($body_ext:tt)*
         }
     ) => {
-        // Re-export the base trait from the futures crate.
-        pub use $base as $name;
-
         // The extension trait that adds methods to any type implementing the base trait.
         #[doc = $doc_ext]
         pub trait $ext: $name {
