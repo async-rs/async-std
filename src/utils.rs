@@ -271,7 +271,7 @@ macro_rules! extension_trait {
     };
 
     // Parse the return type in an extension method.
-    (@ext [-> impl Future<Output = $out:ty> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
+    (@ext [-> [$f:ty] $($tail:tt)*] -> [$($accum:tt)*]) => {
         extension_trait!(@ext [$($tail)*] -> [$($accum)* -> $f]);
     };
 

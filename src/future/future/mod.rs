@@ -45,7 +45,7 @@ extension_trait! {
         /// ```
         #[cfg(feature = "unstable")]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn delay(self, dur: Duration) -> impl Future<Output = Self::Output> [DelayFuture<Self>]
+        fn delay(self, dur: Duration) -> [DelayFuture<Self>]
         where
             Self: Sized,
         {
@@ -70,8 +70,7 @@ extension_trait! {
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
         fn flatten(
             self,
-        ) -> impl Future<Output = <Self::Output as IntoFuture>::Output>
-            [FlattenFuture<Self, <Self::Output as IntoFuture>::Future>]
+        ) -> [FlattenFuture<Self, <Self::Output as IntoFuture>::Future>]
         where
             Self: Sized,
             <Self as Future>::Output: IntoFuture,
@@ -113,7 +112,7 @@ extension_trait! {
         fn race<F>(
             self,
             other: F,
-        ) -> impl Future<Output = <Self as std::future::Future>::Output> [Race<Self, F>]
+        ) -> [Race<Self, F>]
         where
             Self: std::future::Future + Sized,
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
@@ -159,7 +158,7 @@ extension_trait! {
         fn try_race<F, T, E>(
             self,
             other: F
-        ) -> impl Future<Output = <Self as std::future::Future>::Output> [TryRace<Self, F>]
+        ) -> [TryRace<Self, F>]
         where
             Self: std::future::Future<Output = Result<T, E>> + Sized,
             F: std::future::Future<Output = <Self as std::future::Future>::Output>,
@@ -196,7 +195,7 @@ extension_trait! {
         fn join<F>(
             self,
             other: F
-        ) -> impl Future<Output = (<Self as std::future::Future>::Output, <F as std::future::Future>::Output)> [Join<Self, F>]
+        ) -> [Join<Self, F>]
         where
             Self: std::future::Future + Sized,
             F: std::future::Future,
@@ -243,7 +242,7 @@ extension_trait! {
         fn try_join<F, A, B, E>(
             self,
             other: F
-        ) -> impl Future<Output = Result<(A, B), E>> [TryJoin<Self, F>]
+        ) -> [TryJoin<Self, F>]
         where
             Self: std::future::Future<Output = Result<A, E>> + Sized,
             F: std::future::Future<Output = Result<B, E>>,
@@ -279,7 +278,7 @@ extension_trait! {
         "#]
         #[cfg(any(all(feature = "default", feature = "unstable"), feature = "docs"))]
         #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
-        fn timeout(self, dur: Duration) -> impl Future<Output = Self::Output> [TimeoutFuture<Self>]
+        fn timeout(self, dur: Duration) -> [TimeoutFuture<Self>]
             where Self: Sized
         {
             TimeoutFuture::new(self, dur)

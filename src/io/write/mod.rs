@@ -49,7 +49,7 @@ extension_trait! {
         fn write<'a>(
             &'a mut self,
             buf: &'a [u8],
-        ) -> impl Future<Output = io::Result<usize>> [WriteFuture<'a, Self>]
+        ) -> [WriteFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -75,7 +75,7 @@ extension_trait! {
             # Ok(()) }) }
             ```
         "#]
-        fn flush(&mut self) -> impl Future<Output = io::Result<()>> [FlushFuture<'_, Self>]
+        fn flush(&mut self) -> [FlushFuture<'_, Self>]
         where
             Self: Unpin,
         {
@@ -97,7 +97,7 @@ extension_trait! {
         fn write_vectored<'a>(
             &'a mut self,
             bufs: &'a [IoSlice<'a>],
-        ) -> impl Future<Output = io::Result<usize>> [WriteVectoredFuture<'a, Self>]
+        ) -> [WriteVectoredFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -133,7 +133,7 @@ extension_trait! {
         fn write_all<'a>(
             &'a mut self,
             buf: &'a [u8],
-        ) -> impl Future<Output = io::Result<()>> [WriteAllFuture<'a, Self>]
+        ) -> [WriteAllFuture<'a, Self>]
         where
             Self: Unpin,
         {
@@ -170,7 +170,7 @@ extension_trait! {
         fn write_fmt<'a>(
             &'a mut self,
             fmt: std::fmt::Arguments<'_>,
-        ) -> impl Future<Output = io::Result<()>> [WriteFmtFuture<'a, Self>]
+        ) -> [WriteFmtFuture<'a, Self>]
         where
             Self: Unpin,
         {
