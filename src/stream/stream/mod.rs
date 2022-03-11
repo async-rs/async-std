@@ -146,14 +146,12 @@ cfg_unstable! {
 pub use futures_core::stream::Stream as Stream;
 
 extension_trait! {
-    pub trait Stream {}
-
     #[doc = r#"
         Extension methods for [`Stream`].
 
         [`Stream`]: ../stream/trait.Stream.html
     "#]
-    pub trait StreamExt: futures_core::stream::Stream {
+    pub trait StreamExt: Stream {
         #[doc = r#"
             Advances the stream and returns the next value.
 

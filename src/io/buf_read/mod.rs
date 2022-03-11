@@ -18,14 +18,12 @@ use crate::task::{Context, Poll};
 pub use futures_io::AsyncBufRead as BufRead;
 
 extension_trait! {
-    pub trait BufRead {}
-
     #[doc = r#"
         Extension methods for [`BufRead`].
 
         [`BufRead`]: ../trait.BufRead.html
     "#]
-    pub trait BufReadExt: futures_io::AsyncBufRead {
+    pub trait BufReadExt: BufRead {
         #[doc = r#"
             Reads all bytes into `buf` until the delimiter `byte` or EOF is reached.
 

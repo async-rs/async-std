@@ -15,14 +15,12 @@ use crate::io::{self, IoSlice};
 pub use futures_io::AsyncWrite as Write;
 
 extension_trait! {
-    pub trait Write {}
-
     #[doc = r#"
         Extension methods for [`Write`].
 
         [`Write`]: ../trait.Write.html
     "#]
-    pub trait WriteExt: futures_io::AsyncWrite {
+    pub trait WriteExt: Write {
         #[doc = r#"
             Writes some bytes into the byte stream.
 

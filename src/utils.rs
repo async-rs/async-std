@@ -246,14 +246,8 @@ macro_rules! cfg_default {
 #[doc(hidden)]
 macro_rules! extension_trait {
     (
-        // Interesting patterns:
-        // - `$name`: trait name that gets rendered in the docs
-        // - `$ext`: name of the hidden extension trait
-        // - `$base`: base trait
-        pub trait $name:ident {}
-
         #[doc = $doc_ext:tt]
-        pub trait $ext:ident: $base:path {
+        pub trait $ext:ident: $name:ident {
             $($body_ext:tt)*
         }
     ) => {

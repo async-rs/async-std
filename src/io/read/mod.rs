@@ -24,14 +24,12 @@ pub use take::Take;
 pub use futures_io::AsyncRead as Read;
 
 extension_trait! {
-    pub trait Read {}
-
     #[doc = r#"
         Extension methods for [`Read`].
 
         [`Read`]: ../trait.Read.html
     "#]
-    pub trait ReadExt: futures_io::AsyncRead {
+    pub trait ReadExt: Read {
         #[doc = r#"
             Reads some bytes from the byte stream.
 

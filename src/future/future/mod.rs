@@ -23,14 +23,12 @@ cfg_unstable_default! {
 pub use core::future::Future as Future;
 
 extension_trait! {
-    pub trait Future {}
-
     #[doc = r#"
         Extension methods for [`Future`].
 
         [`Future`]: ../future/trait.Future.html
     "#]
-    pub trait FutureExt: core::future::Future {
+    pub trait FutureExt: Future {
         /// Returns a Future that delays execution for a specified time.
         ///
         /// # Examples

@@ -7,14 +7,12 @@ use crate::io::SeekFrom;
 pub use futures_io::AsyncSeek as Seek;
 
 extension_trait! {
-    pub trait Seek {}
-
     #[doc = r#"
         Extension methods for [`Seek`].
 
         [`Seek`]: ../trait.Seek.html
     "#]
-    pub trait SeekExt: futures_io::AsyncSeek {
+    pub trait SeekExt: Seek {
         #[doc = r#"
             Seeks to a new position in a byte stream.
 
