@@ -372,9 +372,10 @@ extension_trait! {
         fn chain<R: Read>(self, next: R) -> Chain<Self, R> where Self: Sized {
             Chain { first: self, second: next, done_first: false }
         }
-
     }
 }
+
+impl<T: Read + ?Sized> ReadExt for T {}
 
 /// Initializes a buffer if necessary.
 ///

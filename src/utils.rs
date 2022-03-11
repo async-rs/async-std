@@ -265,9 +265,6 @@ macro_rules! extension_trait {
         pub trait $ext: $name {
             extension_trait!(@ext [$($body_ext)*] -> []);
         }
-
-        // Blanket implementation of the extension trait for any type implementing the base trait.
-        impl<T: $name + ?Sized> $ext for T {}
     };
 
     // Parse the return type in an extension method.

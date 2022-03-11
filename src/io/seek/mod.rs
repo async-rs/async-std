@@ -48,3 +48,5 @@ extension_trait! {
         }
     }
 }
+
+impl<T: Seek + ?Sized> SeekExt for T {}

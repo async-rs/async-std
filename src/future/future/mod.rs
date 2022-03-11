@@ -285,3 +285,6 @@ extension_trait! {
         }
     }
 }
+
+impl<T: Future + ?Sized> FutureExt for T {}
+

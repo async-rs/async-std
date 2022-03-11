@@ -185,3 +185,5 @@ extension_trait! {
         }
     }
 }
+
+impl<T: Write + ?Sized> WriteExt for T {}

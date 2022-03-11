@@ -2307,3 +2307,6 @@ extension_trait! {
         }
     }
 }
+
+impl<T: Stream + ?Sized> StreamExt for T {}
+

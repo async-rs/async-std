@@ -239,6 +239,8 @@ extension_trait! {
     }
 }
 
+impl<T: BufRead + ?Sized> BufReadExt for T {}
+
 pub fn read_until_internal<R: BufReadExt + ?Sized>(
     mut reader: Pin<&mut R>,
     cx: &mut Context<'_>,
