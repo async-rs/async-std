@@ -5,37 +5,7 @@ use seek::SeekFuture;
 use crate::io::SeekFrom;
 
 extension_trait! {
-    #[doc = r#"
-        Allows seeking through a byte stream.
-
-        This trait is a re-export of [`futures::io::AsyncSeek`] and is an async version of
-        [`std::io::Seek`].
-
-        The [provided methods] do not really exist in the trait itself, but they become
-        available when [`SeekExt`] the [prelude] is imported:
-
-        ```
-        # #[allow(unused_imports)]
-        use async_std::prelude::*;
-        ```
-
-        [`std::io::Seek`]: https://doc.rust-lang.org/std/io/trait.Seek.html
-        [`futures::io::AsyncSeek`]:
-        https://docs.rs/futures/0.3/futures/io/trait.AsyncSeek.html
-        [provided methods]: #provided-methods
-        [`SeekExt`]: ../io/prelude/trait.SeekExt.html
-        [prelude]: ../prelude/index.html
-    "#]
-    pub trait Seek {
-        #[doc = r#"
-            Attempt to seek to an offset, in bytes, in a stream.
-        "#]
-        fn poll_seek(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            pos: SeekFrom,
-        ) -> Poll<io::Result<u64>>;
-    }
+    pub trait Seek {}
 
     #[doc = r#"
         Extension methods for [`Seek`].

@@ -22,49 +22,7 @@ pub use chain::Chain;
 pub use take::Take;
 
 extension_trait! {
-    #[doc = r#"
-        Allows reading from a byte stream.
-
-        This trait is a re-export of [`futures::io::AsyncRead`] and is an async version of
-        [`std::io::Read`].
-
-        Methods other than [`poll_read`] and [`poll_read_vectored`] do not really exist in the
-        trait itself, but they become available when [`ReadExt`] from the [prelude] is imported:
-
-        ```
-        # #[allow(unused_imports)]
-        use async_std::prelude::*;
-        ```
-
-        [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
-        [`futures::io::AsyncRead`]:
-        https://docs.rs/futures/0.3/futures/io/trait.AsyncRead.html
-        [`poll_read`]: #tymethod.poll_read
-        [`poll_read_vectored`]: #method.poll_read_vectored
-        [`ReadExt`]: ../io/prelude/trait.ReadExt.html
-        [prelude]: ../prelude/index.html
-    "#]
-    pub trait Read {
-        #[doc = r#"
-            Attempt to read from the `AsyncRead` into `buf`.
-        "#]
-        fn poll_read(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>>;
-
-        #[doc = r#"
-            Attempt to read from the `AsyncRead` into `bufs` using vectored IO operations.
-        "#]
-        fn poll_read_vectored(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            bufs: &mut [IoSliceMut<'_>],
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-    }
+    pub trait Read {}
 
     #[doc = r#"
         Extension methods for [`Read`].

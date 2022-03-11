@@ -250,10 +250,7 @@ macro_rules! extension_trait {
         // - `$name`: trait name that gets rendered in the docs
         // - `$ext`: name of the hidden extension trait
         // - `$base`: base trait
-        #[doc = $doc:tt]
-        pub trait $name:ident {
-            $($body_base:tt)*
-        }
+        pub trait $name:ident {}
 
         #[doc = $doc_ext:tt]
         pub trait $ext:ident: $base:path {

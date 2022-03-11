@@ -16,51 +16,7 @@ use crate::io;
 use crate::task::{Context, Poll};
 
 extension_trait! {
-    #[doc = r#"
-        Allows reading from a buffered byte stream.
-
-        This trait is a re-export of [`futures::io::AsyncBufRead`] and is an async version of
-        [`std::io::BufRead`].
-
-        The [provided methods] do not really exist in the trait itself, but they become
-        available when [`BufReadExt`] from the [prelude] is imported:
-
-        ```
-        # #[allow(unused_imports)]
-        use async_std::io::prelude::*;
-        ```
-
-        [`std::io::BufRead`]: https://doc.rust-lang.org/std/io/trait.BufRead.html
-        [`futures::io::AsyncBufRead`]:
-        https://docs.rs/futures/0.3/futures/io/trait.AsyncBufRead.html
-        [provided methods]: #provided-methods
-        [`BufReadExt`]: ../io/prelude/trait.BufReadExt.html
-        [prelude]: ../prelude/index.html
-    "#]
-    pub trait BufRead {
-        #[doc = r#"
-            Returns the contents of the internal buffer, filling it with more data from the
-            inner reader if it is empty.
-
-            This function is a lower-level call. It needs to be paired with the [`consume`]
-            method to function properly. When calling this method, none of the contents will be
-            "read" in the sense that later calling `read` may return the same contents. As
-            such, [`consume`] must be called with the number of bytes that are consumed from
-            this buffer to ensure that the bytes are never returned twice.
-
-            [`consume`]: #tymethod.consume
-
-            An empty buffer returned indicates that the stream has reached EOF.
-        "#]
-        // TODO: write a proper doctest with `consume`
-        fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>>;
-
-        #[doc = r#"
-            Tells this buffer that `amt` bytes have been consumed from the buffer, so they
-            should no longer be returned in calls to `read`.
-        "#]
-        fn consume(self: Pin<&mut Self>, amt: usize);
-    }
+    pub trait BufRead {}
 
     #[doc = r#"
         Extension methods for [`BufRead`].

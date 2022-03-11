@@ -13,63 +13,7 @@ use write_vectored::WriteVectoredFuture;
 use crate::io::{self, IoSlice};
 
 extension_trait! {
-    #[doc = r#"
-        Allows writing to a byte stream.
-
-        This trait is a re-export of [`futures::io::AsyncWrite`] and is an async version of
-        [`std::io::Write`].
-
-        Methods other than [`poll_write`], [`poll_write_vectored`], [`poll_flush`], and
-        [`poll_close`] do not really exist in the trait itself, but they become available when
-        [`WriteExt`] from the [prelude] is imported:
-
-        ```
-        # #[allow(unused_imports)]
-        use async_std::prelude::*;
-        ```
-
-        [`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
-        [`futures::io::AsyncWrite`]:
-        https://docs.rs/futures/0.3/futures/io/trait.AsyncWrite.html
-        [`poll_write`]: #tymethod.poll_write
-        [`poll_write_vectored`]: #method.poll_write_vectored
-        [`poll_flush`]: #tymethod.poll_flush
-        [`poll_close`]: #tymethod.poll_close
-        [`WriteExt`]: ../io/prelude/trait.WriteExt.html
-        [prelude]: ../prelude/index.html
-    "#]
-    pub trait Write {
-        #[doc = r#"
-            Attempt to write bytes from `buf` into the object.
-        "#]
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>>;
-
-        #[doc = r#"
-            Attempt to write bytes from `bufs` into the object using vectored IO operations.
-        "#]
-        fn poll_write_vectored(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            bufs: &[IoSlice<'_>]
-        ) -> Poll<io::Result<usize>> {
-            unreachable!("this impl only appears in the rendered docs")
-        }
-
-        #[doc = r#"
-            Attempt to flush the object, ensuring that any buffered data reach
-            their destination.
-        "#]
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
-
-        #[doc = r#"
-            Attempt to close the object.
-        "#]
-        fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
-    }
+    pub trait Write {}
 
     #[doc = r#"
         Extension methods for [`Write`].
