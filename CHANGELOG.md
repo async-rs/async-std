@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 ## Removed
 ## Changed
 
+# [1.11.0] - 2022-03-22
+
+This release improves compile times by up to 55% on initial builds, and up to 75% on recompilation. Additionally we've added a few new APIs and made some tweaks.
+
+## Added
+- `TcpListener::into_incoming` to convert a `TcpListener` into a stream of incoming TCP connections
+
+## Removed
+- The internal `extension_trait` macro had been removed. This drastically improves compile times for `async-std`, but changes the way our documentation is rendered. This is a cosmetic change only, and all existing code should continue to work as it did before.
+
+## Changed
+- Some internal code has been de-macro-ified, making for quicker compile times.
+- We now use the default recursion limit.
+
+## Docs
+- Several docs improvements / fixes.
+
 # [1.10.0] - 2021-08-25
 
 This release comes with an assortment of small features and fixes.
