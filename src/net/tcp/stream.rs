@@ -378,6 +378,21 @@ impl From<std::net::TcpStream> for TcpStream {
     }
 }
 
+impl std::convert::TryFrom<TcpStream> for std::net::TcpStream {
+    type Error = io::Error;
+    /// Converts a `TcpStream` into its synchronous equivalent.
+    fn try_from(stream: TcpStream) -> io::Result<std::net::TcpStream> {
+        let inner = Arc::try_unwrap(stream.watcher)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other,
+                "Cannot convert TcpStream to synchronous: multiple references",
+            ))?
+            .into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 

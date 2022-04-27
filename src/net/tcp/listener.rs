@@ -252,6 +252,16 @@ impl From<std::net::TcpListener> for TcpListener {
     }
 }
 
+impl std::convert::TryFrom<TcpListener> for std::net::TcpListener {
+    type Error = io::Error;
+    /// Converts a `TcpListener` into its synchronous equivalent.
+    fn try_from(listener: TcpListener) -> io::Result<std::net::TcpListener> {
+        let inner = listener.watcher.into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 

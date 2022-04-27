@@ -532,6 +532,16 @@ impl From<std::net::UdpSocket> for UdpSocket {
     }
 }
 
+impl std::convert::TryFrom<UdpSocket> for std::net::UdpSocket {
+    type Error = io::Error;
+    /// Converts a `UdpSocket` into its synchronous equivalent.
+    fn try_from(listener: UdpSocket) -> io::Result<std::net::UdpSocket> {
+        let inner = listener.watcher.into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 

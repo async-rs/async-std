@@ -311,6 +311,16 @@ impl From<StdUnixDatagram> for UnixDatagram {
     }
 }
 
+impl std::convert::TryFrom<UnixDatagram> for StdUnixDatagram {
+    type Error = io::Error;
+    /// Converts a `UnixDatagram` into its synchronous equivalent.
+    fn try_from(listener: UnixDatagram) -> io::Result<StdUnixDatagram> {
+        let inner = listener.watcher.into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 impl AsRawFd for UnixDatagram {
     fn as_raw_fd(&self) -> RawFd {
         self.watcher.as_raw_fd()

@@ -231,6 +231,21 @@ impl From<StdUnixStream> for UnixStream {
     }
 }
 
+impl std::convert::TryFrom<UnixStream> for StdUnixStream {
+    type Error = io::Error;
+    /// Converts a `UnixStream` into its synchronous equivalent.
+    fn try_from(stream: UnixStream) -> io::Result<StdUnixStream> {
+        let inner = Arc::try_unwrap(stream.watcher)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other,
+                "Cannot convert UnixStream to synchronous: multiple references",
+            ))?
+            .into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 impl AsRawFd for UnixStream {
     fn as_raw_fd(&self) -> RawFd {
         self.watcher.as_raw_fd()
