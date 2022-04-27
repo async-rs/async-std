@@ -2,7 +2,7 @@
 //!
 //! ## Base Futures Concurrency
 //!
-//! Often it's desireable to await multiple futures as if it was a single
+//! Often it's desirable to await multiple futures as if it was a single
 //! future. The `join` family of operations converts multiple futures into a
 //! single future that returns all of their outputs. The `race` family of
 //! operations converts multiple future into a single future that returns the

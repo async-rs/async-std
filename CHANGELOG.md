@@ -155,7 +155,7 @@ release, and updates internal dependencies.
 ## Fixed
 
 - Fix `TcpListener::incoming`. ([#889](https://github.com/async-rs/async-std/pull/889))
-- Fix tokio compatability flag. ([#882](https://github.com/async-rs/async-std/pull/882))
+- Fix tokio compatibility flag. ([#882](https://github.com/async-rs/async-std/pull/882))
 
 # [1.6.4] - 2020-09-16
 
@@ -207,7 +207,7 @@ release, and updates internal dependencies.
 
 ## Added
 
-- Added `tokio02` feature flag, to allow compatability usage with tokio@0.2 ([#804](https://github.com/async-rs/async-std/pull/804)).
+- Added `tokio02` feature flag, to allow compatibility usage with tokio@0.2 ([#804](https://github.com/async-rs/async-std/pull/804)).
 
 ## Changed
 
