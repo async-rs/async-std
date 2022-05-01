@@ -205,6 +205,16 @@ impl From<StdUnixListener> for UnixListener {
     }
 }
 
+impl std::convert::TryFrom<UnixListener> for StdUnixListener {
+    type Error = io::Error;
+    /// Converts a `UnixListener` into its synchronous equivalent.
+    fn try_from(listener: UnixListener) -> io::Result<StdUnixListener> {
+        let inner = listener.watcher.into_inner()?;
+        inner.set_nonblocking(false)?;
+        Ok(inner)
+    }
+}
+
 impl AsRawFd for UnixListener {
     fn as_raw_fd(&self) -> RawFd {
         self.watcher.as_raw_fd()
