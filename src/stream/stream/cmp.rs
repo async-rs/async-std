@@ -58,7 +58,7 @@ where
                 return Poll::Ready(Ordering::Greater);
             }
 
-            // Get next value if possible and necesary
+            // Get next value if possible and necessary
             if !this.l.done && this.l_cache.is_none() {
                 let l_next = futures_core::ready!(this.l.as_mut().poll_next(cx));
                 if let Some(item) = l_next {
