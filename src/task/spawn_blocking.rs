@@ -16,7 +16,6 @@ use crate::task::{self, JoinHandle};
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature = "unstable")]
 /// # async_std::task::block_on(async {
 /// #
 /// use async_std::task;
@@ -28,7 +27,6 @@ use crate::task::{self, JoinHandle};
 /// #
 /// # })
 /// ```
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[inline]
 pub fn spawn_blocking<F, T>(f: F) -> JoinHandle<T>
 where

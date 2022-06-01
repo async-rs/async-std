@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 # [Unreleased]
 
 ## Added
+
+- `std::task_spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
+
 ## Removed
 ## Changed
 

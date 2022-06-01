@@ -160,11 +160,7 @@ cfg_default! {
     mod task_locals_wrapper;
 
     #[cfg(not(target_os = "unknown"))]
-    #[cfg(any(feature = "unstable", test))]
     pub use spawn_blocking::spawn_blocking;
-    #[cfg(not(target_os = "unknown"))]
-    #[cfg(not(any(feature = "unstable", test)))]
-    pub(crate) use spawn_blocking::spawn_blocking;
 }
 
 cfg_unstable! {
