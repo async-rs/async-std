@@ -318,6 +318,11 @@ cfg_default! {
     pub mod net;
     #[cfg(not(target_os = "unknown"))]
     pub(crate) mod rt;
+
+    #[cfg(not(target_os = "unknown"))]
+    pub use crate::task::spawn;
+    #[cfg(not(target_os = "unknown"))]
+    pub use crate::task::spawn_blocking;
 }
 
 cfg_unstable! {
