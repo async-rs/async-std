@@ -154,18 +154,18 @@ Make requests by running the client example:
 cargo run --example udp-client
 ```
 
-[hello-world]: https://github.com/async-rs/async-std/blob/master/examples/hello-world.rs
-[line-count]: https://github.com/async-rs/async-std/blob/master/examples/line-count.rs
-[list-dir]: https://github.com/async-rs/async-std/blob/master/examples/list-dir.rs
-[logging]: https://github.com/async-rs/async-std/blob/master/examples/logging.rs
-[print-file]: https://github.com/async-rs/async-std/blob/master/examples/print-file.rs
-[socket-timeouts]: https://github.com/async-rs/async-std/blob/master/examples/socket-timeouts.rs
-[stdin-echo]: https://github.com/async-rs/async-std/blob/master/examples/stdin-echo.rs
-[stdin-timeout]: https://github.com/async-rs/async-std/blob/master/examples/stdin-timeout.rs
-[surf-web]: https://github.com/async-rs/async-std/blob/master/examples/surf-web.rs
-[task-local]: https://github.com/async-rs/async-std/blob/master/examples/task-local.rs
-[task-name]: https://github.com/async-rs/async-std/blob/master/examples/task-name.rs
-[tcp-client]: https://github.com/async-rs/async-std/blob/master/examples/tcp-client.rs
-[tcp-echo]: https://github.com/async-rs/async-std/blob/master/examples/tcp-echo.rs
-[udp-client]: https://github.com/async-rs/async-std/blob/master/examples/udp-client.rs
-[udp-echo]: https://github.com/async-rs/async-std/blob/master/examples/udp-echo.rs
+[hello-world]: https://github.com/async-rs/async-std/blob/HEAD/examples/hello-world.rs
+[line-count]: https://github.com/async-rs/async-std/blob/HEAD/examples/line-count.rs
+[list-dir]: https://github.com/async-rs/async-std/blob/HEAD/examples/list-dir.rs
+[logging]: https://github.com/async-rs/async-std/blob/HEAD/examples/logging.rs
+[print-file]: https://github.com/async-rs/async-std/blob/HEAD/examples/print-file.rs
+[socket-timeouts]: https://github.com/async-rs/async-std/blob/HEAD/examples/socket-timeouts.rs
+[stdin-echo]: https://github.com/async-rs/async-std/blob/HEAD/examples/stdin-echo.rs
+[stdin-timeout]: https://github.com/async-rs/async-std/blob/HEAD/examples/stdin-timeout.rs
+[surf-web]: https://github.com/async-rs/async-std/blob/HEAD/examples/surf-web.rs
+[task-local]: https://github.com/async-rs/async-std/blob/HEAD/examples/task-local.rs
+[task-name]: https://github.com/async-rs/async-std/blob/HEAD/examples/task-name.rs
+[tcp-client]: https://github.com/async-rs/async-std/blob/HEAD/examples/tcp-client.rs
+[tcp-echo]: https://github.com/async-rs/async-std/blob/HEAD/examples/tcp-echo.rs
+[udp-client]: https://github.com/async-rs/async-std/blob/HEAD/examples/udp-client.rs
+[udp-echo]: https://github.com/async-rs/async-std/blob/HEAD/examples/udp-echo.rs

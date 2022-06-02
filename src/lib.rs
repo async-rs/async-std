@@ -56,7 +56,7 @@
 //! * [The async-std website](https://async.rs/)
 //! * [The async-std book](https://book.async.rs)
 //! * [GitHub repository](https://github.com/async-rs/async-std)
-//! * [List of code examples](https://github.com/async-rs/async-std/tree/master/examples)
+//! * [List of code examples](https://github.com/async-rs/async-std/tree/HEAD/examples)
 //! * [Discord chat](https://discord.gg/JvZeVNe)
 //!
 //! # What is in the `async-std` documentation?

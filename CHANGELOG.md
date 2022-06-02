@@ -419,7 +419,7 @@ assert_eq!(right, [2, 4]);
 
 ## Changed
 
-- Enabled CI on master branch.
+- Enabled CI.
 - `Future::join` and `Future::try_join` can now join futures with different
   output types.
 

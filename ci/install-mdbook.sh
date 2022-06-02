@@ -1,7 +1,7 @@
 set -euxo pipefail
 
 # Based on the Rust-Embedded WG's book CI
-# https://github.com/rust-embedded/book/blob/master/ci/install.sh
+# https://github.com/rust-embedded/book/blob/HEAD/ci/install.sh
 
 main() {
     # Note - this will only accept releases tagged with v0.3.x
