@@ -11,11 +11,9 @@ edition = "2018"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/async-rs/async-std"
 homepage = "https://async.rs"
-documentation = "https://docs.rs/async-std"
 description = "Async version of the Rust standard library"
 keywords = ["async", "await", "future", "std", "task"]
 categories = ["asynchronous", "concurrency", "network-programming"]
-readme = "README.md"
 
 [package.metadata.docs.rs]
 features = ["docs"]
