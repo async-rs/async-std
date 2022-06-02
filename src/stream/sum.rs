@@ -27,8 +27,8 @@ use crate::stream::stream::StreamExt;
 use core::num::Wrapping;
 use core::ops::Add;
 
-macro_rules! integer_sum {
-    (@impls $zero: expr, $($a:ty)*) => ($(
+macro_rules! num_sum {
+    ($zero:expr, $($a:ty)*) => ($(
         impl Sum for $a {
             fn sum<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'a>>
             where
@@ -46,32 +46,18 @@ macro_rules! integer_sum {
             }
         }
     )*);
+}
+
+macro_rules! integer_sum {
     ($($a:ty)*) => (
-        integer_sum!(@impls 0, $($a)*);
-        integer_sum!(@impls Wrapping(0), $(Wrapping<$a>)*);
+        num_sum!(0, $($a)*);
+        num_sum!(Wrapping(0), $(Wrapping<$a>)*);
     );
 }
 
 macro_rules! float_sum {
-    ($($a:ty)*) => ($(
-        impl Sum for $a {
-            fn sum<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self> + 'a>>
-                where S: Stream<Item = $a> + 'a,
-            {
-                Box::pin(async move { stream.fold(0.0, |a, b| a + b).await } )
-            }
-        }
-        impl<'a> Sum<&'a $a> for $a {
-            fn sum<'b, S>(stream: S) -> Pin<Box<dyn Future<Output = Self> + 'b>>
-                where S: Stream<Item = &'a $a> + 'b,
-            {
-                Box::pin(async move { stream.fold(0.0, |a, b| a + b).await } )
-            }
-        }
-    )*);
     ($($a:ty)*) => (
-        float_sum!(@impls 0.0, $($a)*);
-        float_sum!(@impls Wrapping(0.0), $(Wrapping<$a>)*);
+        num_sum!(0.0, $($a)*);
     );
 }
 

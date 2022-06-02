@@ -27,8 +27,8 @@ use core::ops::Mul;
 use core::num::Wrapping;
 use crate::stream::stream::StreamExt;
 
-macro_rules! integer_product {
-    (@impls $one: expr, $($a:ty)*) => ($(
+macro_rules! num_product {
+    ($one:expr, $($a:ty)*) => ($(
         impl Product for $a {
             fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'a>>
             where
@@ -46,32 +46,18 @@ macro_rules! integer_product {
             }
         }
     )*);
+}
+
+macro_rules! integer_product {
     ($($a:ty)*) => (
-        integer_product!(@impls 1, $($a)*);
-        integer_product!(@impls Wrapping(1), $(Wrapping<$a>)*);
+        num_product!(1, $($a)*);
+        num_product!(Wrapping(1), $(Wrapping<$a>)*);
     );
 }
 
 macro_rules! float_product {
-    ($($a:ty)*) => ($(
-        impl Product for $a {
-            fn product<'a, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'a>>
-                where S: Stream<Item = $a> + 'a,
-            {
-                Box::pin(async move { stream.fold(1.0, |a, b| a * b).await } )
-            }
-        }
-        impl<'a> Product<&'a $a> for $a {
-            fn product<'b, S>(stream: S) -> Pin<Box<dyn Future<Output = Self>+ 'b>>
-                where S: Stream<Item = &'a $a> + 'b,
-            {
-                Box::pin(async move { stream.fold(1.0, |a, b| a * b).await } )
-            }
-        }
-    )*);
     ($($a:ty)*) => (
-        float_product!($($a)*);
-        float_product!($(Wrapping<$a>)*);
+        num_product!(1.0, $($a)*);
     );
 }
 
