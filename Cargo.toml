@@ -76,7 +76,7 @@ pin-utils = { version = "0.1.0-alpha.4", optional = true }
 slab = { version = "0.4.2", optional = true }
 async-channel = { version = "1.5.1", optional = true }
 
-# Devdepencency, but they are not allowed to be optional :/
+# dev dependency, but they are not allowed to be optional :/
 surf = { version = "2.0.0", optional = true }
 
 
