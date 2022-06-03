@@ -2,7 +2,6 @@
 
 - [Introduction](./introduction.md)
   - [Welcome to `async-std`!](./overview/async-std.md)
-  - [`std::future` and `futures-rs`](./overview/std-and-library-futures.md)
   - [Stability guarantees](./overview/stability-guarantees.md)
 - [Async concepts using async-std](./concepts.md)
   - [Futures](./concepts/futures.md)
