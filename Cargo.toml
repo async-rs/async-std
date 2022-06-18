@@ -1,6 +1,6 @@
 [package]
 name = "async-std"
-version = "1.11.0"
+version = "1.12.0"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "Yoshua Wuyts <yoshuawuyts@gmail.com>",
