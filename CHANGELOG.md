@@ -5,13 +5,15 @@ All notable changes to async-std will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://book.async.rs/overview/stability-guarantees.html).
 
-# [Unreleased]
+# [1.12.0] - 2022-06-18
 
 ## Added
 - `std::task_spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
+- Add `TryFrom` implementations to convert `TcpListener`, `TcpStream`, `UdpSocket`, `UnixDatagram`, `UnixListener`, and `UnixStream` to their synchronous equivalents, including putting them back into blocking mode.
 
-## Removed
 ## Changed
+- async-std no longer depends on `num_cpus`; it uses functionality in the standard library instead (via `async-global-executor`).
+- Miscellaneous documentation fixes and cleanups.
 
 # [1.11.0] - 2022-03-22
 
