@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 # [1.12.0] - 2022-06-18
 
 ## Added
-- `std::task_spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
+- `std::task::spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
 - Add `TryFrom` implementations to convert `TcpListener`, `TcpStream`, `UdpSocket`, `UnixDatagram`, `UnixListener`, and `UnixStream` to their synchronous equivalents, including putting them back into blocking mode.
 
 ## Changed
