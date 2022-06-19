@@ -39,7 +39,7 @@ pub trait ToSocketAddrs {
     /// Note that this function may block a backend thread while resolution is performed.
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>>;
 }
 
 impl ToSocketAddrs for SocketAddr {
@@ -47,7 +47,7 @@ impl ToSocketAddrs for SocketAddr {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         Box::pin(future::ready(Ok(Some(*self).into_iter())))
     }
 }
@@ -57,7 +57,7 @@ impl ToSocketAddrs for SocketAddrV4 {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         Box::pin(future::ready(Ok(Some(SocketAddr::V4(*self)).into_iter())))
     }
 }
@@ -67,7 +67,7 @@ impl ToSocketAddrs for SocketAddrV6 {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         Box::pin(future::ready(Ok(Some(SocketAddr::V6(*self)).into_iter())))
     }
 }
@@ -77,7 +77,7 @@ impl ToSocketAddrs for (IpAddr, u16) {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         let (ip, port) = *self;
         match ip {
             IpAddr::V4(a) => Box::pin(future::ready(Ok(Some(SocketAddr::V4(SocketAddrV4::new(a, port))).into_iter()))),
@@ -91,7 +91,7 @@ impl ToSocketAddrs for (Ipv4Addr, u16) {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         let (ip, port) = *self;
         Box::pin(future::ready(Ok(Some(SocketAddr::V4(SocketAddrV4::new(ip, port))).into_iter())))
     }
@@ -102,7 +102,7 @@ impl ToSocketAddrs for (Ipv6Addr, u16) {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         let (ip, port) = *self;
         Box::pin(future::ready(Ok(Some(SocketAddr::V6(SocketAddrV6::new(ip, port, 0, 0))).into_iter())))
     }
@@ -113,7 +113,7 @@ impl ToSocketAddrs for (&str, u16) {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         let (host, port) = *self;
 
         if let Ok(addr) = host.parse::<Ipv4Addr>() {
@@ -142,7 +142,7 @@ impl ToSocketAddrs for str {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         if let Ok(addr) = self.parse() {
             return Box::pin(future::ready(Ok(vec![addr].into_iter())));
         }
@@ -162,7 +162,7 @@ impl<'b> ToSocketAddrs for &'b [SocketAddr] {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         Box::pin(future::ready(Ok(self.iter().cloned())))
     }
 }
@@ -172,7 +172,7 @@ impl<T: ToSocketAddrs + ?Sized> ToSocketAddrs for &T {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         (**self).to_socket_addrs()
     }
 }
@@ -182,7 +182,7 @@ impl ToSocketAddrs for String {
 
     fn to_socket_addrs<'a>(
         &'a self,
-    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = io::Result<Self::Iter>> + 'a + Send>> {
         (&**self).to_socket_addrs()
     }
 }
