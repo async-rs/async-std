@@ -275,7 +275,7 @@ cfg_std! {
     #[doc(inline)]
     pub use std::io::{Error, ErrorKind, IoSlice, IoSliceMut, Result, SeekFrom};
 
-    pub use buf_read::{BufRead, Lines, Split};
+    pub use buf_read::*;
     pub use buf_reader::BufReader;
     pub use buf_writer::{BufWriter, IntoInnerError};
     pub use copy::copy;
@@ -283,7 +283,7 @@ cfg_std! {
     pub use empty::{empty, Empty};
     pub use read::*;
     pub use repeat::{repeat, Repeat};
-    pub use seek::Seek;
+    pub use seek::*;
     pub use sink::{sink, Sink};
     pub use write::*;
 
