@@ -904,13 +904,13 @@ mod tests {
     }
 
     #[test]
-    fn async_file_create_error () {
+    fn async_file_create_error() {
         let file_name = Path::new("/tmp/does_not_exist/test");
         let expect = std::fs::File::create(file_name).unwrap_err();
 
         crate::task::block_on(async move {
             let actual = File::create(file_name).await.unwrap_err();
-            assert_eq!(format!("{}", expect), format!("{}", actual));     
+            assert_eq!(format!("{}", expect), format!("{}", actual));
         })
     }
 }
