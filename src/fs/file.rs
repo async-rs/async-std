@@ -918,4 +918,40 @@ mod tests {
             assert_eq!(format!("{}", expect), format!("{}", actual));
         })
     }
+
+    #[test]
+    fn file_eof_is_not_permanent() -> crate::io::Result<()> {
+        let tempdir = tempfile::Builder::new()
+            .prefix("async-std-file-eof-test")
+            .tempdir()?;
+        let path = tempdir.path().join("testfile");
+
+        crate::task::block_on(async {
+            let mut file_w = File::create(&path).await?;
+            let mut file_r = File::open(&path).await?;
+
+            file_w.write_all(b"data").await?;
+            file_w.flush().await?;
+
+            let mut buf = [0u8; 4];
+            let mut len = file_r.read(&mut buf).await?;
+            assert_eq!(len, 4);
+            assert_eq!(&buf, b"data");
+
+            len = file_r.read(&mut buf).await?;
+            assert_eq!(len, 0);
+
+            file_w.write_all(b"more").await?;
+            file_w.flush().await?;
+
+            len = file_r.read(&mut buf).await?;
+            assert_eq!(len, 4);
+            assert_eq!(&buf, b"more");
+
+            len = file_r.read(&mut buf).await?;
+            assert_eq!(len, 0);
+
+            Ok(())
+        })
+    }
 }
