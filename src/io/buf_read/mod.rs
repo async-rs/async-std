@@ -239,7 +239,7 @@ pub trait BufReadExt: BufRead {
 
 impl<T: BufRead + ?Sized> BufReadExt for T {}
 
-pub fn read_until_internal<R: BufReadExt + ?Sized>(
+pub(crate) fn read_until_internal<R: BufReadExt + ?Sized>(
     mut reader: Pin<&mut R>,
     cx: &mut Context<'_>,
     byte: u8,
