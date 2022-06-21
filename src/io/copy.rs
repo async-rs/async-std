@@ -7,6 +7,12 @@ use crate::io::{self, BufRead, BufReader, Read, Write};
 use crate::task::{Context, Poll};
 use crate::utils::Context as _;
 
+// Note: There are two otherwise-identical implementations of this
+// function because unstable has removed the `?Sized` bound for the
+// reader and writer and accepts `R` and `W` instead of `&mut R` and
+// `&mut W`. If making a change to either of the implementations,
+// ensure that you copy it into the other.
+
 /// Copies the entire contents of a reader into a writer.
 ///
 /// This function will continuously read data from `reader` and then
@@ -57,6 +63,7 @@ where
             #[pin]
             writer: W,
             amt: u64,
+            reader_eof: bool
         }
     }
 
@@ -69,11 +76,18 @@ where
 
         fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
             let mut this = self.project();
+
             loop {
-                let buffer = futures_core::ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                if buffer.is_empty() {
+                if *this.reader_eof {
                     futures_core::ready!(this.writer.as_mut().poll_flush(cx))?;
                     return Poll::Ready(Ok(*this.amt));
+                }
+
+                let buffer = futures_core::ready!(this.reader.as_mut().poll_fill_buf(cx))?;
+
+                if buffer.is_empty() {
+                    *this.reader_eof = true;
+                    continue;
                 }
 
                 let i = futures_core::ready!(this.writer.as_mut().poll_write(cx, buffer))?;
@@ -89,6 +103,7 @@ where
     let future = CopyFuture {
         reader: BufReader::new(reader),
         writer,
+        reader_eof: false,
         amt: 0,
     };
     future.await.context(|| String::from("io::copy failed"))
@@ -144,6 +159,7 @@ where
             #[pin]
             writer: W,
             amt: u64,
+            reader_eof: bool
         }
     }
 
@@ -156,11 +172,18 @@ where
 
         fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
             let mut this = self.project();
+
             loop {
-                let buffer = futures_core::ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                if buffer.is_empty() {
+                if *this.reader_eof {
                     futures_core::ready!(this.writer.as_mut().poll_flush(cx))?;
                     return Poll::Ready(Ok(*this.amt));
+                }
+
+                let buffer = futures_core::ready!(this.reader.as_mut().poll_fill_buf(cx))?;
+
+                if buffer.is_empty() {
+                    *this.reader_eof = true;
+                    continue;
                 }
 
                 let i = futures_core::ready!(this.writer.as_mut().poll_write(cx, buffer))?;
@@ -176,6 +199,7 @@ where
     let future = CopyFuture {
         reader: BufReader::new(reader),
         writer,
+        reader_eof: false,
         amt: 0,
     };
     future.await.context(|| String::from("io::copy failed"))
