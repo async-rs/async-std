@@ -1485,7 +1485,7 @@ pub trait StreamExt: Stream {
         the stream and ignore elements until it returns `false`.
 
         After `false` is returned, `SkipWhile`'s job is over and all further
-        elements in the strem are yielded.
+        elements in the stream are yielded.
 
         ## Examples
 

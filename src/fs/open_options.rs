@@ -136,7 +136,7 @@ impl OpenOptions {
     /// Configures the option for append mode.
     ///
     /// When set to `true`, this option means the file will be writable after opening and the file
-    /// cursor will be moved to the end of file before every write operaiton.
+    /// cursor will be moved to the end of file before every write operation.
     ///
     /// # Examples
     ///

@@ -61,7 +61,7 @@ deprecated `sync::channel` types, and introduces the `tokio1` feature.
 
 As part of our `1.8.0` release last month we introduced the new
 `async_std::channel` submodule and deprecated the unstable
-`async_std::sync::channel` types. You can read our full motiviation for this
+`async_std::sync::channel` types. You can read our full motivation for this
 change in the last patch notes. But the short version is that the old
 channels had some fundamental problems, and the `sync` submodule is a bit of
 a mess.

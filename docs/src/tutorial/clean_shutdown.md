@@ -245,7 +245,7 @@ async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
 Notice what happens with all of the channels once we exit the accept loop:
 
 1. First, we drop the main broker's sender.
-   That way when the readers are done, there's no sender for the broker's channel, and the chanel closes.
+   That way when the readers are done, there's no sender for the broker's channel, and the channel closes.
 2. Next, the broker exits `while let Some(event) = events.next().await` loop.
 3. It's crucial that, at this stage, we drop the `peers` map.
    This drops writer's senders.
