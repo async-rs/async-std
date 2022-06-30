@@ -670,14 +670,19 @@ impl LockGuard<State> {
 
         match self.mode {
             Mode::Idle => {}
+            Mode::Reading(0) if self.cache.is_empty() => {
+                // If the cache is empty in reading mode, the last operation didn't read any bytes,
+                // which indicates that it reached the end of the file. In this case we need to
+                // reset the mode to idle so that next time we try to read again, since the file
+                // may grow after the first EOF.
+                self.mode = Mode::Idle;
+                return Poll::Ready(Ok(0));
+            }
             Mode::Reading(start) => {
                 // How many bytes in the cache are available for reading.
                 let available = self.cache.len() - start;
 
-                // If there is cached unconsumed data or if the cache is empty, we can read from
-                // it. Empty cache in reading mode indicates that the last operation didn't read
-                // any bytes, i.e. it reached the end of the file.
-                if available > 0 || self.cache.is_empty() {
+                if available > 0 {
                     // Copy data from the cache into the buffer.
                     let n = cmp::min(available, buf.len());
                     buf[..n].copy_from_slice(&self.cache[start..(start + n)]);
