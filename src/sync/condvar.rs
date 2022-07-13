@@ -135,7 +135,7 @@ impl Condvar {
         }
     }
 
-    /// Blocks the current taks until this condition variable receives a notification and the
+    /// Blocks the current task until this condition variable receives a notification and the
     /// required condition is met. Spurious wakeups are ignored and this function will only
     /// return once the condition has been met.
     ///

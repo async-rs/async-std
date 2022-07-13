@@ -1,6 +1,6 @@
 # Security
 
-Writing a highly perfomant async core library is a task involving some instances of unsafe code.
+Writing a highly performant async core library is a task involving some instances of unsafe code.
 
 We take great care in vetting all unsafe code included in `async-std` and do follow generally accepted practices.
 

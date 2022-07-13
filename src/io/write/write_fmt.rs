@@ -18,7 +18,7 @@ impl<T: Write + Unpin + ?Sized> Future for WriteFmtFuture<'_, T> {
     type Output = io::Result<()>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        // Process the interal Result the first time we run.
+        // Process the internal Result the first time we run.
         if self.buffer.is_none() {
             match self.res.take().unwrap() {
                 Err(err) => return Poll::Ready(Err(err)),
