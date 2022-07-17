@@ -11,7 +11,6 @@ use crate::fs::{Metadata, Permissions};
 use crate::future;
 use crate::io::{self, Read, Seek, SeekFrom, Write};
 use crate::path::Path;
-use crate::prelude::*;
 use crate::task::{spawn_blocking, Context, Poll, Waker};
 use crate::utils::Context as _;
 
@@ -315,7 +314,7 @@ impl Drop for File {
         // non-blocking fashion, but our only other option here is losing data remaining in the
         // write cache. Good task schedulers should be resilient to occasional blocking hiccups in
         // file destructors so we don't expect this to be a common problem in practice.
-        let _ = futures_lite::future::block_on(self.flush());
+        (&*self.file).flush().ok();
     }
 }
 
@@ -883,6 +882,7 @@ impl LockGuard<State> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prelude::*;
 
     #[test]
     fn async_file_drop() {
