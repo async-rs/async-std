@@ -233,3 +233,25 @@ impl IntoRawFd for UnixListener {
         self.watcher.into_inner().unwrap().into_raw_fd()
     }
 }
+
+cfg_io_safety! {
+    use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+    impl AsFd for UnixListener {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            self.watcher.get_ref().as_fd()
+        }
+    }
+
+    impl From<OwnedFd> for UnixListener {
+        fn from(fd: OwnedFd) -> UnixListener {
+            std::net::TcpStream::from(fd).into()
+        }
+    }
+
+    impl From<UnixListener> for OwnedFd {
+        fn from(stream: UnixListener) -> OwnedFd {
+            stream.watcher.into_inner().unwrap().into()
+        }
+    }
+}

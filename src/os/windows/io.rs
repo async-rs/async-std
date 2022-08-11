@@ -5,6 +5,13 @@ cfg_not_docs! {
         AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle,
         AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket,
     };
+
+    cfg_io_safety! {
+        pub use std::os::windows::io::{
+            AsHandle, BorrowedHandle, OwnedHandle,
+            AsSocket, BorrowedSocket, OwnedSocket,
+        };
+    }
 }
 
 cfg_docs! {

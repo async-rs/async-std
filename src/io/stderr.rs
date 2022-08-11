@@ -180,6 +180,16 @@ cfg_unix! {
             std::io::stderr().as_raw_fd()
         }
     }
+
+    cfg_io_safety! {
+        use crate::os::unix::io::{AsFd, BorrowedFd};
+
+        impl AsFd for Stderr {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                std::io::stderr().as_fd()
+            }
+        }
+    }
 }
 
 cfg_windows! {
@@ -188,6 +198,16 @@ cfg_windows! {
     impl AsRawHandle for Stderr {
         fn as_raw_handle(&self) -> RawHandle {
             std::io::stderr().as_raw_handle()
+        }
+    }
+
+    cfg_io_safety! {
+        use crate::os::unix::io::{AsHandle, BorrowedHandle};
+
+        impl AsHandle for Stderr {
+            fn as_handle(&self) -> BorrowedHandle<'_> {
+                std::io::stderr().as_handle()
+            }
         }
     }
 }

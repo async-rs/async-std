@@ -415,6 +415,8 @@ impl From<std::fs::File> for File {
 cfg_unix! {
     use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
+    
+
     impl AsRawFd for File {
         fn as_raw_fd(&self) -> RawFd {
             self.file.as_raw_fd()
@@ -432,8 +434,34 @@ cfg_unix! {
             let file = self.file.clone();
             drop(self);
             Arc::try_unwrap(file)
-                .expect("cannot acquire ownership of the file handle after drop")
+                .expect(ARC_TRY_UNWRAP_EXPECT)
                 .into_raw_fd()
+        }
+    }
+
+    cfg_io_safety! {
+        use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+        impl AsFd for File {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.file.as_fd()
+            }
+        }
+
+        impl From<OwnedFd> for File {
+            fn from(fd: OwnedFd) -> Self {
+                std::fs::File::from(fd).into()
+            }
+        }
+
+        impl From<File> for OwnedFd {
+            fn from(val: File) -> OwnedFd {
+                let file = val.file.clone();
+                drop(val);
+                Arc::try_unwrap(file)
+                    .expect(ARC_TRY_UNWRAP_EXPECT)
+                    .into()
+            }
         }
     }
 }
@@ -458,8 +486,34 @@ cfg_windows! {
             let file = self.file.clone();
             drop(self);
             Arc::try_unwrap(file)
-                .expect("cannot acquire ownership of the file handle after drop")
+                .expect(ARC_TRY_UNWRAP_EXPECT)
                 .into_raw_handle()
+        }
+    }
+
+    cfg_io_safety! {
+        use crate::os::windows::io::{AsHandle, BorrowedHandle, OwnedHandle};
+
+        impl AsHandle for File {
+            fn as_handle(&self) -> BorrowedHandle<'_> {
+                self.file.as_handle()
+            }
+        }
+
+        impl From<OwnedHandle> for File {
+            fn from(handle: OwnedHandle) -> Self {
+                std::fs::File::from(handle).into()
+            }
+        }
+
+        impl From<File> for OwnedHandle {
+            fn from(val: File) -> OwnedHandle {
+                let file = val.file.clone();
+                drop(val);
+                Arc::try_unwrap(file)
+                    .expect(ARC_TRY_UNWRAP_EXPECT)
+                    .into()
+            }
         }
     }
 }
@@ -974,3 +1028,5 @@ mod tests {
         })
     }
 }
+
+const ARC_TRY_UNWRAP_EXPECT: &str = "cannot acquire ownership of the file handle after drop";

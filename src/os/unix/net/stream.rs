@@ -264,3 +264,25 @@ impl IntoRawFd for UnixStream {
         (*self.watcher).get_ref().try_clone().unwrap().into_raw_fd()
     }
 }
+
+cfg_io_safety! {
+    use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+    impl AsFd for UnixStream {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            self.watcher.get_ref().as_fd()
+        }
+    }
+
+    impl From<OwnedFd> for UnixStream {
+        fn from(fd: OwnedFd) -> UnixStream {
+            std::net::TcpStream::from(fd).into()
+        }
+    }
+
+    impl From<UnixStream> for OwnedFd {
+        fn from(stream: UnixStream) -> OwnedFd {
+            stream.watcher.into_inner().unwrap().into()
+        }
+    }
+}

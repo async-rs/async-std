@@ -58,6 +58,7 @@ alloc = [
 tokio1 = ["async-global-executor/tokio"]
 tokio02 = ["async-global-executor/tokio02"]
 tokio03 = ["async-global-executor/tokio03"]
+io_safety = []
 
 [dependencies]
 async-attributes = { version = "1.1.1", optional = true }

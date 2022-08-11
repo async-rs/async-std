@@ -340,3 +340,25 @@ impl IntoRawFd for UnixDatagram {
         self.watcher.into_inner().unwrap().into_raw_fd()
     }
 }
+
+cfg_io_safety! {
+    use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+    impl AsFd for UnixDatagram {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            self.watcher.get_ref().as_fd()
+        }
+    }
+
+    impl From<OwnedFd> for UnixDatagram {
+        fn from(fd: OwnedFd) -> UnixDatagram {
+            std::net::TcpStream::from(fd).into()
+        }
+    }
+
+    impl From<UnixDatagram> for OwnedFd {
+        fn from(stream: UnixDatagram) -> OwnedFd {
+            stream.watcher.into_inner().unwrap().into()
+        }
+    }
+}

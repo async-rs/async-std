@@ -108,6 +108,21 @@ jobs:
       with:
         command:  check
         args: --all --features tokio02
+ 
+  check_io_safety_feature:
+    name: Check io_safety feature
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+    - uses: actions/checkout@v3
+    - name: check io_safety
+      uses: actions-rs/cargo@v1
+      with:
+        command:  check
+        args: --all --features io_safety
+ 
 
   cross:
     name: Cross compile

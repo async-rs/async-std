@@ -2,6 +2,10 @@
 
 cfg_not_docs! {
     pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+    
+    cfg_io_safety! {
+        pub use std::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+    }
 }
 
 cfg_docs! {

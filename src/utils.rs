@@ -239,3 +239,15 @@ macro_rules! cfg_default {
         )*
     }
 }
+
+/// Declares items that use I/O safety.
+#[allow(unused_macros)]
+#[doc(hidden)]
+macro_rules! cfg_io_safety {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "io-safety")]
+            $item
+        )*
+    }
+}
