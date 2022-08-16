@@ -15,6 +15,8 @@ use crate::prelude::*;
 use crate::task::{spawn_blocking, Context, Poll, Waker};
 use crate::utils::Context as _;
 
+const ARC_TRY_UNWRAP_EXPECT: &str = "cannot acquire ownership of the file handle after drop";
+
 /// An open file on the filesystem.
 ///
 /// Depending on what options the file was opened with, this type can be used for reading and/or
@@ -413,9 +415,7 @@ impl From<std::fs::File> for File {
 }
 
 cfg_unix! {
-    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-
-    
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};    
 
     impl AsRawFd for File {
         fn as_raw_fd(&self) -> RawFd {
@@ -1028,5 +1028,3 @@ mod tests {
         })
     }
 }
-
-const ARC_TRY_UNWRAP_EXPECT: &str = "cannot acquire ownership of the file handle after drop";
