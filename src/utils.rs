@@ -84,7 +84,13 @@ mod timer {
 
     impl Timer {
         pub(crate) fn after(dur: std::time::Duration) -> Self {
-            Timer(TimeoutFuture::new(dur.as_millis() as u32))
+            // Round up to the nearest millisecond.
+            let mut timeout_ms = dur.as_millis() as u32;
+            if std::time::Duration::from_millis(timeout_ms as u64) < dur {
+                timeout_ms += 1;
+            }
+
+            Timer(TimeoutFuture::new(timeout_ms))
         }
     }
 
