@@ -517,14 +517,16 @@ impl<T> Lock<T> {
         }
 
         // The lock was successfully acquired.
-        Poll::Ready(LockGuard(self.0.clone()))
+        Poll::Ready(LockGuard(Some(self.0.clone())))
     }
 }
 
 /// A lock guard.
 ///
 /// When dropped, ownership of the inner value is returned back to the lock.
-struct LockGuard<T>(Arc<LockState<T>>);
+/// The inner value is always Some, except when the lock is dropped, where we
+/// set it to None. See comment in drop().
+struct LockGuard<T>(Option<Arc<LockState<T>>>);
 
 unsafe impl<T: Send> Send for LockGuard<T> {}
 unsafe impl<T: Sync> Sync for LockGuard<T> {}
@@ -534,7 +536,7 @@ impl<T> LockGuard<T> {
     ///
     /// When this lock guard gets dropped, all registered tasks will be woken up.
     fn register(&self, cx: &Context<'_>) {
-        let mut list = self.0.wakers.lock().unwrap();
+        let mut list = self.0.as_ref().unwrap().wakers.lock().unwrap();
 
         if list.iter().all(|w| !w.will_wake(cx.waker())) {
             list.push(cx.waker().clone());
@@ -544,11 +546,22 @@ impl<T> LockGuard<T> {
 
 impl<T> Drop for LockGuard<T> {
     fn drop(&mut self) {
+        // Set the Option to None and take its value so we can drop the Arc
+        // before we wake up the tasks.
+        let lock = self.0.take().unwrap();
+
+        // Prepare to wake up all registered tasks interested in acquiring the lock.
+        let wakers: Vec<_> = lock.wakers.lock().unwrap().drain(..).collect();
+
         // Release the lock.
-        self.0.locked.store(false, Ordering::Release);
+        lock.locked.store(false, Ordering::Release);
+
+        // Drop the Arc _before_ waking up the tasks, to avoid races. See
+        // reproducer and discussion in https://github.com/async-rs/async-std/issues/1001.
+        drop(lock);
 
         // Wake up all registered tasks interested in acquiring the lock.
-        for w in self.0.wakers.lock().unwrap().drain(..) {
+        for w in wakers {
             w.wake();
         }
     }
@@ -558,13 +571,19 @@ impl<T> Deref for LockGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { &*self.0.value.get() }
+        // SAFETY: Safe because the lock is held when this method is called. And
+        // the inner value is always Some since it is only set to None in
+        // drop().
+        unsafe { &*self.0.as_ref().unwrap().value.get() }
     }
 }
 
 impl<T> DerefMut for LockGuard<T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.0.value.get() }
+        // SAFETY: Safe because the lock is held when this method is called. And
+        // the inner value is always Some since it is only set to None in
+        // drop().
+        unsafe { &mut *self.0.as_ref().unwrap().value.get() }
     }
 }
 
