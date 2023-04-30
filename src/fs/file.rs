@@ -415,7 +415,16 @@ impl From<std::fs::File> for File {
 }
 
 cfg_unix! {
-    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};    
+    use crate::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+
+    impl File {
+        fn into_std_file(self) -> std::fs::File {
+            let file = self.file.clone();
+            drop(self);
+            Arc::try_unwrap(file)
+                .expect(ARC_TRY_UNWRAP_EXPECT)
+        }
+    }
 
     impl AsRawFd for File {
         fn as_raw_fd(&self) -> RawFd {
@@ -431,11 +440,7 @@ cfg_unix! {
 
     impl IntoRawFd for File {
         fn into_raw_fd(self) -> RawFd {
-            let file = self.file.clone();
-            drop(self);
-            Arc::try_unwrap(file)
-                .expect(ARC_TRY_UNWRAP_EXPECT)
-                .into_raw_fd()
+            self.into_std_file().into_raw_fd()
         }
     }
 
@@ -456,11 +461,7 @@ cfg_unix! {
 
         impl From<File> for OwnedFd {
             fn from(val: File) -> OwnedFd {
-                let file = val.file.clone();
-                drop(val);
-                Arc::try_unwrap(file)
-                    .expect(ARC_TRY_UNWRAP_EXPECT)
-                    .into()
+                self.into_std_file()
             }
         }
     }
