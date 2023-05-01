@@ -5,6 +5,13 @@ cfg_not_docs! {
         AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle,
         AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket,
     };
+
+    cfg_io_safety! {
+        pub use std::os::windows::io::{
+            AsHandle, BorrowedHandle, OwnedHandle,
+            AsSocket, BorrowedSocket, OwnedSocket,
+        };
+    }
 }
 
 cfg_docs! {
@@ -74,5 +81,13 @@ cfg_docs! {
         /// caller. Callers are then the unique owners of the socket and must close
         /// it once it's no longer needed.
         fn into_raw_socket(self) -> RawSocket;
+    }
+
+    cfg_io_safety! {
+        #[doc(inline)]
+        pub use std::os::windows::io::{
+            AsHandle, BorrowedHandle, OwnedHandle,
+            AsSocket, BorrowedSocket, OwnedSocket,
+        };
     }
 }

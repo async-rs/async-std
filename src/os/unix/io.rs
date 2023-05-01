@@ -2,6 +2,10 @@
 
 cfg_not_docs! {
     pub use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+    
+    cfg_io_safety! {
+        pub use std::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+    }
 }
 
 cfg_docs! {
@@ -50,5 +54,10 @@ cfg_docs! {
         /// to the caller. Callers are then the unique owners of the file descriptor
         /// and must close the descriptor once it's no longer needed.
         fn into_raw_fd(self) -> RawFd;
+    }
+
+    cfg_io_safety! {
+        #[doc(inline)]
+        pub use std::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
     }
 }

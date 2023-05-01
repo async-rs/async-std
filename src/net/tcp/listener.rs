@@ -282,6 +282,28 @@ cfg_unix! {
             self.watcher.into_inner().unwrap().into_raw_fd()
         }
     }
+
+    cfg_io_safety! {
+        use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+        impl AsFd for TcpListener {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.watcher.get_ref().as_fd()
+            }
+        }
+
+        impl From<OwnedFd> for TcpListener {
+            fn from(fd: OwnedFd) -> TcpListener {
+                std::net::TcpListener::from(fd).into()
+            }
+        }
+
+        impl From<TcpListener> for OwnedFd {
+            fn from(listener: TcpListener) -> OwnedFd {
+                listener.watcher.into_inner().unwrap().into()
+            }
+        }
+    }
 }
 
 cfg_windows! {
@@ -304,6 +326,28 @@ cfg_windows! {
     impl IntoRawSocket for TcpListener {
         fn into_raw_socket(self) -> RawSocket {
             self.watcher.into_inner().unwrap().into_raw_socket()
+        }
+    }
+
+    cfg_io_safety! {
+        use crate::os::windows::io::{AsSocket, BorrowedSocket, OwnedSocket};
+
+        impl AsSocket for TcpListener {
+            fn as_socket(&self) -> BorrowedSocket<'_> {
+                self.watcher.get_ref().as_socket()
+            }
+        }
+
+        impl From<OwnedSocket> for TcpListener {
+            fn from(fd: OwnedSocket) -> TcpListener {
+                std::net::TcpListener::from(fd).into()
+            }
+        }
+
+        impl From<TcpListener> for OwnedSocket {
+            fn from(listener: TcpListener) -> OwnedSocket {
+                listener.watcher.into_inner().unwrap().into()
+            }
         }
     }
 }

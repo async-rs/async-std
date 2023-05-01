@@ -416,6 +416,28 @@ cfg_unix! {
             self.as_raw_fd()
         }
     }
+
+    cfg_io_safety! {
+        use crate::os::unix::io::{AsFd, BorrowedFd, OwnedFd};
+
+        impl AsFd for TcpStream {
+            fn as_fd(&self) -> BorrowedFd<'_> {
+                self.watcher.get_ref().as_fd()
+            }
+        }
+
+        impl From<OwnedFd> for TcpStream {
+            fn from(fd: OwnedFd) -> TcpStream {
+                std::net::TcpStream::from(fd).into()
+            }
+        }
+
+        impl From<TcpStream> for OwnedFd {
+            fn from(stream: TcpStream) -> OwnedFd {
+                stream.watcher.into_inner().unwrap().into()
+            }
+        }
+    }
 }
 
 cfg_windows! {
@@ -441,6 +463,28 @@ cfg_windows! {
             // descriptor because it's possible that there are other clones of this `TcpStream`
             // using it at the same time. We should probably document that behavior.
             self.as_raw_socket()
+        }
+    }
+
+    cfg_io_safety! {
+        use crate::os::windows::io::{AsSocket, BorrowedSocket, OwnedSocket};
+
+        impl AsSocket for TcpStream {
+            fn as_socket(&self) -> BorrowedSocket<'_> {
+                self.watcher.get_ref().as_socket()
+            }
+        }
+
+        impl From<OwnedSocket> for TcpStream {
+            fn from(fd: OwnedSocket) -> TcpStream {
+                std::net::TcpListener::from(fd).into()
+            }
+        }
+
+        impl From<TcpStream> for OwnedSocket {
+            fn from(stream: TcpStream) -> OwnedSocket {
+                stream.watcher.into_inner().unwrap().into()
+            }
         }
     }
 }
