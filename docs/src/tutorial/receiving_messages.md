@@ -118,7 +118,7 @@ handle.await?
 The `.await` waits until the client finishes, and `?` propagates the result.
 
 There are two problems with this solution however!
-*First*, because we immediately await the client, we can only handle one client at time, and that completely defeats the purpose of async!
+*First*, because we immediately await the client, we can only handle one client at a time, and that completely defeats the purpose of async!
 *Second*, if a client encounters an IO error, the whole server immediately exits.
 That is, a flaky internet connection of one peer brings down the whole chat room!
 
