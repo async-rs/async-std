@@ -22,7 +22,7 @@ pin_project! {
 }
 
 impl<S, P> SkipWhile<S, P> {
-    pub(crate) fn new(stream: S, predicate: P) -> Self {
+    pub(crate) const fn new(stream: S, predicate: P) -> Self {
         Self {
             stream,
             predicate: Some(predicate),

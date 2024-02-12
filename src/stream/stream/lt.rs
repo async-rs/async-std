@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<L: Stream, R: Stream> Future for LtFuture<L, R>
+impl<L, R> Future for LtFuture<L, R>
 where
     L: Stream + Sized,
     R: Stream + Sized,

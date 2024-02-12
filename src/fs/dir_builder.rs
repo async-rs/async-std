@@ -36,7 +36,8 @@ impl DirBuilder {
     ///
     /// let builder = DirBuilder::new();
     /// ```
-    pub fn new() -> DirBuilder {
+    #[must_use]
+    pub const fn new() -> DirBuilder {
         #[cfg(not(unix))]
         let builder = DirBuilder { recursive: false };
 

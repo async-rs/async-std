@@ -80,7 +80,7 @@ enum State {
 
 impl ReadDir {
     /// Creates an asynchronous `ReadDir` from a synchronous handle.
-    pub(crate) fn new(inner: std::fs::ReadDir) -> ReadDir {
+    pub(crate) const fn new(inner: std::fs::ReadDir) -> ReadDir {
         ReadDir(State::Idle(Some(inner)))
     }
 }

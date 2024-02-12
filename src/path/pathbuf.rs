@@ -32,6 +32,7 @@ impl PathBuf {
     ///
     /// let path = PathBuf::new();
     /// ```
+    #[must_use]
     pub fn new() -> PathBuf {
         std::path::PathBuf::new().into()
     }
@@ -48,6 +49,7 @@ impl PathBuf {
     /// let p = PathBuf::from("/test");
     /// assert_eq!(Path::new("/test"), p.as_path());
     /// ```
+    #[must_use]
     pub fn as_path(&self) -> &Path {
         self.inner.as_path().into()
     }
@@ -182,6 +184,7 @@ impl PathBuf {
     /// let p = PathBuf::from("/the/head");
     /// let os_str = p.into_os_string();
     /// ```
+    #[must_use]
     pub fn into_os_string(self) -> OsString {
         self.inner.into_os_string()
     }
@@ -190,6 +193,7 @@ impl PathBuf {
     ///
     /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
     /// [`Path`]: struct.Path.html
+    #[must_use]
     pub fn into_boxed_path(self) -> Box<Path> {
         let rw = Box::into_raw(self.inner.into_boxed_path()) as *mut Path;
         unsafe { Box::from_raw(rw) }
@@ -271,7 +275,7 @@ impl Deref for PathBuf {
 
 impl Borrow<Path> for PathBuf {
     fn borrow(&self) -> &Path {
-        self.deref()
+        &*self
     }
 }
 
@@ -364,9 +368,9 @@ impl From<std::path::PathBuf> for PathBuf {
     }
 }
 
-impl Into<std::path::PathBuf> for PathBuf {
-    fn into(self) -> std::path::PathBuf {
-        self.inner
+impl From<PathBuf> for std::path::PathBuf {
+    fn from(path_buf: PathBuf) -> std::path::PathBuf {
+        path_buf.inner
     }
 }
 

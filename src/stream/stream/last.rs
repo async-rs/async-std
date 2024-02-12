@@ -17,7 +17,7 @@ pin_project! {
 }
 
 impl<S, T> LastFuture<S, T> {
-    pub(crate) fn new(stream: S) -> Self {
+    pub(crate) const fn new(stream: S) -> Self {
         Self { stream, last: None }
     }
 }
