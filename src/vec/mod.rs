@@ -6,5 +6,6 @@
 mod extend;
 mod from_stream;
 
+#[allow(unused)]
 #[doc(inline)]
 pub use std::vec::Vec;

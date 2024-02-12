@@ -149,7 +149,7 @@ impl WakerSet {
     /// Returns `true` if at least one operation was notified.
     #[cold]
     fn notify(&self, n: Notify) -> bool {
-        let mut inner = &mut *self.lock();
+        let inner = &mut *self.lock();
         let mut notified = false;
 
         for (_, opt_waker) in inner.entries.iter_mut() {
