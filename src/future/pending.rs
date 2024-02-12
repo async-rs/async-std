@@ -1,6 +1,6 @@
-use std::future::Future;
-use std::marker::PhantomData;
-use std::pin::Pin;
+use core::future::Future;
+use core::marker::PhantomData;
+use core::pin::Pin;
 
 use crate::task::{Context, Poll};
 
@@ -24,14 +24,17 @@ use crate::task::{Context, Poll};
 /// #
 /// # })
 /// ```
-pub async fn pending<T>() -> T {
-    let fut = Pending {
+pub fn pending<T>() -> Pending<T> {
+    Pending {
         _marker: PhantomData,
-    };
-    fut.await
+    }
 }
 
-struct Pending<T> {
+/// This future is constructed by the [`pending`] function.
+///
+/// [`pending`]: fn.pending.html
+#[derive(Debug)]
+pub struct Pending<T> {
     _marker: PhantomData<T>,
 }
 
