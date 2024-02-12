@@ -41,8 +41,6 @@ use crate::utils::{timer_after, Timer};
 /// #
 /// # Ok(()) }) }
 /// ```
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 pub fn interval(dur: Duration) -> Interval {
     Interval {
         delay: timer_after(dur),
@@ -56,8 +54,6 @@ pub fn interval(dur: Duration) -> Interval {
 /// documentation for more.
 ///
 /// [`interval`]: fn.interval.html
-#[cfg(feature = "unstable")]
-#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 #[derive(Debug)]
 pub struct Interval {
     delay: Timer,
