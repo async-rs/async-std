@@ -113,7 +113,7 @@ using Rust's familiar stdlib API.
 
 ## Installation
 
-With [cargo-edit](https://github.com/killercup/cargo-edit) installed run:
+Run this in your projects folder:
 
 ```sh
 $ cargo add async-std
@@ -122,7 +122,7 @@ $ cargo add async-std
 We also provide a set of "unstable" features with async-std. See the [features
 documentation] on how to enable them.
 
-[cargo-add]: https://github.com/killercup/cargo-edit
+[cargo add]: https://doc.rust-lang.org/cargo/commands/cargo-add.html
 [features documentation]: https://docs.rs/async-std/#features
 
 ## Ecosystem
