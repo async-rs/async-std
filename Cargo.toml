@@ -8,7 +8,7 @@ authors = [
   "Contributors to async-std",
 ]
 edition = "2018"
-license = "Apache-2.0/MIT"
+license = "Apache-2.0 OR MIT"
 repository = "https://github.com/async-rs/async-std"
 homepage = "https://async.rs"
 description = "Async version of the Rust standard library"
