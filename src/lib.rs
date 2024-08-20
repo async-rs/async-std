@@ -284,8 +284,6 @@
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 
-extern crate alloc;
-
 #[macro_use]
 mod utils;
 

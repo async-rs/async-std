@@ -230,11 +230,13 @@ cfg_windows! {
     }
 
     cfg_io_safety! {
-        use crate::os::unix::io::{AsFd, BorrowedFd};
+        use crate::os::windows::io::{AsHandle, BorrowedHandle};
 
-        impl AsFd for Stdin {
-            fn as_fd(&self) -> BorrowedFd<'_> {
-                std::io::stdin().as_fd()
+        impl AsHandle for Stdin {
+            fn as_handle(&self) -> BorrowedHandle<'_> {
+                unsafe {
+                    BorrowedHandle::borrow_raw(std::io::stdin().as_raw_handle())
+                }
             }
         }
     }

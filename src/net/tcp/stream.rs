@@ -477,13 +477,13 @@ cfg_windows! {
 
         impl From<OwnedSocket> for TcpStream {
             fn from(fd: OwnedSocket) -> TcpStream {
-                std::net::TcpListener::from(fd).into()
+                std::net::TcpStream::from(fd).into()
             }
         }
 
         impl From<TcpStream> for OwnedSocket {
             fn from(stream: TcpStream) -> OwnedSocket {
-                stream.watcher.into_inner().unwrap().into()
+                stream.watcher.get_ref().try_clone().unwrap().into()
             }
         }
     }

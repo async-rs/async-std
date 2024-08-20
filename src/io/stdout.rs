@@ -204,11 +204,13 @@ cfg_windows! {
     }
 
     cfg_io_safety! {
-        use crate::os::unix::io::{AsHandle, BorrowedHandle};
+        use crate::os::windows::io::{AsHandle, BorrowedHandle};
 
         impl AsHandle for Stdout {
             fn as_handle(&self) -> BorrowedHandle<'_> {
-                std::io::stdout().as_handle()
+                unsafe {
+                    BorrowedHandle::borrow_raw(std::io::stdout().as_raw_handle())
+                }
             }
         }
     }

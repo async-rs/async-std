@@ -1,5 +1,3 @@
-use alloc::string::String;
-
 /// Calls a function and aborts if it panics.
 ///
 /// This is useful in unsafe code where we can't recover from panics.
@@ -55,6 +53,7 @@ pub fn random(n: u32) -> u32 {
 }
 
 /// Add additional context to errors
+#[cfg(feature = "std")]
 pub(crate) trait Context {
     fn context(self, message: impl Fn() -> String) -> Self;
 }
@@ -148,7 +147,7 @@ macro_rules! cfg_unstable_default {
     ($($item:item)*) => {
         $(
             #[cfg(all(feature = "default", feature = "unstable"))]
-            #[cfg_attr(feature = "docs", doc(unstable))]
+            #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
             $item
         )*
     }
@@ -161,7 +160,6 @@ macro_rules! cfg_unix {
     ($($item:item)*) => {
         $(
             #[cfg(any(unix, feature = "docs"))]
-            #[cfg_attr(feature = "docs", doc(cfg(unix)))]
             $item
         )*
     }
@@ -174,7 +172,6 @@ macro_rules! cfg_windows {
     ($($item:item)*) => {
         $(
             #[cfg(any(windows, feature = "docs"))]
-            #[cfg_attr(feature = "docs", doc(cfg(windows)))]
             $item
         )*
     }

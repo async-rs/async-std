@@ -27,6 +27,7 @@ pub use core::future::Future as Future;
 
     [`Future`]: ../future/trait.Future.html
 "#]
+#[cfg(any(feature = "std", feature = "docs"))]
 pub trait FutureExt: Future {
     /// Returns a Future that delays execution for a specified time.
     ///
@@ -284,5 +285,6 @@ pub trait FutureExt: Future {
     }
 }
 
+#[cfg(any(feature = "std", feature = "docs"))]
 impl<T: Future + ?Sized> FutureExt for T {}
 
