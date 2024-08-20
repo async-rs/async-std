@@ -42,7 +42,7 @@ pin_project! {
     ///
     /// This stream is constructed by [`successors`] function
     ///
-    /// [`successors`]: fn.succssors.html
+    /// [`successors`]: fn.successors.html
     #[cfg(feature = "unstable")]
     #[cfg_attr(feature = "docs", doc(cfg(unstable)))]
     #[derive(Debug)]
