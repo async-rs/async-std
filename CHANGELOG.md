@@ -686,9 +686,9 @@ use async_std::prelude::*;
 use async_std::task;
 
 task::spawn(async {
-    let x = fibonnacci(1000); // Do expensive work
+    let x = fibonacci(1000); // Do expensive work
     task::yield_now().await;  // Allow other tasks to run
-    x + fibonnacci(100)       // Do more work
+    x + fibonacci(100)       // Do more work
 })
 ```
 
