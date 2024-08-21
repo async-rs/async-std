@@ -114,7 +114,7 @@ pin_project! {
 /// # Ok(()) }) }
 ///```
 #[derive(Debug)]
-pub struct IntoInnerError<W>(W, crate::io::Error);
+pub struct IntoInnerError<W>(W, #[allow(dead_code)] crate::io::Error);
 
 impl<W: Write> BufWriter<W> {
     /// Creates a new `BufWriter` with a default buffer capacity. The default is currently 8 KB,

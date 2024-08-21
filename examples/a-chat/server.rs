@@ -96,6 +96,7 @@ async fn connection_writer_loop(
                 None => break,
             },
             void = shutdown.next().fuse() => match void {
+                #[allow(unreachable_patterns)]
                 Some(void) => match void {},
                 None => break,
             }

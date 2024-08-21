@@ -620,7 +620,7 @@ cfg_windows! {
 
         impl From<OwnedSocket> for UdpSocket {
             fn from(fd: OwnedSocket) -> UdpSocket {
-                std::net::TcpListener::from(fd).into()
+                std::net::UdpSocket::from(fd).into()
             }
         }
 

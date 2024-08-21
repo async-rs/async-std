@@ -165,7 +165,7 @@ impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
     }
 }
 
-#[cfg(all(test, default))]
+#[cfg(all(test, feature = "default", not(target_arch = "wasm32")))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

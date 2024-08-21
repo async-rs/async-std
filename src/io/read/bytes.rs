@@ -32,7 +32,7 @@ impl<T: Read + Unpin> Stream for Bytes<T> {
     }
 }
 
-#[cfg(all(test, default))]
+#[cfg(all(test, feature = "default", not(target_arch = "wasm32")))]
 mod tests {
     use crate::io;
     use crate::prelude::*;

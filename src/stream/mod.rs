@@ -34,12 +34,17 @@
 //! [`Stream`] looks like this:
 //!
 //! ```
+//! #![allow(dead_code)]
 //! # use async_std::task::{Context, Poll};
 //! # use std::pin::Pin;
-//! trait Stream {
+//! pub trait Stream {
 //!     type Item;
 //!     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
 //! }
+//! # impl Stream for () {
+//! #   type Item = ();
+//! #   fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> { Poll::Pending }
+//! # }
 //! ```
 //!
 //! A stream has a method, [`next`], which when called, returns an
