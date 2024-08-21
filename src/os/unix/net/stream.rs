@@ -276,13 +276,13 @@ cfg_io_safety! {
 
     impl From<OwnedFd> for UnixStream {
         fn from(fd: OwnedFd) -> UnixStream {
-            std::net::TcpStream::from(fd).into()
+            std::os::unix::net::UnixStream::from(fd).into()
         }
     }
 
     impl From<UnixStream> for OwnedFd {
         fn from(stream: UnixStream) -> OwnedFd {
-            stream.watcher.into_inner().unwrap().into()
+            stream.watcher.get_ref().try_clone().unwrap().into()
         }
     }
 }

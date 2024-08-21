@@ -186,7 +186,9 @@ cfg_unix! {
 
         impl AsFd for Stderr {
             fn as_fd(&self) -> BorrowedFd<'_> {
-                std::io::stderr().as_fd()
+                unsafe {
+                    BorrowedFd::borrow_raw(std::io::stderr().as_raw_fd())
+                }
             }
         }
     }

@@ -210,9 +210,11 @@ cfg_unix! {
     cfg_io_safety! {
         use crate::os::unix::io::{AsFd, BorrowedFd};
 
-        impl AsFd for Stderr {
+        impl AsFd for Stdin {
             fn as_fd(&self) -> BorrowedFd<'_> {
-                std::io::stdin().as_fd()
+                unsafe {
+                    BorrowedFd::borrow_raw(std::io::stdin().as_raw_fd())
+                }
             }
         }
     }

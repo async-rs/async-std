@@ -246,7 +246,7 @@ macro_rules! cfg_default {
 macro_rules! cfg_io_safety {
     ($($item:item)*) => {
         $(
-            #[cfg(feature = "io-safety")]
+            #[cfg(feature = "io_safety")]
             $item
         )*
     }

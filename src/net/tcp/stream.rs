@@ -434,7 +434,7 @@ cfg_unix! {
 
         impl From<TcpStream> for OwnedFd {
             fn from(stream: TcpStream) -> OwnedFd {
-                stream.watcher.into_inner().unwrap().into()
+                stream.watcher.get_ref().try_clone().unwrap().into()
             }
         }
     }

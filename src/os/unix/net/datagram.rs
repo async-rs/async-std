@@ -352,7 +352,7 @@ cfg_io_safety! {
 
     impl From<OwnedFd> for UnixDatagram {
         fn from(fd: OwnedFd) -> UnixDatagram {
-            std::net::TcpStream::from(fd).into()
+            StdUnixDatagram::from(fd).into()
         }
     }
 
