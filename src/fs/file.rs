@@ -461,7 +461,7 @@ cfg_unix! {
 
         impl From<File> for OwnedFd {
             fn from(val: File) -> OwnedFd {
-                self.into_std_file().into()
+                val.into_std_file().into()
             }
         }
     }

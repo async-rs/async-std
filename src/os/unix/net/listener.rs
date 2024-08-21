@@ -245,7 +245,7 @@ cfg_io_safety! {
 
     impl From<OwnedFd> for UnixListener {
         fn from(fd: OwnedFd) -> UnixListener {
-            std::net::TcpStream::from(fd).into()
+            std::os::unix::net::UnixListener::from(fd).into()
         }
     }
 

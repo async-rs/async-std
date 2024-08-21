@@ -574,7 +574,7 @@ cfg_unix! {
 
         impl From<OwnedFd> for UdpSocket {
             fn from(fd: OwnedFd) -> UdpSocket {
-                std::net::TcpStream::from(fd).into()
+                std::net::UdpSocket::from(fd).into()
             }
         }
 
