@@ -5,6 +5,15 @@ All notable changes to async-std will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://book.async.rs/overview/stability-guarantees.html).
 
+# [1.13.0] - 2024-09-06
+
+## Added
+- IO Safety traits implementations
+
+## Changed
+- Various dependencies updates
+- Export `BufReadExt` and `SeekExt` from `async_std::io`
+
 # [1.12.0] - 2022-06-18
 
 ## Added
