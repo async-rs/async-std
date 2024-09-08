@@ -95,9 +95,9 @@
 //!   at the same time: In multi-threaded scenarios, you can use two
 //!   kinds of primitives to deal with synchronization:
 //!   - [memory fences] to ensure memory accesses are made visible to
-//!   other CPUs in the right order.
+//!     other CPUs in the right order.
 //!   - [atomic operations] to ensure simultaneous access to the same
-//!   memory location doesn't lead to undefined behavior.
+//!     memory location doesn't lead to undefined behavior.
 //!
 //! [prefetching]: https://en.wikipedia.org/wiki/Cache_prefetching
 //! [compiler fences]: https://doc.rust-lang.org/std/sync/atomic/fn.compiler_fence.html

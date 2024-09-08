@@ -19,11 +19,9 @@ use crate::task::Builder;
 /// ```no_run
 /// use async_std::task;
 ///
-/// fn main() {
-///     task::block_on(async {
-///         println!("Hello, world!");
-///     })
-/// }
+/// task::block_on(async {
+///     println!("Hello, world!");
+/// })
 /// ```
 #[cfg(not(target_os = "unknown"))]
 pub fn block_on<F, T>(future: F) -> T
