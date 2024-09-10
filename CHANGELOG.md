@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://book.async.rs/overview
 # [1.12.0] - 2022-06-18
 
 ## Added
-- `std::task::spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
+- `async_std::task::spawn_blocking` is now stabilized. We consider it a fundamental API for bridging between blocking code and async code, and we widely use it within async-std's own implementation.
 - Add `TryFrom` implementations to convert `TcpListener`, `TcpStream`, `UdpSocket`, `UnixDatagram`, `UnixListener`, and `UnixStream` to their synchronous equivalents, including putting them back into blocking mode.
 
 ## Changed
@@ -307,7 +307,7 @@ Including improved performance, stability, and the addition of various
 - Fixed documentation for `UdpSocket::send` ([#671](https://github.com/async-rs/async-std/pull/671))
 - Fixed typo in stream documentation ([#650](https://github.com/async-rs/async-std/pull/650))
 - Fixed typo on `sync::JoinHandle` documentation ([#659](https://github.com/async-rs/async-std/pull/659))
-- Removed use of `std::error::Error::description` which failed CI ([#661](https://github.com/async-rs/async-std/pull/662))
+- Removed use of `std::error::Error::description` which failed CI ([#661](https://github.com/async-rs/async-std/pull/661))
 - Removed the use of rustfmt's unstable `format_code_in_doc_comments` option which failed CI ([#685](https://github.com/async-rs/async-std/pull/685))
 - Fixed a code typo in the `task::sleep` example ([#688](https://github.com/async-rs/async-std/pull/688))
 
