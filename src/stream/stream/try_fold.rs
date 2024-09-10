@@ -38,7 +38,7 @@ where
             match next {
                 Some(v) => {
                     let old = self.acc.take().unwrap();
-                    let new = (&mut self.f)(old, v);
+                    let new = (self.f)(old, v);
 
                     match new {
                         Ok(o) => self.acc = Some(o),

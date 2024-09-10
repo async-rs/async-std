@@ -46,6 +46,6 @@ impl<R: BufRead> Stream for Split<R> {
         if this.buf[this.buf.len() - 1] == *this.delim {
             this.buf.pop();
         }
-        Poll::Ready(Some(Ok(mem::replace(this.buf, vec![]))))
+        Poll::Ready(Some(Ok(mem::take(this.buf))))
     }
 }
