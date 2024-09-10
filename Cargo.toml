@@ -8,6 +8,7 @@ authors = [
   "Contributors to async-std",
 ]
 edition = "2018"
+rust-version = "1.63"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/async-rs/async-std"
 homepage = "https://async.rs"
