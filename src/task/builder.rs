@@ -154,7 +154,7 @@ impl Builder {
 
         thread_local! {
             /// Tracks the number of nested block_on calls.
-            static NUM_NESTED_BLOCKING: Cell<usize> = Cell::new(0);
+            static NUM_NESTED_BLOCKING: Cell<usize> = const { Cell::new(0) };
         }
 
         // Run the future as a task.

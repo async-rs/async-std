@@ -20,7 +20,7 @@ impl<T: Write + Unpin + ?Sized> Future for WriteAllFuture<'_, T> {
 
         while !buf.is_empty() {
             let n = futures_core::ready!(Pin::new(&mut **writer).poll_write(cx, buf))?;
-            let (_, rest) = mem::replace(buf, &[]).split_at(n);
+            let (_, rest) = mem::take(buf).split_at(n);
             *buf = rest;
 
             if n == 0 {

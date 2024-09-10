@@ -36,7 +36,7 @@ where
 
         match next {
             Some(v) => {
-                if (&mut self.predicate)(v) {
+                if (self.predicate)(v) {
                     Poll::Ready(Some(self.index))
                 } else {
                     cx.waker().wake_by_ref();

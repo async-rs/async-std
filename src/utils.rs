@@ -71,7 +71,7 @@ pub(crate) fn timer_after(dur: std::time::Duration) -> timer::Timer {
     Timer::after(dur)
 }
 
-#[cfg(any(all(target_arch = "wasm32", feature = "default"),))]
+#[cfg(all(target_arch = "wasm32", feature = "default"))]
 mod timer {
     use std::pin::Pin;
     use std::task::Poll;
