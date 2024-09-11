@@ -29,7 +29,7 @@ impl<T: BufRead + Unpin + ?Sized> Future for ReadLineFuture<'_, T> {
         let reader = Pin::new(reader);
 
         let ret = futures_core::ready!(read_until_internal(reader, cx, b'\n', bytes, read));
-        if str::from_utf8(&bytes).is_err() {
+        if str::from_utf8(bytes).is_err() {
             Poll::Ready(ret.and_then(|_| {
                 Err(io::Error::new(
                     io::ErrorKind::InvalidData,

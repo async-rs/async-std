@@ -261,7 +261,7 @@ impl Path {
     /// assert_eq!(ancestors.next(), None);
     /// ```
     pub fn ancestors(&self) -> Ancestors<'_> {
-        Ancestors { next: Some(&self) }
+        Ancestors { next: Some(self) }
     }
 
     /// Returns the final component of the `Path`, if there is one.
@@ -1011,7 +1011,7 @@ impl_cmp_os_str!(&'a Path, OsString);
 
 impl<'a> From<&'a std::path::Path> for &'a Path {
     fn from(path: &'a std::path::Path) -> &'a Path {
-        &Path::new(path.as_os_str())
+        Path::new(path.as_os_str())
     }
 }
 

@@ -33,7 +33,7 @@ where
             match item {
                 None => return Poll::Ready(Ok(())),
                 Some(v) => {
-                    let res = (&mut self.f)(v);
+                    let res = (self.f)(v);
                     if let Err(e) = res {
                         return Poll::Ready(Err(e));
                     }

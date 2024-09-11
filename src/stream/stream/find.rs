@@ -30,7 +30,7 @@ where
         let item = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
 
         match item {
-            Some(v) if (&mut self.p)(&v) => Poll::Ready(Some(v)),
+            Some(v) if (self.p)(&v) => Poll::Ready(Some(v)),
             Some(_) => {
                 cx.waker().wake_by_ref();
                 Poll::Pending
