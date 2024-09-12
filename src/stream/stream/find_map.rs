@@ -30,13 +30,13 @@ where
         let item = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
 
         match item {
-            Some(v) => match (&mut self.f)(v) {
-                Some(v) => Poll::Ready(Some(v)),
-                None => {
+            Some(v) => (&mut self.f)(v).map_or_else(
+                || {
                     cx.waker().wake_by_ref();
                     Poll::Pending
-                }
-            },
+                },
+                |v| Poll::Ready(Some(v)),
+            ),
             None => Poll::Ready(None),
         }
     }

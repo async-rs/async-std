@@ -22,7 +22,8 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-pub fn empty() -> Empty {
+#[must_use]
+pub const fn empty() -> Empty {
     Empty { _private: () }
 }
 

@@ -35,7 +35,7 @@ impl<L: Stream, R: Stream> CmpFuture<L, R> {
     }
 }
 
-impl<L: Stream, R: Stream> Future for CmpFuture<L, R>
+impl<L, R> Future for CmpFuture<L, R>
 where
     L: Stream + Sized,
     R: Stream<Item = L::Item> + Sized,

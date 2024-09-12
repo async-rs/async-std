@@ -67,7 +67,7 @@ where
         let this = self.project();
         match this.future.poll(cx) {
             Poll::Pending => {}
-            other => return other,
+            other @ Poll::Ready(..) => return other,
         }
 
         if this.timeout.poll(cx).is_ready() {

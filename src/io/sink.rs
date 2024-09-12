@@ -19,7 +19,8 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-pub fn sink() -> Sink {
+#[must_use]
+pub const fn sink() -> Sink {
     Sink { _private: () }
 }
 

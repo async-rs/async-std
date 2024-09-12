@@ -91,6 +91,7 @@ impl Path {
     /// let os_str = Path::new("foo.txt").as_os_str();
     /// assert_eq!(os_str, OsStr::new("foo.txt"));
     /// ```
+    #[must_use]
     pub fn as_os_str(&self) -> &OsStr {
         self.inner.as_os_str()
     }
@@ -111,6 +112,7 @@ impl Path {
     /// let path = Path::new("foo.txt");
     /// assert_eq!(path.to_str(), Some("foo.txt"));
     /// ```
+    #[must_use]
     pub fn to_str(&self) -> Option<&str> {
         self.inner.to_str()
     }
@@ -136,6 +138,7 @@ impl Path {
     ///
     /// Had `path` contained invalid unicode, the `to_string_lossy` call might
     /// have returned `"fo�.txt"`.
+    #[must_use]
     pub fn to_string_lossy(&self) -> Cow<'_, str> {
         self.inner.to_string_lossy()
     }
@@ -152,6 +155,7 @@ impl Path {
     /// let path_buf = Path::new("foo.txt").to_path_buf();
     /// assert_eq!(path_buf, PathBuf::from("foo.txt"));
     /// ```
+    #[must_use]
     pub fn to_path_buf(&self) -> PathBuf {
         PathBuf::from(self.inner.to_path_buf())
     }
@@ -174,6 +178,7 @@ impl Path {
     ///
     /// assert!(!Path::new("foo.txt").is_absolute());
     /// ```
+    #[must_use]
     pub fn is_absolute(&self) -> bool {
         self.inner.is_absolute()
     }
@@ -191,6 +196,7 @@ impl Path {
     ///
     /// assert!(Path::new("foo.txt").is_relative());
     /// ```
+    #[must_use]
     pub fn is_relative(&self) -> bool {
         self.inner.is_relative()
     }
@@ -211,6 +217,7 @@ impl Path {
     ///
     /// assert!(Path::new("/etc/passwd").has_root());
     /// ```
+    #[must_use]
     pub fn has_root(&self) -> bool {
         self.inner.has_root()
     }
@@ -234,6 +241,7 @@ impl Path {
     /// assert_eq!(grand_parent, Path::new("/"));
     /// assert_eq!(grand_parent.parent(), None);
     /// ```
+    #[must_use]
     pub fn parent(&self) -> Option<&Path> {
         self.inner.parent().map(|p| p.into())
     }
@@ -260,7 +268,8 @@ impl Path {
     /// assert_eq!(ancestors.next(), Some(Path::new("/").into()));
     /// assert_eq!(ancestors.next(), None);
     /// ```
-    pub fn ancestors(&self) -> Ancestors<'_> {
+    #[must_use]
+    pub const fn ancestors(&self) -> Ancestors<'_> {
         Ancestors { next: Some(&self) }
     }
 
@@ -287,6 +296,7 @@ impl Path {
     /// assert_eq!(None, Path::new("foo.txt/..").file_name());
     /// assert_eq!(None, Path::new("/").file_name());
     /// ```
+    #[must_use]
     pub fn file_name(&self) -> Option<&OsStr> {
         self.inner.file_name()
     }
@@ -387,6 +397,7 @@ impl Path {
     ///
     /// assert_eq!("foo", path.file_stem().unwrap());
     /// ```
+    #[must_use]
     pub fn file_stem(&self) -> Option<&OsStr> {
         self.inner.file_stem()
     }
@@ -412,6 +423,7 @@ impl Path {
     ///
     /// assert_eq!("rs", path.extension().unwrap());
     /// ```
+    #[must_use]
     pub fn extension(&self) -> Option<&OsStr> {
         self.inner.extension()
     }
@@ -510,6 +522,7 @@ impl Path {
     /// assert_eq!(components.next(), Some(Component::Normal(OsStr::new("foo.txt"))));
     /// assert_eq!(components.next(), None);
     /// ```
+    #[must_use]
     pub fn components(&self) -> Components<'_> {
         Components {
             inner: self.inner.components(),
@@ -538,6 +551,7 @@ impl Path {
     /// assert_eq!(it.next(), Some(OsStr::new("foo.txt")));
     /// assert_eq!(it.next(), None)
     /// ```
+    #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         Iter {
             inner: self.components(),
@@ -558,6 +572,7 @@ impl Path {
     ///
     /// println!("{}", path.display());
     /// ```
+    #[must_use]
     pub fn display(&self) -> Display<'_> {
         self.inner.display()
     }
@@ -719,7 +734,7 @@ impl Path {
     /// # See Also
     ///
     /// This is a convenience function that coerces errors to false. If you want to
-    /// check errors, call [fs::metadata].
+    /// check errors, call [`fs::metadata`].
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
     #[cfg(not(target_os = "unknown"))]
@@ -750,8 +765,8 @@ impl Path {
     /// # See Also
     ///
     /// This is a convenience function that coerces errors to false. If you want to
-    /// check errors, call [fs::metadata] and handle its Result. Then call
-    /// [fs::Metadata::is_file] if it was Ok.
+    /// check errors, call [`fs::metadata`] and handle its Result. Then call
+    /// [`fs::Metadata::is_file`] if it was Ok.
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
     /// [fs::Metadata::is_file]: ../fs/struct.Metadata.html#method.is_file
@@ -787,8 +802,8 @@ impl Path {
     /// # See Also
     ///
     /// This is a convenience function that coerces errors to false. If you want to
-    /// check errors, call [fs::metadata] and handle its Result. Then call
-    /// [fs::Metadata::is_dir] if it was Ok.
+    /// check errors, call [`fs::metadata`] and handle its Result. Then call
+    /// [`fs::Metadata::is_dir`] if it was Ok.
     ///
     /// [fs::metadata]: ../fs/fn.metadata.html
     /// [fs::Metadata::is_dir]: ../fs/struct.Metadata.html#method.is_dir
@@ -814,6 +829,7 @@ impl Path {
     /// let path: Box<Path> = Path::new("foo.txt").into();
     /// let path_buf = path.into_path_buf();
     /// ```
+    #[must_use]
     pub fn into_path_buf(self: Box<Path>) -> PathBuf {
         let rw = Box::into_raw(self) as *mut std::path::Path;
         let inner = unsafe { Box::from_raw(rw) };
@@ -1015,9 +1031,9 @@ impl<'a> From<&'a std::path::Path> for &'a Path {
     }
 }
 
-impl<'a> Into<&'a std::path::Path> for &'a Path {
-    fn into(self) -> &'a std::path::Path {
-        std::path::Path::new(&self.inner)
+impl<'a> From<&'a Path> for &'a std::path::Path {
+    fn from(path: &'a Path) -> &'a std::path::Path {
+        std::path::Path::new(&path.inner)
     }
 }
 

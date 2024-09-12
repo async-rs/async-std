@@ -23,7 +23,8 @@ use crate::task::{Context, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
-pub fn repeat(byte: u8) -> Repeat {
+#[must_use]
+pub const fn repeat(byte: u8) -> Repeat {
     Repeat { byte }
 }
 

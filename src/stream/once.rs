@@ -25,7 +25,7 @@ use crate::stream::DoubleEndedStream;
 /// #
 /// # })
 /// ```
-pub fn once<T>(t: T) -> Once<T> {
+pub const fn once<T>(t: T) -> Once<T> {
     Once { value: Some(t) }
 }
 

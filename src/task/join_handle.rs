@@ -46,7 +46,8 @@ impl<T> JoinHandle<T> {
     /// println!("id = {}", handle.task().id());
     /// #
     /// # })
-    pub fn task(&self) -> &Task {
+    #[must_use]
+    pub const fn task(&self) -> &Task {
         &self.task
     }
 

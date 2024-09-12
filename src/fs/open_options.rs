@@ -80,6 +80,7 @@ impl OpenOptions {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[must_use]
     pub fn new() -> OpenOptions {
         OpenOptions(std::fs::OpenOptions::new())
     }

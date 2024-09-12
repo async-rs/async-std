@@ -159,7 +159,7 @@
 //! can call `next()` on your stream, until it reaches `None`. Let's go over
 //! that next.
 //!
-//! # while let Loops and IntoStream
+//! # while let Loops and `IntoStream`
 //!
 //! Rust's `while let` loop syntax is an idiomatic way to iterate over streams. Here's a basic
 //! example of `while let`:

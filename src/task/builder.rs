@@ -17,12 +17,14 @@ pub struct Builder {
 impl Builder {
     /// Creates a new builder.
     #[inline]
-    pub fn new() -> Builder {
+    #[must_use]
+    pub const fn new() -> Builder {
         Builder { name: None }
     }
 
     /// Configures the name of the task.
     #[inline]
+    #[must_use]
     pub fn name(mut self, name: String) -> Builder {
         self.name = Some(name);
         self
