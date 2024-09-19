@@ -58,11 +58,12 @@ cfg_docs! {
     pub trait FromRawSocket {
         /// Creates a new I/O object from the given raw socket.
         ///
-        /// This function will consume ownership of the socket provided and it will be closed when the returned object goes out of scope.
+        /// This function will consume ownership of the socket provided and it will be closed when the returned object
+        /// goes out of scope.
         ///
-        /// This function is also unsafe as the primitives currently returned have the contract that they are the sole owner of the
-        /// file descriptor they are wrapping. Usage of this function could accidentally allow violating this contract which can cause
-        /// memory unsafety in code that relies on it being true.
+        /// This function is also unsafe as the primitives currently returned have the contract that they are the sole
+        /// owner of the file descriptor they are wrapping. Usage of this function could accidentally allow violating
+        /// this contract which can cause memory unsafety in code that relies on it being true.
         unsafe fn from_raw_socket(sock: RawSocket) -> Self;
     }
 

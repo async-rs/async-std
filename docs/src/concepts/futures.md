@@ -1,26 +1,50 @@
 # Futures
 
-A notable point about Rust is [*fearless concurrency*](https://blog.rust-lang.org/2015/04/10/Fearless-Concurrency.html). That is the notion that you should be empowered to do concurrent things, without giving up safety. Also, Rust being a low-level language, it's about fearless concurrency *without picking a specific implementation strategy*. This means we *must* abstract over the strategy, to allow choice *later*, if we want to have any way to share code between users of different strategies.
+A notable point about Rust is [*fearless concurrency*](https://blog.rust-lang.org/2015/04/10/Fearless-Concurrency.html).
+That is the notion that you should be empowered to do concurrent things, without giving up safety. Also, Rust being a
+low-level language, it's about fearless concurrency *without picking a specific implementation strategy*. This means we
+*must* abstract over the strategy, to allow choice *later*, if we want to have any way to share code between users of
+different strategies.
 
-Futures abstract over *computation*. They describe the "what", independent of the "where" and the "when". For that, they aim to break code into small, composable actions that can then be executed by a part of our system. Let's take a tour through what it means to compute things to find where we can abstract.
+Futures abstract over *computation*. They describe the "what", independent of the "where" and the "when". For that,
+they aim to break code into small, composable actions that can then be executed by a part of our system. Let's take a
+tour through what it means to compute things to find where we can abstract.
 
 ## Send and Sync
 
-Luckily, concurrent Rust already has two well-known and effective concepts abstracting over sharing between concurrent parts of a program: `Send` and `Sync`. Notably, both the `Send` and `Sync` traits abstract over *strategies* of concurrent work, compose neatly, and don't prescribe an implementation.
+Luckily, concurrent Rust already has two well-known and effective concepts abstracting over sharing between concurrent
+parts of a program: `Send` and `Sync`. Notably, both the `Send` and `Sync` traits abstract over *strategies* of
+concurrent work, compose neatly, and don't prescribe an implementation.
 
 As a quick summary:
 
-- `Send` abstracts over *passing data* in a computation to another concurrent computation (let's call it the receiver), losing access to it on the sender side. In many programming languages, this strategy is commonly implemented, but missing support from the language side, and expects you to enforce the "losing access" behaviour yourself. This is a regular source of bugs: senders keeping handles to sent things around and maybe even working with them after sending. Rust mitigates this problem by making this behaviour known. Types can be `Send` or not (by implementing the appropriate marker trait), allowing or disallowing sending them around, and the ownership and borrowing rules prevent subsequent access.
+- `Send` abstracts over *passing data* in a computation to another concurrent computation (let's call it the receiver),
+  losing access to it on the sender side. In many programming languages, this strategy is commonly implemented, but
+  missing support from the language side, and expects you to enforce the "losing access" behaviour yourself.
+  This is a regular source of bugs: senders keeping handles to sent things around and maybe even working with them
+  after sending. Rust mitigates this problem by making this behaviour known. Types can be `Send` or not
+  (by implementing the appropriate marker trait), allowing or disallowing sending them around, and the ownership and
+  borrowing rules prevent subsequent access.
 
-- `Sync` is about *sharing data* between two concurrent parts of a program. This is another common pattern: as writing to a memory location or reading while another party is writing is inherently unsafe, this access needs to be moderated through synchronisation.[^1] There are many common ways for two parties to agree on not using the same part in memory at the same time, for example mutexes and spinlocks. Again, Rust gives you the option of (safely!) not caring. Rust gives you the ability to express that something *needs* synchronisation while not being specific about the *how*.
+- `Sync` is about *sharing data* between two concurrent parts of a program. This is another common pattern: as writing
+  to a memory location or reading while another party is writing is inherently unsafe, this access needs to be
+  moderated through synchronisation.[^1] There are many common ways for two parties to agree on not using the same part
+  in memory at the same time, for example mutexes and spinlocks. Again, Rust gives you the option of (safely!) not
+  caring. Rust gives you the ability to express that something *needs* synchronisation while not being specific about
+  the *how*.
 
-Note how we avoided any word like *"thread"*, but instead opted for "computation". The full power of `Send` and `Sync` is that they relieve you of the burden of knowing *what* shares. At the point of implementation, you only need to know which method of sharing is appropriate for the type at hand. This keeps reasoning local and is not influenced by whatever implementation the user of that type later uses.
+Note how we avoided any word like *"thread"*, but instead opted for "computation". The full power of `Send` and `Sync`
+is that they relieve you of the burden of knowing *what* shares. At the point of implementation, you only need to know
+which method of sharing is appropriate for the type at hand. This keeps reasoning local and is not influenced by
+whatever implementation the user of that type later uses.
 
 `Send` and `Sync` can be composed in interesting fashions, but that's beyond the scope here. You can find examples in the [Rust Book][rust-book-sync].
 
 [rust-book-sync]: https://doc.rust-lang.org/stable/book/ch16-04-extensible-concurrency-sync-and-send.html
 
-To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs, their data sharing. It does so in a very lightweight fashion; the language itself only knows about the two markers `Send` and `Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
+To sum up: Rust gives us the ability to safely abstract over important properties of concurrent programs, their data
+sharing. It does so in a very lightweight fashion; the language itself only knows about the two markers `Send` and
+`Sync` and helps us a little by deriving them itself, when possible. The rest is a library concern.
 
 ## An easy view of computation
 
@@ -28,7 +52,9 @@ While computation is a subject to write a whole [book](https://computationbook.c
 
 ## Deferring computation
 
-As mentioned above, `Send` and `Sync` are about data. But programs are not only about data, they also talk about *computing* the data. And that's what [`Futures`][futures] do. We are going to have a close look at how that works in the next chapter. Let's look at what Futures allow us to express, in English. Futures go from this plan:
+As mentioned above, `Send` and `Sync` are about data. But programs are not only about data, they also talk about *computing*
+the data. And that's what [`Futures`][futures] do. We are going to have a close look at how that works in the next chapter.
+Let's look at what Futures allow us to express, in English. Futures go from this plan:
 
 - Do X
 - If X succeeded, do Y
@@ -73,7 +99,9 @@ fn read_file(path: &str) -> io::Result<String> {
 }
 ```
 
-Speaking in terms of time, we can only take action *before* calling the function or *after* the function returned. This is not desirable, as it takes from us the ability to do something *while* it runs. When working with parallel code, this would take from us the ability to start a parallel task while the first runs (because we gave away control).
+Speaking in terms of time, we can only take action *before* calling the function or *after* the function returned.
+This is not desirable, as it takes from us the ability to do something *while* it runs. When working with parallel
+code, this would take from us the ability to start a parallel task while the first runs (because we gave away control).
 
 This is the moment where we could reach for [threads](https://en.wikipedia.org/wiki/Thread_). But threads are a very specific concurrency primitive and we said that we are searching for an abstraction.
 
@@ -124,9 +152,17 @@ This `async` function sets up a deferred computation. When this function is call
 
 ## What does `.await` do?
 
-The `.await` postfix does exactly what it says on the tin: the moment you use it, the code will wait until the requested action (e.g. opening a file or reading all data in it) is finished. The `.await?` is not special, it's just the application of the `?` operator to the result of `.await`. So, what is gained over the initial code example? We're getting futures and then immediately waiting for them?
+The `.await` postfix does exactly what it says on the tin: the moment you use it, the code will wait until the
+requested action (e.g. opening a file or reading all data in it) is finished. The `.await?` is not special, it's just
+the application of the `?` operator to the result of `.await`. So, what is gained over the initial code example? We're
+getting futures and then immediately waiting for them?
 
-The `.await` points act as a marker. Here, the code will wait for a `Future` to produce its value. How will a future finish? You don't need to care! The marker allows the component (usually called the “runtime”) in charge of *executing* this piece of code to take care of all the other things it has to do while the computation finishes. It will come back to this point when the operation you are doing in the background is done. This is why this style of programming is also called *evented programming*. We are waiting for *things to happen* (e.g. a file to be opened) and then react (by starting to read).
+The `.await` points act as a marker. Here, the code will wait for a `Future` to produce its value. How will a future
+finish? You don't need to care! The marker allows the component (usually called the “runtime”) in charge of *executing*
+this piece of code to take care of all the other things it has to do while the computation finishes. It will come back
+to this point when the operation you are doing in the background is done. This is why this style of programming is also
+called *evented programming*. We are waiting for *things to happen* (e.g. a file to be opened) and then react
+(by starting to read).
 
 When executing 2 or more of these functions at the same time, our runtime system is then able to fill the wait time with handling *all the other events* currently going on.
 

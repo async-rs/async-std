@@ -4,7 +4,9 @@
 
 However, there are good reasons for that perception. Futures have three concepts at their base that seem to be a constant source of confusion: deferred computation, asynchronicity and independence of execution strategy.
 
-These concepts are not hard, but something many people are not used to. This base confusion is amplified by many implementations oriented on details. Most explanations of these implementations also target advanced users, and can be hard for beginners. We try to provide both easy-to-understand primitives and approachable overviews of the concepts.
+These concepts are not hard, but something many people are not used to. This base confusion is amplified by many
+implementations oriented on details. Most explanations of these implementations also target advanced users, and can
+be hard for beginners. We try to provide both easy-to-understand primitives and approachable overviews of the concepts.
 
 Futures are a concept that abstracts over how code is run. By themselves, they do nothing. This is a weird concept in an imperative language, where usually one thing happens after the other - right now.
 
