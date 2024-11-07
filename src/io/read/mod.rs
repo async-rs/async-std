@@ -13,7 +13,6 @@ use read_to_end::{read_to_end_internal, ReadToEndFuture};
 use read_to_string::ReadToStringFuture;
 use read_vectored::ReadVectoredFuture;
 
-use std::mem;
 
 use crate::io::IoSliceMut;
 
@@ -168,7 +167,7 @@ pub trait ReadExt: Read {
         let start_len = buf.len();
         ReadToStringFuture {
             reader: self,
-            bytes: unsafe { mem::replace(buf.as_mut_vec(), Vec::new()) },
+            bytes: unsafe { std::mem::take(buf.as_mut_vec()) },
             buf,
             start_len,
         }

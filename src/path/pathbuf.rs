@@ -364,9 +364,9 @@ impl From<std::path::PathBuf> for PathBuf {
     }
 }
 
-impl Into<std::path::PathBuf> for PathBuf {
-    fn into(self) -> std::path::PathBuf {
-        self.inner
+impl From<PathBuf> for std::path::PathBuf {
+    fn from(val: PathBuf) -> Self {
+        val.inner
     }
 }
 

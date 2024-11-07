@@ -12,7 +12,7 @@ pub struct PositionFuture<'a, S, P> {
     index: usize,
 }
 
-impl<'a, S, P> Unpin for PositionFuture<'a, S, P> {}
+impl<S, P> Unpin for PositionFuture<'_, S, P> {}
 
 impl<'a, S, P> PositionFuture<'a, S, P> {
     pub(super) fn new(stream: &'a mut S, predicate: P) -> Self {
@@ -24,7 +24,7 @@ impl<'a, S, P> PositionFuture<'a, S, P> {
     }
 }
 
-impl<'a, S, P> Future for PositionFuture<'a, S, P>
+impl<S, P> Future for PositionFuture<'_, S, P>
 where
     S: Stream + Unpin,
     P: FnMut(S::Item) -> bool,
@@ -36,7 +36,7 @@ where
 
         match next {
             Some(v) => {
-                if (&mut self.predicate)(v) {
+                if (self.predicate)(v) {
                     Poll::Ready(Some(self.index))
                 } else {
                     cx.waker().wake_by_ref();

@@ -22,7 +22,7 @@ impl TaskId {
         static COUNTER: AtomicUsize = AtomicUsize::new(1);
 
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        if id > usize::max_value() / 2 {
+        if id > usize::MAX / 2 {
             std::process::abort();
         }
         TaskId(id)
