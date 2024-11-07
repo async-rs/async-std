@@ -1,4 +1,3 @@
-use std::mem;
 use std::pin::Pin;
 
 use pin_project_lite::pin_project;
@@ -46,6 +45,6 @@ impl<R: BufRead> Stream for Split<R> {
         if this.buf[this.buf.len() - 1] == *this.delim {
             this.buf.pop();
         }
-        Poll::Ready(Some(Ok(mem::replace(this.buf, vec![]))))
+        Poll::Ready(Some(Ok(std::mem::take(this.buf))))
     }
 }
