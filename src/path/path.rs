@@ -1015,9 +1015,9 @@ impl<'a> From<&'a std::path::Path> for &'a Path {
     }
 }
 
-impl<'a> Into<&'a std::path::Path> for &'a Path {
-    fn into(self) -> &'a std::path::Path {
-        std::path::Path::new(&self.inner)
+impl<'a> From<&'a Path> for &'a std::path::Path {
+    fn from(val: &'a Path) -> Self {
+        std::path::Path::new(&val.inner)
     }
 }
 
