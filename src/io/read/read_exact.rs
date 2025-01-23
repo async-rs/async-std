@@ -20,7 +20,7 @@ impl<T: Read + Unpin + ?Sized> Future for ReadExactFuture<'_, T> {
 
         while !buf.is_empty() {
             let n = futures_core::ready!(Pin::new(&mut *reader).poll_read(cx, buf))?;
-            let (_, rest) = mem::replace(buf, &mut []).split_at_mut(n);
+            let (_, rest) = mem::take(buf).split_at_mut(n);
             *buf = rest;
 
             if n == 0 {

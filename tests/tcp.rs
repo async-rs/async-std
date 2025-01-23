@@ -60,7 +60,7 @@ fn smoke_std_stream_to_async_listener() -> io::Result<()> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let addr = listener.local_addr()?;
 
-        let mut std_stream = std::net::TcpStream::connect(&addr)?;
+        let mut std_stream = std::net::TcpStream::connect(addr)?;
         std_stream.write_all(THE_WINTERS_TALE)?;
 
         let mut buf = vec![0; 1024];

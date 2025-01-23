@@ -696,7 +696,7 @@ impl LockGuard<State> {
         // file. This call should not block because it doesn't touch the actual file on disk.
         if pos == SeekFrom::Current(0) {
             // Poll the internal file cursor.
-            let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+            let internal = (&*self.file).stream_position()?;
 
             // Factor in the difference caused by caching.
             let actual = match self.mode {
@@ -714,7 +714,7 @@ impl LockGuard<State> {
                 if let Some(new) = (start as i64).checked_add(diff) {
                     if 0 <= new && new <= self.cache.len() as i64 {
                         // Poll the internal file cursor.
-                        let internal = (&*self.file).seek(SeekFrom::Current(0))?;
+                        let internal = (&*self.file).stream_position()?;
 
                         // Adjust the current position in the read cache.
                         self.mode = Mode::Reading(new as usize);

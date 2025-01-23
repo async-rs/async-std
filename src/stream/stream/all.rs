@@ -37,7 +37,7 @@ where
 
         match next {
             Some(v) => {
-                let result = (&mut self.f)(v);
+                let result = (self.f)(v);
 
                 if result {
                     // don't forget to wake this task again to pull the next item from stream
