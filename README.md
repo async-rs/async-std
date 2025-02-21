@@ -1,39 +1,19 @@
-<h1 align="center">async-std</h1>
-<div align="center">
- <strong>
-   Async version of the Rust standard library
- </strong>
-</div>
+# `async-std` has been discontinued; use `smol` instead
 
-<br />
+We created `async-std` to demonstrate the value of making a library as close to
+`std` as possible, but async. We think that demonstration was successful, and
+we hope it will influence future design and development directions of async in
+`std`. However, in the meantime, the [`smol`](https://github.com/smol-rs/smol/)
+project came about and provided a great executor and libraries for asynchronous
+use in the Rust ecosystem. We think that resources would be better spent
+consolidating around `smol`, rather than continuing to provide occasional
+maintenance of `async-std`. As such, we recommend that all users of
+`async-std`, and all libraries built on `async-std`, switch to `smol` instead.
 
-<div align="center">
-   <!-- CI status -->
-  <a href="https://github.com/async-rs/async-std/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/async-rs/async-std/ci.yml?branch=main&style=flat-square"
-      alt="CI Status" />
-  </a>
-  <!-- Crates version -->
-  <a href="https://crates.io/crates/async-std">
-    <img src="https://img.shields.io/crates/v/async-std.svg?style=flat-square"
-    alt="Crates.io version" />
-  </a>
-  <!-- Downloads -->
-  <a href="https://crates.io/crates/async-std">
-    <img src="https://img.shields.io/crates/d/async-std.svg?style=flat-square"
-      alt="Download" />
-  </a>
-  <!-- docs.rs docs -->
-  <a href="https://docs.rs/async-std">
-    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
-      alt="docs.rs docs" />
-  </a>
+In addition to the `smol` project as a direct replacement, you may find other
+parts of the futures ecosystem useful, including `futures-concurrency`,
+`async-io`, `futures-lite`, and `async-compat`.
 
-  <a href="https://discord.gg/JvZeVNe">
-    <img src="https://img.shields.io/discord/598880689856970762.svg?logo=discord&style=flat-square"
-      alt="chat" />
-  </a>
-</div>
 
 <div align="center">
   <h3>
@@ -43,14 +23,6 @@
     <span> | </span>
     <a href="https://book.async.rs">
       Book
-    </a>
-    <span> | </span>
-    <a href="https://github.com/async-rs/async-std/releases">
-      Releases
-    </a>
-    <span> | </span>
-    <a href="https://async.rs/contribute">
-      Contributing
     </a>
   </h3>
 </div>
@@ -111,38 +83,6 @@ creation, with an adaptive lock-free executor, threadpool and network driver to
 create a smooth system that processes work at a high pace with low latency,
 using Rust's familiar stdlib API.
 
-## Installation
-
-Run this in your projects folder:
-
-```sh
-$ cargo add async-std
-```
-
-We also provide a set of "unstable" features with async-std. See the [features
-documentation] on how to enable them.
-
-[cargo add]: https://doc.rust-lang.org/cargo/commands/cargo-add.html
-[features documentation]: https://docs.rs/async-std/#features
-
-## Ecosystem
- 
- * [async-tls](https://crates.io/crates/async-tls) — Async TLS/SSL streams using **Rustls**. 
-  
- * [async-native-tls](https://crates.io/crates/async-native-tls) — **Native TLS** for Async. Native TLS for futures and async-std.
- 
- * [async-tungstenite](https://crates.io/crates/async-tungstenite) — Asynchronous **WebSockets** for async-std, tokio, gio and any std Futures runtime.
- 
- * [Tide](https://crates.io/crates/tide) — Serve the web. A modular **web framework** built around async/await.
-
- * [SQLx](https://crates.io/crates/sqlx) — The Rust **SQL** Toolkit. SQLx is a 100% safe Rust library for Postgres and MySQL with compile-time checked queries.
-
- * [Surf](https://crates.io/crates/surf) — Surf the web. Surf is a friendly **HTTP client** built for casual Rustaceans and veterans alike.
- 
- * [Xactor](https://crates.io/crates/xactor) — Xactor is a rust actors framework based on async-std.
- 
- * [async-graphql](https://crates.io/crates/async-graphql) — A GraphQL server library implemented in rust, with full support for async/await.
- 
 ## License
 
 <sup>

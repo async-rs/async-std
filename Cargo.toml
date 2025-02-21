@@ -1,6 +1,6 @@
 [package]
 name = "async-std"
-version = "1.13.0"
+version = "1.13.1"
 authors = [
   "Stjepan Glavina <stjepang@gmail.com>",
   "Yoshua Wuyts <yoshuawuyts@gmail.com>",
@@ -12,7 +12,7 @@ rust-version = "1.63"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/async-rs/async-std"
 homepage = "https://async.rs"
-description = "Async version of the Rust standard library"
+description = "Deprecated in favor of `smol` - Async version of the Rust standard library"
 keywords = ["async", "await", "future", "std", "task"]
 categories = ["asynchronous", "concurrency", "network-programming"]
 

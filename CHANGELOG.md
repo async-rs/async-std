@@ -5,6 +5,12 @@ All notable changes to async-std will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://book.async.rs/overview/stability-guarantees.html).
 
+# [1.13.1] - 2025-02-21
+
+`async-std` has officially been discontinued. We recommend that all users and
+libraries migrate to the excellent [`smol`](https://github.com/smol-rs/smol/)
+project.
+
 # [1.13.0] - 2024-09-06
 
 ## Added
