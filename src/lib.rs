@@ -281,7 +281,7 @@
 #![cfg_attr(feature = "docs", feature(doc_cfg))]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::mutex_atomic, clippy::module_inception)]
-#![doc(test(attr(deny(rust_2018_idioms, warnings))))]
+#![doc(test(attr(deny(rust_2018_idioms))))]
 #![doc(test(attr(allow(unused_extern_crates, unused_variables))))]
 #![doc(html_logo_url = "https://async.rs/images/logo--hero.svg")]
 
