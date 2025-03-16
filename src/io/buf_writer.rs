@@ -211,7 +211,7 @@ impl<W: Write> BufWriter<W> {
         self.project().inner
     }
 
-    /// Consumes BufWriter, returning the underlying writer
+    /// Consumes `BufWriter`, returning the underlying writer
     ///
     /// This method will not write leftover data, it will be lost.
     /// For method that will attempt to write before returning the writer see [`poll_into_inner`]
@@ -263,7 +263,7 @@ impl<W: Write> BufWriter<W> {
 
     /// Poll buffer flushing until completion
     ///
-    /// This is used in types that wrap around BufWrite, one such example: [`LineWriter`]
+    /// This is used in types that wrap around `BufWrite`, one such example: [`LineWriter`]
     ///
     /// [`LineWriter`]: struct.LineWriter.html
     fn poll_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {

@@ -25,7 +25,7 @@ impl Task {
 
     /// Gets the task's unique identifier.
     #[inline]
-    pub fn id(&self) -> TaskId {
+    #[must_use] pub const fn id(&self) -> TaskId {
         self.id
     }
 
@@ -34,6 +34,7 @@ impl Task {
     /// The name is configured by [`Builder::name`] before spawning.
     ///
     /// [`Builder::name`]: struct.Builder.html#method.name
+    #[must_use]
     pub fn name(&self) -> Option<&str> {
         self.name.as_ref().map(|s| s.as_str())
     }

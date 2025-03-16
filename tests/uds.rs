@@ -2,6 +2,7 @@
 
 use async_std::io;
 use async_std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
+use async_std::path::Path;
 use async_std::prelude::*;
 use async_std::task;
 
@@ -81,7 +82,7 @@ fn socket_ping_pong() {
     });
 
     let client_handle = std::thread::spawn(move || {
-        task::block_on(async { ping_pong_client(&sock_path, iter_cnt).await }).unwrap()
+        task::block_on(async { ping_pong_client(&sock_path.as_ref(), iter_cnt).await }).unwrap()
     });
 
     client_handle.join().unwrap();
@@ -102,10 +103,10 @@ async fn ping_pong_server(listener: UnixListener, iterations: u32) -> std::io::R
     Ok(())
 }
 
-async fn ping_pong_client(socket: &std::path::PathBuf, iterations: u32) -> std::io::Result<()> {
+async fn ping_pong_client(socket: &Path, iterations: u32) -> std::io::Result<()> {
     let mut buf = [0; 1024];
     for _ix in 0..iterations {
-        let mut socket = UnixStream::connect(&socket).await?;
+        let mut socket = UnixStream::connect(socket).await?;
         socket.write_all(&PING).await?;
         let n = async_std::io::timeout(TEST_TIMEOUT, socket.read(&mut buf[..])).await?;
         assert_eq!(&buf[..n], PONG);

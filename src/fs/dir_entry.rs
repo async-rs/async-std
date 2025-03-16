@@ -47,6 +47,7 @@ impl DirEntry {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[must_use]
     pub fn path(&self) -> PathBuf {
         self.0.path().into()
     }
@@ -147,6 +148,7 @@ impl DirEntry {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[must_use]
     pub fn file_name(&self) -> OsString {
         self.0.file_name()
     }

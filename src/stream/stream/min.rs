@@ -18,7 +18,7 @@ pin_project! {
 }
 
 impl<S, T> MinFuture<S, T> {
-    pub(super) fn new(stream: S) -> Self {
+    pub(super) const fn new(stream: S) -> Self {
         Self { stream, min: None }
     }
 }

@@ -21,7 +21,7 @@ use crate::path::Path;
 ///
 /// [`ancestors`]: struct.Path.html#method.ancestors
 /// [`Path`]: struct.Path.html
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Ancestors<'a> {
     pub(crate) next: Option<&'a Path>,
 }

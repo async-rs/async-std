@@ -17,7 +17,7 @@ pin_project! {
 }
 
 impl<S, F, B> FoldFuture<S, F, B> {
-    pub(super) fn new(stream: S, init: B, f: F) -> Self {
+    pub(super) const fn new(stream: S, init: B, f: F) -> Self {
         Self {
             stream,
             f,
