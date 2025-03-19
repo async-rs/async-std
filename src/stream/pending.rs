@@ -2,7 +2,11 @@ use core::marker::PhantomData;
 use core::pin::Pin;
 use core::task::{Context, Poll};
 
-use crate::stream::{DoubleEndedStream, ExactSizeStream, FusedStream, Stream};
+cfg_unstable! {
+    use crate::stream::{DoubleEndedStream, ExactSizeStream, FusedStream};
+}
+
+use crate::stream::Stream;
 
 /// A stream that never returns any items.
 ///
@@ -53,14 +57,20 @@ impl<T> Stream for Pending<T> {
     }
 }
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl<T> DoubleEndedStream for Pending<T> {
     fn poll_next_back(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<T>> {
         Poll::Pending
     }
 }
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl<T> FusedStream for Pending<T> {}
 
+#[cfg(feature = "unstable")]
+#[cfg_attr(feature = "docs", doc(cfg(unstable)))]
 impl<T> ExactSizeStream for Pending<T> {
     fn len(&self) -> usize {
         0
