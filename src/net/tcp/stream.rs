@@ -1,6 +1,7 @@
 use std::io::{IoSlice, IoSliceMut};
 use std::net::SocketAddr;
 use std::pin::Pin;
+use std::time::Duration;
 
 use async_io::Async;
 
@@ -94,6 +95,18 @@ impl TcpStream {
                 "could not resolve to any addresses",
             )
         }))
+    }
+
+    /// Opens a TCP connection to a remote host with a timeout.
+    ///
+    /// Unlike `connect`, `connect_timeout` takes a single `SocketAddr` since
+    /// timeout must be applied to individual addresses.
+    ///
+    /// It is an error to pass a zero `Duration` to this function.
+    pub async fn connect_timeout(addr: &SocketAddr, timeout: Duration) -> io::Result<TcpStream> {
+        let stream = io::timeout(timeout, async move { TcpStream::connect(addr).await }).await?;
+
+        Ok(stream)
     }
 
     /// Returns the local address that this stream is connected to.
@@ -253,6 +266,29 @@ impl TcpStream {
     /// ```
     pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
         self.watcher.get_ref().set_nodelay(nodelay)
+    }
+
+    /// Gets the value of the `SO_ERROR` option on this socket.
+    ///
+    /// This will retrieve the stored error in the underlying socket, clearing
+    /// the field in the process. This can be useful for checking errors between
+    /// calls.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::TcpStream;
+    ///
+    /// let stream = TcpStream::connect("127.0.0.1:8080").await
+    ///                        .expect("Couldn't connect to the server...");
+    /// stream.take_error().expect("No error was expected...");
+    ///
+    /// # Ok(()) }) }
+    /// ```
+    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+        self.watcher.get_ref().take_error()
     }
 
     /// Shuts down the read, write, or both halves of this connection.
