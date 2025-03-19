@@ -25,7 +25,9 @@ Please note that our SemVer guarantees don't extend to usage of those interfaces
 
 ## Minimum version policy
 
-The current tentative policy is that the minimum Rust version required to use this crate can be increased in minor version updates. For example, if `async-std` 1.0 requires Rust 1.37.0, then `async-std` 1.0.z for all values of z will also require Rust 1.37.0 or newer. However, `async-std` 1.y for y > 0 may require a newer minimum version of Rust.
+The current tentative policy is that the minimum Rust version required to use this crate can be increased in minor
+version updates. For example, if `async-std` 1.0 requires Rust 1.37.0, then `async-std` 1.0.z for all values of `z`
+will also require Rust 1.37.0 or newer. However, `async-std` 1.y for y > 0 may require a newer minimum version of Rust.
 
 In general, this crate will be conservative with respect to the minimum supported version of Rust. With `async/await` being a new feature though, we will track changes in a measured pace initially.
 

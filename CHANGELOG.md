@@ -136,11 +136,21 @@ change.
 
 # [1.8.0] - 2020-12-04
 
-This patch introduces `async_std::channel`, a new submodule for our async channels implementation. `channels` have been one of async-std's most requested features, and have existed as "unstable" for the past year. We've been cautious about stabilizing channels, and this caution turned out to be warranted: we realized our channels could hang indefinitely under certain circumstances, and people ended up expressing a need for unbounded channels.
+This patch introduces `async_std::channel`, a new submodule for our async channels implementation. `channels` have been
+one of async-std's most requested features, and have existed as "unstable" for the past year. We've been cautious about
+stabilizing channels, and this caution turned out to be warranted: we realized our channels could hang indefinitely
+under certain circumstances, and people ended up expressing a need for unbounded channels.
 
-So today we're introducing the new `async_std::channel` submodule which exports the `async-channel` crate, and we're marking the older unstable `async_std::sync::channel` API as "deprecated". This release includes both APIs, but we intend to stabilize `async_std::channel` and remove the older API in January. This should give dependent projects a month to upgrade, though we can extend that if it proves to be too short.
+So today we're introducing the new `async_std::channel` submodule which exports the `async-channel` crate, and we're
+marking the older unstable `async_std::sync::channel` API as "deprecated". This release includes both APIs, but we
+intend to stabilize `async_std::channel` and remove the older API in January. This should give dependent projects a
+month to upgrade, though we can extend that if it proves to be too short.
 
-The rationale for adding a new top-level `channel` submodule, rather than extending `sync` is that the `std::sync` and `async_std::sync` submodule are a bit of a mess, and the libs team [has been talking about splitting `std::sync` up]([https://github.com/rust-lang/rfcs/pull/2788#discussion_r339092478](https://github.com/rust-lang/rfcs/pull/2788#discussion_r339092478)) into separate modules. The stdlib has to guarantee it'll forever be backwards compatible, but `async-std` does not (we fully expect a 2.0 once we have async closures & traits). So we're experimenting with this change before `std` does, with the expectation that this change can serve as a data point when the libs team decides how to proceed in std.
+The rationale for adding a new top-level `channel` submodule, rather than extending `sync` is that the `std::sync` and
+`async_std::sync` submodule are a bit of a mess, and the libs team [has been talking about splitting `std::sync` up]([https://github.com/rust-lang/rfcs/pull/2788#discussion_r339092478](https://github.com/rust-lang/rfcs/pull/2788#discussion_r339092478))
+into separate modules. The stdlib has to guarantee it'll forever be backwards compatible, but `async-std` does not
+(we fully expect a 2.0 once we have async closures & traits). So we're experimenting with this change before `std`
+does, with the expectation that this change can serve as a data point when the libs team decides how to proceed in std.
 
 ### Added
 
