@@ -150,7 +150,7 @@ impl TcpListener {
         Incoming {
             incoming: Box::pin(self.watcher.incoming()),
         }
-    }    
+    }
 
     /// Turn this into a stream over the connections being received on this
     /// listener.
@@ -211,6 +211,48 @@ impl TcpListener {
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.watcher.get_ref().local_addr()
     }
+
+    /// Gets the value of the `IP_TTL` option for this socket.
+    ///
+    /// For more information about this option, see [`TcpListener::set_ttl`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use async_std::net::TcpListener;
+    ///
+    /// let listener = TcpListener::bind("127.0.0.1:80").await?;
+    /// listener.set_ttl(100).expect("could not set TTL");
+    /// assert_eq!(listener.ttl().unwrap_or(0), 100);
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn ttl(&self) -> io::Result<u32> {
+        self.watcher.get_ref().ttl()
+    }
+
+    /// Sets the value for the `IP_TTL` option on this socket.
+    ///
+    /// This value sets the time-to-live field that is used in every packet sent
+    /// from this socket.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> std::io::Result<()> { async_std::task::block_on(async {
+    /// #
+    /// use std::net::TcpListener;
+    ///
+    /// let listener = TcpListener::bind("127.0.0.1:80").unwrap();
+    /// listener.set_ttl(100).expect("could not set TTL");
+    /// #
+    /// # Ok(()) }) }
+    /// ```
+    pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
+        self.watcher.get_ref().set_ttl(ttl)
+    }
 }
 
 /// A stream of incoming TCP connections.
@@ -233,7 +275,11 @@ impl Stream for Incoming<'_> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let res = ready!(Pin::new(&mut self.incoming).poll_next(cx));
-        Poll::Ready(res.map(|res| res.map(|stream| TcpStream { watcher: Arc::new(stream) })))
+        Poll::Ready(res.map(|res| {
+            res.map(|stream| TcpStream {
+                watcher: Arc::new(stream),
+            })
+        }))
     }
 }
 
