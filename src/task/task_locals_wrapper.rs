@@ -6,7 +6,7 @@ use crate::utils::abort_on_panic;
 
 thread_local! {
     /// A pointer to the currently running task.
-    static CURRENT: Cell<*const TaskLocalsWrapper> = Cell::new(ptr::null_mut());
+    static CURRENT: Cell<*const TaskLocalsWrapper> = const { Cell::new(ptr::null_mut()) };
 }
 
 /// A wrapper to store task local data.

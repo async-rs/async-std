@@ -280,6 +280,6 @@ impl ToSocketAddrs for String {
         impl Future<Output = Self::Iter>,
         ToSocketAddrsFuture<Self::Iter>
     ) {
-        (&**self).to_socket_addrs()
+        (**self).to_socket_addrs()
     }
 }

@@ -19,7 +19,7 @@ impl<'a, S, F> FindMapFuture<'a, S, F> {
 
 impl<S: Unpin, F> Unpin for FindMapFuture<'_, S, F> {}
 
-impl<'a, S, B, F> Future for FindMapFuture<'a, S, F>
+impl<S, B, F> Future for FindMapFuture<'_, S, F>
 where
     S: Stream + Unpin + Sized,
     F: FnMut(S::Item) -> Option<B>,
@@ -30,7 +30,7 @@ where
         let item = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
 
         match item {
-            Some(v) => match (&mut self.f)(v) {
+            Some(v) => match (self.f)(v) {
                 Some(v) => Poll::Ready(Some(v)),
                 None => {
                     cx.waker().wake_by_ref();

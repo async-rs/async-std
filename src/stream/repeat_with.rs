@@ -78,7 +78,7 @@ where
     type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let item = (&mut self.f)();
+        let item = (self.f)();
         Poll::Ready(Some(item))
     }
 }

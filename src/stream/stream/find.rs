@@ -19,7 +19,7 @@ impl<'a, S, P> FindFuture<'a, S, P> {
 
 impl<S: Unpin, P> Unpin for FindFuture<'_, S, P> {}
 
-impl<'a, S, P> Future for FindFuture<'a, S, P>
+impl<S, P> Future for FindFuture<'_, S, P>
 where
     S: Stream + Unpin + Sized,
     P: FnMut(&S::Item) -> bool,
@@ -30,7 +30,7 @@ where
         let item = futures_core::ready!(Pin::new(&mut *self.stream).poll_next(cx));
 
         match item {
-            Some(v) if (&mut self.p)(&v) => Poll::Ready(Some(v)),
+            Some(v) if (self.p)(&v) => Poll::Ready(Some(v)),
             Some(_) => {
                 cx.waker().wake_by_ref();
                 Poll::Pending

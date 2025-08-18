@@ -12,7 +12,7 @@ pub struct TryFoldFuture<'a, S, F, T> {
     acc: Option<T>,
 }
 
-impl<'a, S, F, T> Unpin for TryFoldFuture<'a, S, F, T> {}
+impl<S, F, T> Unpin for TryFoldFuture<'_, S, F, T> {}
 
 impl<'a, S, F, T> TryFoldFuture<'a, S, F, T> {
     pub(super) fn new(stream: &'a mut S, init: T, f: F) -> Self {
@@ -24,7 +24,7 @@ impl<'a, S, F, T> TryFoldFuture<'a, S, F, T> {
     }
 }
 
-impl<'a, S, F, T, E> Future for TryFoldFuture<'a, S, F, T>
+impl<S, F, T, E> Future for TryFoldFuture<'_, S, F, T>
 where
     S: Stream + Unpin,
     F: FnMut(T, S::Item) -> Result<T, E>,
@@ -38,7 +38,7 @@ where
             match next {
                 Some(v) => {
                     let old = self.acc.take().unwrap();
-                    let new = (&mut self.f)(old, v);
+                    let new = (self.f)(old, v);
 
                     match new {
                         Ok(o) => self.acc = Some(o),

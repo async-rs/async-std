@@ -168,7 +168,7 @@ pub trait ReadExt: Read {
         let start_len = buf.len();
         ReadToStringFuture {
             reader: self,
-            bytes: unsafe { mem::replace(buf.as_mut_vec(), Vec::new()) },
+            bytes: unsafe { mem::take(buf.as_mut_vec()) },
             buf,
             start_len,
         }
