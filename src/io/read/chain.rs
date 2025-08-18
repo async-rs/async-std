@@ -63,7 +63,7 @@ impl<T, U> Chain<T, U> {
     /// #
     /// # Ok(()) }) }
     /// ```
-    pub fn get_ref(&self) -> (&T, &U) {
+    pub const fn get_ref(&self) -> (&T, &U) {
         (&self.first, &self.second)
     }
 
@@ -157,10 +157,10 @@ impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
 
     fn consume(self: Pin<&mut Self>, amt: usize) {
         let this = self.project();
-        if !*this.done_first {
-            this.first.consume(amt)
-        } else {
+        if *this.done_first {
             this.second.consume(amt)
+        } else {
+            this.first.consume(amt)
         }
     }
 }

@@ -1,6 +1,6 @@
+use std::future::Future;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::future::Future;
 
 use crate::io::{self, Write};
 use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
@@ -30,6 +30,7 @@ use crate::task::{spawn_blocking, Context, JoinHandle, Poll};
 /// #
 /// # Ok(()) }) }
 /// ```
+#[must_use]
 pub fn stdout() -> Stdout {
     Stdout(Mutex::new(State::Idle(Some(Inner {
         stdout: std::io::stdout(),
@@ -150,16 +151,15 @@ impl Write for Stdout {
                     // Check if the operation has completed.
                     if let Some(Operation::Flush(res)) = inner.last_op.take() {
                         return Poll::Ready(res);
-                    } else {
-                        let mut inner = opt.take().unwrap();
-
-                        // Start the operation asynchronously.
-                        *state = State::Busy(spawn_blocking(move || {
-                            let res = std::io::Write::flush(&mut inner.stdout);
-                            inner.last_op = Some(Operation::Flush(res));
-                            State::Idle(Some(inner))
-                        }));
                     }
+                    let mut inner = opt.take().unwrap();
+
+                    // Start the operation asynchronously.
+                    *state = State::Busy(spawn_blocking(move || {
+                        let res = std::io::Write::flush(&mut inner.stdout);
+                        inner.last_op = Some(Operation::Flush(res));
+                        State::Idle(Some(inner))
+                    }));
                 }
                 // Poll the asynchronous operation the stdout is currently blocked on.
                 State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),

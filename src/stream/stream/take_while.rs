@@ -22,7 +22,7 @@ pin_project! {
 }
 
 impl<S, P> TakeWhile<S, P> {
-    pub(super) fn new(stream: S, predicate: P) -> Self {
+    pub(super) const fn new(stream: S, predicate: P) -> Self {
         Self {
             stream,
             predicate,

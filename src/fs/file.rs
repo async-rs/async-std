@@ -949,6 +949,7 @@ impl LockGuard<State> {
 
     // This function does nothing because we're not sure about `AsyncWrite::poll_close()`'s exact
     // semantics nor whether it will stay in the `AsyncWrite` trait.
+    #[allow(clippy::unused_self)]
     fn poll_close(self, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
@@ -977,7 +978,8 @@ mod tests {
                     drop(clone);
                     buf.len()
                 })
-            }).await;
+            })
+            .await;
             assert_eq!(len as u64, file.metadata().await.unwrap().len());
         });
     }

@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<L: Stream, R: Stream> Future for GeFuture<L, R>
+impl<L, R> Future for GeFuture<L, R>
 where
     L: Stream,
     R: Stream,

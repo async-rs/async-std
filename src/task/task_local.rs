@@ -107,7 +107,7 @@ impl<T: Send + 'static> LocalKey<T> {
             let value: *const dyn Send = task.locals().get_or_insert(key, init);
 
             // Call the closure with the value passed as an argument.
-            f(&*(value as *const T))
+            f(&*value.cast::<T>())
         })
         .ok_or(AccessError { _private: () })
     }
@@ -176,7 +176,7 @@ pub(crate) struct LocalsMap {
 
 impl LocalsMap {
     /// Creates an empty map of task-locals.
-    pub fn new() -> LocalsMap {
+    pub const fn new() -> LocalsMap {
         LocalsMap {
             entries: UnsafeCell::new(Some(Vec::new())),
         }

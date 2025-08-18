@@ -127,6 +127,7 @@ impl UnixListener {
     /// #
     /// # Ok(()) }) }
     /// ```
+    #[must_use]
     pub fn incoming(&self) -> Incoming<'_> {
         Incoming {
             incoming: Box::pin(self.watcher.incoming()),

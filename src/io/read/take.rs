@@ -49,7 +49,7 @@ impl<T> Take<T> {
     /// #
     /// #     Ok(()) }) }
     /// ```
-    pub fn limit(&self) -> u64 {
+    pub const fn limit(&self) -> u64 {
         self.limit
     }
 
@@ -229,7 +229,7 @@ mod tests {
         let source: io::Cursor<Vec<u8>> = io::Cursor::new(vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
         task::block_on(async move {
-            let mut buffer = [0u8; 5];
+            let mut buffer = [0_u8; 5];
 
             // read at most five bytes
             let mut handle = source.take(5);

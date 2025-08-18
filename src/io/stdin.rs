@@ -32,6 +32,7 @@ use crate::utils::Context as _;
 /// #
 /// # Ok(()) }) }
 /// ```
+#[must_use]
 pub fn stdin() -> Stdin {
     Stdin(Mutex::new(State::Idle(Some(Inner {
         stdin: std::io::stdin(),
@@ -125,17 +126,16 @@ impl Stdin {
                             // Copy the read data into the buffer and return.
                             buf.push_str(&inner.line);
                             return Poll::Ready(Ok(n));
-                        } else {
-                            let mut inner = opt.take().unwrap();
-
-                            // Start the operation asynchronously.
-                            *state = State::Busy(spawn_blocking(move || {
-                                inner.line.clear();
-                                let res = inner.stdin.read_line(&mut inner.line);
-                                inner.last_op = Some(Operation::ReadLine(res));
-                                State::Idle(Some(inner))
-                            }));
                         }
+                        let mut inner = opt.take().unwrap();
+
+                        // Start the operation asynchronously.
+                        *state = State::Busy(spawn_blocking(move || {
+                            inner.line.clear();
+                            let res = inner.stdin.read_line(&mut inner.line);
+                            inner.last_op = Some(Operation::ReadLine(res));
+                            State::Idle(Some(inner))
+                        }));
                     }
                     // Poll the asynchronous operation the stdin is currently blocked on.
                     State::Busy(task) => *state = futures_core::ready!(Pin::new(task).poll(cx)),

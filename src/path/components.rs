@@ -42,6 +42,7 @@ impl<'a> Components<'a> {
     ///
     /// assert_eq!(Path::new("foo/bar.txt"), components.as_path());
     /// ```
+    #[must_use]
     pub fn as_path(&self) -> &'a Path {
         self.inner.as_path().into()
     }

@@ -392,7 +392,7 @@ mod tests {
     #[test]
     fn test_read_by_ref() {
         crate::task::block_on(async {
-            let mut f = io::Cursor::new(vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8]);
+            let mut f = io::Cursor::new(vec![0_u8, 1, 2, 3, 4, 5, 6, 7, 8]);
             let mut buffer = Vec::new();
             let mut other_buffer = Vec::new();
 

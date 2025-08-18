@@ -42,7 +42,7 @@ where
                 this.source.set(this.orig.clone());
                 this.source.poll_next(cx)
             }
-            item => Poll::Ready(item),
+            item @ Some(..) => Poll::Ready(item),
         }
     }
 }

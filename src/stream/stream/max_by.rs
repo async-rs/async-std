@@ -19,7 +19,7 @@ pin_project! {
 }
 
 impl<S, F, T> MaxByFuture<S, F, T> {
-    pub(super) fn new(stream: S, compare: F) -> Self {
+    pub(super) const fn new(stream: S, compare: F) -> Self {
         Self {
             stream,
             compare,

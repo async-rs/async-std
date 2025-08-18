@@ -22,7 +22,7 @@ pin_project! {
 }
 
 impl<S, St, F> Scan<S, St, F> {
-    pub(crate) fn new(stream: S, initial_state: St, f: F) -> Self {
+    pub(crate) const fn new(stream: S, initial_state: St, f: F) -> Self {
         Self {
             stream,
             state_f: (initial_state, f),

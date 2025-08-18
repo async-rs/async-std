@@ -49,7 +49,8 @@ fn smoke() {
         let lock = RwLock::new(());
         drop(lock.read().await);
         drop(lock.write().await);
-        drop((lock.read().await, lock.read().await));
+        drop(lock.read().await);
+        drop(lock.read().await);
         drop(lock.write().await);
     });
 }

@@ -18,7 +18,7 @@ pin_project! {
 }
 
 impl<S, T> MaxFuture<S, T> {
-    pub(super) fn new(stream: S) -> Self {
+    pub(super) const fn new(stream: S) -> Self {
         Self { stream, max: None }
     }
 }
