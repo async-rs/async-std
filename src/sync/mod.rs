@@ -178,7 +178,10 @@ pub use std::sync::{Arc, Weak};
 pub use async_lock::{Mutex, MutexGuard, MutexGuardArc};
 
 #[doc(inline)]
-pub use async_lock::{RwLock, RwLockReadGuard, RwLockUpgradableReadGuard, RwLockWriteGuard};
+pub use async_lock::{
+    RwLock, RwLockReadGuard, RwLockReadGuardArc, RwLockUpgradableReadGuard,
+    RwLockUpgradableReadGuardArc, RwLockWriteGuard, RwLockWriteGuardArc,
+};
 
 cfg_unstable! {
     pub use async_lock::{Barrier, BarrierWaitResult};
