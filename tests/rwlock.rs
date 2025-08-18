@@ -21,7 +21,7 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 /// Generates a random number in `0..n`.
 pub fn random(n: u32) -> u32 {
     thread_local! {
-        static RNG: Cell<Wrapping<u32>> = Cell::new(Wrapping(1_406_868_647));
+        static RNG: Cell<Wrapping<u32>> = const { Cell::new(Wrapping(1_406_868_647)) };
     }
 
     RNG.with(|rng| {

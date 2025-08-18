@@ -37,7 +37,7 @@ where
 
         match next {
             Some(v) => {
-                let result = (&mut self.f)(v);
+                let result = (self.f)(v);
 
                 if result {
                     Poll::Ready(true)

@@ -19,7 +19,7 @@ impl<'a, S> NthFuture<'a, S> {
     }
 }
 
-impl<'a, S> Future for NthFuture<'a, S>
+impl<S> Future for NthFuture<'_, S>
 where
     S: Stream + Unpin + Sized,
 {

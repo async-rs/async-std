@@ -136,7 +136,7 @@ pub trait BufReadExt: BufRead {
     {
         ReadLineFuture {
             reader: self,
-            bytes: unsafe { mem::replace(buf.as_mut_vec(), Vec::new()) },
+            bytes: unsafe { std::mem::take(buf.as_mut_vec()) },
             buf,
             read: 0,
         }

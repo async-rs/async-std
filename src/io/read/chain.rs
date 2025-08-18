@@ -144,7 +144,7 @@ impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
         let this = self.project();
         if !*this.done_first {
             match futures_core::ready!(this.first.poll_fill_buf(cx)) {
-                Ok(buf) if buf.is_empty() => {
+                Ok([]) => {
                     *this.done_first = true;
                 }
                 Ok(buf) => return Poll::Ready(Ok(buf)),

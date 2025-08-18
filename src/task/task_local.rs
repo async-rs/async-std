@@ -120,7 +120,7 @@ impl<T: Send + 'static> LocalKey<T> {
             static COUNTER: AtomicU32 = AtomicU32::new(1);
 
             let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
-            if counter > u32::max_value() / 2 {
+            if counter > u32::MAX / 2 {
                 std::process::abort();
             }
 
