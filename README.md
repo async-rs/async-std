@@ -1,4 +1,4 @@
-# `async-std` has been discontinued; use `smol` instead
+# `async-std` has been deprecated; use `smol` instead
 
 We created `async-std` to demonstrate the value of making a library as close to
 `std` as possible, but async. We think that demonstration was successful, and
