@@ -409,4 +409,32 @@ mod tests {
             assert_eq!(&other_buffer, &[5, 6, 7, 8]);
         });
     }
+
+    #[test]
+    fn test_read_edge_cases() -> std::io::Result<()> {
+        crate::task::block_on(async {
+            // take(0) returns Ok(0) immediately without touching the inner reader
+            let f = io::Cursor::new(vec![0u8, 1, 2, 3]);
+            let mut buf = [0u8; 4];
+            assert_eq!(f.take(0).read(&mut buf).await?, 0);
+
+            // read_exact with an empty buffer returns Ok immediately
+            let mut f = io::Cursor::new(vec![0u8, 1, 2, 3]);
+            f.read_exact(&mut []).await?;
+
+            // read_to_end on an empty source returns Ok(0)
+            let mut f = io::Cursor::new(Vec::new());
+            let mut buf = Vec::new();
+            assert_eq!(f.read_to_end(&mut buf).await?, 0);
+            assert!(buf.is_empty());
+
+            // read_to_string on an empty source returns Ok(0)
+            let mut f = io::Cursor::new(Vec::new());
+            let mut buf = String::new();
+            assert_eq!(f.read_to_string(&mut buf).await?, 0);
+            assert!(buf.is_empty());
+
+            Ok(())
+        })
+    }
 }

@@ -264,3 +264,29 @@ pub(crate) fn read_until_internal<R: BufReadExt + ?Sized>(
         }
     }
 }
+
+#[cfg(all(test, not(target_os = "unknown")))]
+mod tests {
+    use crate::io;
+    use crate::prelude::*;
+
+    #[test]
+    fn test_read_until_eof_no_delimiter() -> std::io::Result<()> {
+        crate::task::block_on(async {
+            // read_until on an empty source with no delimiter returns Ok(0)
+            let mut reader = io::Cursor::new(Vec::new());
+            let mut buf = Vec::new();
+            assert_eq!(reader.read_until(b'\n', &mut buf).await?, 0);
+            assert!(buf.is_empty());
+
+            // read_until on a source that does not contain the delimiter
+            // reads all bytes and returns the total count at EOF
+            let mut reader = io::Cursor::new(vec![b'a', b'b', b'c']);
+            let mut buf = Vec::new();
+            assert_eq!(reader.read_until(b'\n', &mut buf).await?, 3);
+            assert_eq!(buf, b"abc");
+
+            Ok(())
+        })
+    }
+}
